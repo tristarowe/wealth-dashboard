@@ -485,6 +485,17 @@
     #hold-table tbody td:nth-child(2),#sum-table tbody td:nth-child(1){min-width:124px;max-width:158px}
     #hold-table tbody td:nth-child(2) .pname,#sum-table tbody td:nth-child(1) .pname{
       white-space:normal;word-break:break-word;overflow-wrap:anywhere;line-height:1.45}
+    /* 手机端三张宽表统一收窄列宽，提升一屏可读列数 */
+    #hold-table,#sum-table,#prod-table{font-size:12.5px}
+    #hold-table thead th,#hold-table tbody td,
+    #sum-table thead th,#sum-table tbody td,
+    #prod-table thead th,#prod-table tbody td{padding:8px 6px}
+    #hold-table thead th,#prod-table thead th{font-size:12px}
+    #prod-table thead th{min-width:0 !important}
+    #hold-table{min-width:1000px}
+    #sum-table{min-width:820px}
+    #prod-table{min-width:880px}
+    #hold-table .pname,#sum-table .pname,#prod-table .pname{font-size:12.5px}
     /* 输入框默认15px，iOS 下用16px避免聚焦自动放大 */
     .ms-search{font-size:15px;width:150px;padding:5px 8px}
     .ms-panel{width:214px}
