@@ -346,6 +346,17 @@
   .sr-row.on{border-color:#cbe0e8;background:#eef6f8}
   .sr-row em{font-style:normal;font-family:var(--mono);font-size:11.5px;color:var(--muted);white-space:nowrap}
   .note-line{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.6}
+  .add-hist{margin-top:14px;border-top:1px dashed var(--rule);padding-top:9px}
+  .add-hist-title{font-size:11.5px;color:var(--muted);margin-bottom:5px}
+  .add-hist-list{list-style:none;margin:0;padding:0;max-height:148px;overflow:auto}
+  .add-hist-list li{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f1f6f8;font-size:12px;color:var(--ink)}
+  .add-hist-list li:last-child{border-bottom:0}
+  .add-hist-list b{flex:none;font-weight:400;font-size:11px;line-height:1.5;padding:1px 6px;border-radius:4px}
+  .add-hist-list b.add{background:#eef6f8;color:#3d6b7d}
+  .add-hist-list b.del{background:#fdf4f2;color:#b3564d}
+  .add-hist-list span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .add-hist-list em{flex:none;font-style:normal;font-size:11px;color:var(--muted)}
+  .add-hist-list i{flex:none;font-style:normal;font-family:var(--mono);font-size:11px;color:var(--muted)}
   .drop{border:1px dashed #c9d5dc;border-radius:10px;padding:18px;text-align:center;font-size:12px;color:var(--muted);margin-top:10px;background:#fafcfd;cursor:pointer}
   .drop:hover,.drop.on{border-color:var(--accent);background:#f2f8fa}
   .drop .hint{font-size:11.5px}
@@ -1073,7 +1084,7 @@
         <label class="field wide">产品名称
           <input id="add-name" autocomplete="off" placeholder="如 合盛多元·鸿锦30天1号">
         </label>
-        <label class="field">登记编码（选填）
+        <label class="field">登记编码（填了才能自动抓净值）
           <input id="add-code" autocomplete="off" placeholder="如 Z7001026001785">
         </label>
         <label class="field">风险等级
@@ -1100,7 +1111,11 @@
           </span>
         </label>
       </div>
-      <div class="note-line">手工添加的产品保存在云端，所有设备共用；净值与净值日期需手动维护，不参与每日自动抓取。</div>
+      <div class="note-line">手工添加的产品保存在云端，所有设备共用；填写登记编码的产品会随每日数据抓取自动更新净值，未填写登记编码的需手动维护净值与净值日期。</div>
+      <div class="add-hist" id="add-hist" hidden>
+        <div class="add-hist-title">最近添加记录</div>
+        <ul class="add-hist-list" id="add-hist-list"></ul>
+      </div>
     </div>
     <div class="modal-foot"><button type="button" class="btn" data-close="modal-add">取消</button><button type="button" class="btn primary" id="submit-add">保存</button></div>
   </div>
