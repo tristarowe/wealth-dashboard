@@ -335,14 +335,13 @@
   window.DASHBOARD_HOLDINGS = HOLDINGS;
 
   // 当前选中的产品（顶部“覆盖产品”多选）
-  /* 顶部产品多选的可选范围：与持仓联动，只列当前在持（有份额）的产品 */
+  /* 顶部产品多选的可选范围：与「交易汇总」联动，列出汇总中的全部产品（含当日清仓、在途申购） */
   function pickableProducts() {
     var seen = {};
     var out = [];
-    HOLDINGS.forEach(function (h) {
-      var p = h && h.product;
+    summaryRows().forEach(function (r) {
+      var p = r && r.product;
       if (!p || !p.id || seen[p.id]) return;
-      if (!(h.shares > 0.000001)) return;
       seen[p.id] = 1;
       out.push(p);
     });
