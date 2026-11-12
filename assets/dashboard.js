@@ -1664,12 +1664,15 @@
         '<td><div class="pname">' + (h ?
           '<a class="plink" href="javascript:void(0)" data-goto-trade="' + p.id + '">' +
             (p.short || p.name) + '</a>' :
-          (p.short || p.name)) +
+          '<span class="pname-t">' + (p.short || p.name) + '</span>') +
+          '<span class="ptags">' +
           (h ? (h.cleared ?
-            '<span class="cleared-date" style="margin-left:6px">' +
+            '<span class="cleared-date">' +
               (h.tx && h.tx.confirmDate ? h.tx.confirmDate.slice(5) + ' ' : '') + '清仓</span>' :
-            '<span class="tag new" style="margin-left:6px">持仓</span>') : '') +
-          (isNew ? '<span class="tag np" style="margin-left:6px">当月新品</span>' : '') +
+            '<span class="tag new">持仓</span>') : '') +
+          (isNew ? '<span class="tag np">当月新品</span>' : '') +
+          (p.manual ? '<span class="tag" style="background:#f4f7f9;color:#7d939f" title="手工添加的产品">手工</span>' : '') +
+          '</span>' +
           saleSpan(p) +
           '</div></td>' +
         '<td class="c pmeta">' + (riskShort(p) || '—') + '</td>' +
@@ -1682,7 +1685,9 @@
         '<td class="c cdate">' + (m.inception ?
           '<span>' + m.inception + '</span><i>' + m.listing + ' 天</i>' :
           '<span class="muted">—</span>') + '</td>' +
-        '<td class="c">' + (h ? '<button class="mini" data-detail="' + p.id + '">详情</button>' : '<span class="muted">—</span>') + '</td>' +
+        '<td class="c">' + (h ? '<button class="mini" data-detail="' + p.id + '">详情</button>' : '') +
+          (p.manual ? '<button class="mini warn" data-del-product="' + p.id + '" style="margin-left:4px">删除</button>' : '') +
+          (!h && !p.manual ? '<span class="muted">—</span>' : '') + '</td>' +
         '</tr>';
     }).join('');
 
@@ -1735,6 +1740,91 @@
       return '<option value="' + o + '">' + o + '</option>';
     }).join('');
     sel.value = orgs.indexOf(current) !== -1 ? current : '';
+  }
+
+  /* ---------------- 筛选下拉：自绘列表（原生 select 展开层字号不可控） ---------------- */
+  var selPop = null;
+  var selPopSel = null;
+
+  function closeSelPop() {
+    if (selPop && selPop.parentNode) selPop.parentNode.removeChild(selPop);
+    selPop = null;
+    selPopSel = null;
+  }
+
+  function openSelPop(sel) {
+    if (selPopSel === sel) { closeSelPop(); return; }
+    closeSelPop();
+    var pop = document.createElement('div');
+    pop.className = 'sel-pop';
+    pop.setAttribute('role', 'listbox');
+    Array.prototype.forEach.call(sel.options, function (opt, i) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'sel-opt' + (i === sel.selectedIndex ? ' on' : '');
+      b.textContent = opt.text;
+      b.setAttribute('role', 'option');
+      b.setAttribute('aria-selected', i === sel.selectedIndex ? 'true' : 'false');
+      b.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        sel.selectedIndex = i;
+        closeSelPop();
+        sel.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+      pop.appendChild(b);
+    });
+    document.body.appendChild(pop);
+    selPop = pop;
+    selPopSel = sel;
+
+    var r = sel.getBoundingClientRect();
+    var pw = pop.offsetWidth;
+    var ph = pop.offsetHeight;
+    var vw = window.innerWidth;
+    var vh = window.innerHeight;
+    var left = Math.max(8, Math.min(r.left, vw - pw - 8));
+    var top = r.bottom + 6;
+    if (top + ph > vh - 8) top = Math.max(8, r.top - ph - 6);
+    pop.style.left = left + 'px';
+    pop.style.top = top + 'px';
+    pop.style.minWidth = Math.max(r.width, 132) + 'px';
+
+    var on = pop.querySelector('.sel-opt.on');
+    if (on) pop.scrollTop = Math.max(0, on.offsetTop - 40);
+  }
+
+  function beautifyFilterSelects() {
+    Array.prototype.forEach.call(document.querySelectorAll('.filters select'), function (sel) {
+      if (sel.parentNode && sel.parentNode.classList && sel.parentNode.classList.contains('sel-wrap')) return;
+      var wrap = document.createElement('span');
+      wrap.className = 'sel-wrap';
+      sel.parentNode.insertBefore(wrap, sel);
+      wrap.appendChild(sel);
+      var hit = document.createElement('button');
+      hit.type = 'button';
+      hit.className = 'sel-hit';
+      hit.setAttribute('aria-haspopup', 'listbox');
+      hit.setAttribute('aria-label', sel.getAttribute('aria-label') || '筛选');
+      hit.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        openSelPop(sel);
+      });
+      wrap.appendChild(hit);
+    });
+
+    document.addEventListener('click', function (e) {
+      if (!selPop) return;
+      if (selPop.contains(e.target)) return;
+      if (e.target.closest && e.target.closest('.sel-wrap')) return;
+      closeSelPop();
+    }, true);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' || e.key === 'Esc') closeSelPop();
+    });
+    window.addEventListener('resize', closeSelPop);
+    window.addEventListener('scroll', closeSelPop, true);
   }
 
   function bindProductFilters() {
@@ -1805,6 +1895,23 @@
         if (idx === -1) list.push(id); else list.splice(idx, 1);
         saveFavs(list);
         renderProductTable();
+        return;
+      }
+      var del = e.target.closest('[data-del-product]');
+      if (del) {
+        var pid = del.dataset.delProduct;
+        if (window.confirm('确认从产品库删除该手工产品？删除后本地与云端同时移除。')) {
+          del.disabled = true;
+          window.STORE.removeProduct(pid).then(function () {
+            mergeManualProducts();
+            computeHoldings();
+            renderAll();
+            toast('已删除');
+          }).catch(function (err) {
+            del.disabled = false;
+            toast((err && err.message) || '删除失败，请检查网络');
+          });
+        }
         return;
       }
       var det = e.target.closest('[data-detail]');
@@ -2443,9 +2550,11 @@
       return '<tr>' +
         '<td><div class="pname"><a class="plink" href="javascript:void(0)" data-goto-trade="' + p.id + '">' +
           (p.short || p.name) + '</a>' +
-          (h.pending ? '<span class="tag np" style="margin-left:6px" title="申购待确认：确认日净值未披露，按最新净值估算计入">在途</span>' : '') +
-          (h.cleared ? '<span class="cleared-date" style="margin-left:6px">' +
+          '<span class="ptags">' +
+          (h.pending ? '<span class="tag np" title="申购待确认：确认日净值未披露，按最新净值估算计入">在途</span>' : '') +
+          (h.cleared ? '<span class="cleared-date">' +
             (h.tx && h.tx.confirmDate ? h.tx.confirmDate.slice(5).replace('-', '.') : '') + ' 清仓</span>' : '') +
+          '</span>' +
           '</div></td>' +
         '<td class="c num">' + mmdd(h.latestDate) + '</td>' +
         '<td class="c num">' + fmtNav(h.latestNav) + '</td>' +
@@ -3212,6 +3321,7 @@
     bindCalendar();
     bindTrend();
     bindProductFilters();
+    beautifyFilterSelects();
     bindTrade();
     bindTradeModal();
     initDatePicker();
