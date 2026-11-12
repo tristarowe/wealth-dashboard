@@ -296,7 +296,7 @@
     if (!online) return Promise.resolve({ ok: false, source: 'file', message: '仅本地底稿' });
     return sbTrades().then(function () {
       source = 'supabase';
-      return { ok: true, source: 'supabase', message: '主通道 Supabase 已连接' };
+      return { ok: true, source: 'supabase', message: 'Supabase 已连接' };
     }).catch(function () {
       return { ok: false, source: 'file', message: '云端不可用，使用内置底稿' };
     });
