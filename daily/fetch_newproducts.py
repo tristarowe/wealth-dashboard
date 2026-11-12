@@ -235,18 +235,35 @@ def clean_name(name):
     return n or (name or "")
 
 
+BANK_SHORT = {
+    "中国建设银行": "建设银行", "中国工商银行": "工商银行", "中国农业银行": "农业银行",
+    "中国邮政储蓄银行": "邮储银行", "中国民生银行": "民生银行", "中国光大银行": "光大银行",
+    "中国华夏银行": "华夏银行", "上海浦东发展银行": "浦发银行", "浦东发展银行": "浦发银行",
+    "中国平安银行": "平安银行", "中国兴业银行": "兴业银行", "中国中信银行": "中信银行",
+    "中国招商银行": "招商银行", "中国广发银行": "广发银行", "中国渤海银行": "渤海银行",
+    "中国浙商银行": "浙商银行", "中国恒丰银行": "恒丰银行",
+}
+
+
+def bank_short(name):
+    s = re.sub(r"(股份有限公司|有限责任公司|有限公司)$", "", (name or "").strip()).strip()
+    if s in BANK_SHORT:
+        return BANK_SHORT[s]
+    if s.startswith("中国") and s.endswith("银行") and len(s) > 5:
+        return s[2:]
+    return s
+
+
 def clean_channels(raw):
-    """代销机构去重：拆分后按简称收敛，避免「中国建设银行股份有限公司；建设银行」这类重复。"""
+    """代销机构：去重 + 统一银行简称；理财公司（发行机构）不算代销机构，直接剔除。"""
     parts = [p.strip() for p in re.split(r"[；;/,，]", raw or "") if p.strip()]
-    out, keys = [], []
+    out = []
     for p in parts:
-        short = re.sub(r"(股份有限公司|有限责任公司|有限公司)$", "", p).strip()
-        short = short or p
-        key = short[2:] if short.startswith("中国") else short
-        if any(key == k or key in k or k in key for k in keys):
+        short = bank_short(p)
+        if not short.endswith("银行") or "理财" in short:
             continue
-        out.append(short)
-        keys.append(key)
+        if short and short not in out:
+            out.append(short)
     return "；".join(out)
 
 
