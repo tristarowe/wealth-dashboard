@@ -13,7 +13,7 @@ import os
 import subprocess
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -146,7 +146,7 @@ def main():
     ap.add_argument("--no-nav", action="store_true", help="只入库不抓净值")
     ap.add_argument("--gap", type=float, default=1.2)
     ap.add_argument("--max-new", type=int, default=20, help="单次最多并入条数")
-    ap.add_argument("--max-pending", type=int, default=20, help="单次最多补净值的占位产品数")
+    ap.add_argument("--max-pending", type=int, default=30, help="单次最多补净值的占位产品数")
     a = ap.parse_args()
 
     np = load_json(NP_JSON, {})
@@ -183,8 +183,12 @@ def main():
 
     # 为已入库但净值不足 2 条的占位产品补抓；同时轮换刷新净值日期落后的产品
     asof = max((x.get("latestDate") or "") for x in items) if items else ""
+    try:
+        cutoff = (datetime.strptime(asof, "%Y-%m-%d") - timedelta(days=3)).strftime("%Y-%m-%d")
+    except ValueError:
+        cutoff = asof
     pending = [x for x in items if len(x.get("nav") or []) < 2]
-    stale = [x for x in items if len(x.get("nav") or []) >= 2 and (x.get("latestDate") or "") < asof]
+    stale = [x for x in items if len(x.get("nav") or []) >= 2 and (x.get("latestDate") or "") < cutoff]
     stale.sort(key=lambda x: x.get("latestDate") or "")
     queue = []
     while (pending or stale) and len(queue) < a.max_pending:
@@ -198,7 +202,8 @@ def main():
         for i, x in enumerate(pending, 1):
             print("[%d/%d] 补净值 %s" % (i, len(pending), x["regCode"]), flush=True)
             rows = fetch_nav(x["regCode"])
-            if len(rows) >= 2 and rows[-1]["date"] >= (x.get("latestDate") or ""):
+            if len(rows) >= 2 and (rows[-1]["date"] > (x.get("latestDate") or "")
+                                   or len(rows) > len(x.get("nav") or [])):
                 fresh = to_item(x, rows)
                 x.update({k: fresh[k] for k in ("dates", "nav", "per10k", "latestDate", "latestNav")})
                 if not x.get("risk") and fresh.get("risk"):
