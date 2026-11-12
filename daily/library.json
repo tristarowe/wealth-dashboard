@@ -1,6 +1,6 @@
 {
   "asOf": "2026-11-10",
-  "fetchedAt": "2026-11-12 20:07",
+  "fetchedAt": "2026-11-12 20:08",
   "source": "建行新品公告·销售文件要素表 + 中国理财网净值",
   "window": {
     "start": "2026-08-01",
@@ -2670,6 +2670,46 @@
       "latestNav": null
     },
     {
+      "id": "LZ7001426002156",
+      "name": "阳光金乐盈日开2号（88天最低持有）",
+      "short": "阳光金乐盈日开2号（88天最低持有）",
+      "org": "光大理财有限责任公司",
+      "orgShort": "光大理财",
+      "regCode": "Z7001426002156",
+      "risk": "",
+      "saleChannel": "建设银行",
+      "inception": "2026-09-01",
+      "raiseStart": "2026-08-27",
+      "raiseEnd": "2026-08-31",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7002626002690",
+      "name": "为【信银理财安盈象固收稳利一个月持有期272号理财产",
+      "short": "安盈象固收稳利一个月持有期272号理财产",
+      "org": "信银理财有限责任公司",
+      "orgShort": "信银理财",
+      "regCode": "Z7002626002690",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-09-01",
+      "raiseStart": "2026-08-28",
+      "raiseEnd": "2026-08-31",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
       "id": "LZ7000726001923",
       "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第167期",
       "short": "嘉鑫（稳利）按日开放式第167期",
@@ -2905,6 +2945,206 @@
       ],
       "latestDate": "2026-11-10",
       "latestNav": 1.003661
+    },
+    {
+      "id": "LZ7000726000940",
+      "name": "建信理财龙宝现金管理类产品154号",
+      "short": "龙宝现金管理类产品154号",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726000940",
+      "risk": "R1",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-31",
+      "raiseStart": "2026-08-28",
+      "raiseEnd": "2026-08-28",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726002191",
+      "name": "建信理财嘉鑫（稳利）固收类最低持有7天产品第67期",
+      "short": "嘉鑫（稳利）固收类最低持有7天产品第67期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726002191",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-31",
+      "raiseStart": "2026-08-28",
+      "raiseEnd": "2026-08-28",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726002074",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第203期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第203期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726002074",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-31",
+      "raiseStart": "2026-08-28",
+      "raiseEnd": "2026-08-28",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726002095",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第202期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第202期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726002095",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-31",
+      "raiseStart": "2026-08-28",
+      "raiseEnd": "2026-08-28",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726002079",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第201期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第201期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726002079",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-31",
+      "raiseStart": "2026-08-28",
+      "raiseEnd": "2026-08-28",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726001884",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第168期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第168期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726001884",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-31",
+      "raiseStart": "2026-08-28",
+      "raiseEnd": "2026-08-28",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726001969",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第166期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第166期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726001969",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-31",
+      "raiseStart": "2026-08-28",
+      "raiseEnd": "2026-08-28",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726002021",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第127期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第127期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726002021",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-31",
+      "raiseStart": "2026-08-28",
+      "raiseEnd": "2026-08-28",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726002004",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第126期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第126期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726002004",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-31",
+      "raiseStart": "2026-08-28",
+      "raiseEnd": "2026-08-28",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726001985",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第125期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第125期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726001985",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-31",
+      "raiseStart": "2026-08-28",
+      "raiseEnd": "2026-08-28",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
     },
     {
       "id": "LZ7000726002174",
@@ -3903,6 +4143,206 @@
       "latestNav": 1.00239
     },
     {
+      "id": "LZ7002626002398",
+      "name": "为【信银理财慧盈象固收增利三个月持有期135号理财产",
+      "short": "慧盈象固收增利三个月持有期135号理财产",
+      "org": "信银理财有限责任公司",
+      "orgShort": "信银理财",
+      "regCode": "Z7002626002398",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-27",
+      "raiseStart": "2026-08-25",
+      "raiseEnd": "2026-08-26",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726000978",
+      "name": "建信理财龙宝现金管理类产品150号",
+      "short": "龙宝现金管理类产品150号",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726000978",
+      "risk": "R1",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-27",
+      "raiseStart": "2026-08-26",
+      "raiseEnd": "2026-08-26",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726002058",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第199期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第199期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726002058",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-27",
+      "raiseStart": "2026-08-26",
+      "raiseEnd": "2026-08-26",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726002099",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第198期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第198期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726002099",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-27",
+      "raiseStart": "2026-08-26",
+      "raiseEnd": "2026-08-26",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726001949",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第165期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第165期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726001949",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-27",
+      "raiseStart": "2026-08-26",
+      "raiseEnd": "2026-08-26",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726001895",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第163期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第163期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726001895",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-27",
+      "raiseStart": "2026-08-26",
+      "raiseEnd": "2026-08-26",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726002051",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第123期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第123期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726002051",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-27",
+      "raiseStart": "2026-08-26",
+      "raiseEnd": "2026-08-26",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726001984",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第122期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第122期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726001984",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-27",
+      "raiseStart": "2026-08-26",
+      "raiseEnd": "2026-08-26",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000926001549",
+      "name": "交银理财稳享慧选日开5号（180天持有期）理财产品",
+      "short": "稳享慧选日开5号（180天持有期）",
+      "org": "交银理财有限责任公司",
+      "orgShort": "交银理财",
+      "regCode": "Z7000926001549",
+      "risk": "",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-27",
+      "raiseStart": "2026-08-26",
+      "raiseEnd": "2026-08-26",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7001926001092",
+      "name": "中邮理财优盛·鸿锦最短持有14天23号理财产品",
+      "short": "优盛·鸿锦最短持有14天23号",
+      "org": "中邮理财有限责任公司",
+      "orgShort": "中邮理财",
+      "regCode": "Z7001926001092",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-27",
+      "raiseStart": "2026-08-26",
+      "raiseEnd": "2026-08-26",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
       "id": "LZ7001926001090",
       "name": "中邮理财优盛·鸿锦最短持有7天45号理财产品",
       "short": "优盛·鸿锦7天45号",
@@ -4072,6 +4512,26 @@
       ],
       "latestDate": "2026-11-09",
       "latestNav": 1.005
+    },
+    {
+      "id": "LZ7001926000993",
+      "name": "中邮理财灵活·鸿运日开40号理财产品",
+      "short": "灵活·鸿运日开40号",
+      "org": "中邮理财有限责任公司",
+      "orgShort": "中邮理财",
+      "regCode": "Z7001926000993",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-26",
+      "raiseStart": "2026-08-25",
+      "raiseEnd": "2026-08-25",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
     },
     {
       "id": "LZ7000726000961",
@@ -4837,6 +5297,266 @@
       ],
       "latestDate": "2026-11-10",
       "latestNav": 1.004265
+    },
+    {
+      "id": "LZ7000726001314",
+      "name": "建信理财嘉鑫（稳利）固收类最低持有30天产品第52期",
+      "short": "嘉鑫（稳利）固收类最低持有30天产品第52期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726001314",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-25",
+      "raiseStart": "2026-08-21",
+      "raiseEnd": "2026-08-24",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726002187",
+      "name": "建信理财嘉鑫（稳利）固收类最低持有14天产品第37期",
+      "short": "嘉鑫（稳利）固收类最低持有14天产品第37期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726002187",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-25",
+      "raiseStart": "2026-08-21",
+      "raiseEnd": "2026-08-24",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726002077",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第197期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第197期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726002077",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-25",
+      "raiseStart": "2026-08-21",
+      "raiseEnd": "2026-08-24",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726002103",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第195期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第195期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726002103",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-25",
+      "raiseStart": "2026-08-21",
+      "raiseEnd": "2026-08-24",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726001959",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第161期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第161期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726001959",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-25",
+      "raiseStart": "2026-08-21",
+      "raiseEnd": "2026-08-24",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726001936",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第160期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第160期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726001936",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-25",
+      "raiseStart": "2026-08-21",
+      "raiseEnd": "2026-08-24",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726002018",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第121期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第121期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726002018",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-25",
+      "raiseStart": "2026-08-21",
+      "raiseEnd": "2026-08-24",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726002032",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第120期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第120期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726002032",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-25",
+      "raiseStart": "2026-08-21",
+      "raiseEnd": "2026-08-24",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726002009",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第119期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第119期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726002009",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-25",
+      "raiseStart": "2026-08-21",
+      "raiseEnd": "2026-08-24",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7002626002218",
+      "name": "为【信银理财安盈象固收稳利十四天持有期165号理财产",
+      "short": "安盈象固收稳利十四天持有期165号理财产",
+      "org": "信银理财有限责任公司",
+      "orgShort": "信银理财",
+      "regCode": "Z7002626002218",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-25",
+      "raiseStart": "2026-08-20",
+      "raiseEnd": "2026-08-24",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7001026001299",
+      "name": "中银理财-稳富30天持有期44号",
+      "short": "稳富30天持有期44号",
+      "org": "中银理财有限责任公司",
+      "orgShort": "中银理财",
+      "regCode": "Z7001026001299",
+      "risk": "",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-25",
+      "raiseStart": "2026-08-24",
+      "raiseEnd": "2026-08-24",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7001426001773",
+      "name": "阳光金增利稳健乐享天天购75号（14天最低持有）",
+      "short": "阳光金增利稳健乐享天天购75号（14天最低持有）",
+      "org": "光大理财有限责任公司",
+      "orgShort": "光大理财",
+      "regCode": "Z7001426001773",
+      "risk": "",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-25",
+      "raiseStart": "2026-08-20",
+      "raiseEnd": "2026-08-24",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7002626001798",
+      "name": "为【信银理财安盈象固收稳利日开208号理财产品】，产",
+      "short": "安盈象固收稳利日开208号】，产",
+      "org": "信银理财有限责任公司",
+      "orgShort": "信银理财",
+      "regCode": "Z7002626001798",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-21",
+      "raiseStart": "2026-08-19",
+      "raiseEnd": "2026-08-20",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
     },
     {
       "id": "LZ7000726002071",
@@ -5824,6 +6544,206 @@
       ],
       "latestDate": "2026-11-09",
       "latestNav": 1.0074
+    },
+    {
+      "id": "LZ7000926001560",
+      "name": "交银理财稳享灵动慧利日开132号（7天持有期）理财产品",
+      "short": "稳享灵动慧利日开132号（7天持有期）",
+      "org": "交银理财有限责任公司",
+      "orgShort": "交银理财",
+      "regCode": "Z7000926001560",
+      "risk": "",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-20",
+      "raiseStart": "2026-08-19",
+      "raiseEnd": "2026-08-19",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726000964",
+      "name": "建信理财龙宝现金管理类产品151号",
+      "short": "龙宝现金管理类产品151号",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726000964",
+      "risk": "R1",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-20",
+      "raiseStart": "2026-08-19",
+      "raiseEnd": "2026-08-19",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726002100",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第193期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第193期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726002100",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-20",
+      "raiseStart": "2026-08-19",
+      "raiseEnd": "2026-08-19",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726002101",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第192期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第192期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726002101",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-20",
+      "raiseStart": "2026-08-19",
+      "raiseEnd": "2026-08-19",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726001883",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第158期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第158期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726001883",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-20",
+      "raiseStart": "2026-08-19",
+      "raiseEnd": "2026-08-19",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726001925",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第156期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第156期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726001925",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-20",
+      "raiseStart": "2026-08-19",
+      "raiseEnd": "2026-08-19",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726001885",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第155期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第155期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726001885",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-20",
+      "raiseStart": "2026-08-19",
+      "raiseEnd": "2026-08-19",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726002022",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第118期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第118期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726002022",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-20",
+      "raiseStart": "2026-08-19",
+      "raiseEnd": "2026-08-19",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726002025",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第116期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第116期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726002025",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-20",
+      "raiseStart": "2026-08-19",
+      "raiseEnd": "2026-08-19",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7007926000919",
+      "name": "民生理财贵竹固收添益3个月持有期24号理财产品",
+      "short": "贵竹固收添益3个月持有期24号",
+      "org": "民生理财有限责任公司",
+      "orgShort": "民生理财",
+      "regCode": "Z7007926000919",
+      "risk": "",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-19",
+      "raiseStart": "2026-08-17",
+      "raiseEnd": "2026-08-18",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
     },
     {
       "id": "LZ7000726001566",
@@ -7206,6 +8126,226 @@
       "latestNav": 1.005211
     },
     {
+      "id": "LZ7000726001993",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第37期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第37期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726001993",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-18",
+      "raiseStart": "2026-08-14",
+      "raiseEnd": "2026-08-17",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726002042",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第36期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第36期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726002042",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-18",
+      "raiseStart": "2026-08-14",
+      "raiseEnd": "2026-08-17",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726002030",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第35期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第35期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726002030",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-18",
+      "raiseStart": "2026-08-14",
+      "raiseEnd": "2026-08-17",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726001931",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第152期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第152期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726001931",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-18",
+      "raiseStart": "2026-08-14",
+      "raiseEnd": "2026-08-17",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726001913",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第151期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第151期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726001913",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-18",
+      "raiseStart": "2026-08-14",
+      "raiseEnd": "2026-08-17",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726001309",
+      "name": "建信理财嘉鑫（稳利）固收类最低持有7天产品第66期",
+      "short": "嘉鑫（稳利）固收类最低持有7天产品第66期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726001309",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-18",
+      "raiseStart": "2026-08-14",
+      "raiseEnd": "2026-08-17",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726002108",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第191期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第191期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726002108",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-18",
+      "raiseStart": "2026-08-14",
+      "raiseEnd": "2026-08-17",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726002078",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第189期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第189期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726002078",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-18",
+      "raiseStart": "2026-08-14",
+      "raiseEnd": "2026-08-17",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726002062",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第184期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第184期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726002062",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-18",
+      "raiseStart": "2026-08-14",
+      "raiseEnd": "2026-08-17",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7001026001324",
+      "name": "中银理财-稳富7天持有期27号",
+      "short": "稳富7天持有期27号",
+      "org": "中银理财有限责任公司",
+      "orgShort": "中银理财",
+      "regCode": "Z7001026001324",
+      "risk": "",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-18",
+      "raiseStart": "2026-08-17",
+      "raiseEnd": "2026-08-17",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7001026001289",
+      "name": "中银理财-稳富14天持有期22号",
+      "short": "稳富14天持有期22号",
+      "org": "中银理财有限责任公司",
+      "orgShort": "中银理财",
+      "regCode": "Z7001026001289",
+      "risk": "",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-18",
+      "raiseStart": "2026-08-17",
+      "raiseEnd": "2026-08-17",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
       "id": "LZ7000726001907",
       "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第139期",
       "short": "嘉鑫（稳利）按日开放式第139期",
@@ -7788,6 +8928,226 @@
       "latestNav": 1.006903
     },
     {
+      "id": "LZ7000726001946",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第150期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第150期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726001946",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-13",
+      "raiseStart": "2026-08-12",
+      "raiseEnd": "2026-08-12",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726001944",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第138期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第138期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726001944",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-13",
+      "raiseStart": "2026-08-12",
+      "raiseEnd": "2026-08-12",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726000974",
+      "name": "建信理财龙宝现金管理类产品153号",
+      "short": "龙宝现金管理类产品153号",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726000974",
+      "risk": "R1",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-13",
+      "raiseStart": "2026-08-12",
+      "raiseEnd": "2026-08-12",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726001254",
+      "name": "建信理财嘉鑫（稳利）固收类最低持有7天产品第57期",
+      "short": "嘉鑫（稳利）固收类最低持有7天产品第57期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726001254",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-13",
+      "raiseStart": "2026-08-12",
+      "raiseEnd": "2026-08-12",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726001253",
+      "name": "建信理财嘉鑫（稳利）固收类最低持有30天产品第46期",
+      "short": "嘉鑫（稳利）固收类最低持有30天产品第46期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726001253",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-13",
+      "raiseStart": "2026-08-12",
+      "raiseEnd": "2026-08-12",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726002063",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第188期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第188期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726002063",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-13",
+      "raiseStart": "2026-08-12",
+      "raiseEnd": "2026-08-12",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726002076",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第187期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第187期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726002076",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-13",
+      "raiseStart": "2026-08-12",
+      "raiseEnd": "2026-08-12",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726002096",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第186期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第186期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726002096",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-13",
+      "raiseStart": "2026-08-12",
+      "raiseEnd": "2026-08-12",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726002107",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第183期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第183期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726002107",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-13",
+      "raiseStart": "2026-08-12",
+      "raiseEnd": "2026-08-12",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726002069",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第182期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第182期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726002069",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-13",
+      "raiseStart": "2026-08-12",
+      "raiseEnd": "2026-08-12",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000926001561",
+      "name": "交银理财稳享灵动慧利日开93号（30天持有期）理财产品",
+      "short": "稳享灵动慧利日开93号（30天持有期）",
+      "org": "交银理财有限责任公司",
+      "orgShort": "交银理财",
+      "regCode": "Z7000926001561",
+      "risk": "",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-13",
+      "raiseStart": "2026-08-12",
+      "raiseEnd": "2026-08-12",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
       "id": "LZ7001926000851",
       "name": "中邮理财优盛·鸿锦最短持有7天42号理财产品",
       "short": "优盛·鸿锦7天42号",
@@ -7987,6 +9347,86 @@
       ],
       "latestDate": "2026-11-09",
       "latestNav": 1.0096
+    },
+    {
+      "id": "LZ7005126000103",
+      "name": "贝莱德建信理财贝淳添元45天持有期固定收益类理财产品2期",
+      "short": "贝淳添元45天持有期2期",
+      "org": "贝莱德建信理财有限责任公司",
+      "orgShort": "贝莱德建信理财",
+      "regCode": "Z7005126000103",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-12",
+      "raiseStart": "2026-08-11",
+      "raiseEnd": "2026-08-11",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7005126000084",
+      "name": "贝莱德建信理财贝淳固定收益类理财产品14期（每日开放）",
+      "short": "贝淳14期（每日开放）",
+      "org": "贝莱德建信理财有限责任公司",
+      "orgShort": "贝莱德建信理财",
+      "regCode": "Z7005126000084",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-12",
+      "raiseStart": "2026-08-11",
+      "raiseEnd": "2026-08-11",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7005126000077",
+      "name": "贝莱德建信理财贝淳金元180天持有期固定收益类理财产品1期",
+      "short": "贝淳金元180天持有期1期",
+      "org": "贝莱德建信理财有限责任公司",
+      "orgShort": "贝莱德建信理财",
+      "regCode": "Z7005126000077",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-12",
+      "raiseStart": "2026-08-11",
+      "raiseEnd": "2026-08-11",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7005126000078",
+      "name": "贝莱德建信理财贝淳金元120天持有期固定收益类理财产品1期",
+      "short": "贝淳金元120天持有期1期",
+      "org": "贝莱德建信理财有限责任公司",
+      "orgShort": "贝莱德建信理财",
+      "regCode": "Z7005126000078",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-12",
+      "raiseStart": "2026-08-11",
+      "raiseEnd": "2026-08-11",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
     },
     {
       "id": "LZ7000726001203",
@@ -9177,6 +10617,146 @@
       "latestNav": 1.006675
     },
     {
+      "id": "LZ7000726000982",
+      "name": "建信理财龙宝现金管理类产品169号",
+      "short": "龙宝现金管理类产品169号",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726000982",
+      "risk": "R1",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-11",
+      "raiseStart": "2026-08-07",
+      "raiseEnd": "2026-08-10",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726000558",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第61期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第61期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726000558",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-11",
+      "raiseStart": "2026-08-07",
+      "raiseEnd": "2026-08-10",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726000574",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第60期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第60期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726000574",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-11",
+      "raiseStart": "2026-08-07",
+      "raiseEnd": "2026-08-10",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726000572",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第59期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第59期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726000572",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-11",
+      "raiseStart": "2026-08-07",
+      "raiseEnd": "2026-08-10",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726001976",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第33期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第33期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726001976",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-11",
+      "raiseStart": "2026-08-07",
+      "raiseEnd": "2026-08-10",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726001915",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第137期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第137期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726001915",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-11",
+      "raiseStart": "2026-08-07",
+      "raiseEnd": "2026-08-10",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726001293",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第115期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第115期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726001293",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-11",
+      "raiseStart": "2026-08-07",
+      "raiseEnd": "2026-08-10",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
       "id": "LZ7000726001510",
       "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第107期",
       "short": "嘉鑫（稳利）按日开放式第107期",
@@ -9489,6 +11069,246 @@
       "latestNav": 1.003168
     },
     {
+      "id": "LZ7000726000970",
+      "name": "建信理财龙宝现金管理类产品167号",
+      "short": "龙宝现金管理类产品167号",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726000970",
+      "risk": "R1",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-06",
+      "raiseStart": "2026-08-05",
+      "raiseEnd": "2026-08-05",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726001202",
+      "name": "建信理财嘉鑫（稳利）固收类最低持有30天产品第32期",
+      "short": "嘉鑫（稳利）固收类最低持有30天产品第32期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726001202",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-06",
+      "raiseStart": "2026-08-05",
+      "raiseEnd": "2026-08-05",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726000577",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第9期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第9期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726000577",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-06",
+      "raiseStart": "2026-08-05",
+      "raiseEnd": "2026-08-05",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726000554",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第6期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第6期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726000554",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-06",
+      "raiseStart": "2026-08-05",
+      "raiseEnd": "2026-08-05",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726001306",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第112期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第112期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726001306",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-06",
+      "raiseStart": "2026-08-05",
+      "raiseEnd": "2026-08-05",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726001290",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第111期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第111期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726001290",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-06",
+      "raiseStart": "2026-08-05",
+      "raiseEnd": "2026-08-05",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726001325",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第110期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第110期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726001325",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-06",
+      "raiseStart": "2026-08-05",
+      "raiseEnd": "2026-08-05",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726001530",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第108期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第108期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726001530",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-06",
+      "raiseStart": "2026-08-05",
+      "raiseEnd": "2026-08-05",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726001522",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第106期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第106期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726001522",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-06",
+      "raiseStart": "2026-08-05",
+      "raiseEnd": "2026-08-05",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726001239",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第100期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第100期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726001239",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-06",
+      "raiseStart": "2026-08-05",
+      "raiseEnd": "2026-08-05",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000926001674",
+      "name": "交银理财稳享固收精选日日开12号理财产品",
+      "short": "稳享固收精选日日开12号",
+      "org": "交银理财有限责任公司",
+      "orgShort": "交银理财",
+      "regCode": "Z7000926001674",
+      "risk": "",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-06",
+      "raiseStart": "2026-08-05",
+      "raiseEnd": "2026-08-05",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7001026001304",
+      "name": "中银理财-稳富30天持有期42号",
+      "short": "稳富30天持有期42号",
+      "org": "中银理财有限责任公司",
+      "orgShort": "中银理财",
+      "regCode": "Z7001026001304",
+      "risk": "",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-06",
+      "raiseStart": "2026-08-05",
+      "raiseEnd": "2026-08-05",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
       "id": "LZ7007926000923",
       "name": "民生理财贵竹固收添益3个月持有期23号理财产品",
       "short": "贵竹固收添益3个月持有期23号",
@@ -9697,6 +11517,26 @@
       ],
       "latestDate": "2026-11-09",
       "latestNav": 1.0106
+    },
+    {
+      "id": "LZ7007926000856",
+      "name": "民生理财富竹固收60天持有期8号理财产品",
+      "short": "富竹固收60天持有期8号",
+      "org": "民生理财有限责任公司",
+      "orgShort": "民生理财",
+      "regCode": "Z7007926000856",
+      "risk": "",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-05",
+      "raiseStart": "2026-08-03",
+      "raiseEnd": "2026-08-04",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
     },
     {
       "id": "LZ7000726001305",
@@ -10333,6 +12173,126 @@
       ],
       "latestDate": "2026-11-10",
       "latestNav": 1.003226
+    },
+    {
+      "id": "LZ7000726000939",
+      "name": "建信理财龙宝现金管理类产品170号",
+      "short": "龙宝现金管理类产品170号",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726000939",
+      "risk": "R1",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-04",
+      "raiseStart": "2026-07-31",
+      "raiseEnd": "2026-08-03",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726001198",
+      "name": "建信理财嘉鑫（稳利）固收类最低持有7天产品第32期",
+      "short": "嘉鑫（稳利）固收类最低持有7天产品第32期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726001198",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-04",
+      "raiseStart": "2026-07-31",
+      "raiseEnd": "2026-08-03",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726001249",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第99期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第99期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726001249",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-04",
+      "raiseStart": "2026-07-31",
+      "raiseEnd": "2026-08-03",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726001227",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第96期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第96期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726001227",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-04",
+      "raiseStart": "2026-07-31",
+      "raiseEnd": "2026-08-03",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726000571",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第58期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第58期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726000571",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-04",
+      "raiseStart": "2026-07-31",
+      "raiseEnd": "2026-08-03",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7000726001536",
+      "name": "建信理财嘉鑫（稳利）固收类按日开放式产品第105期",
+      "short": "嘉鑫（稳利）固收类按日开放式产品第105期",
+      "org": "建信理财有限责任公司",
+      "orgShort": "建信理财",
+      "regCode": "Z7000726001536",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-08-04",
+      "raiseStart": "2026-07-31",
+      "raiseEnd": "2026-08-03",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
     }
   ]
 }
