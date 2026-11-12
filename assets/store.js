@@ -1,56 +1,30 @@
-/* 交易存储层
- * 配好 assets/supabase-config.js 时走云端（Supabase REST），任何设备打开都是同一份数据；
- * 未配置时退回浏览器本地存储，单机可登记，不跨设备。
- * 对外接口：STORE.load() / STORE.add() / STORE.update() / STORE.remove()
+/* 数据层：交易与新品全部走腾讯云 CloudBase 云函数接口（/wapi）。
+ * 读取匿名、无需口令；写入需要口令，口令只保存在 sessionStorage（关掉标签页即失效）。
+ * 对外接口：STORE.load() / add() / update() / remove() / askToken() / token() / verify()
  */
 (function () {
-  var CFG = window.SUPABASE_CONFIG || {};
-  var url = String(CFG.url || '').replace(/\/+$/, '');
-  var key = CFG.key || '';
-  var TABLE = CFG.table || 'trades';
-  var LS_KEY = 'wealth3.trades.v1';
-  var online = !!(url && key);
+  var CFG = window.CLOUD_CONFIG || {};
+  var API = String(CFG.api || '').replace(/\/+$/, '');
+  var TOKEN_KEY = 'wealth3.cloud.token';
+  var online = !!API;
 
-  function headers(extra) {
-    var h = { apikey: key, 'Content-Type': 'application/json', Prefer: 'return=representation' };
-    h.Authorization = 'Bearer ' + key;
-    if (extra) for (var k in extra) h[k] = extra[k];
-    return h;
+  function getToken() {
+    try { return sessionStorage.getItem(TOKEN_KEY) || ''; } catch (e) { return ''; }
   }
 
-  function rowToTx(r) {
-    return {
-      id: r.id,
-      pid: r.pid,
-      type: r.type,
-      applyDate: r.apply_date,
-      confirmDate: r.confirm_date,
-      amount: Number(r.amount),
-      shares: Number(r.shares),
-      confirmNav: Number(r.confirm_nav),
-      status: r.status || '已确认',
-      saleChannel: r.sale_channel || '',
-      source: r.source || '人工录入'
-    };
+  function setToken(t) {
+    try {
+      if (t) sessionStorage.setItem(TOKEN_KEY, t);
+      else sessionStorage.removeItem(TOKEN_KEY);
+    } catch (e) {}
   }
 
-  function txToRow(t) {
-    var shares = (t.shares === undefined || t.shares === null)
-      ? Math.round((Number(t.amount) / Number(t.confirmNav)) * 100) / 100
-      : t.shares;
-    return {
-      id: t.id,
-      pid: t.pid,
-      type: t.type,
-      apply_date: t.applyDate,
-      confirm_date: t.confirmDate,
-      amount: t.amount,
-      shares: shares,
-      confirm_nav: t.confirmNav,
-      status: t.status || '已确认',
-      sale_channel: t.saleChannel || '',
-      source: t.source || '人工录入'
-    };
+  function askToken() {
+    var t = window.prompt('请输入云端登记口令（仅本次浏览有效，关闭页面后需重新输入）', '');
+    if (t === null) return '';
+    t = String(t).trim();
+    setToken(t);
+    return t;
   }
 
   function fileItems() {
@@ -62,16 +36,13 @@
     window.TRANSACTIONS.items = items;
   }
 
-  function localList() {
-    try {
-      var raw = localStorage.getItem(LS_KEY);
-      var list = raw ? JSON.parse(raw) : null;
-      return Array.isArray(list) ? list : null;
-    } catch (e) { return null; }
-  }
-
-  function localSave(list) {
-    try { localStorage.setItem(LS_KEY, JSON.stringify(list)); } catch (e) {}
+  function clean(row) {
+    var o = {};
+    for (var k in row) {
+      if (k === '_id' || k === '_openid' || k === 'updatedAt') continue;
+      o[k] = row[k];
+    }
+    return o;
   }
 
   function newId(confirmDate) {
@@ -79,39 +50,141 @@
     return 'TX' + d + String(Math.floor(Math.random() * 900) + 100);
   }
 
-  function load() {
-    if (!online) {
-      var ls = localList();
-      if (ls) applyTrades(ls);
-      return Promise.resolve(fileItems());
+  function req(payload) {
+    return fetch(API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(function (r) { return r.json(); }).then(function (j) {
+      if (!j || j.code !== 0) {
+        if (j && j.code === 401) setToken('');
+        throw new Error((j && j.msg) || '云端写入失败');
+      }
+      return j.data;
+    });
+  }
+
+  function write(payload) {
+    if (!online) return Promise.reject(new Error('未配置云端接口'));
+    var t = getToken() || askToken();
+    if (!t) return Promise.reject(new Error('已取消口令输入'));
+    payload.token = t;
+    return req(payload);
+  }
+
+  /* ---------- 新品：云端条目与页面底稿按登记编码合并，云端优先 ---------- */
+  function npKey(p) {
+    return String(p.regCode || p.name || '').trim();
+  }
+
+  function npBase() {
+    var NP = window.NEW_PRODUCTS || {};
+    var out = [];
+    (NP.lanes || []).forEach(function (lane) {
+      (lane.products || []).forEach(function (p) {
+        var o = clean(p);
+        if (!o.channel) o.channel = lane.channel;
+        out.push(o);
+      });
+    });
+    if (!out.length) {
+      (NP.items || []).forEach(function (p) {
+        var o = clean(p);
+        if (!o.channel) o.channel = o.issuer || '';
+        out.push(o);
+      });
     }
-    return fetch(url + '/rest/v1/' + TABLE + '?select=*&order=id.asc', { headers: headers() })
+    return out;
+  }
+
+  function buildLanes(list) {
+    var lanes = [];
+    var index = {};
+    list.forEach(function (p) {
+      var ch = p.channel || p.issuer || '未登记机构';
+      if (!index[ch]) {
+        index[ch] = { channel: ch, products: [] };
+        lanes.push(index[ch]);
+      }
+      index[ch].products.push(p);
+    });
+    lanes.forEach(function (l) {
+      l.products.sort(function (a, b) {
+        return String(a.raiseStart || '').localeCompare(String(b.raiseStart || '')) ||
+          String(a.name || '').localeCompare(String(b.name || ''));
+      });
+    });
+    lanes.sort(function (a, b) {
+      return String(a.products[0].raiseStart || '').localeCompare(String(b.products[0].raiseStart || ''));
+    });
+    return lanes;
+  }
+
+  function applyNewProducts(rows) {
+    if (!rows || !rows.length) return;
+    var map = {};
+    var order = [];
+    npBase().forEach(function (p) {
+      var k = npKey(p);
+      if (!map[k]) order.push(k);
+      map[k] = p;
+    });
+    rows.forEach(function (p) {
+      var o = clean(p);
+      var k = npKey(o);
+      if (!map[k]) order.push(k);
+      map[k] = o;
+    });
+    var list = order.map(function (k) { return map[k]; });
+    /* 与增量口径一致：只展示成立日（或募集结束日）在今天及以后的新品 */
+    var now = new Date();
+    var today = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' +
+      String(now.getDate()).padStart(2, '0');
+    list = list.filter(function (p) {
+      var e = p.establish || p.raiseEnd;
+      return !e || e >= today;
+    });
+
+    var starts = [];
+    var ends = [];
+    list.forEach(function (p) {
+      if (p.raiseStart) starts.push(p.raiseStart);
+      var e = p.raiseEnd || p.establish;
+      if (e) ends.push(e);
+    });
+    starts.sort();
+    ends.sort();
+
+    var NP = window.NEW_PRODUCTS || {};
+    var win = NP.window || {};
+    NP.lanes = buildLanes(list);
+    NP.items = list;
+    NP.window = {
+      start: win.start || starts[0] || '',
+      end: ends[ends.length - 1] && ends[ends.length - 1] > (win.end || '')
+        ? ends[ends.length - 1] : (win.end || '')
+    };
+    NP.source = '云端登记 + 官网公告';
+    window.NEW_PRODUCTS = NP;
+  }
+
+  function load() {
+    if (!online) return Promise.resolve(fileItems());
+    return fetch(API + '?action=list', { cache: 'no-store' })
       .then(function (r) {
-        if (!r.ok) throw new Error('读取云端交易失败（' + r.status + '）');
+        if (!r.ok) throw new Error('读取云端数据失败（' + r.status + '）');
         return r.json();
       })
-      .then(function (rows) {
-        if (rows.length) {
-          applyTrades(rows.map(rowToTx));
-          return fileItems();
-        }
-        /* 云端还是空表：把现有底稿（或本地缓存）一次性播种上去 */
-        var seed = localList() || fileItems();
-        if (!seed.length) return fileItems();
-        return fetch(url + '/rest/v1/' + TABLE, {
-          method: 'POST',
-          headers: headers(),
-          body: JSON.stringify(seed.map(txToRow))
-        }).then(function (r) {
-          if (!r.ok) throw new Error('初始化云端交易失败（' + r.status + '）');
-          return r.json();
-        }).then(function (saved) {
-          applyTrades((saved || seed.map(txToRow)).map(rowToTx));
-          return fileItems();
-        });
+      .then(function (j) {
+        if (!j || j.code !== 0) throw new Error((j && j.msg) || '读取云端数据失败');
+        var data = j.data || {};
+        var txs = (data.transactions || []).map(clean);
+        if (txs.length) applyTrades(txs);
+        applyNewProducts((data.newproducts || []).map(clean));
+        return fileItems();
       })
       .catch(function (e) {
-        console.warn(e.message + '，本次使用本地底稿');
+        console.warn(e.message + '，本次使用页面内置底稿');
         return fileItems();
       });
   }
@@ -130,27 +203,16 @@
       saleChannel: tx.saleChannel || '',
       source: tx.source || '人工录入'
     };
-    if (!online) {
-      var list = localList() || fileItems().slice();
+    return write({ action: 'saveTx', item: item }).then(function () {
+      var list = fileItems().slice();
       list.push(item);
-      localSave(list);
       applyTrades(list);
-      return Promise.resolve({ ok: true, message: '已录入（本机保存）', item: item });
-    }
-    return fetch(url + '/rest/v1/' + TABLE, {
-      method: 'POST',
-      headers: headers(),
-      body: JSON.stringify(txToRow(item))
-    }).then(function (r) {
-      if (!r.ok) throw new Error('写入云端失败（' + r.status + '）');
-      return r.json();
-    }).then(function () {
       return { ok: true, message: '已录入云端', item: item };
     });
   }
 
   function update(id, tx) {
-    var patch = txToRow({
+    var item = {
       id: id,
       pid: tx.pid,
       type: tx.type,
@@ -159,48 +221,31 @@
       amount: tx.amount,
       shares: tx.shares,
       confirmNav: tx.confirmNav,
-      saleChannel: tx.saleChannel
-    });
-    delete patch.id;
-    if (!online) {
-      var list = localList() || fileItems().slice();
-      for (var i = 0; i < list.length; i++) {
-        if (list[i].id === id) {
-          list[i] = Object.assign({}, list[i], {
-            pid: tx.pid, type: tx.type, applyDate: tx.applyDate, confirmDate: tx.confirmDate,
-            amount: tx.amount, shares: tx.shares, confirmNav: tx.confirmNav,
-            saleChannel: tx.saleChannel || list[i].saleChannel
-          });
-          break;
-        }
-      }
-      localSave(list);
+      saleChannel: tx.saleChannel || '',
+      source: tx.source || '人工录入'
+    };
+    return write({ action: 'saveTx', item: item }).then(function () {
+      var list = fileItems().map(function (t) {
+        return t.id === id ? Object.assign({}, t, item) : t;
+      });
       applyTrades(list);
-      return Promise.resolve({ ok: true, message: '已修改（本机保存）' });
-    }
-    return fetch(url + '/rest/v1/' + TABLE + '?id=eq.' + encodeURIComponent(id), {
-      method: 'PATCH',
-      headers: headers(),
-      body: JSON.stringify(patch)
-    }).then(function (r) {
-      if (!r.ok) throw new Error('修改云端交易失败（' + r.status + '）');
       return { ok: true, message: '已修改云端交易' };
     });
   }
 
   function remove(id) {
-    if (!online) {
-      var list = (localList() || fileItems().slice()).filter(function (t) { return t.id !== id; });
-      localSave(list);
-      applyTrades(list);
-      return Promise.resolve({ ok: true, message: '已删除（本机保存）' });
-    }
-    return fetch(url + '/rest/v1/' + TABLE + '?id=eq.' + encodeURIComponent(id), {
-      method: 'DELETE',
-      headers: headers()
-    }).then(function (r) {
-      if (!r.ok) throw new Error('删除云端交易失败（' + r.status + '）');
+    return write({ action: 'delTx', id: id }).then(function () {
+      applyTrades(fileItems().filter(function (t) { return t.id !== id; }));
       return { ok: true, message: '已删除云端交易' };
+    });
+  }
+
+  function verify() {
+    if (!online) return Promise.reject(new Error('未配置云端接口'));
+    var t = getToken() || askToken();
+    if (!t) return Promise.reject(new Error('已取消口令输入'));
+    return req({ action: 'delTx', token: t, id: '__verify__' }).then(function () {
+      return { ok: true, message: '云端已连接' };
     });
   }
 
@@ -210,7 +255,10 @@
     add: add,
     update: update,
     remove: remove,
-    reset: function () { try { localStorage.removeItem(LS_KEY); } catch (e) {} }
+    verify: verify,
+    askToken: askToken,
+    token: getToken,
+    reset: function () { setToken(''); }
   };
   window.STORE_READY = load();
 })();
