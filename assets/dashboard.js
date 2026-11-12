@@ -32,6 +32,21 @@
     return '';
   }
 
+  /* 当前可卖份额：只认已确认的持仓，已清仓为 0 */
+  function sellableShares(pid) {
+    var map = HOLD_BY_PID || {};
+    var h = map[pid];
+    return h && h.shares > 0.000001 ? h.shares : 0;
+  }
+
+  /* 是否已有在途清仓单（确认日未到或净值未披露），避免重复清仓 */
+  function hasPendingClear(pid) {
+    var items = (window.TRANSACTIONS && window.TRANSACTIONS.items) || [];
+    return items.some(function (t) {
+      return t.pid === pid && t.type === '清仓' && txStatus(t) === '在途';
+    });
+  }
+
   /* 产品在指定日期披露的净值，未披露返回 null */
   function navOnDate(p, date) {
     if (!p || !p.dates || !date) return null;
@@ -214,9 +229,10 @@
         rec.cost -= sell * avg;
         rec.shares -= sell;
       } else {
+        /* 清仓后重新申购：起息日按本次确认日重新计算 */
+        if (!(rec.shares > 0.000001)) rec.startDate = t.confirmDate;
         rec.shares += sh;
         rec.cost += Number(t.amount) || sh * nav;
-        if (!rec.startDate) rec.startDate = t.confirmDate;
       }
       rec.lastTx = t;
     });
@@ -1886,6 +1902,27 @@
     });
   }
 
+  /* 按当前持仓限制可选交易类型：无份额不可赎回/清仓，已有在途清仓不可再次清仓 */
+  function applyTypeLimits(allowAll) {
+    var typeEl = document.getElementById('trade-type');
+    var box = document.getElementById('trade-type-seg');
+    if (!typeEl || !box) return;
+    var p = tradeProduct();
+    var shares = allowAll || !p ? 1 : sellableShares(p.id);
+    var pending = allowAll || !p ? false : hasPendingClear(p.id);
+    var allow = { '申购': true, '赎回': shares > 0, '清仓': shares > 0 && !pending };
+    if (!allow[typeEl.value]) {
+      typeEl.value = '申购';
+      syncTypeSeg();
+      syncTradeForm();
+    }
+    Array.prototype.forEach.call(box.querySelectorAll('.seg'), function (b) {
+      var t = b.getAttribute('data-type');
+      b.disabled = !allow[t];
+      b.title = allow[t] ? '' : (t === '清仓' && pending ? '已有在途清仓单' : '当前无可卖份额');
+    });
+  }
+
   function openTradeModal(pid, type, edit) {
     var modal = document.getElementById('modal-trade');
     if (!modal) return;
@@ -1924,6 +1961,7 @@
       if (navEl) navEl.readOnly = true;
       if (dateEl) dateEl.readOnly = true;
       syncTradeForm();
+      applyTypeLimits();
     }
     modal.hidden = false;
   }
@@ -1942,8 +1980,25 @@
     var nav = Number(navEl.value);
     var shares = Number(shEl && shEl.value);
     var amount = Number(amtEl && amtEl.value);
+    var modal = document.getElementById('modal-trade');
+    var editId = modal ? (modal.dataset.editId || '') : '';
+    var tType = typeEl.value;
+    /* 赎回/清仓必须基于真实持仓：清仓固定卖出全部可卖份额，赎回份额不得超过持仓 */
+    if (!editId && (tType === '赎回' || tType === '清仓')) {
+      var hold = sellableShares(p.id);
+      if (!(hold > 0)) { toast('该产品当前无可卖份额，无法' + tType); return; }
+      if (tType === '清仓' && hasPendingClear(p.id)) { toast('该产品已有在途清仓单，请等待确认后再操作'); return; }
+      if (tType === '清仓') {
+        shares = hold;
+      } else if (shares > hold + 0.01) {
+        toast('赎回份额不能超过可卖份额 ' + hold.toFixed(2));
+        return;
+      }
+      if (shEl && tType === '清仓') shEl.value = hold.toFixed(2);
+    }
     if (!(shares > 0) && amount > 0 && nav > 0) shares = amount / nav;
     if (!(amount > 0) && shares > 0 && nav > 0) amount = shares * nav;
+    if (tType === '清仓' && !editId) amount = shares * nav;
     if (!dateEl.value && applyEl && applyEl.value) dateEl.value = nextWorkday(applyEl.value);
     if (!(shares > 0) || !(nav > 0) || !dateEl.value || (applyEl && !applyEl.value)) {
       toast('请填写份额（或金额）与申购日期后提交');
@@ -1951,11 +2006,9 @@
     }
     var btn = document.getElementById('trade-submit');
     if (btn) btn.disabled = true;
-    var modal = document.getElementById('modal-trade');
-    var editId = modal ? (modal.dataset.editId || '') : '';
     var body = {
       pid: p.id,
-      type: typeEl.value,
+      type: tType,
       shares: Math.round(shares * 100) / 100,
       amount: Math.round(amount * 100) / 100,
       confirmNav: nav,
@@ -2006,6 +2059,7 @@
       var ap0 = document.getElementById('trade-apply');
       if (ap0) ap0.value = '';
       syncTradeForm();
+      applyTypeLimits();
     });
     var applyEl = document.getElementById('trade-apply');
     if (applyEl) applyEl.addEventListener('change', function () {
@@ -2319,6 +2373,11 @@
     }
     tbody.innerHTML = rows.map(function (h) {
       var p = h.product;
+      /* 已清仓无份额：赎回/清仓不可用；已有在途清仓单：清仓不可用（份额取已确认持仓，不含在途申购） */
+      var canSell = sellableShares(p.id) > 0;
+      var canClose = canSell && !hasPendingClear(p.id);
+      var noShareTip = ' title="当前无可卖份额（已清仓）" disabled';
+      var pendingTip = ' title="已有在途清仓单，确认后再操作" disabled';
       return '<tr>' +
         '<td><div class="pname"><a class="plink" href="javascript:void(0)" data-goto-trade="' + p.id + '">' +
           (p.short || p.name) + '</a>' +
@@ -2334,8 +2393,8 @@
         '<td class="r num ' + colorBy(h.ann) + '">' + fmtAnn(h.ann) + '</td>' +
         '<td class="r num dcell"><span class="days">' + h.days + '</span><i class="dunit">天</i></td>' +
         '<td class="c"><button class="mini buy" data-act="add" data-pid="' + p.id + '">加购</button> ' +
-          '<button class="mini sell" data-act="redeem" data-pid="' + p.id + '">赎回</button> ' +
-          '<button class="mini warn" data-act="close" data-pid="' + p.id + '">清仓</button></td>' +
+          '<button class="mini sell" data-act="redeem" data-pid="' + p.id + '"' + (canSell ? '' : noShareTip) + '>赎回</button> ' +
+          '<button class="mini warn" data-act="close" data-pid="' + p.id + '"' + (canClose ? '' : (canSell ? pendingTip : noShareTip)) + '>清仓</button></td>' +
         '</tr>';
     }).join('') || '<tr><td colspan="9" class="c muted" style="padding:28px">' + (flowState.pid ? '该产品暂无持仓' : '暂无持仓') + '</td></tr>';
 
@@ -2576,7 +2635,7 @@
     var sum = document.getElementById('sum-body');
     if (sum) sum.addEventListener('click', function (e) {
       var btn = e.target.closest('[data-act]');
-      if (!btn) return;
+      if (!btn || btn.disabled) return;
       var map = { add: '申购', redeem: '赎回', close: '清仓' };
       openTradeModal(btn.getAttribute('data-pid') || '', map[btn.getAttribute('data-act')] || '申购');
     });
