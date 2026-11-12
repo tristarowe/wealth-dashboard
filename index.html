@@ -896,7 +896,6 @@
 <script src="./assets/newproducts.js"></script>
 <script src="./assets/library.js"></script>
 <script src="./assets/supabase-config.js"></script>
-<script src="./assets/cloud-config.js"></script>
 <script src="./assets/store.js"></script>
 <script>
   /* 先取回交易底稿（云端或本机缓存），再加载看板渲染逻辑 */
@@ -907,7 +906,7 @@
   });
 </script>
 <script>
-  // 云端状态：主通道 Supabase，备用通道 CloudBase，两者都不可用时用内置底稿
+  // 云端状态：Supabase 主通道，不可用时用内置底稿
   (function () {
     var chip = document.getElementById('cloud-chip');
     var label = document.getElementById('cloud-label');
