@@ -1091,6 +1091,8 @@
       if (/iPad|iPhone|iPod/.test(ua)) return true;
       return navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
     }
+    // iOS 需要输入框≥16px 才不会被聚焦放大，用 class 单独处理字号
+    if (isIOS()) document.documentElement.classList.add('is-ios');
 
     // iOS 不支持 a[download]，改为展示图片让用户长按保存
     function showShot(dataUrl) {
