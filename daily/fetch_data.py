@@ -224,6 +224,14 @@ def main():
     stats["fetchedAt"] = data["fetchedAt"]
     STATS.write_text(json.dumps(stats, ensure_ascii=False, indent=2), encoding="utf-8")
     print("数据日期：", stats["dataDate"], "| 当日万收总计：", stats["total"])
+
+    # 新品成立后自动并入产品库；失败只提示，不影响净值入库
+    try:
+        import subprocess
+        subprocess.run([sys.executable, str(Path(__file__).with_name("promote_newproducts.py"))],
+                       check=False, timeout=900)
+    except Exception as exc:
+        print("新品并入产品库跳过：%s" % exc, file=sys.stderr)
     return 0
 
 
