@@ -190,8 +190,14 @@
       return a.confirmDate < b.confirmDate ? -1 : a.confirmDate > b.confirmDate ? 1 : 0;
     });
     var acc = {};
+    var todayStr = isoDate(new Date());
     tx.forEach(function (t) {
-      if (txStatus(t) === '在途') return;
+      /* 申购 / 赎回在途（确认日未到或净值未披露）不计入持仓；
+         清仓按确认日生效：确认日已到即使当日净值尚未披露也按最新净值估算扣减，保证清仓当天可见 */
+      if (txStatus(t) === '在途') {
+        var cd = t.confirmDate || t.applyDate;
+        if (!(t.type === '清仓' && cd && cd <= todayStr)) return;
+      }
       var p = findProductById(t.pid);
       if (!p) return;
       var rec = acc[p.id];
@@ -201,12 +207,12 @@
       if (!(sh > 0)) sh = Number(t.amount) / nav;
       if (t.type === '赎回' || t.type === '清仓') {
         var sell = t.type === '清仓' ? rec.shares : Math.min(rec.shares, sh);
-        if (sell > 0) {
-          var avg = rec.shares > 0 ? rec.cost / rec.shares : nav;
-          rec.realized += sell * (nav - avg);
-          rec.cost -= sell * avg;
-          rec.shares -= sell;
-        }
+        /* 已无份额可卖（重复录入的清仓/赎回）直接忽略，避免覆盖真实清仓日 */
+        if (!(sell > 0)) return;
+        var avg = rec.shares > 0 ? rec.cost / rec.shares : nav;
+        rec.realized += sell * (nav - avg);
+        rec.cost -= sell * avg;
+        rec.shares -= sell;
       } else {
         rec.shares += sh;
         rec.cost += Number(t.amount) || sh * nav;
@@ -630,7 +636,7 @@
         (h ? '市值 ' + fmtMoney(h.mv) + ' − 成本 ' + fmtMoney(h.cost) : '暂无持仓') + '">' + fmtSigned(h ? h.profit : null) + '</td>';
       html += '<td class="r num ' + colorBy(h ? h.ann : null) + '"' + rs + '>' + fmtAnn(h ? h.ann : null) + '</td>';
       html += '<td class="r num"' + rs + '>' + (h ? fmtMoney(h.mv) : '—') + '</td>';
-      html += '<td class="r num dcell"' + rs + '>' + (h ? '<span class="days">' + h.days + '</span>天' : '—') + '</td>';
+      html += '<td class="r num dcell"' + rs + '>' + (h ? '<span class="days">' + h.days + '</span><i class="dunit">天</i>' : '—') + '</td>';
       html += '<td class="c mlabel">' + lbl + '</td>';
 
       var perCells = '';
@@ -2326,7 +2332,7 @@
         '<td class="r num">' + fmtMoney(h.mv) + '</td>' +
         '<td class="r num ' + colorBy(h.profit) + '" title="持仓收益 = 市值 − 成本">' + fmtSigned(h.profit) + '</td>' +
         '<td class="r num ' + colorBy(h.ann) + '">' + fmtAnn(h.ann) + '</td>' +
-        '<td class="r num dcell"><span class="days">' + h.days + '</span>天</td>' +
+        '<td class="r num dcell"><span class="days">' + h.days + '</span><i class="dunit">天</i></td>' +
         '<td class="c"><button class="mini buy" data-act="add" data-pid="' + p.id + '">加购</button> ' +
           '<button class="mini sell" data-act="redeem" data-pid="' + p.id + '">赎回</button> ' +
           '<button class="mini warn" data-act="close" data-pid="' + p.id + '">清仓</button></td>' +
