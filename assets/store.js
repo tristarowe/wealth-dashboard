@@ -278,6 +278,11 @@
 
   /* ---------------- 加载 ---------------- */
   /* 立即返回本地缓存/内置底稿，云端请求放后台；有新数据时通过 STORE_REFRESH 通知页面重绘 */
+  function npSignature() {
+    var NP = window.NEW_PRODUCTS || {};
+    return (NP.items || []).map(function (p) { return (p.name || '') + '|' + (p.channel || ''); }).join(',');
+  }
+
   function load() {
     if (!online) {
       window.STORE_REFRESH = Promise.resolve(false);
@@ -288,9 +293,13 @@
       applyTrades(cached);
       source = 'cache';
     }
-    var base = fileItems().map(function (t) {
-      return [t.id, t.type, t.amount, t.shares, t.confirmNav, t.confirmDate].join('~');
-    }).sort().join('|');
+    function sig() {
+      return fileItems().map(function (t) {
+        return [t.id, t.type, t.amount, t.shares, t.confirmNav, t.confirmDate].join('~');
+      }).sort().join('|');
+    }
+    var base = sig();
+    var baseNp = npSignature();
 
     window.STORE_REFRESH = refreshing = Promise.all([
       sbTrades().then(function (txs) {
@@ -305,10 +314,7 @@
         console.warn(e.message + '，本次使用页面内置新品底稿');
       })
     ]).then(function () {
-      var sig = fileItems().map(function (t) {
-        return [t.id, t.type, t.amount, t.shares, t.confirmNav, t.confirmDate].join('~');
-      }).sort().join('|');
-      return sig !== base;
+      return sig() !== base || npSignature() !== baseNp;
     });
     return Promise.resolve(fileItems());
   }
