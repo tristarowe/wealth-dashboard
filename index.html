@@ -491,7 +491,12 @@
     .filters .fl-sep{display:none}
     .filters .chip{flex:1 1 calc(50% - 6px);width:auto;min-width:0;font-size:11.5px;padding:5px 10px}
     .filters input{flex:1 1 100%;min-width:0}
-    .trade-tool .btn{flex:1 1 100%;justify-content:center}
+    .trade-tool{flex-wrap:nowrap;gap:6px}
+    .trade-tool .sp{display:none}
+    .trade-tool .month-switch{flex:0 1 auto;min-width:0}
+    .trade-tool .month-switch .mini-select{min-width:0;width:auto;font-size:12px;padding:5px 0}
+    .trade-tool .ms-arrow{width:22px;font-size:14px}
+    .trade-tool .btn{flex:0 0 auto;margin-left:auto;min-height:32px;padding:6px 10px;font-size:12px;justify-content:center;white-space:nowrap}
     .timeline{overflow:visible;border:0;background:transparent;border-radius:0}
     .ts-grid{display:none}
     .ts-lane{display:flex;flex-direction:column;align-items:stretch;gap:8px;border:1px solid var(--rule);border-radius:10px;background:#fff;padding:10px;margin-bottom:10px;min-width:0}
