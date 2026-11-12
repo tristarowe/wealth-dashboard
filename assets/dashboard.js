@@ -1796,7 +1796,7 @@
     var cur = hid ? hid.value : '';
     list.innerHTML = items.map(function (p) {
       return '<div class="sr-row' + (p.id === cur ? ' on' : '') + '" data-pid="' + p.id + '"><span>' +
-        (p.short || p.name) + '</span><em>' + navHint(p) + '</em></div>';
+        (p.short || p.name) + '</span></div>';
     }).join('') || '<div class="sr-row" style="cursor:default"><span class="muted">未找到匹配产品</span></div>';
   }
 
