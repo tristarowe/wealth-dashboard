@@ -334,14 +334,14 @@
   window.DASHBOARD_HOLDINGS = HOLDINGS;
 
   // 当前选中的产品（顶部“覆盖产品”多选）
-  /* 顶部产品多选的可选范围：报表产品 + 产品库全部产品（按 id 去重，报表数据优先） */
+  /* 顶部产品多选的可选范围：与持仓联动，只列当前在持（有份额）的产品 */
   function pickableProducts() {
-    var out = [];
     var seen = {};
-    DATA.products.forEach(function (p) { seen[p.id] = 1; out.push(p); });
-    LIB_MODEL.forEach(function (x) {
-      var p = x.product;
+    var out = [];
+    HOLDINGS.forEach(function (h) {
+      var p = h && h.product;
       if (!p || !p.id || seen[p.id]) return;
+      if (!(h.shares > 0.000001)) return;
       seen[p.id] = 1;
       out.push(p);
     });
@@ -349,7 +349,22 @@
   }
 
   var selectedIds = pickableProducts().map(function (p) { return p.id; });
+  var pickerKnown = {};
   var AGG = null;
+
+  /* 持仓变化后同步可选范围：新增持仓自动勾选，已无持仓的从选中集合移除 */
+  function syncPickerScope() {
+    var ids = pickableProducts().map(function (p) { return p.id; });
+    ids.forEach(function (id) {
+      if (pickerKnown[id]) return;
+      pickerKnown[id] = 1;
+      if (selectedIds.indexOf(id) === -1) selectedIds.push(id);
+    });
+    Object.keys(pickerKnown).forEach(function (id) {
+      if (ids.indexOf(id) === -1) delete pickerKnown[id];
+    });
+    selectedIds = selectedIds.filter(function (id) { return ids.indexOf(id) !== -1; });
+  }
 
   function selectedProducts() {
     return pickableProducts().filter(function (p) { return selectedIds.indexOf(p.id) !== -1; });
@@ -2282,17 +2297,18 @@
   }
 
   function initDatePicker() {
-    var input = document.getElementById('trade-apply');
-    if (!input) return;
-    var wrap = input.closest('.dp-wrap') || input;
-    wrap.addEventListener('click', function (e) { e.preventDefault(); openDp(input); });
-    input.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDp(input); }
-      else if (e.key === 'Escape') closeDp();
+    var inputs = document.querySelectorAll('.dp-wrap input');
+    Array.prototype.forEach.call(inputs, function (input) {
+      var wrap = input.closest('.dp-wrap') || input;
+      wrap.addEventListener('click', function (e) { e.preventDefault(); openDp(input); });
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDp(input); }
+        else if (e.key === 'Escape') closeDp();
+      });
     });
     document.addEventListener('mousedown', function (e) {
       if (!dpEl || dpEl.hidden) return;
-      if (dpEl.contains(e.target) || input.contains(e.target) || e.target === input) return;
+      if (dpEl.contains(e.target) || e.target.closest('.dp-wrap')) return;
       closeDp();
     });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDp(); });
@@ -2960,6 +2976,7 @@
   function renderAll() {
     refreshAggregate();
     updatePickerLabel();
+    renderPickerList();
     renderProfitTable();
     resetCalendarMonth();
     renderCalendar();
@@ -3049,8 +3066,8 @@
     computeHoldings();
 
     var ids = pickableProducts().map(function (p) { return p.id; });
-    selectedIds = selectedIds.filter(function (id) { return ids.indexOf(id) !== -1; });
-    if (!selectedIds.length) selectedIds = ids.slice();
+    syncPickerScope();
+    if (!selectedIds.length && ids.length) selectedIds = ids.slice();
 
     refreshAggregate();
     updatePickerLabel();
@@ -3201,7 +3218,7 @@
 
   /* 云端后台刷新完成后由页面调用，重新计算持仓并重绘（等首屏 init 完成后再跑） */
   function refreshFromStore() {
-    function run() { computeHoldings(); renderAll(); }
+    function run() { computeHoldings(); syncPickerScope(); renderAll(); }
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', function () { setTimeout(run, 0); });
     } else {
