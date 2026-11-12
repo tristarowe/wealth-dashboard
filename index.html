@@ -412,16 +412,23 @@
   /* 横向滚动 + 冻结首列 */
   .tbl-scroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
   .swipe-tip{display:none;text-align:center;font-size:11px;color:#93a3ae;margin-top:6px}
+  /* 交易流水按月折叠：表头行显示整月汇总，点击展开明细 */
+  tr.flow-month td{background:#f1f7f9;font-weight:700;font-size:12.5px;color:var(--accent-deep);padding:9px 10px;cursor:pointer;border-bottom:1px solid var(--rule);white-space:nowrap;user-select:none}
+  tr.flow-month:hover td{background:#e8f2f6}
+  tr.flow-month .fm-caret{display:inline-block;width:14px;color:var(--accent);transition:transform .16s ease}
+  tr.flow-month.open .fm-caret{transform:rotate(90deg)}
+  tr.flow-month .fm-meta{font-weight:400;color:var(--muted);font-size:11.5px;margin-left:10px}
   #hold-table{min-width:1120px}
   #prod-table{min-width:1080px}
 
   @media (max-width:900px){
     .swipe-tip{display:block}
     #prod-table tbody td:nth-child(2) .pname{white-space:normal}
-    /* iOS 聚焦输入框时字号小于16px会强制放大页面，手机端统一16px避免缩放 */
-    .ms-search{font-size:16px;width:150px;padding:6px 8px}
-    .ms-panel{width:216px}
-    #prod-search,#trade-prod-q{font-size:16px}
+    /* 输入框默认15px，iOS 下用16px避免聚焦自动放大 */
+    .ms-search{font-size:15px;width:150px;padding:5px 8px}
+    .ms-panel{width:214px}
+    #prod-search,#trade-prod-q{font-size:15px}
+    html.is-ios .ms-search,html.is-ios #prod-search,html.is-ios #trade-prod-q{font-size:16px}
   }
   @media (max-width:760px){
     body{padding:14px 12px calc(40px + env(safe-area-inset-bottom))}
@@ -432,21 +439,21 @@
     .hero-actions .btn.icon-only{width:34px;height:34px;padding:0}
     .hero-subline{gap:8px;margin-top:8px;padding-right:44px}
     .hero-asof{font-size:11.5px;line-height:1.9}
-    h1{font-size:22px}
+    h1{font-size:21px}
     .sub{font-size:11.5px;line-height:1.9}
     .sub b{white-space:nowrap}
     .coverage{margin-left:0}
     .metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:14px}
     .metric{padding:11px 12px}
-    .metric .v{font-size:20px}
+    .metric .v{font-size:19px}
     .metric .v em{font-size:11px}
     .metric .m-sub{font-size:10.5px}
     .metric .m-sub b{font-size:12px}
     .tabs{width:100%;overflow-x:auto;justify-content:flex-start;border-radius:12px}
-    .tab{flex:1 0 auto;padding:8px 14px;font-size:13px}
+    .tab{flex:1 0 auto;padding:8px 14px;font-size:12.5px}
     .sec-head{gap:8px;margin-bottom:10px}
-    .sec-head h2{font-size:18px}
-    .sec-head .idx{font-size:18px}
+    .sec-head h2{font-size:17px}
+    .sec-head .idx{font-size:17px}
     .cal-split{grid-template-columns:1fr}
     #year-view{overflow-x:auto}
     .year-table{min-width:0;font-size:10.5px}
@@ -517,22 +524,26 @@
     /* 手机端表单：底部弹层，放大字号与点击区，聚焦不再被系统放大 */
     .modal{align-items:flex-end;padding:0}
     .modal-card{width:100%;max-width:100%;max-height:92vh;border-radius:16px 16px 0 0;padding:0;display:flex;flex-direction:column;overflow:hidden}
-    .modal-head{flex:none;font-size:16px;padding:16px 14px 12px}
-    .modal-head .x{width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:26px}
-    .modal-body{flex:1 1 auto;min-height:0;overflow:auto;padding:0 14px;-webkit-overflow-scrolling:touch}
+    .modal-head{flex:none;font-size:15px;padding:14px 18px 10px}
+    .modal-head .x{width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:24px}
+    .modal-body{flex:1 1 auto;min-height:0;overflow:auto;padding:0 18px;-webkit-overflow-scrolling:touch}
     .form-grid{grid-template-columns:1fr}
-    .field{font-size:13px;margin-top:14px}
-    .field input,.field select{font-size:16px;min-height:46px;padding:10px 12px;margin-top:6px}
-    .seg-group .seg{font-size:15px;min-height:46px;padding:11px 6px}
-    .note-line{font-size:12.5px;padding-bottom:6px}
-    .modal-foot{flex:none;margin:0;padding:12px 14px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--rule);gap:10px}
-    .modal-foot .btn{flex:1;justify-content:center;min-height:46px;font-size:14.5px}
+    .field{font-size:12.5px;margin-top:12px}
+    .field input,.field select{font-size:15px;min-height:44px;padding:9px 12px;margin-top:6px}
+    .seg-group .seg{font-size:14px;min-height:44px;padding:10px 6px}
+    .note-line{font-size:11.5px;padding-bottom:6px}
+    .modal-foot{flex:none;margin:0;padding:12px 18px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--rule);gap:10px}
+    .modal-foot .btn{flex:1;justify-content:center;min-height:44px;font-size:14px}
+    /* iOS 输入控件保持16px，避免聚焦时页面被强制放大 */
+    html.is-ios .field input,html.is-ios .field select,html.is-ios .seg-group .seg,html.is-ios .filters input{font-size:16px}
     .sr-list{max-height:190px}
     .filters select{font-size:13.5px;min-height:38px}
     .filters .chip{font-size:12px;min-height:34px}
     .filters input{font-size:16px;min-height:40px}
     .tab{min-height:42px}
     .pager button{min-width:34px;height:34px}
+    tr.flow-month td{white-space:normal;font-size:12px;line-height:1.7;padding:9px 8px}
+    tr.flow-month .fm-meta{display:block;margin-left:14px;font-size:11px}
   }
   @media (max-width:360px){
     .metrics{grid-template-columns:1fr}
