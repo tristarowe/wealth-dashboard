@@ -232,6 +232,12 @@ def main():
                        check=False, timeout=900)
     except Exception as exc:
         print("新品并入产品库跳过：%s" % exc, file=sys.stderr)
+    # 手工添加的产品同步补抓最新净值；失败只提示，不影响主数据入库
+    try:
+        from fetch_manual import update_manual_products
+        update_manual_products()
+    except Exception as exc:
+        print("手工产品净值更新跳过：%s" % exc, file=sys.stderr)
     return 0
 
 
