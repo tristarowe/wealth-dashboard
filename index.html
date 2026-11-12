@@ -150,6 +150,15 @@
   .prod-tbl tbody td.num:not([data-col="p10k"]){color:var(--ink)}
   /* 产品库：风险等级 / 持有期两列与今日万收等数值列同字号同字体观感 */
   .prod-tbl tbody td.pmeta{font-family:Consolas,'Microsoft YaHei',monospace;font-size:12.5px;color:#41545f}
+  /* 三张主表：固定列宽，收紧列距，列宽按比例均匀铺满 */
+  #hold-table,#sum-table,#prod-table{table-layout:fixed}
+  #hold-table thead th,#hold-table tbody td{padding:9px 7px}
+  #hold-table tbody td:nth-child(2),#hold-table thead th:nth-child(2){padding-left:10px}
+  #sum-table thead th,#sum-table tbody td{padding:10px 8px}
+  #sum-table tbody td:first-child,#sum-table thead th:first-child{padding-left:12px}
+  #prod-table thead th{padding:9px 8px}
+  #prod-table tbody td{padding:7px 8px}
+  #prod-table tbody td:nth-child(2),#prod-table thead th:nth-child(2){padding-left:10px}
   /* 持仓天数：整列与表头居中对齐，数字与「天」同字体、同字号、同字重 */
   #hold-table th[data-sort="holddays"],#sum-table th[data-sort="days"]{text-align:center}
   #hold-table tbody td.dcell,#sum-table tbody td.dcell{white-space:nowrap;text-align:center}
@@ -498,6 +507,9 @@
       white-space:normal;word-break:break-word;overflow-wrap:anywhere;line-height:1.45}
     /* 手机端三张宽表统一收窄列宽，提升一屏可读列数 */
     #hold-table,#sum-table,#prod-table{font-size:12.5px}
+    /* 手机端恢复自适应列宽（表头不裁切），横向滚动浏览 */
+    #hold-table,#sum-table,#prod-table{table-layout:auto}
+    #hold-table colgroup col,#sum-table colgroup col,#prod-table colgroup col{width:auto !important}
     #hold-table thead th,#hold-table tbody td,
     #sum-table thead th,#sum-table tbody td,
     #prod-table thead th,#prod-table tbody td{padding:8px 6px}
@@ -727,6 +739,14 @@
       <div class="sec-head"><span class="idx">01</span><h2>盈亏汇总</h2></div>
       <div class="card tbl-scroll">
         <table id="hold-table">
+          <colgroup>
+            <col style="width:3%"><col><col style="width:5.4%"><col style="width:5.4%">
+            <col style="width:5.6%"><col style="width:5.6%"><col style="width:5.4%">
+            <col style="width:6.8%"><col style="width:4.8%"><col style="width:5.2%">
+            <col style="width:5.7%"><col style="width:5.7%"><col style="width:5.7%">
+            <col style="width:5.7%"><col style="width:5.7%"><col style="width:6.2%">
+            <col style="width:4.6%">
+          </colgroup>
           <thead>
             <tr>
               <th class="c" style="width:44px">序号</th>
@@ -836,6 +856,11 @@
       <div class="sec-head"><span class="idx">01</span><h2>持仓汇总</h2></div>
       <div class="card tbl-scroll">
         <table id="sum-table">
+          <colgroup>
+            <col><col style="width:7.5%"><col style="width:6.5%"><col style="width:10.5%">
+            <col style="width:11.5%"><col style="width:10%"><col style="width:9%">
+            <col style="width:6.5%"><col style="width:10.5%">
+          </colgroup>
           <thead>
             <tr>
               <th class="sortable" data-sort="name">产品名称</th><th class="c sortable" data-sort="navdate">净值日期</th><th class="c sortable" data-sort="nav">净值</th>
@@ -934,14 +959,20 @@
 
       <div class="card tbl-scroll">
         <table class="prod-tbl" id="prod-table">
+          <colgroup>
+            <col style="width:3%"><col><col style="width:4.8%"><col style="width:5.8%">
+            <col style="width:6.4%"><col style="width:5.7%"><col style="width:5.7%">
+            <col style="width:5.7%"><col style="width:6.8%"><col style="width:6.4%">
+            <col style="width:6.6%"><col style="width:7.8%"><col style="width:9.3%">
+          </colgroup>
           <thead>
             <tr>
               <th style="width:34px"></th>
               <th>产品名称</th><th class="c">风险</th><th class="c">持有期</th>
               <th class="r" data-col="p10k">今日万收</th>
-              <th class="c" style="min-width:66px">7日</th>
-              <th class="c" style="min-width:66px">14日</th>
-              <th class="c" style="min-width:66px">30日</th>
+              <th class="c">7日</th>
+              <th class="c">14日</th>
+              <th class="c">30日</th>
               <th class="r">成立年化</th>
               <th class="r">最新净值</th>
               <th class="c">净值日期</th>
