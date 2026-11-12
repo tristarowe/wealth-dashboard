@@ -2039,6 +2039,7 @@
             mergeManualProducts();
             computeHoldings();
             renderAll();
+            renderAddHistory();
             toast('已删除');
           }).catch(function (err) {
             del.disabled = false;
@@ -2148,6 +2149,7 @@
         prodUi.page = 1;
         renderAll();
         resetAddModal();
+        renderAddHistory();
         document.getElementById('modal-add').hidden = true;
         toast('已加入产品库');
       }).catch(function (e) {
@@ -3522,6 +3524,7 @@
       computeHoldings();
       syncPickerScope();
       renderAll();
+      renderAddHistory();
     }
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', function () { setTimeout(run, 0); });
