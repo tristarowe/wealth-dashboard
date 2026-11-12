@@ -2954,8 +2954,9 @@
     return w >= 10000 ? (Math.round(w / 100) / 100) + '亿' : w + '万';
   }
 
-  // 统一简称规则：机构简称 + 产品系列 + 持有期 + 期数，去掉「理财/固收类/最低持有/产品」等修饰词
-  function npShortName(p, channel) {
+  // 统一简称规则：发行机构简称 + 产品系列 + 持有期 + 期数，去掉「理财/固收类/最低持有/产品」等修饰词
+  // 代销机构（如建设银行）不参与产品名拼接
+  function npShortName(p) {
     var base = (p.short || p.name || '—')
       .replace(/（[^）]*最低持有[^）]*）/g, '')
       .replace(/固定收益类|固收类/g, '')
@@ -2963,7 +2964,9 @@
       .replace(/理财产品/g, '')
       .replace(/产品(?=第\d+期|$)/g, '')
       .trim();
-    var org = (channel || '').replace(/理财(有限责任公司)?$/g, '').trim();
+    var org = String(p.issuer || '')
+      .replace(/(有限责任公司|股份有限公司)$/g, '')
+      .trim();
     if (org && base.indexOf(org) !== 0) base = org + base;
     return base || '—';
   }
@@ -3063,7 +3066,7 @@
         body += '<div class="nchip" style="grid-column:' + (ch.c1 + 2) + ' / span ' + (ch.c2 - ch.c1 + 1) +
           ';grid-row:' + (ch.row + 1) + '" title="' + tip.replace(/"/g, '&quot;') + '">' +
           '<span class="nr">' + mdText(p.raiseStart) + (p.raiseEnd && p.raiseEnd !== p.raiseStart ? '-' + mdText(p.raiseEnd) : '') + '</span>' +
-          '<span class="nmid"><span class="nm">' + npShortName(p, lane.channel) + '</span>' +
+          '<span class="nmid"><span class="nm">' + npShortName(p) + '</span>' +
           (q ? '<span class="na">' + q + '</span>' : '<span class="na na-none">—</span>') +
           (rk ? '<span class="rk' + (rk === 'R3' ? ' r3' : rk === 'R4' || rk === 'R5' ? ' r4' : '') + '">' + rk + '</span>' : '') +
           '</span><span class="ne">' + (p.establish ? mdText(p.establish) : '') + '</span></div>';
