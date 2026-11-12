@@ -686,7 +686,15 @@
     var tbody = document.getElementById('hold-body');
     if (!tbody) return;
 
-    var models = activeModels().filter(function (x) { return !!HOLD_BY_PID[x.product.id]; });
+    /* 与「交易汇总」联动：同样列出汇总中的全部产品（含当日清仓、在途申购），并按顶部多选过滤 */
+    var allModels = MODEL.concat(LIB_MODEL);
+    var models = summaryRows().map(function (r) {
+      var id = r.product.id;
+      for (var i = 0; i < allModels.length; i++) {
+        if (allModels[i].product.id === id) return allModels[i];
+      }
+      return null;
+    }).filter(function (x) { return !!x && selectedIds.indexOf(x.product.id) !== -1; });
     var peerAvg30 = peerAvg30Of(models);
     var rows = models.map(function (item) {
       return { item: item, score: scoreFor(item.m, item.product, peerAvg30) };
