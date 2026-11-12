@@ -1828,6 +1828,120 @@
     window.addEventListener('scroll', closeSelPop, true);
   }
 
+  /* ---------------- 产品库搜索：输入时弹出候选，点选即筛选 ---------------- */
+  var prodSugPop = null;
+  var prodSugIdx = 0;
+
+  function closeProdSug() {
+    if (prodSugPop && prodSugPop.parentNode) prodSugPop.parentNode.removeChild(prodSugPop);
+    prodSugPop = null;
+    prodSugIdx = 0;
+  }
+
+  function prodSugItems(kw) {
+    var q = (kw || '').trim().toLowerCase();
+    if (!q) return [];
+    var hit = MODEL.concat(LIB_MODEL).filter(function (it) {
+      var p = it.product;
+      return (p.name || '').toLowerCase().indexOf(q) !== -1 ||
+        (p.short || '').toLowerCase().indexOf(q) !== -1 ||
+        (p.regCode || '').toLowerCase().indexOf(q) !== -1;
+    });
+    return sortBySearch(hit, kw, function (it) { return it.product; }).slice(0, 8).map(function (it) {
+      return it.product;
+    });
+  }
+
+  /* 弹层跟随输入框定位：滚动/键盘弹出导致视口变化时重新贴靠，不关闭列表 */
+  function placeProdSug() {
+    var input = document.getElementById('prod-search');
+    if (!prodSugPop || !input) return;
+    var r = input.getBoundingClientRect();
+    prodSugPop.style.minWidth = Math.max(r.width, 220) + 'px';
+    var pw = prodSugPop.offsetWidth;
+    var ph = prodSugPop.offsetHeight;
+    var vw = window.innerWidth;
+    var vh = window.innerHeight;
+    var left = Math.max(8, Math.min(r.left, vw - pw - 8));
+    var top = r.bottom + 6;
+    if (top + ph > vh - 8) top = r.top - ph - 6;
+    top = Math.max(8, Math.min(top, vh - ph - 8));
+    prodSugPop.style.left = left + 'px';
+    prodSugPop.style.top = top + 'px';
+  }
+
+  function openProdSug() {
+    var input = document.getElementById('prod-search');
+    if (!input) return;
+    var items = prodSugItems(input.value);
+    closeProdSug();
+    if (!items.length) return;
+
+    var pop = document.createElement('div');
+    pop.className = 'sel-pop prod-sug';
+    pop.setAttribute('role', 'listbox');
+    items.forEach(function (p, i) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'sel-opt' + (i === prodSugIdx ? ' on' : '');
+      b.setAttribute('role', 'option');
+      b.innerHTML = '<span class="sug-name">' + (p.short || p.name) + '</span>' +
+        '<em class="sug-code">' + (p.regCode || '') + '</em>';
+      b.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        input.value = p.short || p.name;
+        closeProdSug();
+        prodUi.q = input.value;
+        prodUi.page = 1;
+        renderProductTable();
+      });
+      pop.appendChild(b);
+    });
+    document.body.appendChild(pop);
+    prodSugPop = pop;
+    placeProdSug();
+  }
+
+  function bindProdSearchSuggest() {
+    var input = document.getElementById('prod-search');
+    if (!input) return;
+
+    input.addEventListener('input', function () {
+      prodSugIdx = 0;
+      openProdSug();
+    });
+    input.addEventListener('focus', function () {
+      if (input.value.trim()) { prodSugIdx = 0; openProdSug(); }
+    });
+    input.addEventListener('keydown', function (e) {
+      if (!prodSugPop) return;
+      var opts = Array.prototype.slice.call(prodSugPop.querySelectorAll('.sel-opt'));
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        prodSugIdx = e.key === 'ArrowDown' ?
+          Math.min(opts.length - 1, prodSugIdx + 1) :
+          Math.max(0, prodSugIdx - 1);
+        opts.forEach(function (o, i) { o.classList.toggle('on', i === prodSugIdx); });
+        if (opts[prodSugIdx]) opts[prodSugIdx].scrollIntoView({ block: 'nearest' });
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (opts[prodSugIdx]) opts[prodSugIdx].click();
+      } else if (e.key === 'Escape' || e.key === 'Esc') {
+        closeProdSug();
+      }
+    });
+
+    document.addEventListener('click', function (e) {
+      if (!prodSugPop) return;
+      if (prodSugPop.contains(e.target)) return;
+      if (e.target === input) return;
+      closeProdSug();
+    }, true);
+    window.addEventListener('scroll', placeProdSug, true);
+    window.addEventListener('resize', placeProdSug);
+  }
+
   function bindProductFilters() {
     var ids = ['sale-sel', 'org-sel', 'risk-sel', 'term-sel'];
     ids.forEach(function (id) {
@@ -3336,6 +3450,7 @@
     bindTrend();
     bindProductFilters();
     beautifyFilterSelects();
+    bindProdSearchSuggest();
     bindTrade();
     bindTradeModal();
     initDatePicker();
