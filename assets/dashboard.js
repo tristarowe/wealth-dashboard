@@ -1798,93 +1798,57 @@
   var addState = { image: '', filename: '' };
 
   function resetAddModal() {
-    addState.image = '';
-    addState.filename = '';
-    var url = document.getElementById('add-url');
-    if (url) url.value = '';
-    var file = document.getElementById('add-file');
-    if (file) file.value = '';
-    var recog = document.getElementById('add-recog');
-    if (recog) { recog.hidden = true; recog.textContent = ''; }
-    var ok = document.getElementById('add-ok');
-    if (ok) ok.style.display = 'none';
-    var drop = document.getElementById('add-drop');
-    if (drop) drop.classList.remove('on');
-  }
-
-  function addRecog(text) {
-    var recog = document.getElementById('add-recog');
-    if (!recog) return;
-    recog.hidden = false;
-    recog.textContent = text;
+    ['add-name', 'add-code', 'add-org', 'add-nav', 'add-navdate'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    var risk = document.getElementById('add-risk');
+    if (risk) risk.value = '';
   }
 
   function bindAddModal() {
-    var drop = document.getElementById('add-drop');
-    var file = document.getElementById('add-file');
-    if (drop && file) {
-      drop.addEventListener('click', function () { file.click(); });
-      drop.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); file.click(); }
-      });
-      ['dragenter', 'dragover'].forEach(function (ev) {
-        drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('on'); });
-      });
-      ['dragleave', 'drop'].forEach(function (ev) {
-        drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove('on'); });
-      });
-      drop.addEventListener('drop', function (e) {
-        var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-        if (f) readAddFile(f);
-      });
-      file.addEventListener('change', function () {
-        if (file.files && file.files[0]) readAddFile(file.files[0]);
-      });
-    }
-
-    var recogBtn = document.getElementById('add-recognize');
-    if (recogBtn) recogBtn.addEventListener('click', function () {
-      var url = (document.getElementById('add-url').value || '').trim();
-      var code = (url.match(/[A-Za-z]\d{8,16}/) || url.match(/\d{10,20}/) || [''])[0];
-      if (!url && !addState.image) { toast('请先粘贴产品链接或上传截图'); return; }
-      if (code) addRecog('已识别登记编码：' + code + '，提交后自动抓取净值');
-      else if (addState.image) addRecog('已识别截图「' + addState.filename + '」，提交后由产品库任务解析并抓取');
-      else addRecog('已识别产品页链接，提交后自动抓取净值与要素');
-    });
-
     var submit = document.getElementById('submit-add');
-    if (submit) submit.addEventListener('click', function () {
-      var url = (document.getElementById('add-url').value || '').trim();
-      if (!url && !addState.image) { toast('请填写产品链接或上传截图'); return; }
-      if (url && !/^https?:\/\//i.test(url)) { toast('产品链接需以 http:// 或 https:// 开头'); return; }
+    if (!submit || submit.dataset.bound) return;
+    submit.dataset.bound = '1';
+    submit.addEventListener('click', function () {
+      var name = (document.getElementById('add-name').value || '').trim();
+      var code = (document.getElementById('add-code').value || '').trim();
+      var org = (document.getElementById('add-org').value || '').trim();
+      var risk = document.getElementById('add-risk').value || '';
+      var channel = document.getElementById('add-channel').value || '';
+      var nav = Number((document.getElementById('add-nav').value || '').trim());
+      var navDate = (document.getElementById('add-navdate').value || '').trim();
+      if (!name) { toast('请填写产品名称'); return; }
+      if (!(nav > 0)) { toast('请填写最新净值'); return; }
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(navDate)) { toast('请选择净值日期'); return; }
+      if (code && tradeProducts().some(function (p) { return p.regCode === code; })) {
+        toast('该登记编码已在产品库，无需重复添加');
+        return;
+      }
+      var item = {
+        id: code ? 'M' + code : 'M' + Date.now(),
+        name: name,
+        regCode: code,
+        org: org,
+        risk: risk,
+        saleChannel: channel,
+        nav: nav,
+        navDate: navDate
+      };
       submit.disabled = true;
-      fetch('/api/product/add', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: url, image: addState.image, filename: addState.filename })
-      }).then(function (r) { return r.json(); }).then(function (res) {
+      window.STORE.addProduct(item).then(function () {
         submit.disabled = false;
-        if (!res || !res.ok) { toast((res && res.message) || '提交失败'); return; }
-        var ok = document.getElementById('add-ok');
-        if (ok) ok.style.display = 'block';
-        toast('已提交，预计下次更新入库');
-      }).catch(function () {
+        mergeManualProducts();
+        computeHoldings();
+        renderAll();
+        resetAddModal();
+        document.getElementById('modal-add').hidden = true;
+        toast('已加入产品库');
+      }).catch(function (e) {
         submit.disabled = false;
-        toast('本地服务未启动，无法提交');
+        toast((e && e.message) || '保存失败，请检查网络');
       });
     });
-  }
-
-  function readAddFile(f) {
-    if (!/^image\/(png|jpe?g)$/i.test(f.type)) { toast('仅支持 PNG / JPG 截图'); return; }
-    if (f.size > 6 * 1024 * 1024) { toast('截图不能超过 6MB'); return; }
-    var reader = new FileReader();
-    reader.onload = function () {
-      addState.image = String(reader.result || '');
-      addState.filename = f.name;
-      addRecog('已选择截图「' + f.name + '」，点击自动识别或直接提交');
-    };
-    reader.readAsDataURL(f);
   }
 
   /* ---------------- 交易 ---------------- */
