@@ -2545,6 +2545,7 @@
     resetCalendarMonth();
     renderCalendar();
     renderTrend();
+    if (window.__syncPickerToggle) window.__syncPickerToggle();
   }
 
   function initPicker() {
@@ -2584,20 +2585,21 @@
       renderPickerList();
     });
 
-    var allBtn = panel.querySelector('[data-act="all"]');
-    if (allBtn) allBtn.addEventListener('click', function () {
-      selectedIds = DATA.products.map(function (p) { return p.id; });
+    var toggleBtn = panel.querySelector('[data-act="toggle"]');
+    function syncPickerToggle() {
+      if (!toggleBtn) return;
+      var all = DATA.products.length > 0 && selectedIds.length >= DATA.products.length;
+      toggleBtn.textContent = all ? '反选' : '全选';
+    }
+    window.__syncPickerToggle = syncPickerToggle;
+    syncPickerToggle();
+    if (toggleBtn) toggleBtn.addEventListener('click', function () {
+      var ids = DATA.products.map(function (p) { return p.id; });
+      var all = selectedIds.length >= ids.length;
+      selectedIds = all ? ids.slice(0, 1) : ids;
       renderPickerList();
       applySelection();
-    });
-
-    var invertBtn = panel.querySelector('[data-act="invert"]');
-    if (invertBtn) invertBtn.addEventListener('click', function () {
-      selectedIds = DATA.products
-        .map(function (p) { return p.id; })
-        .filter(function (id) { return selectedIds.indexOf(id) === -1; });
-      renderPickerList();
-      applySelection();
+      syncPickerToggle();
     });
   }
 
