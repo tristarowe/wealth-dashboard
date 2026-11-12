@@ -1,12 +1,20 @@
-/* 数据层：交易与新品全部走腾讯云 CloudBase 云函数接口（/wapi）。
- * 读取匿名、无需口令；写入需要口令，口令只保存在 sessionStorage（关掉标签页即失效）。
- * 对外接口：STORE.load() / add() / update() / remove() / askToken() / token() / verify()
+/* 数据层：双通道
+ * 主通道 Supabase（免费长期有效，读写不需要口令）
+ * 备通道 CloudBase 云函数 /wapi（写入需要口令，口令仅存本次浏览会话）
+ * 两者都不可用时回退页面内置底稿。
+ * 对外接口：STORE.load() / add() / update() / remove() / status() / askToken() / verify()
  */
 (function () {
-  var CFG = window.CLOUD_CONFIG || {};
-  var API = String(CFG.api || '').replace(/\/+$/, '');
+  var SB = window.SUPABASE_CONFIG || {};
+  var CB = window.CLOUD_CONFIG || {};
+  var sbUrl = String(SB.url || '').replace(/\/+$/, '');
+  var sbKey = SB.key || '';
+  var sbTable = SB.table || 'trades';
+  var cbApi = String(CB.api || '').replace(/\/+$/, '');
+  var sbOnline = !!(sbUrl && sbKey);
+  var cbOnline = !!cbApi;
   var TOKEN_KEY = 'wealth3.cloud.token';
-  var online = !!API;
+  var source = 'file';
 
   function getToken() {
     try { return sessionStorage.getItem(TOKEN_KEY) || ''; } catch (e) { return ''; }
@@ -20,7 +28,7 @@
   }
 
   function askToken() {
-    var t = window.prompt('请输入云端登记口令（仅本次浏览有效，关闭页面后需重新输入）', '');
+    var t = window.prompt('请输入备用通道口令（仅本次浏览有效）', '');
     if (t === null) return '';
     t = String(t).trim();
     setToken(t);
@@ -39,7 +47,7 @@
   function clean(row) {
     var o = {};
     for (var k in row) {
-      if (k === '_id' || k === '_openid' || k === 'updatedAt') continue;
+      if (k === '_id' || k === '_openid' || k === 'updatedAt' || k === 'created_at') continue;
       o[k] = row[k];
     }
     return o;
@@ -50,29 +58,133 @@
     return 'TX' + d + String(Math.floor(Math.random() * 900) + 100);
   }
 
+  /* ---------------- Supabase（主） ---------------- */
+  function sbHeaders(extra) {
+    var h = {
+      apikey: sbKey,
+      Authorization: 'Bearer ' + sbKey,
+      'Content-Type': 'application/json',
+      Prefer: 'return=representation'
+    };
+    if (extra) for (var k in extra) h[k] = extra[k];
+    return h;
+  }
+
+  function rowToTx(r) {
+    return {
+      id: r.id,
+      pid: r.pid,
+      type: r.type,
+      applyDate: r.apply_date,
+      confirmDate: r.confirm_date,
+      amount: Number(r.amount),
+      shares: r.shares === null || r.shares === undefined ? undefined : Number(r.shares),
+      confirmNav: Number(r.confirm_nav),
+      status: r.status || '已确认',
+      saleChannel: r.sale_channel || '',
+      source: r.source || '人工录入'
+    };
+  }
+
+  function txToRow(t) {
+    var shares = (t.shares === undefined || t.shares === null)
+      ? Math.round((Number(t.amount) / Number(t.confirmNav)) * 100) / 100
+      : t.shares;
+    return {
+      id: t.id,
+      pid: t.pid,
+      type: t.type,
+      apply_date: t.applyDate,
+      confirm_date: t.confirmDate,
+      amount: t.amount,
+      shares: shares,
+      confirm_nav: t.confirmNav,
+      status: t.status || '已确认',
+      sale_channel: t.saleChannel || '',
+      source: t.source || '人工录入'
+    };
+  }
+
+  function sbList() {
+    return fetch(sbUrl + '/rest/v1/' + sbTable + '?select=*&order=confirm_date.asc,id.asc', {
+      headers: sbHeaders(),
+      cache: 'no-store'
+    }).then(function (r) {
+      if (!r.ok) throw new Error('Supabase 读取失败（' + r.status + '）');
+      return r.json();
+    }).then(function (rows) {
+      return rows.map(rowToTx);
+    });
+  }
+
+  function sbAdd(item) {
+    return fetch(sbUrl + '/rest/v1/' + sbTable, {
+      method: 'POST',
+      headers: sbHeaders(),
+      body: JSON.stringify(txToRow(item))
+    }).then(function (r) {
+      if (!r.ok) throw new Error('Supabase 写入失败（' + r.status + '）');
+      return true;
+    });
+  }
+
+  function sbUpdate(id, item) {
+    var row = txToRow(item);
+    delete row.id;
+    return fetch(sbUrl + '/rest/v1/' + sbTable + '?id=eq.' + encodeURIComponent(id), {
+      method: 'PATCH',
+      headers: sbHeaders(),
+      body: JSON.stringify(row)
+    }).then(function (r) {
+      if (!r.ok) throw new Error('Supabase 修改失败（' + r.status + '）');
+      return true;
+    });
+  }
+
+  function sbRemove(id) {
+    return fetch(sbUrl + '/rest/v1/' + sbTable + '?id=eq.' + encodeURIComponent(id), {
+      method: 'DELETE',
+      headers: sbHeaders({ Prefer: 'return=minimal' })
+    }).then(function (r) {
+      if (!r.ok) throw new Error('Supabase 删除失败（' + r.status + '）');
+      return true;
+    });
+  }
+
+  /* ---------------- CloudBase（备） ---------------- */
   function req(payload) {
-    return fetch(API, {
+    return fetch(cbApi, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     }).then(function (r) { return r.json(); }).then(function (j) {
       if (!j || j.code !== 0) {
         if (j && j.code === 401) setToken('');
-        throw new Error((j && j.msg) || '云端写入失败');
+        throw new Error((j && j.msg) || '备用通道写入失败');
       }
       return j.data;
     });
   }
 
-  function write(payload) {
-    if (!online) return Promise.reject(new Error('未配置云端接口'));
+  function cbWrite(payload) {
+    if (!cbOnline) return Promise.reject(new Error('备用通道未配置'));
     var t = getToken() || askToken();
     if (!t) return Promise.reject(new Error('已取消口令输入'));
     payload.token = t;
     return req(payload);
   }
 
-  /* ---------- 新品：云端条目与页面底稿按登记编码合并，云端优先 ---------- */
+  function cbList() {
+    if (!cbOnline) return Promise.reject(new Error('备用通道未配置'));
+    return fetch(cbApi + '?action=list', { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (!j || j.code !== 0) throw new Error((j && j.msg) || '备用通道读取失败');
+        return j.data || {};
+      });
+  }
+
+  /* ---------------- 新品（CloudBase 存储，Supabase 无对应表） ---------------- */
   function npKey(p) {
     return String(p.regCode || p.name || '').trim();
   }
@@ -168,25 +280,50 @@
     window.NEW_PRODUCTS = NP;
   }
 
+  /* ---------------- 加载：主通道优先，失败自动切备用 ---------------- */
   function load() {
-    if (!online) return Promise.resolve(fileItems());
-    return fetch(API + '?action=list', { cache: 'no-store' })
-      .then(function (r) {
-        if (!r.ok) throw new Error('读取云端数据失败（' + r.status + '）');
-        return r.json();
-      })
-      .then(function (j) {
-        if (!j || j.code !== 0) throw new Error((j && j.msg) || '读取云端数据失败');
-        var data = j.data || {};
+    if (!sbOnline && !cbOnline) return Promise.resolve(fileItems());
+
+    var errors = [];
+    var chain = sbOnline ? sbList().then(function (txs) {
+      if (txs.length) {
+        applyTrades(txs);
+        source = 'supabase';
+      }
+      return txs.length;
+    }).catch(function (e) {
+      errors.push(e.message);
+      return 0;
+    }) : Promise.resolve(0);
+
+    return chain.then(function (n) {
+      if (n) return true;
+      if (!cbOnline) return false;
+      return cbList().then(function (data) {
         var txs = (data.transactions || []).map(clean);
-        if (txs.length) applyTrades(txs);
+        if (txs.length) {
+          applyTrades(txs);
+          source = 'cloudbase';
+        }
         applyNewProducts((data.newproducts || []).map(clean));
-        return fileItems();
-      })
-      .catch(function (e) {
-        console.warn(e.message + '，本次使用页面内置底稿');
-        return fileItems();
+        return true;
+      }).catch(function (e) {
+        errors.push(e.message);
+        return false;
       });
+    }).then(function () {
+      /* 主通道成功时，新品仍从备用通道补一次（best-effort） */
+      if (source === 'supabase' && cbOnline) {
+        return cbList().then(function (data) {
+          applyNewProducts((data.newproducts || []).map(clean));
+        }).catch(function () {});
+      }
+    }).then(function () {
+      if (!source || source === 'file') {
+        if (errors.length) console.warn(errors.join('；') + '，本次使用页面内置底稿');
+      }
+      return fileItems();
+    });
   }
 
   function add(tx) {
@@ -203,11 +340,16 @@
       saleChannel: tx.saleChannel || '',
       source: tx.source || '人工录入'
     };
-    return write({ action: 'saveTx', item: item }).then(function () {
+    var primary = sbOnline
+      ? sbAdd(item).then(function () { return '已录入云端'; })
+      : Promise.reject(new Error('主通道未配置'));
+    return primary.catch(function (e) {
+      return cbWrite({ action: 'saveTx', item: item }).then(function () { return '已录入备用通道'; });
+    }).then(function (msg) {
       var list = fileItems().slice();
       list.push(item);
       applyTrades(list);
-      return { ok: true, message: '已录入云端', item: item };
+      return { ok: true, message: msg, item: item };
     });
   }
 
@@ -224,40 +366,71 @@
       saleChannel: tx.saleChannel || '',
       source: tx.source || '人工录入'
     };
-    return write({ action: 'saveTx', item: item }).then(function () {
+    var primary = sbOnline
+      ? sbUpdate(id, item).then(function () { return '已修改云端交易'; })
+      : Promise.reject(new Error('主通道未配置'));
+    return primary.catch(function () {
+      return cbWrite({ action: 'saveTx', item: item }).then(function () { return '已修改备用通道交易'; });
+    }).then(function (msg) {
       var list = fileItems().map(function (t) {
         return t.id === id ? Object.assign({}, t, item) : t;
       });
       applyTrades(list);
-      return { ok: true, message: '已修改云端交易' };
+      return { ok: true, message: msg };
     });
   }
 
   function remove(id) {
-    return write({ action: 'delTx', id: id }).then(function () {
+    var primary = sbOnline
+      ? sbRemove(id).then(function () { return '已删除云端交易'; })
+      : Promise.reject(new Error('主通道未配置'));
+    return primary.catch(function () {
+      return cbWrite({ action: 'delTx', id: id }).then(function () { return '已删除备用通道交易'; });
+    }).then(function (msg) {
       applyTrades(fileItems().filter(function (t) { return t.id !== id; }));
-      return { ok: true, message: '已删除云端交易' };
+      return { ok: true, message: msg };
+    });
+  }
+
+  function status() {
+    if (sbOnline) {
+      return sbList().then(function () {
+        source = 'supabase';
+        return { ok: true, source: 'supabase', message: '主通道 Supabase 已连接' };
+      }).catch(function () { return probeBackup(); });
+    }
+    return probeBackup();
+  }
+
+  function probeBackup() {
+    if (!cbOnline) return Promise.resolve({ ok: false, source: 'file', message: '仅本地底稿' });
+    return cbList().then(function () {
+      source = 'cloudbase';
+      return { ok: true, source: 'cloudbase', message: '备用通道已连接' };
+    }).catch(function () {
+      return { ok: false, source: 'file', message: '云端不可用，使用内置底稿' };
     });
   }
 
   function verify() {
-    if (!online) return Promise.reject(new Error('未配置云端接口'));
     var t = getToken() || askToken();
     if (!t) return Promise.reject(new Error('已取消口令输入'));
     return req({ action: 'delTx', token: t, id: '__verify__' }).then(function () {
-      return { ok: true, message: '云端已连接' };
+      return { ok: true, message: '备用通道口令有效' };
     });
   }
 
   window.STORE = {
-    online: online,
+    online: sbOnline || cbOnline,
     load: load,
     add: add,
     update: update,
     remove: remove,
+    status: status,
     verify: verify,
     askToken: askToken,
     token: getToken,
+    source: function () { return source; },
     reset: function () { setToken(''); }
   };
   window.STORE_READY = load();
