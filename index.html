@@ -391,7 +391,7 @@
   .ms-item:hover{background:#f7f9fa}
   .ms-item input{accent-color:var(--accent);flex:none;cursor:pointer}
   .ms-item .ms-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .ms-item em{font-style:normal;font-family:var(--mono);font-size:10.5px;color:var(--muted);flex:none}
+  .ms-item em{display:none}
   .ms-empty{padding:16px 6px;text-align:center;font-size:12px;color:var(--muted)}
 
   .sc-good b,.sc-good i{color:#1f8a70}
@@ -410,18 +410,7 @@
 
   @media (max-width:900px){
     .swipe-tip{display:block}
-    #hold-table th:nth-child(1),#hold-table td:nth-child(1){position:sticky;left:0;z-index:2;background:#fff;min-width:44px;width:44px;max-width:44px}
-    #hold-table th:nth-child(2),#hold-table td:nth-child(2){position:sticky;left:44px;z-index:2;background:#fff;min-width:150px;width:150px;max-width:150px;box-shadow:inset -1px 0 0 var(--rule)}
-    #hold-table thead th:nth-child(1),#hold-table thead th:nth-child(2){z-index:3;background:#f7f9fa}
-    #prod-table th:nth-child(1),#prod-table td:nth-child(1){position:sticky;left:0;z-index:2;background:#fff;min-width:34px;width:34px;max-width:34px}
-    #prod-table th:nth-child(2),#prod-table td:nth-child(2){position:sticky;left:34px;z-index:2;background:#fff;min-width:170px;width:170px;max-width:170px;box-shadow:inset -1px 0 0 var(--rule)}
-    #prod-table thead th:nth-child(1),#prod-table thead th:nth-child(2){z-index:3;background:#f7f9fa}
     #prod-table tbody td:nth-child(2) .pname{white-space:normal}
-    #sum-table th:nth-child(1),#sum-table td:nth-child(1){position:sticky;left:0;z-index:2;background:#fff;min-width:170px;box-shadow:inset -1px 0 0 var(--rule)}
-    #sum-table thead th:nth-child(1){z-index:3;background:#f7f9fa}
-    #flow-table th:nth-child(1),#flow-table td:nth-child(1){position:sticky;left:0;z-index:2;background:#fff;min-width:108px}
-    #flow-table th:nth-child(2),#flow-table td:nth-child(2){position:sticky;left:108px;z-index:2;background:#fff;min-width:140px;box-shadow:inset -1px 0 0 var(--rule)}
-    #flow-table thead th:nth-child(1),#flow-table thead th:nth-child(2){z-index:3;background:#f7f9fa}
   }
   @media (max-width:760px){
     body{padding:14px 12px 40px}
@@ -906,6 +895,7 @@
 <script src="./assets/transactions.js"></script>
 <script src="./assets/newproducts.js"></script>
 <script src="./assets/library.js"></script>
+<script src="./assets/supabase-config.js"></script>
 <script src="./assets/cloud-config.js"></script>
 <script src="./assets/store.js"></script>
 <script>
@@ -917,36 +907,29 @@
   });
 </script>
 <script>
-  // 云端登记状态：点击输入口令，口令只存本次浏览会话
+  // 云端状态：主通道 Supabase，备用通道 CloudBase，两者都不可用时用内置底稿
   (function () {
     var chip = document.getElementById('cloud-chip');
     var label = document.getElementById('cloud-label');
     if (!chip || !window.STORE) return;
 
-    function paint(txt) {
-      var t = window.STORE.token();
-      label.textContent = txt || (t ? '云端已连接' : '云端未连接');
-      chip.classList.toggle('on', !!t);
+    function paint(txt, on) {
+      label.textContent = txt;
+      chip.classList.toggle('on', !!on);
     }
 
-    chip.addEventListener('click', function () {
-      var t = window.STORE.token();
-      if (t && label.textContent === '云端已连接') {
-        window.STORE.reset();
-        paint('云端未连接');
-        return;
-      }
-      if (!window.STORE.askToken()) return;
-      paint('连接中…');
-      window.STORE.verify().then(function (res) {
-        paint(res.message);
-      }).catch(function (e) {
-        paint('云端未连接');
-        window.alert((e && e.message) || '云端连接失败');
+    function check() {
+      paint('连接中…', false);
+      window.STORE.status().then(function (res) {
+        paint(res.message, res.ok);
+      }).catch(function () {
+        paint('云端不可用', false);
       });
-    });
+    }
 
-    paint();
+    chip.addEventListener('click', check);
+    paint('连接中…', false);
+    window.STORE_READY.then(check);
   })();
 </script>
 <script>
