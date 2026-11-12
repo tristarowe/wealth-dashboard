@@ -1031,6 +1031,11 @@
         window.dispatchEvent(new Event('resize'));
       }
 
+      // 撑宽后等两帧，让 echarts 完成重绘，否则图表仍按窄屏尺寸绘制
+      var framesReady = new Promise(function (res) {
+        requestAnimationFrame(function () { requestAnimationFrame(res); });
+      });
+
       // html2canvas 渲染原生 select 时文字会被裁切，导出期间用等价文本块替换
       function swapSelects() {
         var selects = Array.prototype.slice.call(target.querySelectorAll('select'));
@@ -1055,11 +1060,11 @@
       }
 
       var restoreSelects = null;
-      var cropWidth = Math.max(EXPORT_WIDTH, Math.ceil(target.scrollWidth));
-      var cropHeight = Math.ceil(target.scrollHeight);
       var fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
 
-      fontsReady.then(function () {
+      Promise.all([fontsReady, framesReady]).then(function () {
+        var cropWidth = Math.max(EXPORT_WIDTH, Math.ceil(target.scrollWidth));
+        var cropHeight = Math.ceil(target.scrollHeight);
         restoreSelects = swapSelects();
         return html2canvas(target, {
           backgroundColor: '#f3f5f7',
