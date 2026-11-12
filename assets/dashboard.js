@@ -1779,16 +1779,17 @@
     selPopSel = sel;
 
     var r = sel.getBoundingClientRect();
+    pop.style.minWidth = Math.max(r.width, 132) + 'px';
     var pw = pop.offsetWidth;
     var ph = pop.offsetHeight;
     var vw = window.innerWidth;
     var vh = window.innerHeight;
     var left = Math.max(8, Math.min(r.left, vw - pw - 8));
     var top = r.bottom + 6;
-    if (top + ph > vh - 8) top = Math.max(8, r.top - ph - 6);
+    if (top + ph > vh - 8) top = r.top - ph - 6;
+    top = Math.max(8, Math.min(top, vh - ph - 8));
     pop.style.left = left + 'px';
     pop.style.top = top + 'px';
-    pop.style.minWidth = Math.max(r.width, 132) + 'px';
 
     var on = pop.querySelector('.sel-opt.on');
     if (on) pop.scrollTop = Math.max(0, on.offsetTop - 40);
@@ -1942,7 +1943,9 @@
     var submit = document.getElementById('submit-add');
     if (!submit || submit.dataset.bound) return;
     submit.dataset.bound = '1';
+    var busy = false;
     submit.addEventListener('click', function () {
+      if (busy) return;
       var name = (document.getElementById('add-name').value || '').trim();
       var code = (document.getElementById('add-code').value || '').trim();
       var org = (document.getElementById('add-org').value || '').trim();
@@ -1968,15 +1971,23 @@
         navDate: navDate
       };
       submit.disabled = true;
+      busy = true;
       window.STORE.addProduct(item).then(function () {
+        busy = false;
         submit.disabled = false;
         mergeManualProducts();
         computeHoldings();
+        /* 清空产品库搜索与页码，保证刚添加的产品立即可见 */
+        var si = document.getElementById('prod-search');
+        if (si) si.value = '';
+        prodUi.q = '';
+        prodUi.page = 1;
         renderAll();
         resetAddModal();
         document.getElementById('modal-add').hidden = true;
         toast('已加入产品库');
       }).catch(function (e) {
+        busy = false;
         submit.disabled = false;
         toast((e && e.message) || '保存失败，请检查网络');
       });
