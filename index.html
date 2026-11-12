@@ -935,10 +935,16 @@
 <script src="./assets/supabase-config.js"></script>
 <script src="./assets/store.js"></script>
 <script>
-  /* 先取回交易底稿（云端或本机缓存），再加载看板渲染逻辑 */
+  /* 先用本地缓存/内置底稿立即渲染，云端数据在后台取回后再重绘，避免等待网络白屏 */
   window.STORE_READY.then(function () {
     var s = document.createElement('script');
     s.src = './assets/dashboard.js';
+    s.onload = function () {
+      if (!window.STORE_REFRESH) return;
+      window.STORE_REFRESH.then(function (changed) {
+        if (changed && window.DASHBOARD_REFRESH) window.DASHBOARD_REFRESH();
+      });
+    };
     document.body.appendChild(s);
   });
 </script>
