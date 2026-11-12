@@ -177,7 +177,7 @@
           product: p,
           m: {
             latestDate: p.latestDate, latestNav: p.latestNav,
-            inception: p.inception || p.latestDate, days: 0, listing: 0,
+            inception: p.inception || '', days: 0, listing: 0,
             sinceAnn: null, todayPer: null,
             windows: [blank, blank, blank, blank, blank, blank]
           }
@@ -203,7 +203,7 @@
       regCode: m.regCode || '',
       risk: m.risk || '',
       saleChannel: m.saleChannel || '',
-      inception: date,
+      inception: '',
       raiseStart: '', raiseEnd: '',
       dates: date ? [date] : [],
       nav: date && nav > 0 ? [nav] : [],
@@ -216,20 +216,21 @@
 
   function mergeManualProducts() {
     var list = window.MANUAL_PRODUCTS || [];
-    if (!list.length) return;
     window.PRODUCT_LIBRARY = window.PRODUCT_LIBRARY || { items: [] };
-    var items = window.PRODUCT_LIBRARY.items = window.PRODUCT_LIBRARY.items || [];
+    var src = window.PRODUCT_LIBRARY.items || [];
+    var hadManual = src.some(function (p) { return p.manual; });
+    /* 每次以云端手工产品为准整体重建，新增/修改/删除都能同步 */
+    var items = src.filter(function (p) { return !p.manual; });
     var seen = {};
     items.forEach(function (p) { seen[p.id] = 1; });
-    var added = false;
     list.forEach(function (m) {
       var p = manualToProduct(m);
       if (!p || seen[p.id]) return;
       seen[p.id] = 1;
       items.push(p);
-      added = true;
     });
-    if (added) computeLibrary();
+    window.PRODUCT_LIBRARY.items = items;
+    if (hadManual || list.length) computeLibrary();
   }
   mergeManualProducts();
 
@@ -1671,7 +1672,9 @@
         '<td class="r num ' + colorBy(m.sinceAnn) + '">' + fmtAnn(m.sinceAnn) + '</td>' +
         '<td class="r num">' + fmtNav(m.latestNav) + '</td>' +
         '<td class="c num">' + mmdd(m.latestDate) + '</td>' +
-        '<td class="c cdate"><span>' + m.inception + '</span><i>' + m.listing + ' 天</i></td>' +
+        '<td class="c cdate">' + (m.inception ?
+          '<span>' + m.inception + '</span><i>' + m.listing + ' 天</i>' :
+          '<span class="muted">—</span>') + '</td>' +
         '<td class="c">' + (h ? '<button class="mini" data-detail="' + p.id + '">详情</button>' : '<span class="muted">—</span>') + '</td>' +
         '</tr>';
     }).join('');
@@ -3218,7 +3221,12 @@
 
   /* 云端后台刷新完成后由页面调用，重新计算持仓并重绘（等首屏 init 完成后再跑） */
   function refreshFromStore() {
-    function run() { computeHoldings(); syncPickerScope(); renderAll(); }
+    function run() {
+      mergeManualProducts();
+      computeHoldings();
+      syncPickerScope();
+      renderAll();
+    }
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', function () { setTimeout(run, 0); });
     } else {
