@@ -2054,7 +2054,15 @@
     var ms = document.getElementById('flow-month');
     if (ys) ys.value = '';
     if (ms) ms.value = '';
+    /* 从产品名进入时，该产品所有流水月份全部展开，不按月份折叠 */
+    flowOpenMonths = {};
+    if (pid) {
+      ((window.TRANSACTIONS && window.TRANSACTIONS.items) || []).forEach(function (t) {
+        if (t.pid === pid) flowOpenMonths[String(t.applyDate).slice(0, 7)] = true;
+      });
+    }
     renderFlows();
+    renderTradeSummary();
     switchTab('trade');
     closePanel();
   }
@@ -2122,6 +2130,9 @@
     var tbody = document.getElementById('sum-body');
     if (!tbody) return;
     var rows = summaryRows();
+    if (flowState.pid) {
+      rows = rows.filter(function (r) { return r.product.id === flowState.pid; });
+    }
     if (sumState.key && sumSorters[sumState.key]) {
       var get = sumSorters[sumState.key];
       var dir = sumState.dir === 'asc' ? 1 : -1;
@@ -2158,7 +2169,7 @@
           '<button class="mini sell" data-act="redeem" data-pid="' + p.id + '">赎回</button> ' +
           '<button class="mini warn" data-act="close" data-pid="' + p.id + '">清仓</button></td>' +
         '</tr>';
-    }).join('') || '<tr><td colspan="9" class="c muted" style="padding:28px">暂无持仓</td></tr>';
+    }).join('') || '<tr><td colspan="9" class="c muted" style="padding:28px">' + (flowState.pid ? '该产品暂无持仓' : '暂无持仓') + '</td></tr>';
 
     Array.prototype.forEach.call(document.querySelectorAll('#sum-table thead th[data-sort]'), function (th) {
       th.classList.remove('sorted-asc', 'sorted-desc');
@@ -2221,7 +2232,10 @@
   function flowMonthKeys() {
     var items = (window.TRANSACTIONS && window.TRANSACTIONS.items) || [];
     var set = {};
-    items.forEach(function (t) { set[t.applyDate.slice(0, 7)] = 1; });
+    items.forEach(function (t) {
+      if (flowState.pid && t.pid !== flowState.pid) return;
+      set[t.applyDate.slice(0, 7)] = 1;
+    });
     return Object.keys(set).sort();
   }
 
