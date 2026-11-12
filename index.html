@@ -248,7 +248,7 @@
   .filters #open-add{margin-left:auto;flex:none}
   .filters .sp{flex:1}
   /* 筛选下拉：原生 select 展开列表字号无法控制，改为自绘下拉 */
-  .filters .sel-wrap{position:relative;display:inline-block;flex:none;width:112px}
+  .filters .sel-wrap{position:relative;display:inline-block;flex:none;width:80px}
   .filters .sel-wrap select{width:100%;padding-right:22px;appearance:none;-webkit-appearance:none;-moz-appearance:none;cursor:pointer;text-overflow:ellipsis}
   .filters .sel-wrap::after{content:'';position:absolute;right:9px;top:50%;width:5px;height:5px;margin-top:-3.5px;border-right:1.4px solid #8fa5b1;border-bottom:1.4px solid #8fa5b1;transform:rotate(45deg);pointer-events:none}
   .filters .sel-hit{position:absolute;inset:0;z-index:2;display:block;width:100%;height:100%;padding:0;border:0;background:transparent;cursor:pointer;font-size:0;color:transparent}
@@ -260,6 +260,9 @@
   .prod-sug{max-width:min(92vw,340px)}
   .chip{font-size:12.5px;padding:5px 10px;border-radius:999px;border:1px solid #dbe7ed;background:#f6fafc;cursor:pointer;color:var(--muted);width:auto;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;line-height:1.5}
   .chip.on{background:#e4f0f5;border-color:#cbe0e8;color:var(--accent-deep);font-weight:700}
+  /* 产品库筛选按钮统一为 4 个汉字的宽度 */
+  .filters select{width:80px}
+  .filters .chip{width:80px;padding-left:0;padding-right:0}
   .fl-label{font-size:12px;color:var(--muted);margin-left:2px}
   .banner{display:flex;align-items:center;gap:10px;background:#eef6f8;border:1px solid #d5e5ea;border-radius:10px;padding:10px 14px;font-size:12px;color:var(--accent-deep);margin-bottom:14px}
   .banner .sp{flex:1}
