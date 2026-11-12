@@ -1555,8 +1555,8 @@
           (isNew ? '<span class="tag np" style="margin-left:6px">当月新品</span>' : '') +
           saleSpan(p) +
           '</div></td>' +
-        '<td class="c">' + (riskShort(p) || '—') + '</td>' +
-        '<td class="c">' + term + '</td>' +
+        '<td class="c pmeta">' + (riskShort(p) || '—') + '</td>' +
+        '<td class="c pmeta">' + term + '</td>' +
         '<td class="r num ' + colorBy(m.todayPer) + '" data-col="p10k">' + fmtSigned(m.todayPer) + '</td>' +
         winCell(w7) + winCell(w14) + winCell(w30) +
         '<td class="r num ' + colorBy(m.sinceAnn) + '">' + fmtAnn(m.sinceAnn) + '</td>' +
