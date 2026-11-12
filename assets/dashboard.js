@@ -1749,6 +1749,7 @@
 
   /* ---------------- 交易 ---------------- */
   var flowState = { pid: '', year: '', month: '' };
+  var flowOpenMonths = {};
 
   function toast(msg) {
     var el = document.getElementById('toast');
@@ -2258,22 +2259,53 @@
       return true;
     }).sort(function (a, b) { return b.applyDate.localeCompare(a.applyDate); });
 
-    tbody.innerHTML = items.map(function (t) {
-      var p = t._p;
-      var st = txStatus(t);
-      return '<tr>' +
-        '<td class="num">' + t.applyDate + '</td>' +
-        '<td><div class="pname">' + (p ? (p.short || p.name) : t.pid) + '</div></td>' +
-        '<td class="c"><span class="tag' + (t.type === '赎回' || t.type === '清仓' ? ' new' : '') + '">' + t.type + '</span></td>' +
-        '<td class="r num">' + fmtMoney(t.shares || (t.amount / t.confirmNav)) + '</td>' +
-        '<td class="r num">' + (st === '在途' ? '<span class="pending-nav">待确认</span>' : fmtNav(navOnDate(p, t.confirmDate) || t.confirmNav)) + '</td>' +
-        '<td class="r num">' + fmtMoney(t.amount) + '</td>' +
-        '<td class="c num">' + t.confirmDate + '</td>' +
-        '<td class="c"><span class="tag' + (st === '在途' ? ' np' : '') + '" title="' +
-          (st === '在途' ? '在途：' + txPendingReason(t) + '，暂不计入持仓；净值披露后自动转为已确认' : '已确认并计入持仓') + '">' + st + '</span></td>' +
-        '<td class="c"><button class="mini" data-edit="' + t.id + '">修改</button> ' +
-          '<button class="mini warn" data-del="' + t.id + '">删除</button></td>' +
-        '</tr>';
+    var groups = {};
+    var months = [];
+    items.forEach(function (t) {
+      var mk = t.applyDate.slice(0, 7);
+      if (!groups[mk]) { groups[mk] = []; months.push(mk); }
+      groups[mk].push(t);
+    });
+    months.sort().reverse();
+
+    function moneyBrief(v) {
+      return v >= 10000 ? (v / 10000).toFixed(2) + '万' : fmtMoney(v);
+    }
+
+    tbody.innerHTML = months.map(function (mk) {
+      var list = groups[mk];
+      var open = !!flowOpenMonths[mk];
+      var sum = {};
+      list.forEach(function (t) {
+        var k = t.type || '申购';
+        if (!sum[k]) sum[k] = { n: 0, amt: 0 };
+        sum[k].n += 1;
+        sum[k].amt += Number(t.amount) || 0;
+      });
+      var meta = ['申购', '赎回', '清仓'].filter(function (k) { return sum[k] && sum[k].n; })
+        .map(function (k) { return k + ' ' + sum[k].n + ' 笔 ' + moneyBrief(sum[k].amt); })
+        .join(' · ');
+      var head = '<tr class="flow-month' + (open ? ' open' : '') + '" data-mk="' + mk + '">' +
+        '<td colspan="9"><span class="fm-caret">▸</span>' + mk.slice(0, 4) + '年' + (+mk.slice(5, 7)) + '月' +
+        '<span class="fm-meta">共 ' + list.length + ' 笔 · ' + meta + '</span></td></tr>';
+      var rows = list.map(function (t) {
+        var p = t._p;
+        var st = txStatus(t);
+        return '<tr class="flow-detail"' + (open ? '' : ' hidden') + '>' +
+          '<td class="num">' + t.applyDate + '</td>' +
+          '<td><div class="pname">' + (p ? (p.short || p.name) : t.pid) + '</div></td>' +
+          '<td class="c"><span class="tag' + (t.type === '赎回' || t.type === '清仓' ? ' new' : '') + '">' + t.type + '</span></td>' +
+          '<td class="r num">' + fmtMoney(t.shares || (t.amount / t.confirmNav)) + '</td>' +
+          '<td class="r num">' + (st === '在途' ? '<span class="pending-nav">待确认</span>' : fmtNav(navOnDate(p, t.confirmDate) || t.confirmNav)) + '</td>' +
+          '<td class="r num">' + fmtMoney(t.amount) + '</td>' +
+          '<td class="c num">' + t.confirmDate + '</td>' +
+          '<td class="c"><span class="tag' + (st === '在途' ? ' np' : '') + '" title="' +
+            (st === '在途' ? '在途：' + txPendingReason(t) + '，暂不计入持仓；净值披露后自动转为已确认' : '已确认并计入持仓') + '">' + st + '</span></td>' +
+          '<td class="c"><button class="mini" data-edit="' + t.id + '">修改</button> ' +
+            '<button class="mini warn" data-del="' + t.id + '">删除</button></td>' +
+          '</tr>';
+      }).join('');
+      return head + rows;
     }).join('') || '<tr><td colspan="9" class="c muted" style="padding:28px">暂无符合条件的交易流水</td></tr>';
 
     var filterEl = document.getElementById('trade-filter');
@@ -2321,6 +2353,13 @@
 
     var flow = document.getElementById('flow-body');
     if (flow) flow.addEventListener('click', function (e) {
+      var mh = e.target.closest('tr.flow-month');
+      if (mh) {
+        var mk = mh.getAttribute('data-mk');
+        flowOpenMonths[mk] = !flowOpenMonths[mk];
+        renderFlows();
+        return;
+      }
       var ed = e.target.closest('[data-edit]');
       if (ed) {
         var eid = ed.getAttribute('data-edit');
