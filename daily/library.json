@@ -1,6 +1,6 @@
 {
   "asOf": "2026-11-10",
-  "fetchedAt": "2026-11-12 19:21",
+  "fetchedAt": "2026-11-12 19:45",
   "source": "建行新品公告·销售文件要素表 + 中国理财网净值",
   "window": {
     "start": "2026-08-01",
@@ -19,6 +19,46 @@
       "inception": "2026-11-12",
       "raiseStart": "2026-11-06",
       "raiseEnd": "2026-11-11",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7001026001785",
+      "name": "中银理财-稳富7天持有期7号",
+      "short": "稳富7天持有期7号",
+      "org": "中银理财有限责任公司",
+      "orgShort": "中银理财",
+      "regCode": "Z7001026001785",
+      "risk": "",
+      "saleChannel": "建设银行",
+      "inception": "2026-11-10",
+      "raiseStart": "2026-11-09",
+      "raiseEnd": "2026-11-09",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7001026001180",
+      "name": "中银理财-乐享天天53号",
+      "short": "乐享天天53号",
+      "org": "中银理财有限责任公司",
+      "orgShort": "中银理财",
+      "regCode": "Z7001026001180",
+      "risk": "",
+      "saleChannel": "建设银行",
+      "inception": "2026-11-10",
+      "raiseStart": "2026-11-09",
+      "raiseEnd": "2026-11-09",
       "dates": [],
       "nav": [],
       "per10k": [
@@ -172,6 +212,26 @@
       "latestNav": 1.0007
     },
     {
+      "id": "LZ7001026001927",
+      "name": "中银理财-悦享天添27号",
+      "short": "悦享天添27号",
+      "org": "中银理财有限责任公司",
+      "orgShort": "中银理财",
+      "regCode": "Z7001026001927",
+      "risk": "",
+      "saleChannel": "建设银行",
+      "inception": "2026-10-27",
+      "raiseStart": "2026-10-26",
+      "raiseEnd": "2026-10-26",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
       "id": "LZ7001026001769",
       "name": "中银理财-稳富14天持有期4号",
       "short": "稳富14天持有期4号",
@@ -239,6 +299,26 @@
       ],
       "latestDate": "2026-11-10",
       "latestNav": 1.001756
+    },
+    {
+      "id": "LZ7001426002673",
+      "name": "阳光金增利稳健乐享天天购2号（365天最低持有）",
+      "short": "阳光金增利稳健乐享天天购2号（365天最低持有）",
+      "org": "光大理财有限责任公司",
+      "orgShort": "光大理财",
+      "regCode": "Z7001426002673",
+      "risk": "",
+      "saleChannel": "建设银行",
+      "inception": "2026-10-20",
+      "raiseStart": "2026-10-16",
+      "raiseEnd": "2026-10-19",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
     },
     {
       "id": "LZ7007926000589",
@@ -626,6 +706,26 @@
       ],
       "latestDate": "2026-11-09",
       "latestNav": 1.001264
+    },
+    {
+      "id": "LZ7001426002197",
+      "name": "阳光金乐盈日开18号（180天最低持有）",
+      "short": "阳光金乐盈日开18号（180天最低持有）",
+      "org": "光大理财有限责任公司",
+      "orgShort": "光大理财",
+      "regCode": "Z7001426002197",
+      "risk": "",
+      "saleChannel": "建设银行",
+      "inception": "2026-09-22",
+      "raiseStart": "2026-09-15",
+      "raiseEnd": "2026-09-21",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
     },
     {
       "id": "LZ7000926001950",
