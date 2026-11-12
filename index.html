@@ -340,6 +340,9 @@
   .active-filter[hidden]{display:none}
   .active-filter b{color:var(--accent-deep)}
   #sum-table{min-width:980px}
+  /* 交易汇总操作列：加购/赎回/清仓三个按钮同排显示，不允许换行折叠 */
+  #sum-table thead th:last-child,#sum-table tbody td:last-child{white-space:nowrap}
+  #sum-table tbody td:last-child .mini{white-space:nowrap}
   #flow-table{min-width:900px}
   #flow-table td{white-space:nowrap}
 
