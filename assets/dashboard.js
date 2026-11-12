@@ -2405,6 +2405,16 @@
 
     var NP = window.NEW_PRODUCTS || { lanes: [] };
     var lanes = NP.lanes || [];
+    // 查漏补缺：成立日 <= 今天的产品已不算「新品预告」，直接在此拦截（云端/本地数据同口径）
+    var _todayKey = ymd(new Date());
+    lanes = lanes.map(function (l) {
+      return {
+        channel: l.channel,
+        products: (l.products || []).filter(function (p) {
+          return !(p.establish && p.establish <= _todayKey);
+        })
+      };
+    }).filter(function (l) { return l.products.length; });
     var winStart = (NP.window && NP.window.start) || DATA.asOf;
     var winEnd = (NP.window && NP.window.end) || winStart;
     var days = [];
