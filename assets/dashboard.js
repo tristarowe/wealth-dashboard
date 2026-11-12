@@ -1423,7 +1423,7 @@
     if (/日日开|日开/.test(s)) return '日开';
     s = s.replace(/十四/g, '14').replace(/三十/g, '30').replace(/七/g, '7');
     var m = s.match(/持有期?\s*(\d+)\s*天/) || s.match(/(\d+)\s*天/);
-    return m ? (+m[1]) + ' 天' : '—';
+    return m ? (+m[1]) + '天' : '—';
   }
 
   function termBucket(term) {
