@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:,">
+<title>理财产品每日收益看板</title>
+<style>
+  :root{
+    --bg:#f3f5f7; --card:#fff; --soft:#F9FFFF;
+    --ink:#172530; --muted:#5d6b76; --rule:#dfe5ea;
+    --accent:#0e5a73; --accent-deep:#0a3c4e; --gold:#B8860B;
+    --up:#c0392b; --down:#1e8449;
+    --mono:'Consolas','JetBrainsMono',monospace;
+    --font:'Microsoft YaHei','PingFang SC','Hiragino Sans GB',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+  body{font-family:var(--font);background:var(--bg);color:var(--ink);line-height:1.65;padding:24px 20px 60px;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility}
+  .page{max-width:1320px;margin:0 auto}
+  .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  .up{color:var(--up)} .down{color:var(--down)}
+  .muted{color:var(--muted)}
+
+  /* header */
+  .hero{position:relative;background:var(--soft);border:1px solid var(--rule);border-radius:18px;padding:20px 30px 22px}
+  .hero-top{display:flex;justify-content:center;gap:20px}
+  .hero-top > div{width:100%;text-align:center}
+  h1{font-size:clamp(26px,3.2vw,36px);color:var(--gold);font-weight:800;letter-spacing:.02em;line-height:1.2}
+  .sub{margin-top:6px;font-size:12px;color:var(--muted)}
+  .sub b{font-weight:600;color:var(--ink)}
+  .hero-actions{position:absolute;top:16px;right:24px;display:flex;align-items:center;gap:8px;margin-left:0}
+  .hero-top .coverage{margin:10px 0 0}
+  .hero-subline{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .hero-subline .coverage{margin:0}
+  .hero-subline #refresh-data{margin-right:-7px}
+  .hero-asof{font-size:12px;color:var(--muted)}
+  .hero-asof b{font-weight:600;color:var(--ink);white-space:nowrap}
+  .btn{display:inline-flex;align-items:center;gap:6px;font-family:var(--font);font-size:12.5px;font-weight:700;color:var(--accent-deep);background:#f6fafc;border:1px solid #dbe7ed;border-radius:999px;padding:8px 16px;cursor:pointer;text-decoration:none}
+  .btn.primary{background:#e4f0f5;border-color:#cbe0e8;color:var(--accent-deep)}
+  .btn:hover{background:#eef6f8}
+  .btn:disabled{cursor:default;opacity:.9}
+  .btn svg{width:14px;height:14px;flex:none}
+  .btn.icon-only{width:32px;height:32px;padding:0;justify-content:center;border-radius:50%;border:0;background:transparent;color:#7d939f}
+  .btn.icon-only:hover{background:transparent;border:0;color:var(--accent)}
+  .btn.icon-only svg{width:18px;height:18px}
+  .btn.done{background:var(--gold);border-color:var(--gold);color:#1a1200}
+  .btn.error{color:var(--up);border-color:#f0c8c3;background:#fdf4f2}
+  .update-btn.loading svg{animation:update-spin .9s linear infinite}
+  @keyframes update-spin{to{transform:rotate(360deg)}}
+
+  .tabs{display:flex;gap:4px;background:#fff;border:1px solid var(--rule);border-radius:999px;padding:4px;width:max-content;margin:12px auto 0}
+  .tab{border:0;background:transparent;font-family:var(--font);font-size:14px;font-weight:700;color:var(--muted);padding:8px 30px;border-radius:999px;cursor:pointer}
+  .tab.on{background:#e6f2f6;color:var(--accent-deep)}
+
+  .metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:18px}
+  .metric{background:#fff;border:1px solid var(--rule);border-radius:12px;padding:14px 18px}
+  .metric .k{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.04em}
+  .metric .v{font-family:var(--mono);font-size:30px;font-weight:700;line-height:1.25;margin-top:2px;font-variant-numeric:tabular-nums}
+  .metric .v em{font-style:normal;font-size:11.5px;font-weight:400;color:var(--muted);margin-left:4px}
+  .metric.key .v{color:var(--up)}
+  .metric .v.up{color:var(--up)}
+  .metric .v.down{color:var(--down)}
+  .metric .v.muted{color:var(--muted)}
+  .metric .m-sub{margin-top:7px;padding-top:6px;border-top:1px dashed #e8eef1;font-size:11.5px;color:var(--muted)}
+  .metric .m-sub b{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--up);margin:0 2px}
+  .metric .m-sub b.ink{color:var(--ink)}
+  .metric .m-sub b.up{color:var(--up)}
+  .metric .m-sub b.down{color:var(--down)}
+  .metric .m-sub b{white-space:nowrap}
+  .nw{white-space:nowrap}
+
+  /* sections */
+  section{margin-top:26px}
+  .sec-head{display:flex;align-items:baseline;gap:10px;padding-bottom:9px;border-bottom:1px solid var(--rule);margin-bottom:14px}
+  .sec-head .idx{font-family:var(--mono);font-size:21px;font-weight:700;color:var(--gold);letter-spacing:.02em}
+  .sec-head h2{font-size:21px;font-weight:700;color:var(--ink);letter-spacing:.01em;line-height:1.3}
+  .sec-head .note{margin-left:auto;font-size:12px;color:var(--muted)}
+
+  .card{background:#fff;border:1px solid var(--rule);border-radius:12px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  thead th{background:#f7f9fa;color:#50606b;font-size:12.5px;font-weight:600;text-align:left;padding:10px;border-bottom:1px solid var(--rule);white-space:nowrap;letter-spacing:.01em}
+  tbody td{padding:10px;border-bottom:1px solid #edf1f4;vertical-align:middle}
+  tbody tr:last-child td{border-bottom:0}
+  .c{text-align:center}
+  .r{text-align:right}
+  .pname{font-weight:400;font-size:13px;line-height:1.5;letter-spacing:.005em}
+  .plink{color:inherit;text-decoration:none;border-bottom:1px dashed #b9ccd4;cursor:pointer}
+  .plink:hover{color:var(--accent-deep);border-bottom-color:var(--accent)}
+  .cdate span{display:block;font-family:var(--mono);font-size:12px;color:var(--ink);white-space:nowrap}
+  .cdate i{display:block;font-style:normal;font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-top:1px}
+  .nav-under{display:none}
+  .unit-u{display:block;font-size:11.5px;color:var(--muted);font-weight:400;line-height:1.2;margin-top:1px}
+  .st b{display:block;font-family:var(--mono);font-weight:700}
+  .st i{display:block;font-style:normal;font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-top:1px}
+  .st b.up,.st i.up{color:var(--up)}
+  .st b.down,.st i.down{color:var(--down)}
+  /* 盈亏明细：7日~成立至今等历史区间不做红绿着色，按内容区分黑/灰 */
+  #hold-table .st.win b{color:var(--ink)}
+  #hold-table .st.win i{color:#6f8089}
+  /* 重点列：评分加粗+底色，今日收益仅加粗 */
+  #hold-table thead th[data-sort="score"]{font-weight:700;color:var(--accent-deep);background:#e6f2f6}
+  #hold-table thead th[data-sort="name"]{font-weight:700}
+  #hold-table thead th[data-sort="income"]{color:var(--accent-deep)}
+  /* 重点列单元格：今日收益加粗、不再填充底色 */
+  #hold-table tbody td.income-col{font-weight:700;background:transparent}
+  #hold-table tbody td.score-col{background:#f2f8fa}
+  #hold-table .pname{font-size:13px}
+  #hold-table .st i{font-size:12px}
+  /* 盈亏明细：7日~成立至今 拆成「日均万收」「年化」两行，评分纵向合并 */
+  #hold-table tr.ma.dual > td:not([rowspan]){border-bottom:1px solid #f0f4f6}
+  #hold-table th:nth-child(10),#hold-table td:nth-child(10){border-left:1px solid var(--rule)}
+  #hold-table tr.mb td:first-child{border-left:1px solid var(--rule)}
+  #hold-table td.mlabel{font-size:12px;color:var(--muted);white-space:nowrap;padding:6px 8px}
+  #hold-table td.pwin,#hold-table td.awin{font-size:13px;font-weight:400;text-align:center}
+  #hold-table td.pwin{color:var(--ink)}
+  #hold-table td.awin{color:#6f8089}
+  .lbl span{display:block;font-size:11px;color:var(--muted);white-space:nowrap}
+  .th-lbl{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:3px;white-space:nowrap}
+  .th-select{font-family:var(--font);font-size:12px;font-weight:600;color:var(--muted);background:#fff;border:1px solid var(--rule);border-radius:6px;padding:2px 3px;cursor:pointer;max-width:84px}
+  .th-select:hover{border-color:#c9dbe3;color:var(--accent-deep)}
+  .th-select:focus{outline:none;border-color:var(--accent);color:var(--accent-deep)}
+  .dag{font-size:10px;color:var(--muted);margin-left:1px}
+  th.sortable{cursor:pointer;user-select:none}
+  th.sortable:hover{color:var(--accent-deep)}
+  th.sorted-asc::after{content:"\25B2";font-size:8px;margin-left:3px;color:var(--accent)}
+  th.sorted-desc::after{content:"\25BC";font-size:8px;margin-left:3px;color:var(--accent)}
+
+  #hold-table.only-ann .st.win i{font-size:13px;font-weight:400;margin-top:0}
+  #hold-table.only-p10k .st.win b{font-size:13px;font-weight:400}
+  #hold-table.only-ann .lbl span,#hold-table.only-p10k .lbl span{font-size:11.5px;font-weight:400;color:var(--muted)}
+  #hold-table tbody td.today-col{font-weight:700}
+  .prod-tbl .st b{font-size:13px}
+  .prod-tbl .st i{font-size:13px}
+  .prod-tbl .cdate span{font-size:13px}
+  .prod-tbl .cdate i{font-size:12px}
+  .prod-tbl tbody td.num{font-size:13px}
+  /* 产品库行高压缩，产品名称列：表头加粗、内容不加粗 */
+  .prod-tbl tbody td{padding:6px 8px}
+  .prod-tbl thead th:nth-child(2){font-weight:700}
+  .prod-tbl .pname{font-weight:400;font-size:13px;line-height:1.35}
+  .prod-tbl.only-ann .st i{font-size:13px;font-weight:700}
+  .prod-tbl.only-p10k .st b{font-size:13px}
+  /* 产品库仅「今日万收」保留正红负绿并加粗，其余区间万收按黑色不加粗 */
+  .prod-tbl tbody td[data-col="p10k"]{font-weight:700}
+  .prod-tbl .st b.m-p10k{color:var(--ink);font-weight:400}
+  .prod-tbl .st i.m-ann{color:#6f8089}
+  .prod-tbl tbody td.num:not([data-col="p10k"]){color:var(--ink)}
+
+  /* calendar */
+  .cal-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+  .cal-ctrl{display:flex;align-items:center;gap:8px}
+  .cal-hint{font-size:12px;color:var(--muted)}
+  .month-switch{display:inline-flex;align-items:center;border:1px solid var(--rule);border-radius:7px;background:#fff;overflow:hidden}
+  .ms-arrow{border:0;background:transparent;width:26px;height:30px;cursor:pointer;color:var(--accent-deep);font-size:15px;line-height:1;font-family:var(--font)}
+  .ms-arrow:hover{background:#f2f8fa}
+  .ms-arrow:disabled{color:#c3cfd6;cursor:default;background:#fff}
+  .ms-sel{border:0;border-left:1px solid #eef2f5;border-right:1px solid #eef2f5;background:transparent;font-family:var(--font);font-size:12px;padding:6px 0;color:var(--ink);text-align:center;min-width:56px;appearance:none;cursor:pointer}
+  .cal-split{display:grid;grid-template-columns:minmax(0,680px) minmax(0,1fr);gap:18px;align-items:stretch}
+  .cal-split[hidden]{display:none}
+  #year-view{padding-bottom:10px;margin-bottom:10px;border-bottom:1px solid var(--rule)}
+  .cal-box{border:1px solid var(--rule);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;min-width:0}
+  .cal-box-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:9px;border-bottom:1px solid var(--rule);margin-bottom:10px}
+  .cal-sub{font-size:13px;font-weight:700;color:var(--accent-deep)}
+  .month-list{display:flex;flex-direction:column;flex:0 1 auto;overflow:auto}
+  .month-rows{display:flex;flex-direction:column;justify-content:flex-start;flex:1 0 auto}
+  .month-row{display:grid;grid-template-columns:44px 96px 84px 60px 54px 48px 1fr;align-items:center;gap:8px;padding:9px;font-size:13px;line-height:1.5;border-bottom:1px solid #edf1f4}
+  .month-row.mhead span{text-align:center}
+  .month-row.mhead{font-size:12.5px;font-weight:400;color:var(--muted);background:#f7f9fa;position:sticky;top:0;z-index:1;border-bottom:1px solid var(--rule);flex:none;padding:8px 9px;border-left:2px solid transparent}
+  .month-row.mhead .unit-note{display:none}
+  .month-item{display:grid;grid-template-columns:44px 96px 84px 60px 54px 48px 1fr;align-items:center;gap:8px;padding:9px;font-size:13px;line-height:1.5;cursor:pointer;border-left:2px solid transparent;border-bottom:1px solid #edf1f4;color:var(--ink)}
+  .month-item:last-child{border-bottom:0}
+  .month-item:hover{background:#f7f9fa}
+  .month-item.on{background:#eef6f8;border-left-color:var(--accent)}
+  .month-item .m{color:var(--muted);text-align:center}
+  .month-item .v{font-family:var(--mono);font-weight:400;white-space:nowrap;text-align:right}
+  .month-row.mhead span:first-child{text-align:center}
+  .month-row.mhead span:nth-child(2){text-align:center}
+  .month-row.mhead span:nth-child(3){text-align:center}
+  .month-row.mhead span:last-child{text-align:center}
+  .month-row.mhead span:nth-child(n+4):not(:last-child){text-align:center}
+  .month-item > span:nth-child(2),.month-item > span:nth-child(3),.month-item > span:nth-child(4),.month-item > span:nth-child(5),.month-item > span:nth-child(6){text-align:center}
+  .month-item .d{font-family:var(--mono);color:var(--muted);text-align:right}
+  .month-item .rate-cell{width:100%;max-width:120px;min-width:0;margin:0 auto}
+  .month-item .thumb{margin-left:3px;font-size:10px;line-height:1}
+  .rate-cell{display:flex;align-items:center;justify-content:center;height:22px;border-radius:5px;font-family:var(--mono);font-size:13px;font-weight:600;background:#eaf3f6;color:#4a6b76}
+  .rate-cell.lv1{background:#eef4f6;color:#5f7883}
+  .rate-cell.lv2{background:#d6e8ee;color:#35626f}
+  .rate-cell.lv3{background:#b6d6df;color:#1b5364}
+  .rate-cell.lv4{background:#7fb2c1;color:#fff}
+  .rate-cell.lv5{background:#4a8b9e;color:#fff}
+  .cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;flex:1;align-content:start}
+  .cal .wd{text-align:center;font-size:12.5px;font-weight:600;color:var(--accent);padding:6px 0}
+  .cell{background:#fff;border:1px solid #e8eef1;border-radius:7px;min-height:58px;padding:5px 7px}
+  .cell.empty{background:transparent;border:0}
+  .cell .d{font-family:var(--mono);font-size:13px;color:var(--muted);font-weight:700}
+  .cell .d .thumb{margin-left:3px;font-size:11px;font-weight:400}
+  .cell .v{font-family:var(--mono);font-size:13px;font-weight:700;margin-top:2px}
+  .cell .a{font-family:var(--mono);font-size:12px;color:#46565f;margin-top:1px}
+  .cell.best{outline:2px solid #d9b44a;outline-offset:-2px}
+  .cell.nodata .v,.cell.nodata .a{color:#b7c3cb}
+  .vrow{display:flex;align-items:center;gap:3px}
+  .cal-sum{display:flex;align-items:baseline;flex-wrap:wrap;margin-top:10px;padding-top:9px;border-top:1px dashed #e8eef1;font-size:12px;color:var(--muted)}
+  .cal-sum .lead,.cal-sum .st{display:inline-flex;align-items:baseline;gap:4px;padding:0 14px;border-right:1px solid var(--rule)}
+  .cal-sum .lead{padding-left:0}
+  .cal-sum .st:last-child{border-right:0;padding-right:0}
+  .cal-sum b{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--ink);line-height:1.2}
+  .cal-sum .lead b{font-size:15px}
+  .cal-sum b.up{color:var(--up)} .cal-sum b.down{color:var(--down)}
+  .cal-sum i{font-style:normal;font-size:11.5px;color:var(--muted)}
+
+  /* trend */
+  .trend-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+  .seg{display:flex;border:1px solid var(--rule);border-radius:999px;overflow:hidden;background:#fff}
+  .seg button{border:0;background:transparent;font-family:var(--font);font-size:12px;padding:5px 13px;cursor:pointer;color:var(--muted)}
+  .seg button.on{background:#e4f0f5;color:var(--accent-deep);font-weight:700}
+  #chart{width:100%;height:360px;display:block;min-width:0}
+  .trend-sub{font-size:12px;color:var(--muted);margin:10px 0 0;padding-top:8px;border-top:1px dashed #e8eef1;text-align:left}
+  .trend-sub b{font-family:var(--mono);color:var(--ink);white-space:nowrap}
+  .trend-sub b.up{color:var(--up)}
+  .trend-sub b.down{color:var(--down)}
+  .trend-sub .sep{color:#c9d4da;margin:0 8px}
+
+  /* product page */
+  .filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:#fff;border:1px solid var(--rule);border-radius:12px;padding:12px 14px;margin-bottom:14px}
+  .filters select{font-family:var(--font);font-size:12px;padding:6px 8px;border:1px solid var(--rule);border-radius:7px;background:#fff;color:var(--ink);width:112px}
+  .filters input[type="search"]{font-family:var(--font);font-size:12.5px;padding:6px 10px;border:1px solid var(--rule);border-radius:7px;background:#fff;color:var(--ink);width:260px;min-width:200px}
+  .filters input[type="search"]:focus{outline:none;border-color:var(--accent)}
+  .filters #open-add{margin-left:auto;flex:none}
+  .filters .sp{flex:1}
+  .chip{font-size:12.5px;padding:5px 10px;border-radius:999px;border:1px solid #dbe7ed;background:#f6fafc;cursor:pointer;color:var(--muted);width:auto;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;line-height:1.5}
+  .chip.on{background:#e4f0f5;border-color:#cbe0e8;color:var(--accent-deep);font-weight:700}
+  .fl-label{font-size:12px;color:var(--muted);margin-left:2px}
+  .banner{display:flex;align-items:center;gap:10px;background:#eef6f8;border:1px solid #d5e5ea;border-radius:10px;padding:10px 14px;font-size:12px;color:var(--accent-deep);margin-bottom:14px}
+  .banner .sp{flex:1}
+  .banner b{font-family:var(--mono)}
+
+  /* 标签 / 小按钮 / 收藏 */
+  .tag{display:inline-block;font-size:11px;padding:1px 6px;border-radius:4px;background:#eef2f5;color:var(--muted)}
+  /* 在途交易的成交净值：待确认用暖色区分 */
+  .pending-nav{color:#a2701f;font-weight:400}
+  .tag.new{background:#fdecea;color:var(--up)}
+  .tag.np{background:#fdf3e6;color:#a2701f;border:1px solid #f1e1c6}
+  .cleared-date{display:inline-block;font-size:11px;font-weight:400;color:var(--muted);background:#eef2f5;border-radius:4px;padding:1px 6px;margin-left:6px;white-space:nowrap;vertical-align:1px}
+  .mini{font-family:var(--font);font-size:12px;font-weight:400;padding:4px 9px;border-radius:6px;border:1px solid #dbe7ed;background:#f6fafc;cursor:pointer;color:var(--accent-deep)}
+  .mini.warn{color:var(--up);border-color:#f0c8c3;background:#fdf4f2}
+  /* 加购 / 赎回 用不同文字颜色区分：加购深青、赎回棕金、清仓红色危险 */
+  .mini.buy{color:var(--accent);border-color:#cbe0e8;background:#f2f8fa}
+  .mini.sell{color:#a2701f;border-color:#f1e1c6;background:#fdf8ef}
+  .stars{color:#d9b44a;cursor:pointer;font-size:14px;background:none;border:0;padding:0;line-height:1}
+  .pager{display:flex;align-items:center;gap:10px;justify-content:flex-end;padding:12px 4px;font-size:12.5px;color:var(--muted)}
+  .pager button{min-width:28px;height:28px;border:1px solid #dbe7ed;background:#f6fafc;border-radius:6px;font-family:var(--mono);font-size:12.5px;cursor:pointer;color:var(--muted)}
+  .pager button.on{background:#e4f0f5;border-color:#cbe0e8;color:var(--accent-deep)}
+  .modal{position:fixed;inset:0;background:rgba(12,32,42,.35);display:flex;align-items:center;justify-content:center;z-index:200}
+  .modal[hidden]{display:none}
+  .modal-card{background:#fff;border-radius:14px;width:620px;max-width:calc(100vw - 40px);max-height:calc(100vh - 60px);overflow:auto;padding:18px 20px;box-shadow:0 20px 60px rgba(9,46,60,.25)}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;padding-bottom:10px;border-bottom:1px solid var(--rule);font-size:15px}
+  .modal-head .x{border:0;background:transparent;font-size:20px;line-height:1;color:var(--muted);cursor:pointer}
+  .field{display:block;font-size:12px;color:var(--muted);margin-top:12px}
+  .field input,.field select{display:block;width:100%;margin-top:4px;font-family:var(--font);font-size:13px;padding:8px 10px;border:1px solid var(--rule);border-radius:7px;color:var(--ink);background:#fff}
+  .field input[readonly]{background:#f7f9fa;color:var(--muted)}
+  /* 交易类型：同级并排按钮，不做下拉 */
+  .seg-group{display:flex;margin-top:4px;border:1px solid var(--rule);border-radius:0;overflow:hidden;background:#fff}
+  .seg-group .seg{flex:1;display:flex;align-items:center;justify-content:center;text-align:center;border-radius:0;border:0;border-right:1px solid var(--rule);background:#fff;font-family:var(--font);font-size:13px;line-height:1.5;padding:8px 6px;cursor:pointer;color:var(--muted)}
+  .seg-group .seg:last-child{border-right:0}
+  .seg-group .seg:hover{background:#f6fafc}
+  .seg-group .seg.on{background:#e4f0f5;color:var(--accent-deep);font-weight:700}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+  .sr-list{max-height:152px;overflow:auto;margin-top:6px}
+  .sr-list[hidden]{display:none}
+  .sr-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 10px;margin-top:5px;border:1px solid var(--rule);border-radius:7px;background:#fff;cursor:pointer;font-size:12px}
+  .sr-row:hover{border-color:#cbe0e8;background:#f6fafc}
+  .sr-row.on{border-color:#cbe0e8;background:#eef6f8}
+  .sr-row em{font-style:normal;font-family:var(--mono);font-size:11.5px;color:var(--muted);white-space:nowrap}
+  .note-line{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.6}
+  .drop{border:1px dashed #c9d5dc;border-radius:10px;padding:18px;text-align:center;font-size:12px;color:var(--muted);margin-top:10px;background:#fafcfd;cursor:pointer}
+  .drop:hover,.drop.on{border-color:var(--accent);background:#f2f8fa}
+  .drop .hint{font-size:11.5px}
+  .recog{margin-top:10px;font-size:12px;color:var(--accent-deep);background:#eef6f8;border:1px solid #cbe0e8;border-radius:7px;padding:7px 10px}
+  .ok-note{display:none;margin-top:10px;font-size:12px;color:#1e8449;background:#eef8f1;border:1px solid #cfe9d6;border-radius:7px;padding:7px 10px}
+  .modal-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:200;background:#172530;color:#fff;font-size:12.5px;line-height:1.5;padding:9px 16px;border-radius:999px;box-shadow:0 10px 24px rgba(9,46,60,.22);opacity:0;pointer-events:none;transition:opacity .18s}
+  .toast.on{opacity:1}
+
+  /* 交易 */
+  .trade-tool{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+  .trade-tool .sp{flex:1}
+  .trade-tool .month-switch{height:32px}
+  .trade-tool .month-switch .mini-select{border:0;border-radius:0;padding:5px 4px;min-width:64px;text-align:center;appearance:none}
+  .trade-tool .month-switch .ms-arrow{height:30px}
+  .mini-select{font-family:var(--font);font-size:12px;padding:6px 8px;border:1px solid var(--rule);border-radius:7px;background:#fff;color:var(--ink)}
+  .active-filter{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);background:#eef6f8;border:1px solid #d5e5ea;border-radius:8px;padding:6px 10px;margin-bottom:10px}
+  .active-filter[hidden]{display:none}
+  .active-filter b{color:var(--accent-deep)}
+  #sum-table{min-width:980px}
+  #flow-table{min-width:900px}
+  #flow-table td{white-space:nowrap}
+
+  /* 新品预告：发行机构 × 日期 时间轴 */
+  .timeline{border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:#fff}
+  .ts-grid,.ts-lane{display:grid;grid-template-columns:124px repeat(6,minmax(0,1fr))}
+  .ts-grid{border-bottom:1px solid var(--rule);background:#f7f9fa}
+  .ts-cell{padding:9px 2px;text-align:center;font-family:var(--mono);font-size:12px;color:var(--muted);line-height:1.45;white-space:nowrap;border-left:1px solid #eef2f5}
+  .ts-cell b{display:block;font-family:var(--mono);font-weight:700;font-size:13px;color:var(--muted)}
+  .ts-cell.is-today b{color:#a2701f}
+  .ts-cell.is-today em{font-style:normal;font-size:11px;color:#a2701f;margin-left:3px}
+  .ts-cell.gap{background:#f6f9fa;color:#b0bcc5;font-size:10px;padding:9px 0;overflow:hidden}
+  .ts-cell.gap b{font-size:11px;font-weight:500;letter-spacing:0;color:#a3b1bb}
+  .ts-org{padding:5px 10px!important;text-align:left!important;display:flex;align-items:center;border-left:0!important}
+  .ts-org select{font-family:var(--font);font-size:12px;color:#2a5563;border:1px solid #d7e3e9;background:#fff;border-radius:5px;padding:3px 6px;outline:none;cursor:pointer;width:100%}
+  .ts-lane{position:relative;grid-template-rows:42px;align-items:center;border-bottom:1px solid #cfdae2;padding:4px 0}
+  .ts-lane:last-of-type{border-bottom:0}
+  .ts-lane .org{grid-column:1;grid-row:1/-1;padding-left:12px;font-size:13px;color:#44535f;display:flex;align-items:center;gap:7px;white-space:nowrap}
+  .ts-lane .org .dot{width:8px;height:8px;border-radius:50%;background:var(--c);flex:none}
+  .gapfill{background:#f7fafb;align-self:stretch;display:flex;align-items:center;justify-content:center;border-left:1px solid #eef2f5}
+  .gapfill em{font-style:normal;font-size:11px;color:#b7c3cb;letter-spacing:.5px}
+  .n-legend{display:flex;gap:16px;align-items:center;font-size:12px;color:var(--muted);margin-top:10px;flex-wrap:wrap}
+  .n-legend i{display:inline-block;width:22px;height:9px;border-radius:3px;background:#fff;border:1.5px solid #0e5a73;vertical-align:middle;margin-right:5px}
+  .nchip{height:32px;border-radius:6px;background:#fff;border:1px solid var(--c);box-shadow:0 1px 3px rgba(20,45,60,.05);display:flex;align-items:center;gap:7px;padding:0 8px;overflow:hidden;z-index:2;justify-self:stretch;margin:0 3px;cursor:pointer;transition:background .15s}
+  .nchip:hover{background:#f7fbfc}
+  .nchip .nr{font-family:var(--mono);font-size:12px;color:var(--c);white-space:nowrap;flex:none}
+  .nmid{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;min-width:0}
+  .nmid .nm{font-size:12px;font-weight:400;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .nchip .na{font-family:var(--mono);font-size:11px;color:#3f6f56;background:#f1f7f3;border-radius:3px;padding:1px 4px;white-space:nowrap;flex:none}
+  .nchip .na.na-none{color:#a9b6bf;background:transparent;padding:0}
+  .nchip .rk{font-family:var(--mono);font-size:11px;font-weight:600;color:#41606f;background:#eef4f7;border-radius:3px;padding:1px 4px;flex:none}
+  .nchip .rk.r3{background:#fdf3e6;color:#a2701f}
+  .nchip .rk.r4{background:#fbe9e6;color:#a4453a}
+  .nchip .ne{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap;flex:none}
+
+  .year-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:12.5px}
+  .year-table .yc1{width:55px}
+  .year-table .yc2{width:104px}
+  .year-table .yc3{width:92px}
+  .year-table .yc4{width:68px}
+  .year-table .yc5{width:62px}
+  .year-table .yc6{width:56px}
+  .year-table thead th{background:#f7f9fa;color:var(--muted);font-size:12.5px;font-weight:400;text-align:center;padding:9px 0 9px 8px;border-bottom:1px solid var(--rule);white-space:nowrap;overflow:hidden}
+  .year-table thead th:first-child{padding-left:11px}
+  .year-table td{padding:10px 0 10px 8px;border-bottom:1px solid #edf1f4;font-size:13px;text-align:center;white-space:nowrap;overflow:hidden}
+  .year-table tr:last-child td{border-bottom:0}
+  /* 年度表列宽=月度列宽+8px，左侧补 8px 使表头/数值中心与月度表逐列重合 */
+  .year-table td.r{text-align:center;padding:10px 0 10px 8px}
+  .year-table td:last-child{text-align:center;padding:6px 0}
+  .year-table thead th:last-child{padding-left:0}
+  .year-table .rate-cell{height:22px;max-width:120px;margin:0 auto}
+  .year-table tr.on td{background:#eef6f8}
+  .year-table tr.on td:first-child{font-weight:400;color:var(--muted);box-shadow:inset 2px 0 0 var(--accent)}
+  .year-table td.cnt{font-size:13px;color:var(--muted)}
+  .year-table td.ym{font-family:var(--font);color:var(--muted);text-align:center;padding-left:11px}
+
+  /* 空状态 */
+  .empty-card{background:#fff;border:1px solid var(--rule);border-radius:12px;padding:34px 20px;text-align:center}
+  .empty-ico{width:44px;height:44px;margin:0 auto 12px;border-radius:50%;background:#eef6f8;border:1px solid #d5e5ea;display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:20px;font-family:var(--mono)}
+  .empty-title{font-size:14.5px;font-weight:700;color:var(--ink)}
+  .empty-sub{margin-top:5px;font-size:12.5px;color:var(--muted)}
+
+  /* 数据说明 */
+  .doc-attach{display:flex;align-items:center;gap:14px;padding:18px 20px;flex-wrap:wrap}
+  .pdf-ico{width:44px;height:52px;border-radius:7px;background:#fdf4f2;border:1px solid #f0c8c3;color:#b03a2e;display:flex;align-items:flex-end;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:700;padding-bottom:6px;flex:none;position:relative;letter-spacing:.04em}
+  .pdf-ico::after{content:"";position:absolute;right:-1px;top:-1px;border-width:0 13px 13px 0;border-style:solid;border-color:transparent #fff transparent transparent}
+  .att-meta{flex:1;min-width:180px}
+  .att-title{font-size:14px;font-weight:700;color:var(--ink)}
+  .att-sub{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.6}
+  .doc-attach .btn{flex:none}
+  .rule-card{padding:16px 18px;margin-top:12px}
+  .rule-card h3{font-size:13.5px;margin-bottom:6px}
+  .rule-list{list-style:none;font-size:12.5px;color:var(--muted)}
+  .rule-list li{position:relative;padding-left:14px;margin-top:4px;line-height:1.7}
+  .rule-list li::before{content:"\00B7";position:absolute;left:2px;color:var(--accent);font-weight:700}
+  .rule-list strong{color:var(--ink)}
+
+  /* 覆盖产品多选 */
+  .coverage{display:inline-flex;align-items:center;gap:5px;font-family:var(--font);font-size:12.5px;font-weight:700;color:var(--accent-deep);background:#fff;border:1px solid var(--rule);border-radius:7px;padding:3px 9px;cursor:pointer;margin-left:6px}
+  .coverage:hover{border-color:var(--accent)}
+  .coverage svg{width:12px;height:12px;flex:none}
+  .coverage svg.cv-caret{width:9px;height:8px;opacity:.65;margin-left:1px}
+  .ms-panel{position:fixed;z-index:130;width:320px;max-width:calc(100vw - 32px);background:#fff;border:1px solid var(--rule);border-radius:12px;box-shadow:0 18px 40px rgba(9,46,60,.18);padding:10px 12px;color:var(--ink)}
+  .ms-panel[hidden]{display:none}
+  .ms-head{display:flex;align-items:center;gap:6px;padding-bottom:8px;border-bottom:1px solid var(--rule)}
+  .ms-search{flex:1;min-width:0;font-family:var(--font);font-size:12px;padding:5px 8px;border:1px solid var(--rule);border-radius:6px}
+  .ms-search:focus{outline:none;border-color:var(--accent)}
+  .ms-actions{display:flex;gap:4px}
+  .ms-actions button{font-family:var(--font);font-size:11px;padding:3px 6px;border:1px solid #dbe7ed;border-radius:6px;background:#f6fafc;cursor:pointer;color:var(--accent-deep)}
+  .ms-list{max-height:264px;overflow:auto;padding-top:6px}
+  .ms-item{display:flex;align-items:center;gap:8px;padding:6px;border-radius:7px;font-size:12.5px;cursor:pointer}
+  .ms-item:hover{background:#f7f9fa}
+  .ms-item input{accent-color:var(--accent);flex:none;cursor:pointer}
+  .ms-item .ms-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ms-item em{font-style:normal;font-family:var(--mono);font-size:10.5px;color:var(--muted);flex:none}
+  .ms-empty{padding:16px 6px;text-align:center;font-size:12px;color:var(--muted)}
+
+  .sc-good b,.sc-good i{color:#1f8a70}
+  .sc-mid b,.sc-mid i{color:#b07d18}
+  .sc-weak b,.sc-weak i{color:#a94442}
+  .sc-none b,.sc-none i{color:var(--muted)}
+
+  .tabpane[hidden]{display:none}
+  .thumb-under{display:inline-block;font-size:11px;line-height:1;margin-left:4px;vertical-align:middle}
+
+  /* 横向滚动 + 冻结首列 */
+  .tbl-scroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
+  .swipe-tip{display:none;text-align:center;font-size:11px;color:#93a3ae;margin-top:6px}
+  #hold-table{min-width:1120px}
+  #prod-table{min-width:1080px}
+
+  @media (max-width:900px){
+    .swipe-tip{display:block}
+    #hold-table th:nth-child(1),#hold-table td:nth-child(1){position:sticky;left:0;z-index:2;background:#fff;min-width:44px;width:44px;max-width:44px}
+    #hold-table th:nth-child(2),#hold-table td:nth-child(2){position:sticky;left:44px;z-index:2;background:#fff;min-width:150px;width:150px;max-width:150px;box-shadow:inset -1px 0 0 var(--rule)}
+    #hold-table thead th:nth-child(1),#hold-table thead th:nth-child(2){z-index:3;background:#f7f9fa}
+    #prod-table th:nth-child(1),#prod-table td:nth-child(1){position:sticky;left:0;z-index:2;background:#fff;min-width:34px;width:34px;max-width:34px}
+    #prod-table th:nth-child(2),#prod-table td:nth-child(2){position:sticky;left:34px;z-index:2;background:#fff;min-width:170px;width:170px;max-width:170px;box-shadow:inset -1px 0 0 var(--rule)}
+    #prod-table thead th:nth-child(1),#prod-table thead th:nth-child(2){z-index:3;background:#f7f9fa}
+    #prod-table tbody td:nth-child(2) .pname{white-space:normal}
+    #sum-table th:nth-child(1),#sum-table td:nth-child(1){position:sticky;left:0;z-index:2;background:#fff;min-width:170px;box-shadow:inset -1px 0 0 var(--rule)}
+    #sum-table thead th:nth-child(1){z-index:3;background:#f7f9fa}
+    #flow-table th:nth-child(1),#flow-table td:nth-child(1){position:sticky;left:0;z-index:2;background:#fff;min-width:108px}
+    #flow-table th:nth-child(2),#flow-table td:nth-child(2){position:sticky;left:108px;z-index:2;background:#fff;min-width:140px;box-shadow:inset -1px 0 0 var(--rule)}
+    #flow-table thead th:nth-child(1),#flow-table thead th:nth-child(2){z-index:3;background:#f7f9fa}
+  }
+  @media (max-width:760px){
+    body{padding:14px 12px 40px}
+    .hero{padding:16px 14px 18px;border-radius:14px}
+    .hero-top{flex-direction:column;align-items:stretch;gap:10px}
+    .hero-actions{position:absolute;top:12px;right:12px;display:flex;flex-direction:column;justify-content:flex-end;gap:6px}
+    .hero-actions .btn{justify-content:center;padding:9px 8px}
+    .hero-actions .btn.icon-only{width:34px;height:34px;padding:0}
+    .hero-subline{gap:8px;margin-top:8px;padding-right:44px}
+    .hero-asof{font-size:11.5px;line-height:1.9}
+    h1{font-size:22px}
+    .sub{font-size:11.5px;line-height:1.9}
+    .sub b{white-space:nowrap}
+    .coverage{margin-left:0}
+    .metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:14px}
+    .metric{padding:11px 12px}
+    .metric .v{font-size:20px}
+    .metric .v em{font-size:11px}
+    .metric .m-sub{font-size:10.5px}
+    .metric .m-sub b{font-size:12px}
+    .tabs{width:100%;overflow-x:auto;justify-content:flex-start;border-radius:12px}
+    .tab{flex:1 0 auto;padding:8px 14px;font-size:13px}
+    .sec-head{gap:8px;margin-bottom:10px}
+    .sec-head h2{font-size:18px}
+    .sec-head .idx{font-size:18px}
+    .cal-split{grid-template-columns:1fr}
+    #year-view{overflow-x:auto}
+    .year-table{min-width:0;font-size:10.5px}
+    .year-table thead th{font-size:10px;white-space:nowrap;line-height:1.35}
+    .year-table thead th:nth-child(3){white-space:normal}
+    .year-table td{font-size:10.5px}
+    .year-table td.cnt{font-size:10.5px}
+    .year-table .yc1{width:32px}
+    .year-table .yc2{width:65px}
+    .year-table .yc3{width:53px}
+    .year-table .yc4{width:35px}
+    .year-table .yc5{width:31px}
+    .year-table .yc6{width:27px}
+    .year-table th,.year-table td{padding:8px 0;white-space:nowrap}
+    .month-row.mhead{padding:8px 4px}
+    .year-table thead th{padding-left:6px}
+    .year-table thead th:nth-child(2){padding-left:3px;padding-right:0}
+    .year-table thead th:nth-child(3){padding-left:3px;padding-right:0}
+    .year-table thead th:nth-child(4){padding-left:3px;padding-right:0}
+    .year-table thead th:nth-child(5){padding-left:3px;padding-right:0}
+    .year-table thead th:first-child{padding-left:6px}
+    .year-table th.r{padding-left:0;text-align:right}
+    .year-table td{padding-left:6px}
+    .year-table td.r{padding-left:3px;padding-right:0;text-align:center}
+    .year-table td.ym{padding-left:6px}
+    .year-table thead th:last-child{padding-right:0}
+    .year-table td:last-child{padding:8px 0}
+    .cal{grid-template-columns:repeat(7,minmax(0,1fr));gap:2px}
+    .cal .wd{font-size:11px;padding:4px 0}
+    .cell{min-height:54px;padding:3px}
+    .cell .d{font-size:10px}
+    .cell .v{font-size:11.5px}
+    .cell .a{font-size:9.5px;color:#46565f}
+    .cell .thumb{display:none}
+    .month-item .thumb{display:none}
+    .cal-sum{flex-wrap:wrap;gap:6px 18px}
+    .cal-sum .lead,.cal-sum .st{padding:0;border-right:0}
+    .seg button{white-space:nowrap;padding:6px 10px}
+    .filters{padding:10px;gap:6px}
+    .filters select{flex:1 1 calc(50% - 6px);width:auto;min-width:0;font-size:12px}
+    .filters .fl-label{font-size:11.5px;margin-left:0}
+    .filters .fl-sep{display:none}
+    .filters .chip{flex:1 1 calc(50% - 6px);width:auto;min-width:0;font-size:11.5px;padding:5px 10px}
+    .filters input{flex:1 1 100%;min-width:0}
+    .trade-tool .btn{flex:1 1 100%;justify-content:center}
+    .timeline{overflow:visible;border:0;background:transparent;border-radius:0}
+    .ts-grid{display:none}
+    .ts-lane{display:flex;flex-direction:column;align-items:stretch;gap:8px;border:1px solid var(--rule);border-radius:10px;background:#fff;padding:10px;margin-bottom:10px;min-width:0}
+    .ts-lane:last-of-type{margin-bottom:0}
+    .ts-lane .org{padding-left:2px;font-weight:700;justify-content:flex-start}
+    .ts-lane .gapfill{display:none}
+    .ts-lane .nchip{width:100%;margin:0;height:auto;min-height:34px;flex-wrap:wrap;padding:6px 8px}
+    .ts-lane .nchip .nmid{justify-content:flex-start}
+    .ts-lane .nchip .nm{white-space:normal}
+    .n-legend{margin-top:4px}
+    .month-row,.month-item{grid-template-columns:26px 62px 50px 32px 28px 24px minmax(40px,1fr);gap:3px;padding:10px 4px;font-size:10.5px;line-height:1.6}
+    .month-row.mhead{font-size:10.5px}
+    .rate-cell{height:20px;font-size:13px}
+    .pager{flex-wrap:wrap;justify-content:center}
+    #chart{height:300px}
+    .banner{flex-wrap:wrap;font-size:12px;padding:9px 12px}
+    .card{overflow-x:auto}
+  }
+  @media (max-width:360px){
+    .metrics{grid-template-columns:1fr}
+    .hero-actions{grid-template-columns:1fr}
+  }
+
+  /* 导出时撑满基准宽度，避免窄窗口裁切 */
+  .page.is-exporting{width:1320px}
+  .page.is-exporting .tbl-scroll{overflow:visible}
+  .page.is-exporting .card{overflow:visible}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="hero">
+    <div class="hero-top">
+      <div>
+        <h1>理财产品每日收益看板</h1>
+        <div class="hero-subline">
+          <button type="button" class="btn update-btn icon-only" id="refresh-data" aria-label="重新抓取最新数据" title="重新抓取全部产品的最新数据，并刷新所有模块">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M13.6 9.2A5.7 5.7 0 1 1 12.9 4.1"></path>
+              <path d="M13.9 2.6v3.4h-3.4"></path>
+            </svg>
+          </button>
+          <span class="hero-asof"><span hidden>数据截至 <span id="hero-asof">—</span> · </span>数据抓取 <b id="hero-report">—</b></span>
+          <button class="coverage" id="ms-trigger" aria-haspopup="listbox" aria-expanded="false" title="全部产品（4 款）">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M2 3.2h12l-4.6 5.3v5.1l-2.8-1.6V8.5z"></path>
+            </svg>
+            <span id="ms-label">4 款</span>
+            <svg class="cv-caret" viewBox="0 0 10 8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M2 3l3 3 3-3"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="metrics">
+      <div class="metric key">
+        <div class="k">今日收益</div>
+        <div class="v up" id="metric-today">—</div>
+        <div class="m-sub">今日平均万收 <b class="ink" id="metric-avg">—</b></div>
+      </div>
+      <div class="metric key">
+        <div class="k">本月收益</div>
+        <div class="v up" id="metric-month">—</div>
+        <div class="m-sub">本月日均万收 <b class="ink" id="metric-month-avg">—</b></div>
+      </div>
+      <div class="metric key">
+        <div class="k">持仓收益</div>
+        <div class="v up" id="metric-profit">—</div>
+        <div class="m-sub">较上月 <b class="ink" id="metric-momprofit">—</b> <span class="nw">元</span></div>
+      </div>
+      <div class="metric">
+        <div class="k">持仓金额</div>
+        <div class="v" id="metric-value">—</div>
+        <div class="m-sub">较上月 <b class="ink" id="metric-mom">—</b></div>
+      </div>
+    </div>
+    <div class="hero-actions">
+      <button type="button" class="btn export-btn icon-only" id="export-shot" aria-label="把整个看板导出为图片" title="把整个看板导出为图片">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="2" y="3" width="12" height="10" rx="1.6"></rect>
+          <circle cx="5.6" cy="6.4" r="1.1"></circle>
+          <path d="M2.6 11.2 6 8.4l2.2 1.8 2-1.6 3.2 2.6"></path>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button class="tab on" data-tab="hold">首页</button>
+    <button class="tab" data-tab="trade">交易</button>
+    <button class="tab" data-tab="prod">产品</button>
+  </nav>
+
+  <!-- ================= 首页 ================= -->
+  <div class="tabpane" id="pane-hold">
+    <section>
+      <div class="sec-head"><span class="idx">01</span><h2>盈亏明细</h2></div>
+      <div class="card tbl-scroll">
+        <table id="hold-table">
+          <thead>
+            <tr>
+              <th class="c" style="width:44px">序号</th>
+              <th class="sortable" data-sort="name">产品名称</th>
+              <th class="c sortable" data-sort="navdate">净值日期</th>
+              <th class="r sortable" data-sort="today">今日万收</th>
+              <th class="r sortable" data-sort="income">今日收益</th>
+              <th class="r sortable" data-sort="profit">持仓收益</th>
+              <th class="r sortable" data-sort="holdann">持仓年化</th>
+              <th class="r sortable" data-sort="value">持仓市值</th>
+              <th class="r sortable" data-sort="holddays">持仓天数</th>
+              <th class="c" style="width:92px"><select class="th-select" id="hold-data-sel" title="数据" aria-label="数据"><option value="both">数据</option><option value="per10k">万收</option><option value="ann">年化</option></select></th>
+              <th class="c sortable" data-sort="w7">7日</th>
+              <th class="c sortable" data-sort="w14">14日</th>
+              <th class="c sortable" data-sort="w30">30日</th>
+              <th class="c sortable" data-sort="w60">60日</th>
+              <th class="c sortable" data-sort="w90">90日</th>
+              <th class="c sortable" data-sort="w365">成立至今</th>
+              <th class="c sortable" data-sort="score">评分</th>
+            </tr>
+          </thead>
+          <tbody id="hold-body"></tbody>
+        </table>
+      </div>
+      <div class="swipe-tip">← 左右滑动查看完整指标 →</div>
+    </section>
+
+    <section>
+      <div class="sec-head"><span class="idx">02</span><h2>盈亏日历</h2></div>
+      <div class="card" style="padding:16px 18px">
+        <div class="cal-head">
+          <div class="cal-ctrl" id="cal-filters">
+            <div class="month-switch">
+              <button class="ms-arrow" id="cal-year-prev" aria-label="上一年">‹</button>
+              <select class="ms-sel" id="cal-year-sel" aria-label="选择年份"></select>
+              <button class="ms-arrow" id="cal-year-next" aria-label="下一年">›</button>
+            </div>
+            <div class="month-switch" id="cal-month-wrap">
+              <button class="ms-arrow" id="cal-prev" aria-label="上一个月">‹</button>
+              <select class="ms-sel" id="cal-month-sel" aria-label="选择月份"></select>
+              <button class="ms-arrow" id="cal-next" aria-label="下一个月">›</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="cal-split" id="month-view">
+          <div class="cal-box">
+            <div id="year-view">
+              <div class="cal-box-head"><span class="cal-sub">年度收益</span></div>
+              <table class="year-table">
+                <colgroup>
+                  <col class="yc1"><col class="yc2"><col class="yc3">
+                  <col class="yc4"><col class="yc5"><col class="yc6"><col>
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>年份</th>
+                    <th>收益</th>
+                    <th>日均万收</th>
+                    <th>正收益</th>
+                    <th>回撤</th>
+                    <th></th>
+                    <th>年化</th>
+                  </tr>
+                </thead>
+                <tbody id="year-body"></tbody>
+              </table>
+            </div>
+            <div class="cal-box-head"><span class="cal-sub" id="year-label">月度收益</span></div>
+            <div class="month-list" id="month-list">
+              <div class="month-row mhead"><span>月份</span><span>收益</span><span>日均万收</span><span>正收益</span><span>回撤</span><span>挂0</span><span>年化</span></div>
+            </div>
+          </div>
+
+          <div class="cal-box">
+            <div class="cal-box-head"><span class="cal-sub" id="cal-sub">每日收益</span></div>
+            <div class="cal" id="cal"></div>
+            <div class="cal-sum" id="cal-summary"></div>
+          </div>
+        </div>
+
+        <div class="cal-hint" id="cal-range-hint" style="margin-top:14px;padding-top:12px;border-top:1px solid var(--rule)"></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-head"><span class="idx">03</span><h2>盈亏趋势</h2></div>
+      <div class="card" style="padding:16px 18px">
+        <div class="trend-bar">
+          <div class="seg" id="range-tabs">
+            <button data-range="7">7日</button>
+            <button data-range="14">14日</button>
+            <button data-range="30" class="on">30日</button>
+            <button data-range="90">90日</button>
+            <button data-range="365">成立至今</button>
+          </div>
+        </div>
+        <div id="chart"></div>
+        <div class="trend-sub" id="trend-sub"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ================= 交易 ================= -->
+  <div class="tabpane" id="pane-trade" hidden>
+    <section>
+      <div class="sec-head"><span class="idx">01</span><h2>交易汇总</h2></div>
+      <div class="card tbl-scroll">
+        <table id="sum-table">
+          <thead>
+            <tr>
+              <th class="sortable" data-sort="name">产品名称</th><th class="c sortable" data-sort="navdate">净值日期</th><th class="c sortable" data-sort="nav">净值</th>
+              <th class="r sortable" data-sort="shares">持仓份额</th><th class="r sortable" data-sort="mv">持仓市值</th>
+              <th class="r sortable" data-sort="profit">持仓收益</th><th class="r sortable" data-sort="ann">持仓年化</th><th class="r sortable" data-sort="days">持仓天数</th>
+              <th class="c">操作</th>
+            </tr>
+          </thead>
+          <tbody id="sum-body"></tbody>
+        </table>
+      </div>
+      <div class="swipe-tip">← 左右滑动查看完整指标 →</div>
+    </section>
+
+    <section>
+      <div class="sec-head"><span class="idx">02</span><h2>交易流水</h2></div>
+      <div class="card tbl-scroll" style="padding:14px 16px">
+        <div class="trade-tool">
+          <div class="month-switch">
+            <button class="ms-arrow" id="flow-year-prev" aria-label="上一年" title="上一年">‹</button>
+            <select class="mini-select" id="flow-year"><option value="">年份</option></select>
+            <button class="ms-arrow" id="flow-year-next" aria-label="下一年" title="下一年">›</button>
+          </div>
+          <div class="month-switch">
+            <button class="ms-arrow" id="flow-month-prev" aria-label="上一个月" title="上一个月">‹</button>
+            <select class="mini-select" id="flow-month"><option value="">月份</option></select>
+            <button class="ms-arrow" id="flow-month-next" aria-label="下一个月" title="下一个月">›</button>
+          </div>
+          <span class="sp"></span>
+          <button class="btn primary" id="open-trade">＋ 新增交易</button>
+        </div>
+        <div class="active-filter" id="trade-filter" hidden>
+          筛选：<b id="trade-filter-name"></b>
+          <button class="mini" id="clear-filter" style="margin-left:auto">清除筛选</button>
+        </div>
+        <table id="flow-table">
+          <thead>
+            <tr>
+              <th>交易时间</th><th>产品名称</th><th class="c">类型</th><th class="r">份额</th>
+              <th class="r">成交净值</th><th class="r">金额</th><th class="c">确认日期</th>
+              <th class="c">状态</th><th class="c">操作</th>
+            </tr>
+          </thead>
+          <tbody id="flow-body"></tbody>
+        </table>
+      </div>
+      <div class="swipe-tip">← 左右滑动查看完整流水 →</div>
+    </section>
+  </div>
+
+  <!-- ================= 产品 ================= -->
+  <div class="tabpane" id="pane-prod" hidden>
+    <section>
+      <div class="sec-head"><span class="idx">01</span><h2>新品预告</h2></div>
+
+      <div class="timeline">
+        <div class="ts-grid" id="np-head"></div>
+        <div id="np-lanes"></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-head"><span class="idx">02</span><h2>产品库</h2><button class="btn" id="open-add" style="margin-left:auto">＋ 添加产品</button></div>
+
+      <div class="filters">
+        <select id="sale-sel" aria-label="按代销机构筛选">
+          <option value="">代销机构</option>
+          <option>建设银行</option>
+        </select>
+        <select id="org-sel" aria-label="按发行机构筛选">
+          <option value="">发行机构</option>
+        </select>
+        <select id="risk-sel" aria-label="按风险等级筛选">
+          <option value="">风险等级</option>
+          <option>R1 低风险</option><option>R2 中低风险</option><option>R3 中风险</option><option>R4 中高风险</option><option>R5 高风险</option>
+        </select>
+        <select id="term-sel" aria-label="按持有期筛选">
+          <option value="">持有期</option>
+          <option>1–14 天</option><option>15–30 天</option><option>31–60 天</option><option>61–90 天</option><option>91–180 天</option><option>180 天以上</option>
+        </select>
+        <select id="hold-sel" aria-label="按持仓状态筛选">
+          <option value="both">持仓状态</option>
+          <option value="holding">仅持仓</option>
+          <option value="cleared">仅清仓</option>
+        </select>
+        <span class="fl-sep"></span>
+        <select id="m-sel" aria-label="按数据展示筛选">
+          <option value="both">数据</option>
+          <option value="per10k">仅万收</option>
+          <option value="ann">仅年化</option>
+        </select>
+        <button class="chip" data-flag="new">当月新品</button>
+        <button class="chip" data-flag="fav">★ 收藏</button>
+        <input type="search" id="prod-search" placeholder="搜索产品名称 / 登记编码" aria-label="搜索产品名称或登记编码">
+      </div>
+
+      <div class="card tbl-scroll">
+        <table class="prod-tbl" id="prod-table">
+          <thead>
+            <tr>
+              <th style="width:34px"></th>
+              <th>产品名称</th><th class="c">风险</th><th class="c">持有期</th>
+              <th class="r" data-col="p10k">今日万收</th>
+              <th class="c" style="min-width:66px">7日</th>
+              <th class="c" style="min-width:66px">14日</th>
+              <th class="c" style="min-width:66px">30日</th>
+              <th class="r">成立年化</th>
+              <th class="r">最新净值</th>
+              <th class="c">净值日期</th>
+              <th class="c">成立日期</th>
+              <th class="c">操作</th>
+            </tr>
+          </thead>
+          <tbody id="prod-body"></tbody>
+        </table>
+        <div class="pager" id="prod-pager">
+          <span id="prod-pager-info">共 0 条 · 每页 20 条</span>
+          <span id="prod-pages"></span>
+        </div>
+      </div>
+      <div class="swipe-tip">← 左右滑动查看完整指标 →</div>
+    </section>
+
+    <section>
+      <div class="sec-head"><span class="idx">03</span><h2>数据说明</h2></div>
+      <div class="card doc-attach">
+        <div class="pdf-ico">PDF</div>
+        <div class="att-meta">
+          <div class="att-title">数据说明与口径（PDF）</div>
+          <div class="att-sub">含全局、首页·持仓、交易、产品四组口径 · 更新于 2026-11-10</div>
+        </div>
+        <a class="btn primary" href="./assets/数据说明.pdf" target="_blank" rel="noopener">点击查看</a>
+      </div>
+    </section>
+  </div>
+
+</div>
+
+<div class="ms-panel" id="ms-panel" hidden>
+  <div class="ms-head">
+    <input type="search" id="ms-search" class="ms-search" placeholder="搜索产品名称" aria-label="搜索产品名称">
+    <div class="ms-actions">
+      <button type="button" data-act="all">全选</button>
+      <button type="button" data-act="invert">反选</button>
+    </div>
+  </div>
+  <div class="ms-list" id="ms-list"></div>
+</div>
+
+<div class="modal" id="modal-trade" hidden>
+  <div class="modal-card">
+    <div class="modal-head"><b id="trade-modal-title">新增交易</b><button type="button" class="x" data-close="modal-trade">×</button></div>
+    <label class="field">产品搜索
+      <input id="trade-prod-q" autocomplete="off" placeholder="输入产品名称 / 登记编码，自动带出净值与确认日期">
+    </label>
+    <div class="sr-list" id="trade-prod-list"></div>
+    <input type="hidden" id="trade-prod">
+    <div class="form-grid">
+      <div class="field">交易类型
+        <div class="seg-group" id="trade-type-seg" role="group" aria-label="交易类型">
+          <button type="button" class="seg on" data-type="申购">申购</button>
+          <button type="button" class="seg" data-type="赎回">赎回</button>
+          <button type="button" class="seg" data-type="清仓">清仓</button>
+        </div>
+        <select id="trade-type" style="display:none"><option>申购</option><option>赎回</option><option>清仓</option></select>
+      </div>
+      <label class="field">申购日期<input id="trade-apply" type="date"></label>
+      <label class="field">金额<input id="trade-amount" inputmode="decimal"></label>
+      <label class="field">份额<input id="trade-shares" inputmode="decimal" readonly placeholder="按金额与成交净值自动计算"></label>
+      <label class="field">成交净值<input id="trade-nav" readonly></label>
+      <label class="field">确认日期<input id="trade-confirm" readonly="" class=""></label>
+      <input type="hidden" id="trade-channel" value="建设银行">
+    </div>
+    <div class="note-line">按确认日净值成交，不收手续费；填写金额后按成交净值自动折算份额，无需手填；赎回/清仓选择后自动带出可卖份额，确认后份额从持仓中扣减。所有交易均为人工录入，实际以银行 App 为准。</div>
+    <div class="modal-foot"><button type="button" class="btn" data-close="modal-trade">取消</button><button type="button" class="btn primary" id="trade-submit">提交</button></div>
+  </div>
+</div>
+
+<div class="modal" id="modal-add" hidden>
+  <div class="modal-card">
+    <div class="modal-head"><b>添加产品</b><button type="button" class="x" data-close="modal-add">×</button></div>
+    <label class="field">产品链接
+      <input id="add-url" autocomplete="off" placeholder="粘贴中国理财网 / 银行官网的产品页链接">
+    </label>
+    <input type="file" id="add-file" accept="image/png,image/jpeg" hidden>
+    <div class="drop" id="add-drop" role="button" tabindex="0">拖拽或点击上传产品截图<br><span class="hint">支持 PNG / JPG，自动识别产品名称、登记编码与最新净值</span></div>
+    <div class="recog" id="add-recog" hidden></div>
+    <div class="note-line">识别后先回显产品信息供你确认；提交后进入待入库队列，由每日 08:00 的产品库任务抓取净值并加入产品页，手工添加的产品也会持续更新。</div>
+    <div class="ok-note" id="add-ok">已提交，预计下次更新入库</div>
+    <div class="modal-foot"><button type="button" class="btn" data-close="modal-add">取消</button><button type="button" class="btn" id="add-recognize">自动识别</button><button type="button" class="btn primary" id="submit-add">提交</button></div>
+  </div>
+</div>
+
+<script src="./_shared/js/echarts.min.js"></script>
+<script src="./assets/html2canvas.min.js"></script>
+<script src="./assets/data.js"></script>
+<script src="./assets/risk_levels.js"></script>
+<script src="./assets/transactions.js"></script>
+<script src="./assets/newproducts.js"></script>
+<script src="./assets/library.js"></script>
+<script src="./assets/supabase-config.js"></script>
+<script src="./assets/store.js"></script>
+<script>
+  /* 先取回交易底稿（云端或本机缓存），再加载看板渲染逻辑 */
+  window.STORE_READY.then(function () {
+    var s = document.createElement('script');
+    s.src = './assets/dashboard.js';
+    document.body.appendChild(s);
+  });
+</script>
+<script>
+  // 页签切换
+  (function () {
+    var tabs = document.querySelectorAll('.tab');
+    function show(id) {
+      tabs.forEach(function (t) { t.classList.toggle('on', t.dataset.tab === id); });
+      ['hold', 'trade', 'prod'].forEach(function (k) {
+        var pane = document.getElementById('pane-' + k);
+        if (pane) pane.hidden = (k !== id);
+      });
+      location.hash = id;
+      window.dispatchEvent(new Event('resize'));
+    }
+    tabs.forEach(function (t) {
+      t.addEventListener('click', function () { show(t.dataset.tab); });
+    });
+    if (location.hash) {
+      var key = location.hash.slice(1);
+      if (['hold', 'trade', 'prod'].indexOf(key) !== -1) show(key);
+    }
+  })();
+
+  // 导出整页看板为 PNG 图片
+  (function () {
+    var btn = document.getElementById('export-shot');
+    if (!btn) return;
+    var labelEl = btn.querySelector('.export-label');
+    var defaultLabel = labelEl ? labelEl.textContent : '导出图片';
+    var timer = null;
+
+    function setLabel(text) { if (labelEl) labelEl.textContent = text; }
+
+    function restoreLabel(delay) {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(function () {
+        btn.classList.remove('done', 'error');
+        setLabel(defaultLabel);
+        timer = null;
+      }, delay || 1800);
+    }
+
+    var PAD = 24;
+    var SCALE = Math.max(2, Math.min(3, window.devicePixelRatio || 1));
+
+    function withPadding(src) {
+      var pad = Math.round(PAD * SCALE);
+      var out = document.createElement('canvas');
+      out.width = src.width + pad * 2;
+      out.height = src.height + pad * 2;
+      var ctx = out.getContext('2d');
+      ctx.fillStyle = '#f3f5f7';
+      ctx.fillRect(0, 0, out.width, out.height);
+      ctx.drawImage(src, pad, pad);
+      return out;
+    }
+
+    function download(canvas) {
+      var now = new Date();
+      var stamp = now.getFullYear() + '-' +
+        String(now.getMonth() + 1).padStart(2, '0') + '-' +
+        String(now.getDate()).padStart(2, '0');
+      var a = document.createElement('a');
+      a.href = canvas.toDataURL('image/png');
+      a.download = '理财产品每日收益看板_' + stamp + '.png';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    var EXPORT_WIDTH = 1320;
+    var EXPORT_WINDOW_WIDTH = EXPORT_WIDTH + 40;
+
+    btn.addEventListener('click', function () {
+      if (btn.disabled) return;
+      var target = document.querySelector('.page');
+      if (!target) return;
+
+      var actions = btn.closest('.hero-actions');
+      btn.disabled = true;
+      if (actions) actions.style.visibility = 'hidden';
+      setLabel('生成中…');
+      var scrollX = window.scrollX;
+      var scrollY = window.scrollY;
+      window.scrollTo(0, 0);
+
+      var prevWidth = target.style.width;
+      var widened = target.getBoundingClientRect().width < EXPORT_WIDTH - 1;
+      if (widened) {
+        target.classList.add('is-exporting');
+        target.style.width = EXPORT_WIDTH + 'px';
+        window.dispatchEvent(new Event('resize'));
+      }
+
+      function restoreLayout() {
+        if (!widened) return;
+        target.style.width = prevWidth;
+        target.classList.remove('is-exporting');
+        window.dispatchEvent(new Event('resize'));
+      }
+
+      // html2canvas 渲染原生 select 时文字会被裁切，导出期间用等价文本块替换
+      function swapSelects() {
+        var selects = Array.prototype.slice.call(target.querySelectorAll('select'));
+        var undo = selects.map(function (sel) {
+          var opt = sel.options[sel.selectedIndex];
+          var rect = sel.getBoundingClientRect();
+          var span = document.createElement('span');
+          span.className = sel.className + ' export-select-proxy';
+          span.style.cssText = 'display:inline-flex;align-items:center;box-sizing:border-box;position:relative;' +
+            'width:' + Math.ceil(rect.width) + 'px;height:' + Math.ceil(rect.height) + 'px;' +
+            'justify-content:center;padding:0 3px;background-color:#ffffff;background-image:none;' +
+            'cursor:default;user-select:none;overflow:hidden;white-space:nowrap;font-size:12px;color:#5d6b76;';
+          span.textContent = opt ? opt.text : '';
+          sel.parentNode.insertBefore(span, sel);
+          sel.style.display = 'none';
+          return function () {
+            if (span.parentNode) span.parentNode.removeChild(span);
+            sel.style.display = '';
+          };
+        });
+        return function () { undo.forEach(function (fn) { fn(); }); };
+      }
+
+      var restoreSelects = null;
+      var cropWidth = Math.max(EXPORT_WIDTH, Math.ceil(target.scrollWidth));
+      var cropHeight = Math.ceil(target.scrollHeight);
+      var fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+
+      fontsReady.then(function () {
+        restoreSelects = swapSelects();
+        return html2canvas(target, {
+          backgroundColor: '#f3f5f7',
+          scale: SCALE,
+          useCORS: true,
+          logging: false,
+          width: cropWidth,
+          height: cropHeight,
+          windowWidth: Math.max(EXPORT_WINDOW_WIDTH, document.documentElement.clientWidth),
+          scrollX: 0,
+          scrollY: 0
+        });
+      }).then(function (canvas) {
+        if (restoreSelects) restoreSelects();
+        restoreLayout();
+        window.scrollTo(scrollX, scrollY);
+        if (actions) actions.style.visibility = '';
+        download(withPadding(canvas));
+        btn.disabled = false;
+        btn.classList.add('done');
+        setLabel('已导出');
+        restoreLabel();
+      }).catch(function (err) {
+        if (restoreSelects) restoreSelects();
+        restoreLayout();
+        window.scrollTo(scrollX, scrollY);
+        if (actions) actions.style.visibility = '';
+        if (window.console && console.error) console.error('[图片导出失败]', err);
+        btn.disabled = false;
+        setLabel('导出失败');
+        restoreLabel();
+      });
+    });
+  })();
+</script>
+</body>
+</html>
