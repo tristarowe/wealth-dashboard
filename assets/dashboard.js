@@ -2970,7 +2970,6 @@
       if (t.checked && idx === -1) {
         selectedIds.push(t.value);
       } else if (!t.checked && idx !== -1) {
-        if (selectedIds.length === 1) { t.checked = true; return; }
         selectedIds.splice(idx, 1);
       }
       applySelection();
