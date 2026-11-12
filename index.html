@@ -392,6 +392,13 @@
   .ms-item input{accent-color:var(--accent);flex:none;cursor:pointer}
   .ms-item .ms-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .ms-item em{display:none}
+  /* 移动端导出：预览浮层，长按图片保存到相册 */
+  .shot-modal{position:fixed;inset:0;z-index:200;background:#0d1f28;display:flex;flex-direction:column;justify-content:center;padding:14px}
+  .shot-modal[hidden]{display:none}
+  .shot-tip{color:#fff;font-size:13px;text-align:center;line-height:1.6;padding:6px 0 12px;flex:none}
+  .shot-scroll{flex:0 1 auto;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;text-align:center;border-radius:10px}
+  .shot-scroll img{max-width:100%;height:auto;display:block;margin:0 auto;border-radius:10px;-webkit-touch-callout:default;user-select:auto}
+  .shot-close{flex:none;margin-top:12px;align-self:center;font-family:var(--font);font-size:13px;font-weight:700;color:#fff;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.34);border-radius:999px;padding:9px 34px;cursor:pointer}
   .ms-empty{padding:16px 6px;text-align:center;font-size:12px;color:var(--muted)}
 
   .sc-good b,.sc-good i{color:#1f8a70}
@@ -843,6 +850,12 @@
   <div class="ms-list" id="ms-list"></div>
 </div>
 
+<div class="shot-modal" id="shot-modal" hidden>
+  <div class="shot-tip">长按下方图片 → 选择「存储到照片」即可保存</div>
+  <div class="shot-scroll"><img id="shot-img" alt="理财产品每日收益看板"></div>
+  <button type="button" class="shot-close" id="shot-close">关闭</button>
+</div>
+
 <div class="modal" id="modal-trade" hidden>
   <div class="modal-card">
     <div class="modal-head"><b id="trade-modal-title">新增交易</b><button type="button" class="x" data-close="modal-trade">×</button></div>
@@ -986,13 +999,85 @@
       return out;
     }
 
+    // 裁掉画布四周多余的底色空白，让内容饱满居中（低分辨率采样，避免占用内存）
+    function trimCanvas(src) {
+      var step = 8;
+      var sw = Math.max(1, Math.round(src.width / step));
+      var sh = Math.max(1, Math.round(src.height / step));
+      var probe = document.createElement('canvas');
+      probe.width = sw;
+      probe.height = sh;
+      var pctx = probe.getContext('2d');
+      pctx.drawImage(src, 0, 0, sw, sh);
+      var data = pctx.getImageData(0, 0, sw, sh).data;
+      var top = sh, bottom = -1, left = sw, right = -1;
+      for (var y = 0; y < sh; y++) {
+        for (var x = 0; x < sw; x++) {
+          var i = (y * sw + x) * 4;
+          var d = Math.abs(data[i] - 243) + Math.abs(data[i + 1] - 245) + Math.abs(data[i + 2] - 247);
+          if (d > 12) {
+            if (y < top) top = y;
+            if (y > bottom) bottom = y;
+            if (x < left) left = x;
+            if (x > right) right = x;
+          }
+        }
+      }
+      if (bottom < 0) return src;
+      var pad = 2;
+      var x0 = Math.max(0, (left - pad) * step);
+      var y0 = Math.max(0, (top - pad) * step);
+      var x1 = Math.min(src.width, (right + 1 + pad) * step);
+      var y1 = Math.min(src.height, (bottom + 1 + pad) * step);
+      if (x1 - x0 < 8 || y1 - y0 < 8) return src;
+      var out = document.createElement('canvas');
+      out.width = x1 - x0;
+      out.height = y1 - y0;
+      out.getContext('2d').drawImage(src, x0, y0, out.width, out.height, 0, 0, out.width, out.height);
+      return out;
+    }
+
+    function isIOS() {
+      var ua = navigator.userAgent || '';
+      if (/iPad|iPhone|iPod/.test(ua)) return true;
+      return navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+    }
+
+    // iOS 不支持 a[download]，改为展示图片让用户长按保存
+    function showShot(dataUrl) {
+      var modal = document.getElementById('shot-modal');
+      var img = document.getElementById('shot-img');
+      if (!modal || !img) return false;
+      img.src = dataUrl;
+      modal.hidden = false;
+      document.body.style.overflow = 'hidden';
+      return true;
+    }
+
+    function closeShot() {
+      var modal = document.getElementById('shot-modal');
+      var img = document.getElementById('shot-img');
+      if (modal) modal.hidden = true;
+      if (img) img.removeAttribute('src');
+      document.body.style.overflow = '';
+    }
+
+    (function () {
+      var modal = document.getElementById('shot-modal');
+      var close = document.getElementById('shot-close');
+      if (close) close.addEventListener('click', closeShot);
+      if (modal) modal.addEventListener('click', function (e) { if (e.target === modal) closeShot(); });
+    })();
+
     function download(canvas) {
       var now = new Date();
       var stamp = now.getFullYear() + '-' +
         String(now.getMonth() + 1).padStart(2, '0') + '-' +
         String(now.getDate()).padStart(2, '0');
+      var dataUrl = canvas.toDataURL('image/png');
+      if (isIOS() && showShot(dataUrl)) return;
       var a = document.createElement('a');
-      a.href = canvas.toDataURL('image/png');
+      a.href = dataUrl;
       a.download = '理财产品每日收益看板_' + stamp + '.png';
       document.body.appendChild(a);
       a.click();
@@ -1081,7 +1166,7 @@
         restoreLayout();
         window.scrollTo(scrollX, scrollY);
         if (actions) actions.style.visibility = '';
-        download(withPadding(canvas));
+        download(withPadding(trimCanvas(canvas)));
         btn.disabled = false;
         btn.classList.add('done');
         setLabel('已导出');
