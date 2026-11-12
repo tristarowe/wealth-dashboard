@@ -2046,6 +2046,164 @@
     if (tab) tab.click();
   }
 
+  /* ---------------- 自定义日期选择器 ---------------- */
+  var dpEl = null;
+  var dpState = { input: null, view: new Date(), sel: '', mode: 'day' };
+
+  function buildDp() {
+    if (dpEl) return dpEl;
+    dpEl = document.createElement('div');
+    dpEl.className = 'dp';
+    dpEl.id = 'dp-pop';
+    dpEl.hidden = true;
+    dpEl.setAttribute('role', 'dialog');
+    dpEl.setAttribute('aria-label', '选择日期');
+    dpEl.innerHTML =
+      '<div class="dp-head">' +
+        '<button type="button" class="dp-nav" data-dp="prev" aria-label="上个月">‹</button>' +
+        '<button type="button" class="dp-title" data-dp="title" aria-label="切换年月"></button>' +
+        '<button type="button" class="dp-nav" data-dp="next" aria-label="下个月">›</button>' +
+      '</div>' +
+      '<div class="dp-body"></div>' +
+      '<div class="dp-foot">' +
+        '<button type="button" data-dp="today">今天</button>' +
+        '<span class="dp-hint">点标题切换年月</span>' +
+        '<button type="button" data-dp="clear">清空</button>' +
+      '</div>';
+    document.body.appendChild(dpEl);
+    dpEl.addEventListener('click', onDpClick);
+    return dpEl;
+  }
+
+  function renderDp() {
+    var title = dpEl.querySelector('[data-dp="title"]');
+    var body = dpEl.querySelector('.dp-body');
+    var y = dpState.view.getFullYear();
+    var m = dpState.view.getMonth();
+    title.textContent = y + ' 年 ' + (m + 1) + ' 月';
+
+    if (dpState.mode === 'month') {
+      var mh = '';
+      for (var i = 0; i < 12; i++) {
+        mh += '<button type="button" data-dp-month="' + i + '"' + (i === m ? ' class="on"' : '') + '>' + (i + 1) + ' 月</button>';
+      }
+      body.innerHTML = '<div class="dp-ybar">' +
+        '<button type="button" class="dp-nav" data-dp="yprev" aria-label="上一年">‹</button>' +
+        '<span class="dp-y">' + y + '</span>' +
+        '<button type="button" class="dp-nav" data-dp="ynext" aria-label="下一年">›</button></div>' +
+        '<div class="dp-mgrid">' + mh + '</div>';
+      return;
+    }
+
+    /* 周一为首列，只渲染当月实际需要的行数，避免多余的下月占位行 */
+    var first = new Date(y, m, 1);
+    var offset = (first.getDay() + 6) % 7;
+    var total = Math.ceil((offset + new Date(y, m + 1, 0).getDate()) / 7) * 7;
+    var todayStr = isoDate(new Date());
+    var cells = '';
+    for (var k = 0; k < total; k++) {
+      var d = new Date(y, m, 1 - offset + k);
+      var s = isoDate(d);
+      var cls = [];
+      if (d.getMonth() !== m) cls.push('out');
+      if (d.getDay() === 0 || d.getDay() === 6) cls.push('we');
+      if (s === todayStr) cls.push('today');
+      if (s === dpState.sel) cls.push('on');
+      cells += '<button type="button" data-dp-day="' + s + '" class="' + cls.join(' ') + '"' +
+        (cls.indexOf('on') > -1 ? ' aria-current="date"' : '') + '>' + d.getDate() + '</button>';
+    }
+    body.innerHTML = '<div class="dp-week">' +
+      '<span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span>' +
+      '</div><div class="dp-grid">' + cells + '</div>';
+  }
+
+  function placeDp() {
+    if (!dpEl || !dpState.input) return;
+    var r = dpState.input.getBoundingClientRect();
+    var w = dpEl.offsetWidth;
+    var h = dpEl.offsetHeight;
+    var vw = window.innerWidth;
+    var vh = window.innerHeight;
+    var left = vw <= 560 ? Math.max(8, (vw - w) / 2) : Math.min(Math.max(8, r.left), vw - w - 8);
+    var top = r.bottom + 6;
+    if (top + h > vh - 8) top = Math.max(8, r.top - h - 6);
+    dpEl.style.left = left + 'px';
+    dpEl.style.top = top + 'px';
+  }
+
+  function openDp(input) {
+    buildDp();
+    if (!dpEl.hidden && dpState.input === input) { closeDp(); return; }
+    dpState.input = input;
+    var v = String(input.value || '').trim();
+    var ok = /^\d{4}-\d{2}-\d{2}$/.test(v);
+    var base = ok ? parseDate(v) : new Date();
+    if (!base || isNaN(base.getTime())) base = new Date();
+    dpState.sel = ok ? v : '';
+    dpState.view = new Date(base.getFullYear(), base.getMonth(), 1);
+    dpState.mode = 'day';
+    renderDp();
+    dpEl.hidden = false;
+    placeDp();
+  }
+
+  function closeDp() {
+    if (dpEl) dpEl.hidden = true;
+    dpState.input = null;
+  }
+
+  function pickDp(s) {
+    var input = dpState.input;
+    if (!input) return;
+    input.value = s;
+    closeDp();
+    input.dispatchEvent(new Event('change'));
+  }
+
+  function onDpClick(e) {
+    var monthBtn = e.target.closest('[data-dp-month]');
+    if (monthBtn) {
+      dpState.view = new Date(dpState.view.getFullYear(), Number(monthBtn.getAttribute('data-dp-month')), 1);
+      dpState.mode = 'day';
+      renderDp();
+      return;
+    }
+    var dayBtn = e.target.closest('[data-dp-day]');
+    if (dayBtn) { pickDp(dayBtn.getAttribute('data-dp-day')); return; }
+    var act = e.target.closest('[data-dp]');
+    if (!act) return;
+    var v = dpState.view;
+    switch (act.getAttribute('data-dp')) {
+      case 'prev': dpState.view = new Date(v.getFullYear(), v.getMonth() - 1, 1); break;
+      case 'next': dpState.view = new Date(v.getFullYear(), v.getMonth() + 1, 1); break;
+      case 'yprev': dpState.view = new Date(v.getFullYear() - 1, v.getMonth(), 1); break;
+      case 'ynext': dpState.view = new Date(v.getFullYear() + 1, v.getMonth(), 1); break;
+      case 'title': dpState.mode = dpState.mode === 'month' ? 'day' : 'month'; break;
+      case 'today': pickDp(isoDate(new Date())); return;
+      case 'clear': pickDp(''); return;
+    }
+    renderDp();
+  }
+
+  function initDatePicker() {
+    var input = document.getElementById('trade-apply');
+    if (!input) return;
+    var wrap = input.closest('.dp-wrap') || input;
+    wrap.addEventListener('click', function (e) { e.preventDefault(); openDp(input); });
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDp(input); }
+      else if (e.key === 'Escape') closeDp();
+    });
+    document.addEventListener('mousedown', function (e) {
+      if (!dpEl || dpEl.hidden) return;
+      if (dpEl.contains(e.target) || input.contains(e.target) || e.target === input) return;
+      closeDp();
+    });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDp(); });
+    window.addEventListener('resize', function () { if (dpEl && !dpEl.hidden) placeDp(); });
+    window.addEventListener('scroll', function () { if (dpEl && !dpEl.hidden) placeDp(); }, true);
+  }
+
   function openTradeFor(pid) {
     flowState.pid = pid || '';
     flowState.year = '';
@@ -2922,6 +3080,7 @@
     bindProductFilters();
     bindTrade();
     bindTradeModal();
+    initDatePicker();
     bindAddModal();
     renderAll();
 
