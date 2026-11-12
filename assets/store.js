@@ -165,7 +165,9 @@
     }).then(function (rows) {
       var all = rows.map(function (r) { return clean(r.data || {}); });
       window.MANUAL_PRODUCTS = all.filter(function (o) { return o.kind === 'manual'; });
-      return all.filter(function (o) { return o.kind !== 'manual'; });
+      window.MANUAL_HISTORY = all.filter(function (o) { return o.kind === 'manualhist'; })
+        .sort(function (a, b) { return String(b.at || '').localeCompare(String(a.at || '')); });
+      return all.filter(function (o) { return o.kind !== 'manual' && o.kind !== 'manualhist'; });
     });
   }
 
@@ -287,7 +289,9 @@
   }
 
   function manualSignature() {
-    return (window.MANUAL_PRODUCTS || []).map(function (p) { return p.id + '~' + p.nav + '~' + p.navDate; }).join(',');
+    var hist = window.MANUAL_HISTORY || [];
+    return (window.MANUAL_PRODUCTS || []).map(function (p) { return p.id + '~' + p.nav + '~' + p.navDate; }).join(',') +
+      '#' + hist.length + '~' + ((hist[0] && hist[0].at) || '');
   }
 
   function load() {
@@ -397,6 +401,34 @@
 
   /* ---------------- 手工添加的产品 ---------------- */
   /* 复用 newproducts 表，key 用 manual: 前缀区分；data.kind = manual */
+  /* 历史记录同样入表，key 用 manualhist: 前缀，data.kind = manualhist */
+  function histKey() {
+    return 'manualhist:' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  }
+
+  function logManual(action, p) {
+    var rec = {
+      kind: 'manualhist',
+      action: action,
+      at: new Date().toISOString(),
+      id: p.id || '',
+      name: p.name || '',
+      regCode: p.regCode || '',
+      org: p.org || '',
+      risk: p.risk || '',
+      saleChannel: p.saleChannel || '',
+      nav: p.nav || null,
+      navDate: p.navDate || ''
+    };
+    window.MANUAL_HISTORY = [rec].concat(window.MANUAL_HISTORY || []).slice(0, 200);
+    if (!online) return Promise.resolve(false);
+    return req(url + '/rest/v1/' + npTable + '?on_conflict=key', {
+      method: 'POST',
+      headers: headers({ Prefer: 'resolution=merge-duplicates,return=minimal' }),
+      body: JSON.stringify([{ key: histKey(), data: rec }])
+    }).then(function (r) { return r.ok; }).catch(function () { return false; });
+  }
+
   function addProduct(p) {
     if (!online) return Promise.reject(new Error('云端未配置，无法保存产品'));
     var data = { kind: 'manual' };
@@ -410,19 +442,24 @@
       var list = (window.MANUAL_PRODUCTS || []).filter(function (x) { return x.id !== data.id; });
       list.push(data);
       window.MANUAL_PRODUCTS = list;
-      return { ok: true, message: '已保存到云端产品库', item: data };
+      return logManual('add', data).then(function () {
+        return { ok: true, message: '已保存到云端产品库', item: data };
+      });
     });
   }
 
   function removeProduct(id) {
     if (!online) return Promise.reject(new Error('云端未配置，无法删除产品'));
+    var removed = (window.MANUAL_PRODUCTS || []).filter(function (x) { return x.id === id; })[0] || { id: id };
     return req(url + '/rest/v1/' + npTable + '?key=eq.' + encodeURIComponent('manual:' + id), {
       method: 'DELETE',
       headers: headers({ Prefer: 'return=minimal' })
     }).then(function (r) {
       if (!r.ok) throw fail('产品删除失败', r.status);
       window.MANUAL_PRODUCTS = (window.MANUAL_PRODUCTS || []).filter(function (x) { return x.id !== id; });
-      return { ok: true, message: '已删除云端产品' };
+      return logManual('del', removed).then(function () {
+        return { ok: true, message: '已删除云端产品' };
+      });
     });
   }
 
