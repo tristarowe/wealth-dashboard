@@ -1,6 +1,6 @@
 window.REPORT_DATA = {
-  "asOf": "2026-11-11",
-  "fetchedAt": "2026-11-11 18:29",
+  "asOf": "2026-11-12",
+  "fetchedAt": "2026-11-12 12:44",
   "products": [
     {
       "id": "p2150",
@@ -10,7 +10,7 @@ window.REPORT_DATA = {
       "regCode": "Z7000926002150",
       "shareCode": "5811226799",
       "inception": "2026-10-29",
-      "latestDate": "2026-11-10",
+      "latestDate": "2026-11-11",
       "officialAnnual": null,
       "officialAsOf": null,
       "dates": [
@@ -22,7 +22,8 @@ window.REPORT_DATA = {
         "2026-11-05",
         "2026-11-06",
         "2026-11-09",
-        "2026-11-10"
+        "2026-11-10",
+        "2026-11-11"
       ],
       "nav": [
         1.0,
@@ -33,7 +34,8 @@ window.REPORT_DATA = {
         1.0002,
         1.0002,
         1.0003,
-        1.0003
+        1.0003,
+        1.0004
       ],
       "per10k": [
         null,
@@ -44,7 +46,8 @@ window.REPORT_DATA = {
         0.0,
         0.0,
         1.0,
-        0.0
+        0.0,
+        1.0
       ],
       "sourceName": "交银理财官网"
     },
@@ -56,7 +59,7 @@ window.REPORT_DATA = {
       "regCode": "Z7000726000157",
       "shareCode": "",
       "inception": "2026-03-03",
-      "latestDate": "2026-11-10",
+      "latestDate": "2026-11-11",
       "officialAnnual": null,
       "officialAsOf": null,
       "dates": [
@@ -312,7 +315,8 @@ window.REPORT_DATA = {
         "2026-11-07",
         "2026-11-08",
         "2026-11-09",
-        "2026-11-10"
+        "2026-11-10",
+        "2026-11-11"
       ],
       "nav": [
         1.0,
@@ -567,7 +571,8 @@ window.REPORT_DATA = {
         1.022248,
         1.022295,
         1.022321,
-        1.022326
+        1.022326,
+        1.022272
       ],
       "per10k": [
         null,
@@ -822,7 +827,8 @@ window.REPORT_DATA = {
         0.47,
         0.47,
         0.26,
-        0.05
+        0.05,
+        -0.54
       ],
       "sourceName": "建设银行代销净值"
     },
