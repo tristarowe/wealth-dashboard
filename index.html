@@ -149,8 +149,10 @@
   .prod-tbl tbody td.num:not([data-col="p10k"]){color:var(--ink)}
   /* 产品库：风险等级 / 持有期两列与今日万收等数值列同字号同字体观感 */
   .prod-tbl tbody td.pmeta{font-family:Consolas,'Microsoft YaHei',monospace;font-size:12.5px;color:#41545f}
-  /* 持仓天数：数字与「天」统一字体观感，避免中文回落到宋体 */
-  #hold-table tbody td.dcell,#sum-table tbody td.dcell{font-family:Consolas,'Microsoft YaHei',monospace;font-size:13px;white-space:nowrap}
+  /* 持仓天数：数字用等宽、单位「天」作小号灰字后缀，基线对齐不突兀 */
+  #hold-table tbody td.dcell,#sum-table tbody td.dcell{white-space:nowrap}
+  #hold-table td.dcell .days,#sum-table td.dcell .days{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:13px}
+  #hold-table td.dcell .dunit,#sum-table td.dcell .dunit{font-style:normal;font-family:var(--font);font-size:11.5px;color:var(--muted);margin-left:1px;vertical-align:baseline}
 
   /* calendar */
   .cal-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
