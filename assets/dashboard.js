@@ -1811,7 +1811,6 @@
     var shEl = document.getElementById('trade-shares');
     var amtEl = document.getElementById('trade-amount');
     if (navEl) navEl.value = Number(p.nav[n - 1]).toFixed(6);
-    if (applyEl && !applyEl.value) applyEl.value = p.latestDate || DATA.asOf;
     if (dateEl) dateEl.value = nextWorkday(applyEl ? applyEl.value : '');
     var h = HOLD_BY_PID[p.id];
     if (typeEl && typeEl.value === '清仓') {
@@ -2834,10 +2833,14 @@
     });
   }
 
-  /* 云端后台刷新完成后由页面调用，重新计算持仓并重绘 */
+  /* 云端后台刷新完成后由页面调用，重新计算持仓并重绘（等首屏 init 完成后再跑） */
   function refreshFromStore() {
-    computeHoldings();
-    renderAll();
+    function run() { computeHoldings(); renderAll(); }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function () { setTimeout(run, 0); });
+    } else {
+      setTimeout(run, 0);
+    }
   }
   window.DASHBOARD_REFRESH = refreshFromStore;
 
