@@ -256,6 +256,11 @@
   .sel-opt{display:block;width:100%;text-align:left;border:0;background:transparent;font-family:var(--font);font-size:12.5px;line-height:1.4;color:var(--ink);padding:6px 9px;border-radius:7px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .sel-opt:hover{background:#f6fafc}
   .sel-opt.on{background:#e4f0f5;color:var(--accent-deep);font-weight:700}
+  /* 产品库搜索候选 */
+  .prod-sug{max-width:min(92vw,340px)}
+  .prod-sug .sel-opt{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+  .prod-sug .sug-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .prod-sug .sug-code{flex:none;font-family:var(--mono);font-style:normal;font-size:11px;color:var(--muted)}
   .chip{font-size:12.5px;padding:5px 10px;border-radius:999px;border:1px solid #dbe7ed;background:#f6fafc;cursor:pointer;color:var(--muted);width:auto;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;line-height:1.5}
   .chip.on{background:#e4f0f5;border-color:#cbe0e8;color:var(--accent-deep);font-weight:700}
   .fl-label{font-size:12px;color:var(--muted);margin-left:2px}
