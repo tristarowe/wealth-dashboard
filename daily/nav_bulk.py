@@ -38,20 +38,22 @@ def reset_client():
     _CLIENT = None
 
 
-def _call(fn, *args, **kwargs):
-    """签名会话到期时服务端返回「验证失败」，重新握手后重试一次。"""
+def _call(fn):
+    """签名会话到期时服务端返回「验证失败」，重新握手后重试一次。
+
+    fn 必须是「调用时才取 client」的闭包，否则重试仍会用到已失效的会话。
+    """
     try:
-        return fn(*args, **kwargs)
+        return fn()
     except Exception as exc:
         if "验证" not in str(exc):
             raise
         reset_client()
-        return fn(*args, **kwargs)
+        return fn()
 
 
 def product_meta(reg, c=None):
-    c = c or client()
-    data = _call(c.search_products, reg_code=reg, page=1, size=10) or {}
+    data = _call(lambda: client().search_products(reg_code=reg, page=1, size=10)) or {}
     items = data.get("list") or []
     if not items:
         return {}
@@ -70,8 +72,7 @@ def product_meta(reg, c=None):
 def history(reg, share=""):
     rows, page = [], 1
     while page <= 40:
-        c = client()
-        data = _call(c.get_net_value_list, reg, share, "1", page, 50) or {}
+        data = _call(lambda: client().get_net_value_list(reg, share, "1", page, 50)) or {}
         items = data.get("list") or []
         rows.extend(items)
         total = data.get("total") or 0
