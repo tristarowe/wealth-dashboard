@@ -10,9 +10,44 @@
   var npTable = SB.npTable || 'newproducts';
   var online = !!(url && key);
   var source = 'file';
+  var CACHE_KEY = 'wealth3.trades.cache';
+  var refreshing = null;
+  var TIMEOUT = 8000;
 
   function fileItems() {
     return (window.TRANSACTIONS && window.TRANSACTIONS.items) || [];
+  }
+
+  function readCache() {
+    try {
+      var s = window.localStorage.getItem(CACHE_KEY);
+      if (!s) return null;
+      var o = JSON.parse(s);
+      return (o && o.items && o.items.length) ? o.items : null;
+    } catch (e) { return null; }
+  }
+
+  function writeCache(items) {
+    try {
+      window.localStorage.setItem(CACHE_KEY, JSON.stringify({ at: Date.now(), items: items }));
+    } catch (e) { /* 隐私模式或超配额，忽略 */ }
+  }
+
+  /* 带超时的 fetch：网络差时最多等 TIMEOUT 毫秒，避免整页卡在加载 */
+  function req(u, opt) {
+    opt = opt || {};
+    var ctrl = typeof window.AbortController === 'function' ? new window.AbortController() : null;
+    var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, opt.timeout || TIMEOUT) : null;
+    var o = { method: opt.method || 'GET', headers: opt.headers || headers(), cache: 'no-store' };
+    if (opt.body) o.body = opt.body;
+    if (ctrl) o.signal = ctrl.signal;
+    return fetch(u, o).then(function (r) {
+      if (timer) clearTimeout(timer);
+      return r;
+    }, function (e) {
+      if (timer) clearTimeout(timer);
+      throw e;
+    });
   }
 
   function applyTrades(items) {
@@ -115,10 +150,7 @@
   }
 
   function sbTrades() {
-    return fetch(url + '/rest/v1/' + txTable + '?select=*&order=confirm_date.asc,id.asc', {
-      headers: headers(),
-      cache: 'no-store'
-    }).then(function (r) {
+    return req(url + '/rest/v1/' + txTable + '?select=*&order=confirm_date.asc,id.asc').then(function (r) {
       if (!r.ok) throw fail('交易读取失败', r.status);
       return r.json();
     }).then(function (rows) { return rows.map(rowToTx); });
@@ -126,10 +158,7 @@
 
   /* ---------------- 新品 ---------------- */
   function sbNewProducts() {
-    return fetch(url + '/rest/v1/' + npTable + '?select=data', {
-      headers: headers(),
-      cache: 'no-store'
-    }).then(function (r) {
+    return req(url + '/rest/v1/' + npTable + '?select=data').then(function (r) {
       if (!r.ok) throw fail('新品读取失败', r.status);
       return r.json();
     }).then(function (rows) {
@@ -248,24 +277,40 @@
   }
 
   /* ---------------- 加载 ---------------- */
+  /* 立即返回本地缓存/内置底稿，云端请求放后台；有新数据时通过 STORE_REFRESH 通知页面重绘 */
   function load() {
-    if (!online) return Promise.resolve(fileItems());
+    if (!online) {
+      window.STORE_REFRESH = Promise.resolve(false);
+      return Promise.resolve(fileItems());
+    }
+    var cached = readCache();
+    if (cached) {
+      applyTrades(cached);
+      source = 'cache';
+    }
+    var base = fileItems().map(function (t) {
+      return [t.id, t.type, t.amount, t.shares, t.confirmNav, t.confirmDate].join('~');
+    }).sort().join('|');
 
-    return Promise.all([
+    window.STORE_REFRESH = refreshing = Promise.all([
       sbTrades().then(function (txs) {
-        if (txs.length) {
-          applyTrades(txs);
-          source = 'supabase';
-        }
+        if (!txs.length) return;
+        applyTrades(txs);
+        source = 'supabase';
+        writeCache(txs);
       }).catch(function (e) {
-        console.warn(e.message + '，本次使用页面内置交易底稿');
+        console.warn(e.message + '，本次使用本地缓存的交易数据');
       }),
       sbNewProducts().then(applyNewProducts).catch(function (e) {
         console.warn(e.message + '，本次使用页面内置新品底稿');
       })
     ]).then(function () {
-      return fileItems();
+      var sig = fileItems().map(function (t) {
+        return [t.id, t.type, t.amount, t.shares, t.confirmNav, t.confirmDate].join('~');
+      }).sort().join('|');
+      return sig !== base;
     });
+    return Promise.resolve(fileItems());
   }
 
   function add(tx) {
@@ -283,13 +328,14 @@
       source: tx.source || '人工录入'
     };
     if (!online) return Promise.reject(new Error('云端未配置，无法保存'));
-    return fetch(url + '/rest/v1/' + txTable, {
+    return req(url + '/rest/v1/' + txTable, {
       method: 'POST',
       headers: headers(),
       body: JSON.stringify(txToRow(item))
     }).then(function (r) {
       if (!r.ok) throw fail('交易保存失败', r.status);
       applyTrades(fileItems().concat([item]));
+      writeCache(fileItems());
       return { ok: true, message: '已录入云端', item: item };
     });
   }
@@ -309,7 +355,7 @@
       source: tx.source || '人工录入'
     });
     delete row.id;
-    return fetch(url + '/rest/v1/' + txTable + '?id=eq.' + encodeURIComponent(id), {
+    return req(url + '/rest/v1/' + txTable + '?id=eq.' + encodeURIComponent(id), {
       method: 'PATCH',
       headers: headers(),
       body: JSON.stringify(row)
@@ -317,27 +363,31 @@
       if (!r.ok) throw fail('交易修改失败', r.status);
       var item = Object.assign({}, tx, { id: id });
       applyTrades(fileItems().map(function (t) { return t.id === id ? item : t; }));
+      writeCache(fileItems());
       return { ok: true, message: '已修改云端交易' };
     });
   }
 
   function remove(id) {
     if (!online) return Promise.reject(new Error('云端未配置，无法删除'));
-    return fetch(url + '/rest/v1/' + txTable + '?id=eq.' + encodeURIComponent(id), {
+    return req(url + '/rest/v1/' + txTable + '?id=eq.' + encodeURIComponent(id), {
       method: 'DELETE',
       headers: headers({ Prefer: 'return=minimal' })
     }).then(function (r) {
       if (!r.ok) throw fail('交易删除失败', r.status);
       applyTrades(fileItems().filter(function (t) { return t.id !== id; }));
+      writeCache(fileItems());
       return { ok: true, message: '已删除云端交易' };
     });
   }
 
+  /* 状态：复用后台刷新结果，不再重复发请求 */
   function status() {
     if (!online) return Promise.resolve({ ok: false, source: 'file', message: '仅本地底稿' });
-    return sbTrades().then(function () {
-      source = 'supabase';
-      return { ok: true, source: 'supabase', message: 'Supabase 已连接' };
+    return (refreshing || Promise.resolve()).then(function () {
+      if (source === 'supabase') return { ok: true, source: 'supabase', message: 'Supabase 已连接' };
+      if (source === 'cache') return { ok: false, source: 'cache', message: '云端超时，已用本地缓存' };
+      return { ok: false, source: 'file', message: '云端不可用，使用内置底稿' };
     }).catch(function () {
       return { ok: false, source: 'file', message: '云端不可用，使用内置底稿' };
     });
