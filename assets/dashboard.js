@@ -595,7 +595,7 @@
       var lbl = holdMetric === 'ann' ? '年化' : '日均万收';
       html += '<tr class="ma' + (dual ? ' dual' : '') + '">';
       html += '<td class="c num"' + rs + '>' + (i + 1) + '</td>';
-      html += '<td' + rs + '><div class="pname"><a class="plink" href="javascript:void(0)" data-goto-trade="' + p.id + '" title="查看「' + p.name + '」的交易记录">' + (p.short || p.name) + '</a>' + badge + '</div></td>';
+      html += '<td' + rs + '><div class="pname"><a class="plink" href="javascript:void(0)" data-goto-trade="' + p.id + '" title="查看「' + p.name + '」的交易记录">' + (p.short || p.name) + '</a>' + badge + saleSpan(p) + '</div></td>';
       html += '<td class="c num"' + rs + '>' + mmdd(m.latestDate) + '</td>';
       html += '<td class="r num today-col ' + colorBy(tv) + '"' + rs + '>' + fmtSigned(tv) + '</td>';
       html += '<td class="r num income-col ' + colorBy(h ? h.income : null) + '"' + rs + '>' + fmtSigned(h ? h.income : null) + '</td>';
@@ -1394,6 +1394,13 @@
     return h ? h.tx.saleChannel : (p.saleChannel || '—');
   }
 
+  /* 产品名下方的代销机构小字（持仓优先取交易登记渠道，产品库取公告渠道） */
+  function saleSpan(p) {
+    var h = HOLD_BY_PID[p.id];
+    var v = (h && h.tx && h.tx.saleChannel) || p.saleChannel || '';
+    return v && v !== '—' ? '<span class="salech">' + v + '</span>' : '';
+  }
+
   /* 风险等级：以中国理财网披露的 prodRiskLevel 为准（daily/risk_levels.json 同步而来） */
   var RISK_LABEL = {
     '1': 'R1 低风险', '2': 'R2 中低风险', '3': 'R3 中风险',
@@ -1472,8 +1479,19 @@
         (p.regCode || '').toLowerCase().indexOf(q) === -1) return false;
       return true;
     });
-    /* 搜索时按「名称命中优先、编号命中最后」重排，其余情况保持原顺序 */
+    /* 搜索时按「名称命中优先、编号命中最后」重排；无搜索词时按今日万收降序 */
     list = sortBySearch(list, prodUi.q, function (it) { return it.product; });
+    if (!prodUi.q.trim()) {
+      list = list.slice().sort(function (a, b) {
+        var av = a.m ? a.m.todayPer : null;
+        var bv = b.m ? b.m.todayPer : null;
+        var aOk = typeof av === 'number' && isFinite(av);
+        var bOk = typeof bv === 'number' && isFinite(bv);
+        if (aOk !== bOk) return aOk ? -1 : 1;
+        if (!aOk) return 0;
+        return bv - av;
+      });
+    }
 
     var hit = list.length;
     var pages = Math.max(1, Math.ceil(hit / PROD_PAGE_SIZE));
@@ -1508,6 +1526,7 @@
               (h.tx && h.tx.confirmDate ? h.tx.confirmDate.slice(5) + ' ' : '') + '清仓</span>' :
             '<span class="tag new" style="margin-left:6px">持仓</span>') : '') +
           (isNew ? '<span class="tag np" style="margin-left:6px">当月新品</span>' : '') +
+          saleSpan(p) +
           '</div></td>' +
         '<td class="c">' + (riskShort(p) || '—') + '</td>' +
         '<td class="c">' + term + '</td>' +
@@ -2099,6 +2118,7 @@
           (h.pending ? '<span class="tag np" style="margin-left:6px" title="申购待确认：确认日净值未披露，按最新净值估算计入">在途</span>' : '') +
           (h.cleared ? '<span class="cleared-date" style="margin-left:6px">' +
             (h.tx && h.tx.confirmDate ? h.tx.confirmDate.slice(5).replace('-', '.') : '') + ' 清仓</span>' : '') +
+          saleSpan(p) +
           '</div></td>' +
         '<td class="c num">' + mmdd(h.latestDate) + '</td>' +
         '<td class="c num">' + fmtNav(h.latestNav) + '</td>' +
@@ -2293,7 +2313,8 @@
         var st = txStatus(t);
         return '<tr class="flow-detail"' + (open ? '' : ' hidden') + '>' +
           '<td class="num">' + t.applyDate + '</td>' +
-          '<td><div class="pname">' + (p ? (p.short || p.name) : t.pid) + '</div></td>' +
+          '<td><div class="pname">' + (p ? (p.short || p.name) : t.pid) +
+            (t.saleChannel ? '<span class="salech">' + t.saleChannel + '</span>' : '') + '</div></td>' +
           '<td class="c"><span class="tag' + (t.type === '赎回' || t.type === '清仓' ? ' new' : '') + '">' + t.type + '</span></td>' +
           '<td class="r num">' + fmtMoney(t.shares || (t.amount / t.confirmNav)) + '</td>' +
           '<td class="r num">' + (st === '在途' ? '<span class="pending-nav">待确认</span>' : fmtNav(navOnDate(p, t.confirmDate) || t.confirmNav)) + '</td>' +
