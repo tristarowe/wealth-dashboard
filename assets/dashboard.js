@@ -622,7 +622,7 @@
       var lbl = holdMetric === 'ann' ? '年化' : '日均万收';
       html += '<tr class="ma' + (dual ? ' dual' : '') + '">';
       html += '<td class="c num"' + rs + '>' + (i + 1) + '</td>';
-      html += '<td' + rs + '><div class="pname"><a class="plink" href="javascript:void(0)" data-goto-trade="' + p.id + '" title="查看「' + p.name + '」的交易记录">' + (p.short || p.name) + '</a>' + badge + saleSpan(p) + '</div></td>';
+      html += '<td' + rs + '><div class="pname"><a class="plink" href="javascript:void(0)" data-goto-trade="' + p.id + '" title="查看「' + p.name + '」的交易记录">' + (p.short || p.name) + '</a>' + badge + '</div></td>';
       html += '<td class="c num"' + rs + '>' + mmdd(m.latestDate) + '</td>';
       html += '<td class="r num today-col ' + colorBy(tv) + '"' + rs + '>' + fmtSigned(tv) + '</td>';
       html += '<td class="r num income-col ' + colorBy(h ? h.income : null) + '"' + rs + '>' + fmtSigned(h ? h.income : null) + '</td>';
@@ -2156,7 +2156,6 @@
           (h.pending ? '<span class="tag np" style="margin-left:6px" title="申购待确认：确认日净值未披露，按最新净值估算计入">在途</span>' : '') +
           (h.cleared ? '<span class="cleared-date" style="margin-left:6px">' +
             (h.tx && h.tx.confirmDate ? h.tx.confirmDate.slice(5).replace('-', '.') : '') + ' 清仓</span>' : '') +
-          saleSpan(p) +
           '</div></td>' +
         '<td class="c num">' + mmdd(h.latestDate) + '</td>' +
         '<td class="c num">' + fmtNav(h.latestNav) + '</td>' +
