@@ -340,6 +340,10 @@ def build():
 
         issuer = extract_manager(flat, R) or (r.get("产品管理人") or "").strip()
         name = re.sub(r"^[（(][^）)]{2,12}[）)]", "", (r.get("产品名称") or "").strip())
+        # 说明书写法「产品名称为【…】」会把前缀和书名号带进名称
+        name = name.lstrip("为").lstrip("【[").rstrip("】]").strip()
+        if name.endswith("理财产"):
+            name += "品"
         reg = (r.get("登记编码") or "").strip()
         if not issuer or not name:
             dropped += 1
