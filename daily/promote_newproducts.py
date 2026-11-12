@@ -181,10 +181,20 @@ def main():
         if not a.no_nav:
             time.sleep(a.gap)
 
-    # 为已入库但净值不足 2 条的占位产品补抓
-    pending = [x for x in items if len(x.get("nav") or []) < 2][: a.max_pending]
+    # 为已入库但净值不足 2 条的占位产品补抓；同时轮换刷新净值日期落后的产品
+    asof = max((x.get("latestDate") or "") for x in items) if items else ""
+    pending = [x for x in items if len(x.get("nav") or []) < 2]
+    stale = [x for x in items if len(x.get("nav") or []) >= 2 and (x.get("latestDate") or "") < asof]
+    stale.sort(key=lambda x: x.get("latestDate") or "")
+    queue = []
+    while (pending or stale) and len(queue) < a.max_pending:
+        if pending:
+            queue.append(pending.pop(0))
+        if stale and len(queue) < a.max_pending:
+            queue.append(stale.pop(0))
+    pending = queue
     if pending and not a.no_nav:
-        print("待补净值 %d 只" % len(pending), flush=True)
+        print("待补/待刷新净值 %d 只" % len(pending), flush=True)
         for i, x in enumerate(pending, 1):
             print("[%d/%d] 补净值 %s" % (i, len(pending), x["regCode"]), flush=True)
             rows = fetch_nav(x["regCode"])
