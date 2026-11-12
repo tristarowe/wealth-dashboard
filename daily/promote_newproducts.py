@@ -41,6 +41,17 @@ def load_json(path, default):
 
 
 def fetch_nav(reg, tries=3):
+    """优先走「产品列表 + 净值列表」接口，详情接口在高频查询时会返回人机验证。"""
+    try:
+        import nav_bulk
+        rows, _ = nav_bulk.fetch(reg)
+        if rows:
+            return rows
+    except Exception as exc:
+        msg = str(exc)[:110]
+        print("  ! 列表接口抓取失败：%s" % msg, flush=True)
+        if "验证" in msg:
+            return []
     for attempt in range(1, tries + 1):
         try:
             rows = sources.fetch("chinawealth", {"regCode": reg, "shareCode": ""},
@@ -54,6 +65,16 @@ def fetch_nav(reg, tries=3):
                 return []
             time.sleep(6 * attempt)
     return []
+
+
+def meta_risk(reg):
+    """列表接口顺带返回的风险等级（仅用于补空值）。"""
+    try:
+        import nav_bulk
+        meta = nav_bulk.LAST_META.get(reg) or {}
+        return meta.get("risk") or ""
+    except Exception:
+        return ""
 
 
 def to_item(p, rows):
