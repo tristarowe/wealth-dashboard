@@ -1,6 +1,6 @@
 {
   "asOf": "2026-11-10",
-  "fetchedAt": "2026-11-12 20:02",
+  "fetchedAt": "2026-11-12 20:03",
   "source": "建行新品公告·销售文件要素表 + 中国理财网净值",
   "window": {
     "start": "2026-08-01",
@@ -1029,6 +1029,26 @@
       "latestNav": null
     },
     {
+      "id": "LZ7001126000970",
+      "name": "农银理财农银匠心·灵动30天理财产品第22期（低波优享）",
+      "short": "农银匠心·灵动30天第22期（低波优享）",
+      "org": "农银理财有限责任公司",
+      "orgShort": "农银理财",
+      "regCode": "Z7001126000970",
+      "risk": "",
+      "saleChannel": "建设银行",
+      "inception": "2026-10-16",
+      "raiseStart": "",
+      "raiseEnd": "",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
       "id": "LZ7005126000157",
       "name": "贝莱德建信理财贝淳金元90天持有期固定收益类理财产品1期",
       "short": "贝淳金元90天持有期1期",
@@ -1183,6 +1203,86 @@
       ],
       "latestDate": "2026-11-10",
       "latestNav": 1.0014
+    },
+    {
+      "id": "LZ7000926002142",
+      "name": "交银理财稳享固收精选日日开18号理财产品",
+      "short": "稳享固收精选日日开18号",
+      "org": "交银理财有限责任公司",
+      "orgShort": "交银理财",
+      "regCode": "Z7000926002142",
+      "risk": "",
+      "saleChannel": "建设银行",
+      "inception": "2026-10-15",
+      "raiseStart": "2026-10-14",
+      "raiseEnd": "2026-10-14",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7005126000158",
+      "name": "贝莱德建信理财贝淳金元60天持有期固定收益类理财产品1期",
+      "short": "贝淳金元60天持有期1期",
+      "org": "贝莱德建信理财有限责任公司",
+      "orgShort": "贝莱德建信理财",
+      "regCode": "Z7005126000158",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-10-15",
+      "raiseStart": "2026-10-14",
+      "raiseEnd": "2026-10-14",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7005126000138",
+      "name": "贝莱德建信理财贝淳金元150天持有期固定收益类理财产品1期",
+      "short": "贝淳金元150天持有期1期",
+      "org": "贝莱德建信理财有限责任公司",
+      "orgShort": "贝莱德建信理财",
+      "regCode": "Z7005126000138",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-10-15",
+      "raiseStart": "2026-10-14",
+      "raiseEnd": "2026-10-14",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7005126000159",
+      "name": "贝莱德建信理财贝淳固定收益类理财产品18期（每日开放）",
+      "short": "贝淳18期（每日开放）",
+      "org": "贝莱德建信理财有限责任公司",
+      "orgShort": "贝莱德建信理财",
+      "regCode": "Z7005126000159",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-10-15",
+      "raiseStart": "2026-10-14",
+      "raiseEnd": "2026-10-14",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
     },
     {
       "id": "LZ7001026001309",
