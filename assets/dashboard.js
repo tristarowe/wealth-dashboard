@@ -177,7 +177,7 @@
           product: p,
           m: {
             latestDate: p.latestDate, latestNav: p.latestNav,
-            inception: p.inception || '', days: 0, listing: 0,
+            inception: p.inception || p.latestDate, days: 0, listing: 0,
             sinceAnn: null, todayPer: null,
             windows: [blank, blank, blank, blank, blank, blank]
           }
@@ -203,7 +203,7 @@
       regCode: m.regCode || '',
       risk: m.risk || '',
       saleChannel: m.saleChannel || '',
-      inception: '',
+      inception: date,
       raiseStart: '', raiseEnd: '',
       dates: date ? [date] : [],
       nav: date && nav > 0 ? [nav] : [],
@@ -334,12 +334,25 @@
   window.DASHBOARD_HOLDINGS = HOLDINGS;
 
   // 当前选中的产品（顶部“覆盖产品”多选）
-  var selectedIds = DATA.products.map(function (p) { return p.id; });
+  /* 顶部产品多选的可选范围：报表产品 + 产品库全部产品（按 id 去重，报表数据优先） */
+  function pickableProducts() {
+    var out = [];
+    var seen = {};
+    DATA.products.forEach(function (p) { seen[p.id] = 1; out.push(p); });
+    LIB_MODEL.forEach(function (x) {
+      var p = x.product;
+      if (!p || !p.id || seen[p.id]) return;
+      seen[p.id] = 1;
+      out.push(p);
+    });
+    return out;
+  }
+
+  var selectedIds = pickableProducts().map(function (p) { return p.id; });
   var AGG = null;
 
   function selectedProducts() {
-    return DATA.products.filter(function (p) { return selectedIds.indexOf(p.id) !== -1; })
-      .concat(libHeldProducts());
+    return pickableProducts().filter(function (p) { return selectedIds.indexOf(p.id) !== -1; });
   }
 
   // 合计口径：按持仓份额把万收折算为当日收益（元），年化按当日前一净值日市值折算
@@ -472,8 +485,9 @@
   }
 
   function activeModels() {
-    return MODEL.filter(function (x) { return selectedIds.indexOf(x.product.id) !== -1; })
-      .concat(LIB_MODEL.filter(function (x) { return !!HOLD_BY_PID[x.product.id]; }));
+    return MODEL.concat(LIB_MODEL).filter(function (x) {
+      return selectedIds.indexOf(x.product.id) !== -1;
+    });
   }
 
   function peerAvg30Of(models) {
@@ -1633,7 +1647,6 @@
               (h.tx && h.tx.confirmDate ? h.tx.confirmDate.slice(5) + ' ' : '') + '清仓</span>' :
             '<span class="tag new" style="margin-left:6px">持仓</span>') : '') +
           (isNew ? '<span class="tag np" style="margin-left:6px">当月新品</span>' : '') +
-          (p.manual ? '<span class="tag" style="margin-left:6px;background:#f4f7f9;color:#7d939f" title="手工添加的产品">手工</span>' : '') +
           saleSpan(p) +
           '</div></td>' +
         '<td class="c pmeta">' + (riskShort(p) || '—') + '</td>' +
@@ -1643,9 +1656,7 @@
         '<td class="r num ' + colorBy(m.sinceAnn) + '">' + fmtAnn(m.sinceAnn) + '</td>' +
         '<td class="r num">' + fmtNav(m.latestNav) + '</td>' +
         '<td class="c num">' + mmdd(m.latestDate) + '</td>' +
-        '<td class="c cdate">' + (m.inception ?
-          '<span>' + m.inception + '</span><i>' + m.listing + ' 天</i>' :
-          '<span class="muted">—</span>') + '</td>' +
+        '<td class="c cdate"><span>' + m.inception + '</span><i>' + m.listing + ' 天</i></td>' +
         '<td class="c">' + (h ? '<button class="mini" data-detail="' + p.id + '">详情</button>' : '<span class="muted">—</span>') + '</td>' +
         '</tr>';
     }).join('');
@@ -1783,58 +1794,97 @@
     });
   }
 
-  /* ---------------- 添加产品（手工录入，保存到云端，所有设备共用） ---------------- */
+  /* ---------------- 添加产品 ---------------- */
+  var addState = { image: '', filename: '' };
+
   function resetAddModal() {
-    ['add-name', 'add-code', 'add-org', 'add-nav', 'add-navdate'].forEach(function (id) {
-      var el = document.getElementById(id);
-      if (el) el.value = '';
-    });
-    var risk = document.getElementById('add-risk');
-    if (risk) risk.value = '';
+    addState.image = '';
+    addState.filename = '';
+    var url = document.getElementById('add-url');
+    if (url) url.value = '';
+    var file = document.getElementById('add-file');
+    if (file) file.value = '';
+    var recog = document.getElementById('add-recog');
+    if (recog) { recog.hidden = true; recog.textContent = ''; }
+    var ok = document.getElementById('add-ok');
+    if (ok) ok.style.display = 'none';
+    var drop = document.getElementById('add-drop');
+    if (drop) drop.classList.remove('on');
+  }
+
+  function addRecog(text) {
+    var recog = document.getElementById('add-recog');
+    if (!recog) return;
+    recog.hidden = false;
+    recog.textContent = text;
   }
 
   function bindAddModal() {
+    var drop = document.getElementById('add-drop');
+    var file = document.getElementById('add-file');
+    if (drop && file) {
+      drop.addEventListener('click', function () { file.click(); });
+      drop.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); file.click(); }
+      });
+      ['dragenter', 'dragover'].forEach(function (ev) {
+        drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('on'); });
+      });
+      ['dragleave', 'drop'].forEach(function (ev) {
+        drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove('on'); });
+      });
+      drop.addEventListener('drop', function (e) {
+        var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+        if (f) readAddFile(f);
+      });
+      file.addEventListener('change', function () {
+        if (file.files && file.files[0]) readAddFile(file.files[0]);
+      });
+    }
+
+    var recogBtn = document.getElementById('add-recognize');
+    if (recogBtn) recogBtn.addEventListener('click', function () {
+      var url = (document.getElementById('add-url').value || '').trim();
+      var code = (url.match(/[A-Za-z]\d{8,16}/) || url.match(/\d{10,20}/) || [''])[0];
+      if (!url && !addState.image) { toast('请先粘贴产品链接或上传截图'); return; }
+      if (code) addRecog('已识别登记编码：' + code + '，提交后自动抓取净值');
+      else if (addState.image) addRecog('已识别截图「' + addState.filename + '」，提交后由产品库任务解析并抓取');
+      else addRecog('已识别产品页链接，提交后自动抓取净值与要素');
+    });
+
     var submit = document.getElementById('submit-add');
     if (submit) submit.addEventListener('click', function () {
-      var name = (document.getElementById('add-name').value || '').trim();
-      var code = (document.getElementById('add-code').value || '').trim();
-      var org = (document.getElementById('add-org').value || '').trim();
-      var risk = document.getElementById('add-risk').value || '';
-      var channel = document.getElementById('add-channel').value || '';
-      var nav = Number((document.getElementById('add-nav').value || '').trim());
-      var navDate = (document.getElementById('add-navdate').value || '').trim();
-      if (!name) { toast('请填写产品名称'); return; }
-      if (!(nav > 0)) { toast('请填写最新净值'); return; }
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(navDate)) { toast('请选择净值日期'); return; }
-      var dup = null;
-      if (code) {
-        dup = tradeProducts().filter(function (p) { return p.regCode === code; })[0] || null;
-      }
-      if (dup) { toast('该登记编码已在产品库：' + (dup.short || dup.name)); return; }
-      var item = {
-        id: code ? 'M' + code : 'M' + Date.now(),
-        name: name,
-        regCode: code,
-        org: org,
-        risk: risk,
-        saleChannel: channel,
-        nav: nav,
-        navDate: navDate
-      };
+      var url = (document.getElementById('add-url').value || '').trim();
+      if (!url && !addState.image) { toast('请填写产品链接或上传截图'); return; }
+      if (url && !/^https?:\/\//i.test(url)) { toast('产品链接需以 http:// 或 https:// 开头'); return; }
       submit.disabled = true;
-      window.STORE.addProduct(item).then(function () {
+      fetch('/api/product/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: url, image: addState.image, filename: addState.filename })
+      }).then(function (r) { return r.json(); }).then(function (res) {
         submit.disabled = false;
-        mergeManualProducts();
-        computeHoldings();
-        renderAll();
-        resetAddModal();
-        document.getElementById('modal-add').hidden = true;
-        toast('已加入产品库');
-      }).catch(function (e) {
+        if (!res || !res.ok) { toast((res && res.message) || '提交失败'); return; }
+        var ok = document.getElementById('add-ok');
+        if (ok) ok.style.display = 'block';
+        toast('已提交，预计下次更新入库');
+      }).catch(function () {
         submit.disabled = false;
-        toast(e.message || '保存失败，请检查网络');
+        toast('本地服务未启动，无法提交');
       });
     });
+  }
+
+  function readAddFile(f) {
+    if (!/^image\/(png|jpe?g)$/i.test(f.type)) { toast('仅支持 PNG / JPG 截图'); return; }
+    if (f.size > 6 * 1024 * 1024) { toast('截图不能超过 6MB'); return; }
+    var reader = new FileReader();
+    reader.onload = function () {
+      addState.image = String(reader.result || '');
+      addState.filename = f.name;
+      addRecog('已选择截图「' + f.name + '」，点击自动识别或直接提交');
+    };
+    reader.readAsDataURL(f);
   }
 
   /* ---------------- 交易 ---------------- */
@@ -2268,18 +2318,17 @@
   }
 
   function initDatePicker() {
-    var inputs = document.querySelectorAll('.dp-wrap input');
-    Array.prototype.forEach.call(inputs, function (input) {
-      var wrap = input.closest('.dp-wrap') || input;
-      wrap.addEventListener('click', function (e) { e.preventDefault(); openDp(input); });
-      input.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDp(input); }
-        else if (e.key === 'Escape') closeDp();
-      });
+    var input = document.getElementById('trade-apply');
+    if (!input) return;
+    var wrap = input.closest('.dp-wrap') || input;
+    wrap.addEventListener('click', function (e) { e.preventDefault(); openDp(input); });
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDp(input); }
+      else if (e.key === 'Escape') closeDp();
     });
     document.addEventListener('mousedown', function (e) {
       if (!dpEl || dpEl.hidden) return;
-      if (dpEl.contains(e.target) || e.target.closest('.dp-wrap')) return;
+      if (dpEl.contains(e.target) || input.contains(e.target) || e.target === input) return;
       closeDp();
     });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDp(); });
@@ -2701,8 +2750,9 @@
 
   /* ---------------- 顶部产品多选 ---------------- */
   function shortOf(id) {
-    for (var i = 0; i < DATA.products.length; i++) {
-      if (DATA.products[i].id === id) return DATA.products[i].short;
+    var list = pickableProducts();
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].id === id) return list[i].short || list[i].name;
     }
     return '';
   }
@@ -2711,7 +2761,7 @@
     var el = document.getElementById('ms-label');
     if (!el) return;
     var n = selectedIds.length;
-    var total = DATA.products.length;
+    var total = pickableProducts().length;
     el.textContent = n + ' 款';
     var trigger = document.getElementById('ms-trigger');
     if (trigger) {
@@ -2736,7 +2786,7 @@
   function renderPickerList() {
     var list = document.getElementById('ms-list');
     if (!list) return;
-    var items = sortBySearch(DATA.products.filter(pickerMatches), pickerQuery);
+    var items = sortBySearch(pickableProducts().filter(pickerMatches), pickerQuery);
     if (!items.length) {
       list.innerHTML = '<div class="ms-empty">未找到匹配产品</div>';
       return;
@@ -3007,13 +3057,14 @@
     var toggleBtn = panel.querySelector('[data-act="toggle"]');
     function syncPickerToggle() {
       if (!toggleBtn) return;
-      var all = DATA.products.length > 0 && selectedIds.length >= DATA.products.length;
+      var total = pickableProducts().length;
+      var all = total > 0 && selectedIds.length >= total;
       toggleBtn.textContent = all ? '反选' : '全选';
     }
     window.__syncPickerToggle = syncPickerToggle;
     syncPickerToggle();
     if (toggleBtn) toggleBtn.addEventListener('click', function () {
-      var ids = DATA.products.map(function (p) { return p.id; });
+      var ids = pickableProducts().map(function (p) { return p.id; });
       var all = selectedIds.length >= ids.length;
       selectedIds = all ? [] : ids;
       renderPickerList();
@@ -3033,7 +3084,7 @@
     computeLibrary();
     computeHoldings();
 
-    var ids = data.products.map(function (p) { return p.id; });
+    var ids = pickableProducts().map(function (p) { return p.id; });
     selectedIds = selectedIds.filter(function (id) { return ids.indexOf(id) !== -1; });
     if (!selectedIds.length) selectedIds = ids.slice();
 
@@ -3174,8 +3225,6 @@
     bindTradeModal();
     initDatePicker();
     bindAddModal();
-    mergeManualProducts();
-    computeHoldings();
     renderAll();
 
     var wasCompact = (window.innerWidth || 1200) < 480;
@@ -3188,7 +3237,7 @@
 
   /* 云端后台刷新完成后由页面调用，重新计算持仓并重绘（等首屏 init 完成后再跑） */
   function refreshFromStore() {
-    function run() { mergeManualProducts(); computeHoldings(); renderAll(); }
+    function run() { computeHoldings(); renderAll(); }
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', function () { setTimeout(run, 0); });
     } else {
