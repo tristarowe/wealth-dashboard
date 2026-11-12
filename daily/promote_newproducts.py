@@ -44,8 +44,9 @@ def fetch_nav(reg, tries=3):
     """优先走「产品列表 + 净值列表」接口，详情接口在高频查询时会返回人机验证。"""
     try:
         import nav_bulk
-        rows, _ = nav_bulk.fetch(reg)
-        if rows:
+        rows, meta = nav_bulk.fetch(reg)
+        if rows or meta:
+            # 主档存在但无净值记录 = 尚未披露，不再回退详情接口（该接口限频更严）
             return rows
     except Exception as exc:
         msg = str(exc)[:110]
@@ -91,7 +92,7 @@ def to_item(p, rows):
         "org": issuer,
         "orgShort": p.get("orgShort") or _org_short(issuer),
         "regCode": p["regCode"],
-        "risk": (p.get("risk") or "").upper(),
+        "risk": (p.get("risk") or "").upper() or meta_risk(p["regCode"]),
         "saleChannel": p.get("saleChannel") or "",
         "inception": p.get("establish") or p.get("inception") or "",
         "raiseStart": p.get("raiseStart") or "",
@@ -145,7 +146,7 @@ def main():
     ap.add_argument("--no-nav", action="store_true", help="只入库不抓净值")
     ap.add_argument("--gap", type=float, default=1.2)
     ap.add_argument("--max-new", type=int, default=20, help="单次最多并入条数")
-    ap.add_argument("--max-pending", type=int, default=5, help="单次最多补净值的占位产品数")
+    ap.add_argument("--max-pending", type=int, default=20, help="单次最多补净值的占位产品数")
     a = ap.parse_args()
 
     np = load_json(NP_JSON, {})
@@ -190,6 +191,8 @@ def main():
             if len(rows) >= 2:
                 fresh = to_item(x, rows)
                 x.update({k: fresh[k] for k in ("dates", "nav", "per10k", "latestDate", "latestNav")})
+                if not x.get("risk") and fresh.get("risk"):
+                    x["risk"] = fresh["risk"]
                 save(items)
                 print("  OK %d 条" % len(rows), flush=True)
             else:
