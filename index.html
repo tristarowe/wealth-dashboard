@@ -418,6 +418,10 @@
   @media (max-width:900px){
     .swipe-tip{display:block}
     #prod-table tbody td:nth-child(2) .pname{white-space:normal}
+    /* iOS 聚焦输入框时字号小于16px会强制放大页面，手机端统一16px避免缩放 */
+    .ms-search{font-size:16px;width:150px;padding:6px 8px}
+    .ms-panel{width:216px}
+    #prod-search,#trade-prod-q{font-size:16px}
   }
   @media (max-width:760px){
     body{padding:14px 12px 40px}
