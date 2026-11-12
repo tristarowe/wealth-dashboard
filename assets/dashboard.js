@@ -630,7 +630,7 @@
         (h ? '市值 ' + fmtMoney(h.mv) + ' − 成本 ' + fmtMoney(h.cost) : '暂无持仓') + '">' + fmtSigned(h ? h.profit : null) + '</td>';
       html += '<td class="r num ' + colorBy(h ? h.ann : null) + '"' + rs + '>' + fmtAnn(h ? h.ann : null) + '</td>';
       html += '<td class="r num"' + rs + '>' + (h ? fmtMoney(h.mv) : '—') + '</td>';
-      html += '<td class="r num"' + rs + '>' + (h ? '<span class="days">' + h.days + '</span>天' : '—') + '</td>';
+      html += '<td class="r num dcell"' + rs + '>' + (h ? '<span class="days">' + h.days + '</span>天' : '—') + '</td>';
       html += '<td class="c mlabel">' + lbl + '</td>';
 
       var perCells = '';
@@ -2326,7 +2326,7 @@
         '<td class="r num">' + fmtMoney(h.mv) + '</td>' +
         '<td class="r num ' + colorBy(h.profit) + '" title="持仓收益 = 市值 − 成本">' + fmtSigned(h.profit) + '</td>' +
         '<td class="r num ' + colorBy(h.ann) + '">' + fmtAnn(h.ann) + '</td>' +
-        '<td class="r num"><span class="days">' + h.days + '</span>天</td>' +
+        '<td class="r num dcell"><span class="days">' + h.days + '</span>天</td>' +
         '<td class="c"><button class="mini buy" data-act="add" data-pid="' + p.id + '">加购</button> ' +
           '<button class="mini sell" data-act="redeem" data-pid="' + p.id + '">赎回</button> ' +
           '<button class="mini warn" data-act="close" data-pid="' + p.id + '">清仓</button></td>' +
