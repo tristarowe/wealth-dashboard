@@ -20,6 +20,33 @@
     window.TRANSACTIONS.items = items;
   }
 
+  /* ---------------- 代销机构口径 ---------------- */
+  /* 统一用简称；代销机构必须是银行，理财公司名（发行机构）一律判为待核实 */
+  var BANK_SHORT = {
+    '中国建设银行': '建设银行', '中国工商银行': '工商银行', '中国农业银行': '农业银行',
+    '中国邮政储蓄银行': '邮储银行', '中国银行': '中国银行', '交通银行': '交通银行',
+    '中国民生银行': '民生银行', '中国光大银行': '光大银行', '中国华夏银行': '华夏银行',
+    '上海浦东发展银行': '浦发银行', '浦东发展银行': '浦发银行', '中国平安银行': '平安银行',
+    '中国兴业银行': '兴业银行', '中国中信银行': '中信银行', '中国招商银行': '招商银行',
+    '中国广发银行': '广发银行', '中国渤海银行': '渤海银行', '中国浙商银行': '浙商银行',
+    '中国恒丰银行': '恒丰银行', '中国邮政储蓄': '邮储银行'
+  };
+
+  function bankShort(name) {
+    var s = String(name || '').trim().replace(/(股份有限公司|有限责任公司|有限公司)$/, '').trim();
+    if (BANK_SHORT[s]) return BANK_SHORT[s];
+    if (/^中国([\u4e00-\u9fa5]{2,4}银行)$/.test(s)) return s.slice(2);
+    return s;
+  }
+
+  function normChannel(ch, issuer) {
+    var c = bankShort(String(ch || '').split(/[；;/,，]/)[0]);
+    if (!c || !/银行$/.test(c) || /理财/.test(c)) return '待核实';
+    var owner = bankShort(issuer).replace(/理财$/, '');
+    if (owner && c === owner) return '待核实';
+    return c;
+  }
+
   function clean(row) {
     var o = {};
     for (var k in row) {
@@ -127,6 +154,10 @@
         out.push(o);
       });
     }
+    out.forEach(function (o) {
+      o.channel = normChannel(o.channel || o.saleChannel, o.issuer);
+      o.saleChannel = o.channel === '待核实' ? '' : o.channel;
+    });
     return out;
   }
 
@@ -169,8 +200,18 @@
     rows.forEach(function (p) {
       var o = clean(p);
       var k = npKey(o);
-      if (!map[k]) order.push(k);
-      map[k] = o;
+      o.channel = normChannel(o.channel || o.saleChannel, o.issuer);
+      o.saleChannel = o.channel === '待核实' ? '' : o.channel;
+      if (map[k]) {
+        /* 同一产品以本地官网公告抓取结果为准，云端只补空缺字段 */
+        var base = map[k];
+        for (var f in o) {
+          if (base[f] === undefined || base[f] === null || base[f] === '') base[f] = o[f];
+        }
+      } else {
+        order.push(k);
+        map[k] = o;
+      }
     });
     var list = order.map(function (k) { return map[k]; });
 
