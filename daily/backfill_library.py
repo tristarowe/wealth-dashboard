@@ -110,7 +110,7 @@ def main():
             "org": m["issuer"],
             "orgShort": _org_short(m["issuer"]),
             "regCode": m["regCode"],
-            "risk": (m.get("risk") or "").upper(),
+            "risk": (m.get("risk") or "").upper() or meta_risk(m["regCode"]),
             "saleChannel": clean_channels(m.get("saleChannel") or "") or "建设银行",
             "inception": m["establish"],
             "raiseStart": m.get("raiseStart") or "",
