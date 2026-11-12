@@ -150,14 +150,14 @@
   .prod-tbl tbody td.num:not([data-col="p10k"]){color:var(--ink)}
   /* 产品库：风险等级 / 持有期两列与今日万收等数值列同字号同字体观感 */
   .prod-tbl tbody td.pmeta{font-family:Consolas,'Microsoft YaHei',monospace;font-size:12.5px;color:#41545f}
-  /* 三张主表：固定列宽，收紧列距，列宽按比例均匀铺满 */
-  #hold-table,#sum-table,#prod-table{table-layout:fixed}
+  /* 四张数据表：固定列宽，相同内容同列宽，收紧列距 */
+  #hold-table,#sum-table,#prod-table,#flow-table{table-layout:fixed}
   #hold-table thead th,#hold-table tbody td{padding:9px 7px}
   #hold-table tbody td:nth-child(2),#hold-table thead th:nth-child(2){padding-left:10px}
   #sum-table thead th,#sum-table tbody td{padding:10px 8px}
   #sum-table tbody td:first-child,#sum-table thead th:first-child{padding-left:12px}
-  #prod-table thead th{padding:9px 8px}
-  #prod-table tbody td{padding:7px 8px}
+  #prod-table thead th,#flow-table thead th{padding:9px 8px}
+  #prod-table tbody td,#flow-table tbody td{padding:7px 8px}
   #prod-table tbody td:nth-child(2),#prod-table thead th:nth-child(2){padding-left:10px}
   /* 持仓天数：整列与表头居中对齐，数字与「天」同字体、同字号、同字重 */
   #hold-table th[data-sort="holddays"],#sum-table th[data-sort="days"]{text-align:center}
@@ -256,11 +256,8 @@
   .sel-opt{display:block;width:100%;text-align:left;border:0;background:transparent;font-family:var(--font);font-size:12.5px;line-height:1.4;color:var(--ink);padding:6px 9px;border-radius:7px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .sel-opt:hover{background:#f6fafc}
   .sel-opt.on{background:#e4f0f5;color:var(--accent-deep);font-weight:700}
-  /* 产品库搜索候选 */
+  /* 产品库搜索候选：只列名称，不展示登记编码 */
   .prod-sug{max-width:min(92vw,340px)}
-  .prod-sug .sel-opt{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
-  .prod-sug .sug-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .prod-sug .sug-code{flex:none;font-family:var(--mono);font-style:normal;font-size:11px;color:var(--muted)}
   .chip{font-size:12.5px;padding:5px 10px;border-radius:999px;border:1px solid #dbe7ed;background:#f6fafc;cursor:pointer;color:var(--muted);width:auto;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;line-height:1.5}
   .chip.on{background:#e4f0f5;border-color:#cbe0e8;color:var(--accent-deep);font-weight:700}
   .fl-label{font-size:12px;color:var(--muted);margin-left:2px}
@@ -513,11 +510,12 @@
     /* 手机端三张宽表统一收窄列宽，提升一屏可读列数 */
     #hold-table,#sum-table,#prod-table{font-size:12.5px}
     /* 手机端恢复自适应列宽（表头不裁切），横向滚动浏览 */
-    #hold-table,#sum-table,#prod-table{table-layout:auto}
-    #hold-table colgroup col,#sum-table colgroup col,#prod-table colgroup col{width:auto !important}
+    #hold-table,#sum-table,#prod-table,#flow-table{table-layout:auto}
+    #hold-table colgroup col,#sum-table colgroup col,#prod-table colgroup col,#flow-table colgroup col{width:auto !important}
     #hold-table thead th,#hold-table tbody td,
     #sum-table thead th,#sum-table tbody td,
-    #prod-table thead th,#prod-table tbody td{padding:8px 6px}
+    #prod-table thead th,#prod-table tbody td,
+    #flow-table thead th,#flow-table tbody td{padding:8px 6px}
     #hold-table thead th,#prod-table thead th{font-size:12px}
     #prod-table thead th{min-width:0 !important}
     #hold-table{min-width:1000px}
@@ -745,12 +743,12 @@
       <div class="card tbl-scroll">
         <table id="hold-table">
           <colgroup>
-            <col style="width:3%"><col><col style="width:5.4%"><col style="width:5.4%">
-            <col style="width:5.6%"><col style="width:5.6%"><col style="width:5.4%">
-            <col style="width:6.8%"><col style="width:4.8%"><col style="width:5.2%">
-            <col style="width:5.7%"><col style="width:5.7%"><col style="width:5.7%">
-            <col style="width:5.7%"><col style="width:5.7%"><col style="width:6.2%">
-            <col style="width:4.6%">
+            <col style="width:3%"><col><col style="width:5.2%"><col style="width:5.5%">
+            <col style="width:5.8%"><col style="width:5.8%"><col style="width:5.5%">
+            <col style="width:6.7%"><col style="width:5.2%"><col style="width:5.3%">
+            <col style="width:5.2%"><col style="width:5.2%"><col style="width:5.2%">
+            <col style="width:5.2%"><col style="width:5.2%"><col style="width:5.9%">
+            <col style="width:4.9%">
           </colgroup>
           <thead>
             <tr>
@@ -862,9 +860,9 @@
       <div class="card tbl-scroll">
         <table id="sum-table">
           <colgroup>
-            <col><col style="width:7.5%"><col style="width:6.5%"><col style="width:10.5%">
-            <col style="width:11.5%"><col style="width:10%"><col style="width:9%">
-            <col style="width:6.5%"><col style="width:11.5%">
+            <col><col style="width:7.6%"><col style="width:7%"><col style="width:9.6%">
+            <col style="width:10.2%"><col style="width:9.6%"><col style="width:7.6%">
+            <col style="width:7%"><col style="width:12.4%">
           </colgroup>
           <thead>
             <tr>
@@ -902,6 +900,11 @@
           <button class="mini" id="clear-filter" style="margin-left:auto">清除筛选</button>
         </div>
         <table id="flow-table">
+          <colgroup>
+            <col style="width:11.6%"><col><col style="width:6.2%"><col style="width:10.6%">
+            <col style="width:9.2%"><col style="width:10.6%"><col style="width:9.6%">
+            <col style="width:7.4%"><col style="width:9.6%">
+          </colgroup>
           <thead>
             <tr>
               <th>交易时间</th><th>产品名称</th><th class="c">类型</th><th class="r">份额</th>
@@ -965,10 +968,10 @@
       <div class="card tbl-scroll">
         <table class="prod-tbl" id="prod-table">
           <colgroup>
-            <col style="width:3%"><col><col style="width:4.8%"><col style="width:5.8%">
-            <col style="width:6.4%"><col style="width:5.7%"><col style="width:5.7%">
-            <col style="width:5.7%"><col style="width:6.8%"><col style="width:6.4%">
-            <col style="width:6.6%"><col style="width:7.8%"><col style="width:9.3%">
+            <col style="width:3%"><col><col style="width:5%"><col style="width:5.8%">
+            <col style="width:6.6%"><col style="width:6%"><col style="width:6%">
+            <col style="width:6%"><col style="width:6.6%"><col style="width:6.6%">
+            <col style="width:6%"><col style="width:8%"><col style="width:9.6%">
           </colgroup>
           <thead>
             <tr>
