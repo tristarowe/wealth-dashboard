@@ -1742,6 +1742,8 @@
     tbl.querySelectorAll('.m-p10k').forEach(function (el) { el.style.display = on.per10k ? '' : 'none'; });
     tbl.querySelectorAll('.m-ann').forEach(function (el) { el.style.display = on.ann ? '' : 'none'; });
     tbl.querySelectorAll('[data-col="p10k"]').forEach(function (el) { el.style.display = on.per10k ? '' : 'none'; });
+    var p10kCol = document.getElementById('prod-p10k-col');
+    if (p10kCol) p10kCol.style.width = on.per10k ? '6.1%' : '0';
   }
 
   function populateOrgSelect() {
