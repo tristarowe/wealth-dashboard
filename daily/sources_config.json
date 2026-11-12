@@ -1,0 +1,16 @@
+{
+  "p2150": [
+    {
+      "adapter": "bocom",
+      "params": { "fundcode": "5811226799" }
+    }
+  ],
+  "p0157": [
+    {
+      "adapter": "ccb",
+      "params": { "ecd": "JXJXZDCY301229035", "mkt": "0JH", "sale": "005" }
+    }
+  ],
+  "p2218": [],
+  "p1090": []
+}
