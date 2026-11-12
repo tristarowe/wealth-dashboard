@@ -14,7 +14,7 @@ from datetime import datetime
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
-from promote_newproducts import fetch_nav, save  # noqa: E402
+from promote_newproducts import fetch_nav, save, meta_risk  # noqa: E402
 
 CAND_JSON = os.path.join(HERE, "library_candidates.json")
 LIB_JSON = os.path.join(HERE, "library.json")
