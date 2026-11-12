@@ -544,7 +544,7 @@
   /* ---------------- 模块 01：盈亏明细 ---------------- */
   var profitState = { key: 'today', dir: 'desc' };
   var holdMetric = 'both';
-  var sumState = { key: '', dir: 'desc' };
+  var sumState = { key: 'mv', dir: 'desc' };
   var sumSorters = {
     name: function (h) { return h.product.short || h.product.name; },
     navdate: function (h) { return h.latestDate || ''; },
