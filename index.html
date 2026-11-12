@@ -254,6 +254,7 @@
   /* 加购 / 赎回 用不同文字颜色区分：加购深青、赎回棕金、清仓红色危险 */
   .mini.buy{color:var(--accent);border-color:#cbe0e8;background:#f2f8fa}
   .mini.sell{color:#a2701f;border-color:#f1e1c6;background:#fdf8ef}
+  .mini[disabled]{color:#c3cfd6;border-color:#e6edf1;background:#fafcfd;cursor:not-allowed}
   .stars{color:#d9b44a;cursor:pointer;font-size:14px;background:none;border:0;padding:0;line-height:1}
   .pager{display:flex;align-items:center;gap:10px;justify-content:flex-end;padding:12px 4px;font-size:12.5px;color:var(--muted)}
   .pager button{min-width:28px;height:28px;border:1px solid #dbe7ed;background:#f6fafc;border-radius:6px;font-family:var(--mono);font-size:12.5px;cursor:pointer;color:var(--muted)}
@@ -309,6 +310,7 @@
   .seg-group .seg{flex:1;display:flex;align-items:center;justify-content:center;text-align:center;border-radius:0;border:0;border-right:1px solid var(--rule);background:#fff;font-family:var(--font);font-size:13px;line-height:1.5;padding:8px 6px;cursor:pointer;color:var(--muted)}
   .seg-group .seg:last-child{border-right:0}
   .seg-group .seg:hover{background:#f6fafc}
+  .seg-group .seg[disabled]{color:#c3cfd6;background:#fafcfd;cursor:not-allowed}
   .seg-group .seg.on{background:#e4f0f5;color:var(--accent-deep);font-weight:700}
   .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
   .sr-list{max-height:152px;overflow:auto;margin-top:6px}
