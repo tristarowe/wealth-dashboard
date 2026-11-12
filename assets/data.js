@@ -1,6 +1,6 @@
 window.REPORT_DATA = {
   "asOf": "2026-11-12",
-  "fetchedAt": "2026-11-12 12:44",
+  "fetchedAt": "2026-11-12 12:05",
   "products": [
     {
       "id": "p2150",
@@ -1012,7 +1012,7 @@ window.REPORT_DATA = {
       "regCode": "Z7001926001090",
       "shareCode": "2601NB045A",
       "inception": "2026-08-26",
-      "latestDate": "2026-11-09",
+      "latestDate": "2026-11-10",
       "officialAnnual": null,
       "officialAsOf": null,
       "dates": [
@@ -1065,7 +1065,8 @@ window.REPORT_DATA = {
         "2026-11-04",
         "2026-11-05",
         "2026-11-06",
-        "2026-11-09"
+        "2026-11-09",
+        "2026-11-10"
       ],
       "nav": [
         1.0,
@@ -1117,6 +1118,7 @@ window.REPORT_DATA = {
         1.0047,
         1.0048,
         1.0049,
+        1.005,
         1.005
       ],
       "per10k": [
@@ -1169,7 +1171,8 @@ window.REPORT_DATA = {
         2.0,
         1.0,
         1.0,
-        1.0
+        1.0,
+        0.0
       ],
       "sourceName": "中国理财网"
     }
