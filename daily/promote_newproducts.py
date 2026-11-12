@@ -10,6 +10,7 @@
 import argparse
 import json
 import os
+import subprocess
 import sys
 import time
 from datetime import datetime
@@ -98,6 +99,25 @@ def save(items):
         f.write("window.PRODUCT_LIBRARY = " + json.dumps(payload, ensure_ascii=False) + ";\n")
 
 
+def commit_in_ci():
+    """GitHub Actions 中自动提交产品库变更（工作流只提交净值文件，这里补齐）。"""
+    if os.environ.get("GITHUB_ACTIONS") != "true":
+        return
+    files = [LIB_JS, LIB_JSON, NP_JSON, os.path.join(ROOT, "assets", "newproducts.js")]
+    try:
+        subprocess.run(["git", "add"] + files, check=False, timeout=120)
+        diff = subprocess.run(["git", "diff", "--cached", "--quiet"], check=False)
+        if diff.returncode == 0:
+            return
+        subprocess.run(["git", "-c", "user.name=github-actions[bot]",
+                        "-c", "user.email=41898282+github-actions[bot]@users.noreply.github.com",
+                        "commit", "-m", "data: 新品成立后并入产品库"], check=False, timeout=120)
+        subprocess.run(["git", "push"], check=False, timeout=180)
+        print("已在 CI 中提交产品库变更", flush=True)
+    except Exception as exc:
+        print("CI 提交产品库变更失败：%s" % exc, flush=True)
+
+
 def main():
     ap = argparse.ArgumentParser(description="新品成立后并入产品库")
     ap.add_argument("--today", default=datetime.now().strftime("%Y-%m-%d"))
@@ -159,6 +179,7 @@ def main():
         print("无需并入：新品预告中没有已成立且未入库的产品", flush=True)
         return 0
     print("完成：本次新并入 %d 只，产品库共 %d 只" % (added, len(items)), flush=True)
+    commit_in_ci()
     return 0
 
 
