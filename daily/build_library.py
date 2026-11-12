@@ -93,7 +93,7 @@ def collect(a):
             "quotaWan": extract_quota(flat),
             "risk": (r.get("风险等级_R级") or "").upper(),
             "mode": mode,
-            "saleChannel": bank_short(r.get("产品销售机构_简称") or ""),
+            "saleChannel": bank_short(r.get("产品销售机构_简称") or "") or "建设银行",
         })
     out.sort(key=lambda x: x["establish"], reverse=True)
     print("成立日 ∈ [%s, %s) 且去重后 %d 条" % (LIB_START, today, len(out)), flush=True)
