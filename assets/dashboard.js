@@ -39,11 +39,38 @@
     return i === -1 ? null : p.nav[i];
   }
 
-  /* 确认日按申购日 T+1 自动换算，遇周末顺延至下一工作日 */
+  /* 确认日按申购日 T+1 自动换算，遇周末/法定节假日顺延至下一交易日 */
+  var MARKET_HOLIDAYS = [
+    ['2025-01-01', '2025-01-01'],
+    ['2025-01-28', '2025-02-04'],
+    ['2025-04-04', '2025-04-06'],
+    ['2025-05-01', '2025-05-05'],
+    ['2025-05-31', '2025-06-02'],
+    ['2025-10-01', '2025-10-08'],
+    ['2026-01-01', '2026-01-03'],
+    ['2026-02-15', '2026-02-22'],
+    ['2026-04-04', '2026-04-06'],
+    ['2026-05-01', '2026-05-05'],
+    ['2026-06-19', '2026-06-21'],
+    ['2026-09-25', '2026-09-27'],
+    ['2026-10-01', '2026-10-07']
+  ];
+
+  /* 是否休市：周末或法定节假日 */
+  function isMarketClosed(d) {
+    var w = d.getDay();
+    if (w === 0 || w === 6) return true;
+    var s = isoDate(d);
+    for (var i = 0; i < MARKET_HOLIDAYS.length; i++) {
+      if (s >= MARKET_HOLIDAYS[i][0] && s <= MARKET_HOLIDAYS[i][1]) return true;
+    }
+    return false;
+  }
+
   function nextWorkday(s) {
     var d = s ? parseDate(s) : null;
     if (!d || isNaN(d.getTime())) return '';
-    do { d = new Date(d.getTime() + DAY); } while (d.getDay() === 0 || d.getDay() === 6);
+    do { d = new Date(d.getTime() + DAY); } while (isMarketClosed(d));
     return isoDate(d);
   }
 
