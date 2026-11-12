@@ -2225,14 +2225,19 @@
     closePanel();
   }
 
-  /* 交易汇总行：待确认申购计入（标记在途），清仓次日起剔除 */
+  /* 交易汇总行：待确认申购计入（标记在途），已清仓按「确认日 +1 天」剔除 */
   function summaryRows() {
     var today = isoDate(new Date());
     var rows = [];
     HOLDINGS.forEach(function (h) {
       if (h.cleared) {
         var cd = h.tx && h.tx.confirmDate;
-        if (cd && cd < today) return;
+        if (cd) {
+          /* 剔除日 = 清仓确认份额日 + 1 天：12 号确认，13 号才从交易汇总剔除 */
+          var cut = new Date(cd + 'T00:00:00');
+          cut.setDate(cut.getDate() + 1);
+          if (today >= isoDate(cut)) return;
+        }
       }
       rows.push({
         product: h.product, latestDate: h.latestDate, latestNav: h.latestNav,
