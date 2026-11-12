@@ -2013,10 +2013,69 @@
     closePanel();
   }
 
+  /* 交易汇总行：待确认申购计入（标记在途），清仓次日起剔除 */
+  function summaryRows() {
+    var today = isoDate(new Date());
+    var rows = [];
+    HOLDINGS.forEach(function (h) {
+      if (h.cleared) {
+        var cd = h.tx && h.tx.confirmDate;
+        if (cd && cd < today) return;
+      }
+      rows.push({
+        product: h.product, latestDate: h.latestDate, latestNav: h.latestNav,
+        shares: h.shares, cost: h.cost, mv: h.mv, profit: h.profit, ann: h.ann,
+        days: h.days, cleared: h.cleared, tx: h.tx, pending: false
+      });
+    });
+    var pend = {};
+    ((window.TRANSACTIONS && window.TRANSACTIONS.items) || []).forEach(function (t) {
+      if (t.type !== '申购' || txStatus(t) !== '在途') return;
+      var p = findProductById(t.pid);
+      if (!p) return;
+      var latestNav = p.nav[p.nav.length - 1];
+      var nav = Number(t.confirmNav) || latestNav || 1;
+      var sh = Number(t.shares);
+      if (!(sh > 0)) sh = (Number(t.amount) || 0) / nav;
+      var rec = pend[p.id];
+      if (!rec) {
+        rec = pend[p.id] = {
+          product: p, latestDate: p.latestDate, latestNav: latestNav,
+          shares: 0, cost: 0, tx: t
+        };
+      }
+      rec.shares += sh;
+      rec.cost += Number(t.amount) || sh * nav;
+    });
+    Object.keys(pend).forEach(function (pid) {
+      var q = pend[pid];
+      var row = null;
+      for (var i = 0; i < rows.length; i++) {
+        if (rows[i].product.id === pid) { row = rows[i]; break; }
+      }
+      if (row) {
+        row.shares += q.shares;
+        row.cost += q.cost;
+        row.mv = row.shares * row.latestNav;
+        row.profit = row.mv - row.cost;
+        row.ann = (row.days > 0 && row.cost > 0) ? row.profit / row.cost * 365 / row.days * 100 : row.ann;
+        row.pending = true;
+      } else {
+        rows.push({
+          product: q.product, latestDate: q.latestDate, latestNav: q.latestNav,
+          shares: q.shares, cost: q.cost, mv: q.shares * q.latestNav,
+          profit: q.shares * q.latestNav - q.cost,
+          ann: null, days: 0, cleared: false, tx: q.tx, pending: true
+        });
+      }
+    });
+    return rows;
+  }
+
   function renderTradeSummary() {
     var tbody = document.getElementById('sum-body');
     if (!tbody) return;
-    var rows = HOLDINGS.slice();
+    var rows = summaryRows();
     if (sumState.key && sumSorters[sumState.key]) {
       var get = sumSorters[sumState.key];
       var dir = sumState.dir === 'asc' ? 1 : -1;
@@ -2037,6 +2096,7 @@
       return '<tr>' +
         '<td><div class="pname"><a class="plink" href="javascript:void(0)" data-goto-trade="' + p.id + '">' +
           (p.short || p.name) + '</a>' +
+          (h.pending ? '<span class="tag np" style="margin-left:6px" title="申购待确认：确认日净值未披露，按最新净值估算计入">在途</span>' : '') +
           (h.cleared ? '<span class="cleared-date" style="margin-left:6px">' +
             (h.tx && h.tx.confirmDate ? h.tx.confirmDate.slice(5).replace('-', '.') : '') + ' 清仓</span>' : '') +
           '</div></td>' +
