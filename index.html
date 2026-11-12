@@ -88,6 +88,7 @@
   .pname .salech{display:block;font-size:10.5px;line-height:1.5;color:#8a9aa5;font-weight:400;letter-spacing:0;margin-top:1px}
   .plink{color:inherit;text-decoration:none;border-bottom:1px dashed #b9ccd4;cursor:pointer}
   .plink:hover{color:var(--accent-deep);border-bottom-color:var(--accent)}
+  .pname .ptags{display:inline-flex;align-items:baseline;gap:6px;margin-left:6px}
   .cdate span{display:block;font-family:var(--mono);font-size:12px;color:var(--ink);white-space:nowrap}
   .cdate i{display:block;font-style:normal;font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-top:1px}
   .nav-under{display:none}
@@ -237,6 +238,15 @@
   .filters input[type="search"]:focus{outline:none;border-color:var(--accent)}
   .filters #open-add{margin-left:auto;flex:none}
   .filters .sp{flex:1}
+  /* 筛选下拉：原生 select 展开列表字号无法控制，改为自绘下拉 */
+  .filters .sel-wrap{position:relative;display:inline-block;flex:none;width:112px}
+  .filters .sel-wrap select{width:100%;padding-right:22px;appearance:none;-webkit-appearance:none;-moz-appearance:none;cursor:pointer;text-overflow:ellipsis}
+  .filters .sel-wrap::after{content:'';position:absolute;right:9px;top:50%;width:5px;height:5px;margin-top:-3.5px;border-right:1.4px solid #8fa5b1;border-bottom:1.4px solid #8fa5b1;transform:rotate(45deg);pointer-events:none}
+  .filters .sel-hit{position:absolute;inset:0;z-index:2;display:block;width:100%;height:100%;padding:0;border:0;background:transparent;cursor:pointer;font-size:0;color:transparent}
+  .sel-pop{position:fixed;z-index:250;min-width:132px;max-width:min(80vw,240px);max-height:264px;overflow:auto;background:#fff;border:1px solid #dbe7ed;border-radius:10px;box-shadow:0 12px 28px rgba(28,58,80,.16);padding:4px;-webkit-overflow-scrolling:touch}
+  .sel-opt{display:block;width:100%;text-align:left;border:0;background:transparent;font-family:var(--font);font-size:12.5px;line-height:1.4;color:var(--ink);padding:6px 9px;border-radius:7px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sel-opt:hover{background:#f6fafc}
+  .sel-opt.on{background:#e4f0f5;color:var(--accent-deep);font-weight:700}
   .chip{font-size:12.5px;padding:5px 10px;border-radius:999px;border:1px solid #dbe7ed;background:#f6fafc;cursor:pointer;color:var(--muted);width:auto;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;line-height:1.5}
   .chip.on{background:#e4f0f5;border-color:#cbe0e8;color:var(--accent-deep);font-weight:700}
   .fl-label{font-size:12px;color:var(--muted);margin-left:2px}
@@ -480,9 +490,10 @@
     .swipe-tip{display:block}
     #prod-table tbody td:nth-child(2) .pname{white-space:normal}
     /* 手机端产品名称：限制列宽并允许换行，避免名称撑宽整张表 */
-    #prod-table tbody td:nth-child(2){min-width:124px;max-width:158px}
+    #prod-table tbody td:nth-child(2){min-width:144px;max-width:176px}
     #prod-table tbody td:nth-child(2) .pname{white-space:normal;word-break:break-word;overflow-wrap:anywhere;line-height:1.45}
-    #hold-table tbody td:nth-child(2),#sum-table tbody td:nth-child(1){min-width:124px;max-width:158px}
+    #hold-table tbody td:nth-child(2){min-width:124px;max-width:158px}
+    #sum-table tbody td:nth-child(1){min-width:144px;max-width:176px}
     #hold-table tbody td:nth-child(2) .pname,#sum-table tbody td:nth-child(1) .pname{
       white-space:normal;word-break:break-word;overflow-wrap:anywhere;line-height:1.45}
     /* 手机端三张宽表统一收窄列宽，提升一屏可读列数 */
@@ -496,6 +507,15 @@
     #sum-table{min-width:820px}
     #prod-table{min-width:880px}
     #hold-table .pname,#sum-table .pname,#prod-table .pname{font-size:12.5px}
+    /* 产品名称右侧标签不换行，固定显示在名称右侧 */
+    #prod-table tbody td:nth-child(2) .pname,#sum-table tbody td:nth-child(1) .pname{
+      display:flex;flex-wrap:wrap;align-items:flex-start;column-gap:4px}
+    #prod-table tbody td:nth-child(2) .pname>a,#sum-table tbody td:nth-child(1) .pname>a,
+    #prod-table tbody td:nth-child(2) .pname>.pname-t{flex:1 1 46%;min-width:0}
+    #prod-table tbody td:nth-child(2) .pname>.ptags,
+    #sum-table tbody td:nth-child(1) .pname>.ptags{flex:0 0 auto;margin-left:0}
+    #prod-table tbody td:nth-child(2) .pname>.salech,
+    #sum-table tbody td:nth-child(1) .pname>.salech{flex:0 0 100%}
     /* 输入框默认15px，iOS 下用16px避免聚焦自动放大 */
     .ms-search{font-size:15px;width:150px;padding:5px 8px}
     .ms-panel{width:214px}
@@ -566,6 +586,9 @@
     .seg button{white-space:nowrap;padding:6px 10px}
     .filters{padding:10px;gap:6px}
     .filters select{flex:1 1 calc(50% - 6px);width:auto;min-width:0;font-size:12px}
+    .filters .sel-wrap{flex:1 1 calc(50% - 6px);width:auto;min-width:0}
+    .sel-opt{font-size:13px;padding:9px 11px}
+    .sel-pop{max-height:300px}
     .filters .fl-label{font-size:11.5px;margin-left:0}
     .filters .fl-sep{display:none}
     .filters .chip{flex:1 1 calc(50% - 6px);width:auto;min-width:0;font-size:11.5px;padding:5px 10px}
@@ -609,7 +632,7 @@
     /* iOS 输入控件保持16px，避免聚焦时页面被强制放大 */
     html.is-ios .field input,html.is-ios .field select,html.is-ios .seg-group .seg,html.is-ios .filters input{font-size:16px}
     .sr-list{max-height:190px}
-    .filters select{font-size:13.5px;min-height:38px}
+    .filters select{font-size:13px;min-height:38px}
     .filters .chip{font-size:12px;min-height:34px}
     .filters input{font-size:16px;min-height:40px}
     .tab{min-height:42px}
