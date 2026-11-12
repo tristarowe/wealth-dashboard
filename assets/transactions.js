@@ -13,7 +13,8 @@ window.TRANSACTIONS = {
       "applyDate": "2026-08-20",
       "confirmDate": "2026-08-25",
       "amount": 23503.52,
-      "confirmNav": 1,
+      "shares": 23503.52,
+      "confirmNav": 1.0,
       "status": "已确认",
       "saleChannel": "建设银行",
       "source": "人工录入 · 申购 23,503.52 元"
@@ -24,8 +25,9 @@ window.TRANSACTIONS = {
       "type": "申购",
       "applyDate": "2026-08-25",
       "confirmDate": "2026-08-26",
-      "amount": 26000,
-      "confirmNav": 1,
+      "amount": 26000.0,
+      "shares": 26000.0,
+      "confirmNav": 1.0,
       "status": "已确认",
       "saleChannel": "建设银行",
       "source": "人工录入 · 申购 26,000.00 元"
@@ -36,7 +38,8 @@ window.TRANSACTIONS = {
       "type": "申购",
       "applyDate": "2026-09-29",
       "confirmDate": "2026-09-30",
-      "amount": 22222,
+      "amount": 22222.0,
+      "shares": 21810.03,
       "confirmNav": 1.018889,
       "status": "已确认",
       "saleChannel": "建设银行",
@@ -48,11 +51,11 @@ window.TRANSACTIONS = {
       "type": "申购",
       "applyDate": "2026-11-03",
       "confirmDate": "2026-11-04",
-      "amount": 10000,
+      "amount": 10000.0,
       "shares": 9982.03,
       "confirmNav": 1.0018,
-      "saleChannel": "建设银行",
       "status": "已确认",
+      "saleChannel": "建设银行",
       "source": "人工录入"
     },
     {
@@ -61,11 +64,11 @@ window.TRANSACTIONS = {
       "type": "申购",
       "applyDate": "2026-11-05",
       "confirmDate": "2026-11-06",
-      "amount": 10000,
-      "shares": 9997,
+      "amount": 10000.0,
+      "shares": 9997.0,
       "confirmNav": 1.0003,
-      "saleChannel": "建设银行",
       "status": "已确认",
+      "saleChannel": "建设银行",
       "source": "人工录入"
     },
     {
@@ -74,11 +77,11 @@ window.TRANSACTIONS = {
       "type": "清仓",
       "applyDate": "2026-11-06",
       "confirmDate": "2026-11-09",
-      "amount": 10000,
+      "amount": 10000.0,
       "shares": 9982.03,
       "confirmNav": 1.0018,
-      "saleChannel": "建设银行",
       "status": "已确认",
+      "saleChannel": "建设银行",
       "source": "人工录入"
     },
     {
@@ -87,11 +90,11 @@ window.TRANSACTIONS = {
       "type": "申购",
       "applyDate": "2026-11-09",
       "confirmDate": "2026-11-10",
-      "amount": 1007,
-      "shares": 1000,
+      "amount": 1007.0,
+      "shares": 1000.0,
       "confirmNav": 1.007,
-      "saleChannel": "建设银行",
       "status": "已确认",
+      "saleChannel": "建设银行",
       "source": "人工录入"
     },
     {
@@ -100,11 +103,11 @@ window.TRANSACTIONS = {
       "type": "赎回",
       "applyDate": "2026-11-09",
       "confirmDate": "2026-11-10",
-      "amount": 10000,
+      "amount": 10000.0,
       "shares": 9951.24,
       "confirmNav": 1.0049,
-      "saleChannel": "建设银行",
       "status": "已确认",
+      "saleChannel": "建设银行",
       "source": "人工录入"
     },
     {
@@ -113,11 +116,11 @@ window.TRANSACTIONS = {
       "type": "申购",
       "applyDate": "2026-11-09",
       "confirmDate": "2026-11-10",
-      "amount": 10000,
-      "shares": 9997,
+      "amount": 10000.0,
+      "shares": 9997.0,
       "confirmNav": 1.0003,
-      "saleChannel": "建设银行",
       "status": "已确认",
+      "saleChannel": "建设银行",
       "source": "人工录入"
     },
     {
@@ -126,11 +129,11 @@ window.TRANSACTIONS = {
       "type": "申购",
       "applyDate": "2026-11-10",
       "confirmDate": "2026-11-11",
-      "amount": 10000,
+      "amount": 10000.0,
       "shares": 9935.23,
       "confirmNav": 1.006519,
-      "saleChannel": "建设银行",
       "status": "已确认",
+      "saleChannel": "建设银行",
       "source": "人工录入"
     },
     {
@@ -139,11 +142,11 @@ window.TRANSACTIONS = {
       "type": "申购",
       "applyDate": "2026-11-11",
       "confirmDate": "2026-11-12",
-      "amount": 10049,
-      "shares": 10000,
+      "amount": 10049.0,
+      "shares": 10000.0,
       "confirmNav": 1.0049,
-      "saleChannel": "建设银行",
       "status": "已确认",
+      "saleChannel": "建设银行",
       "source": "人工录入"
     },
     {
@@ -152,11 +155,11 @@ window.TRANSACTIONS = {
       "type": "申购",
       "applyDate": "2026-11-11",
       "confirmDate": "2026-11-12",
-      "amount": 20000,
+      "amount": 20000.0,
       "shares": 19910.92,
       "confirmNav": 1.004474,
-      "saleChannel": "建设银行",
       "status": "已确认",
+      "saleChannel": "建设银行",
       "source": "人工录入"
     }
   ]
