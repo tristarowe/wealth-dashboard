@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <link rel="icon" href="data:,">
 <title>理财产品每日收益看板</title>
 <style>
@@ -15,7 +15,7 @@
     --font:'Microsoft YaHei','PingFang SC','Hiragino Sans GB',sans-serif;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;text-size-adjust:100%}
   body{font-family:var(--font);background:var(--bg);color:var(--ink);line-height:1.65;padding:24px 20px 60px;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility}
   .page{max-width:1320px;margin:0 auto}
   .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
@@ -424,7 +424,7 @@
     #prod-search,#trade-prod-q{font-size:16px}
   }
   @media (max-width:760px){
-    body{padding:14px 12px 40px}
+    body{padding:14px 12px calc(40px + env(safe-area-inset-bottom))}
     .hero{padding:16px 14px 18px;border-radius:14px}
     .hero-top{flex-direction:column;align-items:stretch;gap:10px}
     .hero-actions{position:absolute;top:12px;right:12px;display:flex;flex-direction:column;justify-content:flex-end;gap:6px}
@@ -509,6 +509,23 @@
     #chart{height:300px}
     .banner{flex-wrap:wrap;font-size:12px;padding:9px 12px}
     .card{overflow-x:auto}
+    /* 手机端表单：底部弹层，放大字号与点击区，聚焦不再被系统放大 */
+    .modal{align-items:flex-end;padding:0}
+    .modal-card{width:100%;max-width:100%;max-height:92vh;border-radius:16px 16px 0 0;padding:0;display:flex;flex-direction:column;overflow:hidden}
+    .modal-head{flex:none;font-size:16px;padding:16px 14px 12px}
+    .modal-head .x{width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:26px}
+    .modal-body{flex:1 1 auto;min-height:0;overflow:auto;padding:0 14px;-webkit-overflow-scrolling:touch}
+    .form-grid{grid-template-columns:1fr}
+    .field{font-size:13px;margin-top:14px}
+    .field input,.field select{font-size:16px;min-height:46px;padding:10px 12px;margin-top:6px}
+    .seg-group .seg{font-size:15px;min-height:46px;padding:11px 6px}
+    .note-line{font-size:12.5px;padding-bottom:6px}
+    .modal-foot{flex:none;margin:0;padding:12px 14px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--rule);gap:10px}
+    .modal-foot .btn{flex:1;justify-content:center;min-height:46px;font-size:14.5px}
+    .sr-list{max-height:190px}
+    .filters select,.filters input{font-size:16px;min-height:40px}
+    .tab{min-height:42px}
+    .pager button{min-width:34px;height:34px}
   }
   @media (max-width:360px){
     .metrics{grid-template-columns:1fr}
@@ -863,6 +880,7 @@
 <div class="modal" id="modal-trade" hidden>
   <div class="modal-card">
     <div class="modal-head"><b id="trade-modal-title">新增交易</b><button type="button" class="x" data-close="modal-trade">×</button></div>
+    <div class="modal-body">
     <label class="field">产品搜索
       <input id="trade-prod-q" autocomplete="off" placeholder="输入产品名称 / 登记编码，自动带出净值与确认日期">
     </label>
@@ -885,6 +903,7 @@
       <input type="hidden" id="trade-channel" value="建设银行">
     </div>
     <div class="note-line">按确认日净值成交，不收手续费；填写金额后按成交净值自动折算份额，无需手填；赎回/清仓选择后自动带出可卖份额，确认后份额从持仓中扣减。所有交易均为人工录入，实际以银行 App 为准。</div>
+    </div>
     <div class="modal-foot"><button type="button" class="btn" data-close="modal-trade">取消</button><button type="button" class="btn primary" id="trade-submit">提交</button></div>
   </div>
 </div>
@@ -892,6 +911,7 @@
 <div class="modal" id="modal-add" hidden>
   <div class="modal-card">
     <div class="modal-head"><b>添加产品</b><button type="button" class="x" data-close="modal-add">×</button></div>
+    <div class="modal-body">
     <label class="field">产品链接
       <input id="add-url" autocomplete="off" placeholder="粘贴中国理财网 / 银行官网的产品页链接">
     </label>
@@ -900,6 +920,7 @@
     <div class="recog" id="add-recog" hidden></div>
     <div class="note-line">识别后先回显产品信息供你确认；提交后进入待入库队列，由每日 08:00 的产品库任务抓取净值并加入产品页，手工添加的产品也会持续更新。</div>
     <div class="ok-note" id="add-ok">已提交，预计下次更新入库</div>
+    </div>
     <div class="modal-foot"><button type="button" class="btn" data-close="modal-add">取消</button><button type="button" class="btn" id="add-recognize">自动识别</button><button type="button" class="btn primary" id="submit-add">提交</button></div>
   </div>
 </div>
