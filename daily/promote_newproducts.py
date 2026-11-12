@@ -198,7 +198,7 @@ def main():
         for i, x in enumerate(pending, 1):
             print("[%d/%d] 补净值 %s" % (i, len(pending), x["regCode"]), flush=True)
             rows = fetch_nav(x["regCode"])
-            if len(rows) >= 2:
+            if len(rows) >= 2 and rows[-1]["date"] >= (x.get("latestDate") or ""):
                 fresh = to_item(x, rows)
                 x.update({k: fresh[k] for k in ("dates", "nav", "per10k", "latestDate", "latestNav")})
                 if not x.get("risk") and fresh.get("risk"):
