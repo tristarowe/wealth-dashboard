@@ -1760,6 +1760,7 @@
       return '<option value="' + o + '">' + o + '</option>';
     }).join('');
     sel.value = orgs.indexOf(current) !== -1 ? current : '';
+    syncSelLabel(sel);
   }
 
   /* ---------------- 筛选下拉：自绘列表（原生 select 展开层字号不可控） ---------------- */
@@ -1815,6 +1816,16 @@
     if (on) pop.scrollTop = Math.max(0, on.offsetTop - 40);
   }
 
+  /* 下拉当前值：由自绘标签居中展示（原生 select 文本无法居中） */
+  function syncSelLabel(sel) {
+    var wrap = sel && sel.parentNode;
+    if (!wrap || !wrap.classList || !wrap.classList.contains('sel-wrap')) return;
+    var label = wrap.querySelector('.sel-label');
+    if (!label) return;
+    var opt = sel.options[sel.selectedIndex];
+    label.textContent = opt ? opt.text : '';
+  }
+
   function beautifyFilterSelects() {
     Array.prototype.forEach.call(document.querySelectorAll('.filters select'), function (sel) {
       if (sel.parentNode && sel.parentNode.classList && sel.parentNode.classList.contains('sel-wrap')) return;
@@ -1822,6 +1833,9 @@
       wrap.className = 'sel-wrap';
       sel.parentNode.insertBefore(wrap, sel);
       wrap.appendChild(sel);
+      var label = document.createElement('span');
+      label.className = 'sel-label';
+      wrap.appendChild(label);
       var hit = document.createElement('button');
       hit.type = 'button';
       hit.className = 'sel-hit';
@@ -1833,6 +1847,8 @@
         openSelPop(sel);
       });
       wrap.appendChild(hit);
+      sel.addEventListener('change', function () { syncSelLabel(sel); });
+      syncSelLabel(sel);
     });
 
     document.addEventListener('click', function (e) {
