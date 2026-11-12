@@ -7,7 +7,7 @@ window.NEW_PRODUCTS = {
     "end": "2026-11-18"
   },
   "institutions": [
-    "中国建设银行"
+    "建设银行"
   ],
   "items": [
     {
@@ -22,7 +22,7 @@ window.NEW_PRODUCTS = {
       "risk": "R1",
       "riskRaw": "",
       "mode": "开放式净值型",
-      "saleChannel": "中国建设银行",
+      "saleChannel": "建设银行",
       "source": "建行官网新品公告·销售文件要素表"
     },
     {
@@ -37,7 +37,7 @@ window.NEW_PRODUCTS = {
       "risk": "R2",
       "riskRaw": "",
       "mode": "开放式净值型",
-      "saleChannel": "中国建设银行",
+      "saleChannel": "建设银行",
       "source": "建行官网新品公告·销售文件要素表"
     },
     {
@@ -52,7 +52,7 @@ window.NEW_PRODUCTS = {
       "risk": "R2",
       "riskRaw": "R2 中低风险",
       "mode": "开放式",
-      "saleChannel": "中国建设银行",
+      "saleChannel": "建设银行",
       "source": "建行官网新品公告·销售文件要素表"
     },
     {
@@ -67,13 +67,13 @@ window.NEW_PRODUCTS = {
       "risk": "R2",
       "riskRaw": "R2 中低风险",
       "mode": "开放式",
-      "saleChannel": "中国建设银行",
+      "saleChannel": "建设银行",
       "source": "建行官网新品公告·销售文件要素表"
     }
   ],
   "lanes": [
     {
-      "channel": "中国建设银行",
+      "channel": "建设银行",
       "products": [
         {
           "name": "中银理财-乐享天天54号",
@@ -87,7 +87,7 @@ window.NEW_PRODUCTS = {
           "risk": "R1",
           "riskRaw": "",
           "mode": "开放式净值型",
-          "saleChannel": "中国建设银行",
+          "saleChannel": "建设银行",
           "source": "建行官网新品公告·销售文件要素表"
         },
         {
@@ -102,7 +102,7 @@ window.NEW_PRODUCTS = {
           "risk": "R2",
           "riskRaw": "",
           "mode": "开放式净值型",
-          "saleChannel": "中国建设银行",
+          "saleChannel": "建设银行",
           "source": "建行官网新品公告·销售文件要素表"
         },
         {
@@ -117,7 +117,7 @@ window.NEW_PRODUCTS = {
           "risk": "R2",
           "riskRaw": "R2 中低风险",
           "mode": "开放式",
-          "saleChannel": "中国建设银行",
+          "saleChannel": "建设银行",
           "source": "建行官网新品公告·销售文件要素表"
         },
         {
@@ -132,7 +132,7 @@ window.NEW_PRODUCTS = {
           "risk": "R2",
           "riskRaw": "R2 中低风险",
           "mode": "开放式",
-          "saleChannel": "中国建设银行",
+          "saleChannel": "建设银行",
           "source": "建行官网新品公告·销售文件要素表"
         }
       ]
