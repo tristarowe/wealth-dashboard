@@ -107,6 +107,9 @@
   #hold-table tbody td.income-col{font-weight:700;background:transparent}
   #hold-table tbody td.score-col{background:#f2f8fa}
   #hold-table .pname{font-size:13px}
+  /* 盈亏明细产品名称不换行，随表格横向滑动，滑动时底色透明 */
+  #hold-table tbody td:first-child{white-space:nowrap;background:transparent}
+  #hold-table .pname,#hold-table .pname a{white-space:nowrap}
   #hold-table .st i{font-size:12px}
   /* 盈亏明细：7日~成立至今 拆成「日均万收」「年化」两行，评分纵向合并 */
   #hold-table tr.ma.dual > td:not([rowspan]){border-bottom:1px solid #f0f4f6}
@@ -270,6 +273,9 @@
   .field input,.field select{display:block;width:100%;margin-top:4px;font-family:var(--font);font-size:13px;padding:8px 10px;border:1px solid var(--rule);border-radius:7px;color:var(--ink);background:#fff}
   .field input[readonly]{background:#f7f9fa;color:var(--muted)}
   /* 自定义日期选择器：替换浏览器原生日期面板 */
+  .add-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+  .add-grid .wide{grid-column:1/-1}
+  @media (max-width:760px){.add-grid{grid-template-columns:1fr;gap:10px}}
   .dp-wrap{position:relative;display:block}
   .dp-wrap input{margin-top:4px;padding-right:34px;cursor:pointer;background:#fff!important;color:var(--ink)!important}
   .dp-wrap input:focus{outline:none;border-color:#cbe0e8;box-shadow:0 0 0 3px rgba(14,90,115,.08)}
@@ -987,16 +993,40 @@
   <div class="modal-card">
     <div class="modal-head"><b>添加产品</b><button type="button" class="x" data-close="modal-add">×</button></div>
     <div class="modal-body">
-    <label class="field">产品链接
-      <input id="add-url" autocomplete="off" placeholder="粘贴中国理财网 / 银行官网的产品页链接">
-    </label>
-    <input type="file" id="add-file" accept="image/png,image/jpeg" hidden>
-    <div class="drop" id="add-drop" role="button" tabindex="0">拖拽或点击上传产品截图<br><span class="hint">支持 PNG / JPG，自动识别产品名称、登记编码与最新净值</span></div>
-    <div class="recog" id="add-recog" hidden></div>
-    <div class="note-line">识别后先回显产品信息供你确认；提交后进入待入库队列，由每日 08:00 的产品库任务抓取净值并加入产品页，手工添加的产品也会持续更新。</div>
-    <div class="ok-note" id="add-ok">已提交，预计下次更新入库</div>
+      <div class="add-grid">
+        <label class="field wide">产品名称
+          <input id="add-name" autocomplete="off" placeholder="如 合盛多元·鸿锦30天1号">
+        </label>
+        <label class="field">登记编码（选填）
+          <input id="add-code" autocomplete="off" placeholder="如 Z7001026001785">
+        </label>
+        <label class="field">风险等级
+          <select id="add-risk"><option value="">未填</option><option>R1</option><option>R2</option><option>R3</option><option>R4</option><option>R5</option></select>
+        </label>
+        <label class="field">发行机构（选填）
+          <input id="add-org" autocomplete="off" placeholder="如 中邮理财">
+        </label>
+        <label class="field">代销机构
+          <select id="add-channel">
+            <option>建设银行</option><option>工商银行</option><option>农业银行</option><option>邮储银行</option><option>中国银行</option>
+            <option>交通银行</option><option>民生银行</option><option>光大银行</option><option>华夏银行</option><option>浦发银行</option>
+            <option>平安银行</option><option>兴业银行</option><option>中信银行</option><option>招商银行</option><option>广发银行</option>
+            <option>渤海银行</option><option>浙商银行</option><option>恒丰银行</option>
+          </select>
+        </label>
+        <label class="field">最新净值
+          <input id="add-nav" inputmode="decimal" autocomplete="off" placeholder="如 1.0045">
+        </label>
+        <label class="field">净值日期
+          <span class="dp-wrap">
+            <input id="add-navdate" type="text" readonly placeholder="请选择净值日期" autocomplete="off" aria-haspopup="dialog">
+            <svg class="dp-ico" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="3" y="5.5" width="18" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3 10.5h18M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          </span>
+        </label>
+      </div>
+      <div class="note-line">手工添加的产品保存在云端，所有设备共用；净值与净值日期需手动维护，不参与每日自动抓取。</div>
     </div>
-    <div class="modal-foot"><button type="button" class="btn" data-close="modal-add">取消</button><button type="button" class="btn" id="add-recognize">自动识别</button><button type="button" class="btn primary" id="submit-add">提交</button></div>
+    <div class="modal-foot"><button type="button" class="btn" data-close="modal-add">取消</button><button type="button" class="btn primary" id="submit-add">保存</button></div>
   </div>
 </div>
 
