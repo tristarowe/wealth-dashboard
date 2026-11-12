@@ -574,31 +574,23 @@
     .sec-head .idx{font-size:17px}
     .cal-split{grid-template-columns:1fr}
     #year-view{overflow-x:auto}
+    /* 手机端年度收益表：与月度表共用百分比列宽，列边界逐列重合、间距均匀 */
     .year-table{min-width:0;font-size:10.5px}
     .year-table thead th{font-size:10px;white-space:nowrap;line-height:1.35}
     .year-table thead th:nth-child(3){white-space:normal}
     .year-table td{font-size:10.5px}
     .year-table td.cnt{font-size:10.5px}
-    .year-table .yc1{width:32px}
-    .year-table .yc2{width:65px}
-    .year-table .yc3{width:53px}
-    .year-table .yc4{width:35px}
-    .year-table .yc5{width:31px}
-    .year-table .yc6{width:27px}
-    .year-table th,.year-table td{padding:8px 0;white-space:nowrap}
-    .month-row.mhead{padding:8px 4px}
-    .year-table thead th{padding-left:6px}
-    .year-table thead th:nth-child(2){padding-left:3px;padding-right:0}
-    .year-table thead th:nth-child(3){padding-left:3px;padding-right:0}
-    .year-table thead th:nth-child(4){padding-left:3px;padding-right:0}
-    .year-table thead th:nth-child(5){padding-left:3px;padding-right:0}
-    .year-table thead th:first-child{padding-left:6px}
-    .year-table th.r{padding-left:0;text-align:right}
-    .year-table td{padding-left:6px}
-    .year-table td.r{padding-left:3px;padding-right:0;text-align:center}
-    .year-table td.ym{padding-left:6px}
-    .year-table thead th:last-child{padding-right:0}
-    .year-table td:last-child{padding:8px 0}
+    .year-table .yc1{width:11%}
+    .year-table .yc2{width:20%}
+    .year-table .yc3{width:18.5%}
+    .year-table .yc4{width:13%}
+    .year-table .yc5{width:12%}
+    .year-table .yc6{width:10.5%}
+    .year-table th,.year-table td{padding:12px 0;white-space:nowrap}
+    .year-table thead th,.year-table thead th:first-child,.year-table thead th:last-child{padding:9px 0}
+    .year-table th.r,.year-table td.r,.year-table td.ym{padding:12px 0;text-align:center}
+    .year-table thead th.r{text-align:center}
+    .year-table td:last-child{padding:12px 0}
     .cal{grid-template-columns:repeat(7,minmax(0,1fr));gap:2px}
     .cal .wd{font-size:11px;padding:4px 0}
     .cell{min-height:54px;padding:3px}
@@ -635,8 +627,11 @@
     .ts-lane .nchip .nmid{justify-content:flex-start}
     .ts-lane .nchip .nm{white-space:normal}
     .n-legend{margin-top:4px}
-    .month-row,.month-item{grid-template-columns:26px 62px 50px 32px 28px 24px minmax(40px,1fr);gap:3px;padding:10px 4px;font-size:10.5px;line-height:1.6}
-    .month-row.mhead{font-size:10.5px}
+    /* 手机端月度收益表：与年度表同一套百分比列宽，去掉左侧 2px 边框避免整体偏移 */
+    .month-row,.month-item{grid-template-columns:11% 20% 18.5% 13% 12% 10.5% 15%;gap:0;padding:12px 0;font-size:10.5px;line-height:1.6}
+    .month-row.mhead{padding:9px 0;font-size:10.5px;border-left:0}
+    .month-item{border-left:0}
+    .month-item.on{box-shadow:inset 2px 0 0 var(--accent)}
     .rate-cell{height:20px;font-size:13px}
     .pager{flex-wrap:wrap;justify-content:center}
     #chart{height:300px}
