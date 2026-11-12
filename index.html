@@ -107,9 +107,6 @@
   #hold-table tbody td.income-col{font-weight:700;background:transparent}
   #hold-table tbody td.score-col{background:#f2f8fa}
   #hold-table .pname{font-size:13px}
-  /* 盈亏明细产品名称不换行，随表格横向滑动，滑动时底色透明 */
-  #hold-table tbody td:first-child{white-space:nowrap;background:transparent}
-  #hold-table .pname,#hold-table .pname a{white-space:nowrap}
   #hold-table .st i{font-size:12px}
   /* 盈亏明细：7日~成立至今 拆成「日均万收」「年化」两行，评分纵向合并 */
   #hold-table tr.ma.dual > td:not([rowspan]){border-bottom:1px solid #f0f4f6}
@@ -482,6 +479,10 @@
   @media (max-width:900px){
     .swipe-tip{display:block}
     #prod-table tbody td:nth-child(2) .pname{white-space:normal}
+    /* 手机端产品名称：限制列宽并允许换行，避免名称撑宽整张表 */
+    #hold-table tbody td:nth-child(2),#sum-table tbody td:nth-child(1){min-width:108px;max-width:150px}
+    #hold-table tbody td:nth-child(2) .pname,#sum-table tbody td:nth-child(1) .pname{
+      white-space:normal;word-break:break-word;overflow-wrap:anywhere;line-height:1.45}
     /* 输入框默认15px，iOS 下用16px避免聚焦自动放大 */
     .ms-search{font-size:15px;width:150px;padding:5px 8px}
     .ms-panel{width:214px}
