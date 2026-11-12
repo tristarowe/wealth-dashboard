@@ -183,7 +183,13 @@
           }
         };
       }
-      return { product: p, m: calc(p) };
+      var mm = calc(p);
+      if (p.manual) {
+        /* 手工产品没有「成立日期」，不展示首条净值日冒充成立日 */
+        mm.inception = '';
+        mm.listing = 0;
+      }
+      return { product: p, m: mm };
     });
     window.DASHBOARD_LIBRARY = LIB_MODEL;
   }
@@ -194,6 +200,18 @@
     if (!m || !m.id || !m.name) return null;
     var date = m.navDate || '';
     var nav = Number(m.nav);
+    /* 每日自动抓取会回填 history（[{date, nav}]），有多点时用于区间收益计算 */
+    var hist = (m.history || []).filter(function (h) {
+      return h && h.date && Number(h.nav) > 0;
+    }).slice().sort(function (a, b) {
+      return a.date < b.date ? -1 : a.date > b.date ? 1 : 0;
+    });
+    var dates = hist.length ? hist.map(function (h) { return h.date; }) : (date ? [date] : []);
+    var navs = hist.length ? hist.map(function (h) { return Number(h.nav); }) : (date && nav > 0 ? [nav] : []);
+    if (date && nav > 0 && (!dates.length || dates[dates.length - 1] < date)) {
+      dates = dates.concat([date]);
+      navs = navs.concat([nav]);
+    }
     return {
       id: m.id,
       name: m.name,
@@ -205,11 +223,11 @@
       saleChannel: m.saleChannel || '',
       inception: '',
       raiseStart: '', raiseEnd: '',
-      dates: date ? [date] : [],
-      nav: date && nav > 0 ? [nav] : [],
-      per10k: [null],
-      latestDate: date,
-      latestNav: date && nav > 0 ? nav : null,
+      dates: dates,
+      nav: navs,
+      per10k: dates.map(function () { return null; }),
+      latestDate: dates[dates.length - 1] || date,
+      latestNav: navs[navs.length - 1] || null,
       manual: true
     };
   }
@@ -1885,8 +1903,8 @@
       b.type = 'button';
       b.className = 'sel-opt' + (i === prodSugIdx ? ' on' : '');
       b.setAttribute('role', 'option');
-      b.innerHTML = '<span class="sug-name">' + (p.short || p.name) + '</span>' +
-        '<em class="sug-code">' + (p.regCode || '') + '</em>';
+      /* 只展示名称，名称命中优先，编号仅作为命中兜底且不在列表露出 */
+      b.textContent = p.short || p.name;
       b.addEventListener('click', function (e) {
         e.preventDefault();
         e.stopPropagation();
@@ -2036,6 +2054,7 @@
     var addBtn = document.getElementById('open-add');
     if (addBtn) addBtn.addEventListener('click', function () {
       resetAddModal();
+      renderAddHistory();
       var m = document.getElementById('modal-add');
       if (m) m.hidden = false;
     });
@@ -2051,6 +2070,37 @@
     });
     var risk = document.getElementById('add-risk');
     if (risk) risk.value = '';
+  }
+
+  /* 添加产品历史记录：云端 MANUAL_HISTORY（添加 / 删除） */
+  function histEsc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+
+  function fmtHistTime(s) {
+    var d = new Date(s);
+    if (isNaN(d.getTime())) return '';
+    function pad(n) { return (n < 10 ? '0' : '') + n; }
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) +
+      ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+
+  function renderAddHistory() {
+    var box = document.getElementById('add-hist');
+    var list = document.getElementById('add-hist-list');
+    if (!box || !list) return;
+    var hist = (window.MANUAL_HISTORY || []).slice(0, 15);
+    box.hidden = !hist.length;
+    list.innerHTML = hist.map(function (r) {
+      var isDel = r.action === 'del';
+      var meta = [r.regCode, r.saleChannel].filter(Boolean).join(' · ');
+      return '<li><b class="' + (isDel ? 'del' : 'add') + '">' + (isDel ? '删除' : '添加') + '</b>' +
+        '<span title="' + histEsc(r.name || '') + '">' + histEsc(r.name || '—') + '</span>' +
+        (meta ? '<em>' + histEsc(meta) + '</em>' : '') +
+        '<i>' + fmtHistTime(r.at) + '</i></li>';
+    }).join('');
   }
 
   function bindAddModal() {
