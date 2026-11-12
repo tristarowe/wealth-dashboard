@@ -2834,6 +2834,13 @@
     });
   }
 
+  /* 云端后台刷新完成后由页面调用，重新计算持仓并重绘 */
+  function refreshFromStore() {
+    computeHoldings();
+    renderAll();
+  }
+  window.DASHBOARD_REFRESH = refreshFromStore;
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
