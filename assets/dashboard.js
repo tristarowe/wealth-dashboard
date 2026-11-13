@@ -286,7 +286,6 @@
   // 交易底稿 → 持仓：申购累加份额，赎回/清仓按确认净值扣减，起息日 = 首次确认日
   function computeHoldings() {
     var tx = ((window.TRANSACTIONS && window.TRANSACTIONS.items) || []).slice();
-    var asof = parseDate((window.TRANSACTIONS && window.TRANSACTIONS.asOf) || DATA.asOf);
     tx.sort(function (a, b) {
       return a.confirmDate < b.confirmDate ? -1 : a.confirmDate > b.confirmDate ? 1 : 0;
     });
@@ -334,11 +333,8 @@
       var alive = rec.shares > 0.000001;
       var mv = rec.shares * latestNav;
       var profit = mv - rec.cost + rec.realized;
-      /* 持仓截止日取「交易快照日」与「该产品最新净值日」的较晚者：
-         当日申购且净值已披露时，净值为最新数据，避免出现负数天数 */
-      var end = asof;
-      if (p.latestDate && p.latestDate > isoDate(asof)) end = parseDate(p.latestDate);
-      var days = alive ? Math.max(0, dayDiff(parseDate(rec.startDate), end)) : 0;
+      /* 持仓天数 = 今天 − 首次确认日（按自然日算，11-11 确认、11-13 看为 2 天） */
+      var days = alive ? Math.max(0, dayDiff(parseDate(rec.startDate), parseDate(todayStr))) : 0;
       var costNav = alive ? rec.cost / rec.shares : 0;
       var lastPer = p.per10k[n - 1];
       var h = {
