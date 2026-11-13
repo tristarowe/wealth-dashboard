@@ -30,4 +30,4 @@ jobs:
       - name: 轮换补抓非建信净值
         env:
           PYTHONIOENCODING: utf-8
-        run: python daily/nav_rotate.py --limit 5
+        run: python daily/nav_rotate.py --limit 8
