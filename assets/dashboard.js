@@ -2066,6 +2066,25 @@
     if (!label) return;
     var opt = sel.options[sel.selectedIndex];
     label.textContent = opt ? opt.text : '';
+    sizeSelWrap(sel);
+  }
+
+  /* 发行机构选项文字过长（如「贝莱德建信理财」）时按实测宽度加宽，避免当前值被截断 */
+  function sizeSelWrap(sel) {
+    var wrap = sel && sel.parentNode;
+    if (!sel || sel.id !== 'org-sel') return;
+    if (!wrap || !wrap.classList || !wrap.classList.contains('sel-wrap')) return;
+    var cv = document.createElement('canvas');
+    var ctx = cv.getContext ? cv.getContext('2d') : null;
+    if (!ctx) return;
+    ctx.font = '12px ' + getComputedStyle(sel).fontFamily;
+    var needW = 0;
+    Array.prototype.forEach.call(sel.options, function (o) {
+      needW = Math.max(needW, ctx.measureText(o.text).width);
+    });
+    /* 左右内距 6 + 17、边框 2，另留 5px 余量；不足 80px 时保持统一宽度 */
+    var w = Math.ceil(needW) + 30;
+    wrap.style.width = (w > 80 ? w : 80) + 'px';
   }
 
   function beautifyFilterSelects() {
@@ -2089,6 +2108,7 @@
         openSelPop(sel);
       });
       wrap.appendChild(hit);
+      sizeSelWrap(sel);
       sel.addEventListener('change', function () { syncSelLabel(sel); });
       syncSelLabel(sel);
     });

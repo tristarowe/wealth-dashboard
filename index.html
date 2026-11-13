@@ -101,10 +101,9 @@
   /* 盈亏明细：7日~成立至今等历史区间不做红绿着色，按内容区分黑/灰 */
   #hold-table .st.win b{color:var(--ink)}
   #hold-table .st.win i{color:#6f8089}
-  /* 重点列：评分加粗+底色，今日收益仅加粗 */
+  /* 重点列：评分加粗+底色 */
   #hold-table thead th[data-sort="score"]{font-weight:700;color:var(--accent-deep);background:#e6f2f6}
   #hold-table thead th[data-sort="name"]{font-weight:700}
-  #hold-table thead th[data-sort="income"]{color:var(--accent-deep)}
   /* 重点列单元格：今日收益加粗、不再填充底色 */
   #hold-table tbody td.income-col{font-weight:700;background:transparent}
   #hold-table tbody td.score-col{background:#f2f8fa}
@@ -1324,7 +1323,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261113l';
+      s.src = './assets/dashboard.js?v=20261113m';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();
