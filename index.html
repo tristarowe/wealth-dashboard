@@ -220,9 +220,8 @@
   .month-item .d{font-family:var(--mono);color:var(--muted);text-align:right}
   .month-item .rate-cell{width:100%;max-width:120px;min-width:0;margin:0 auto}
   .month-item .thumb{margin-left:3px;font-size:10px;line-height:1}
-  /* 年化数据条：底色为浅底，左侧按数值比例填充色条（5% 年化满格），文字压在条上 */
-  .rate-cell{position:relative;display:flex;align-items:center;justify-content:center;height:22px;border-radius:5px;font-family:var(--mono);font-size:13px;font-weight:600;background:#f4f8fa;color:#3c5c67;overflow:hidden}
-  .rate-cell::before{content:"";position:absolute;left:0;top:0;bottom:0;width:var(--w,0%);background:var(--bar,#d3e2e7);border-radius:5px 0 0 5px}
+  /* 年化数据条：浅底 + 左侧按数值比例填充色条（5% 年化满格），底色用渐变绘制避免盖住文字 */
+  .rate-cell{position:relative;display:flex;align-items:center;justify-content:center;height:22px;border-radius:5px;font-family:var(--mono);font-size:13px;font-weight:600;color:#3c5c67;overflow:hidden;background:#f4f8fa;background-image:linear-gradient(90deg,var(--bar,#d6e4e9) var(--w,0%),transparent var(--w,0%))}
   .rate-cell.lv1{--bar:#d6e4e9;color:#5f7883}
   .rate-cell.lv2{--bar:#b3d1db;color:#35626f}
   .rate-cell.lv3{--bar:#8fbfcd;color:#1b5364}
