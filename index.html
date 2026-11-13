@@ -169,7 +169,7 @@
   /* 持仓天数：整列与表头居中对齐，数字与「天」同字体、同字号、同字重 */
   #hold-table th[data-sort="holddays"],#sum-table th[data-sort="days"]{text-align:center}
   /* 持仓汇总：净值日期保持单行，列窄时也不会断成「11-」「10」两行 */
-  #sum-table thead th:nth-child(5),#sum-table tbody td:nth-child(5){white-space:nowrap}
+  #sum-table thead th:nth-child(2),#sum-table tbody td:nth-child(2){white-space:nowrap}
   #hold-table tbody td.dcell,#sum-table tbody td.dcell{white-space:nowrap;text-align:center}
   #hold-table td.dcell .days,#sum-table td.dcell .days,
   #hold-table td.dcell .dunit,#sum-table td.dcell .dunit{font-family:var(--mono);font-size:13px;font-weight:400;font-variant-numeric:tabular-nums}
@@ -647,10 +647,10 @@
     /* 产品名与评分说明也统一到 11px，全表只保留 † 上标略小 */
     #hold-table .pname,#hold-table .plink,#hold-table .st i{font-size:11px}
     #sum-table col:nth-child(1){width:136px !important}
-    #sum-table col:nth-child(2){width:70px !important}
-    #sum-table col:nth-child(3){width:66px !important}
-    #sum-table col:nth-child(4){width:62px !important}
-    #sum-table col:nth-child(5){width:56px !important}
+    #sum-table col:nth-child(2){width:56px !important}
+    #sum-table col:nth-child(3){width:70px !important}
+    #sum-table col:nth-child(4){width:66px !important}
+    #sum-table col:nth-child(5){width:62px !important}
     #sum-table col:nth-child(6){width:62px !important}
     #sum-table col:nth-child(7){width:62px !important}
     #sum-table col:nth-child(8){width:52px !important}
@@ -1036,10 +1036,10 @@
           <thead>
             <tr>
               <th class="sortable" data-sort="name">产品名称</th>
+              <th class="c sortable" data-sort="navdate">净值<br>日期</th>
               <th class="r sortable" data-sort="profit">持仓<br>收益</th>
               <th class="r sortable" data-sort="ann">持仓<br>年化</th>
               <th class="r sortable" data-sort="mv">持仓<br>市值</th>
-              <th class="c sortable" data-sort="navdate">净值<br>日期</th>
               <th class="c sortable" data-sort="nav">净值</th><th class="r sortable" data-sort="shares">持仓<br>份额</th>
               <th class="c sortable" data-sort="days">持仓<br>天数</th>
               <th class="c sortable" data-sort="listdays">成立<br>天数</th>
@@ -1312,7 +1312,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261113i';
+      s.src = './assets/dashboard.js?v=20261113j';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();
