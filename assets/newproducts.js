@@ -1,13 +1,14 @@
 window.NEW_PRODUCTS = {
-  "asOf": "2026-11-12",
-  "fetchedAt": "2026-11-12 18:50",
+  "asOf": "2026-11-13",
+  "fetchedAt": "2026-11-13 14:49",
   "source": "六大行及股份制银行新品公告 · 销售文件要素表",
   "window": {
-    "start": "2026-11-12",
-    "end": "2026-11-18"
+    "start": "2026-11-13",
+    "end": "2026-11-19"
   },
   "institutions": [
-    "建设银行"
+    "中银理财",
+    "贝莱德建信理财"
   ],
   "items": [
     {
@@ -73,7 +74,7 @@ window.NEW_PRODUCTS = {
   ],
   "lanes": [
     {
-      "channel": "建设银行",
+      "channel": "中银理财",
       "products": [
         {
           "name": "中银理财-乐享天天54号",
@@ -104,7 +105,12 @@ window.NEW_PRODUCTS = {
           "mode": "开放式净值型",
           "saleChannel": "建设银行",
           "source": "建行官网新品公告·销售文件要素表"
-        },
+        }
+      ]
+    },
+    {
+      "channel": "贝莱德建信理财",
+      "products": [
         {
           "name": "贝莱德建信理财贝淳金元120天持有期固定收益类理财产品2期",
           "issuer": "贝莱德建信理财有限责任公司",
@@ -139,9 +145,9 @@ window.NEW_PRODUCTS = {
     }
   ],
   "stats": {
-    "notices": 62,
-    "candidates": 15,
+    "notices": 48,
+    "candidates": 12,
     "kept": 4,
-    "dropped": 10
+    "dropped": 8
   }
 };
