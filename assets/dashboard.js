@@ -769,12 +769,12 @@
       html += '<td class="c num"' + rs + '>' + (i + 1) + '</td>';
       html += '<td' + rs + '><div class="pname"><a class="plink" href="javascript:void(0)" data-goto-trade="' + p.id + '" title="查看「' + p.name + '」的交易记录">' + (p.short || p.name) + '</a>' + badge + '</div></td>';
       html += '<td class="c num"' + rs + '>' + mmdd(m.latestDate) + '</td>';
-      html += '<td class="r num today-col ' + colorBy(tv) + '"' + rs + '>' + fmtSigned(tv) + '</td>';
-      html += '<td class="r num income-col ' + colorBy(h ? h.income : null) + '"' + rs + '>' + fmtSigned(h ? h.income : null) + '</td>';
+      html += '<td class="r num"' + rs + '>' + (h ? fmtMoney(h.mv) : '—') + '</td>';
       html += '<td class="r num ' + colorBy(h ? h.profit : null) + '"' + rs + ' title="' +
         (h ? '市值 ' + fmtMoney(h.mv) + ' − 成本 ' + fmtMoney(h.cost) : '暂无持仓') + '">' + fmtSigned(h ? h.profit : null) + '</td>';
       html += '<td class="r num ' + colorBy(h ? h.ann : null) + '"' + rs + '>' + fmtAnn(h ? h.ann : null) + '</td>';
-      html += '<td class="r num"' + rs + '>' + (h ? fmtMoney(h.mv) : '—') + '</td>';
+      html += '<td class="r num today-col ' + colorBy(tv) + '"' + rs + '>' + fmtSigned(tv) + '</td>';
+      html += '<td class="r num income-col ' + colorBy(h ? h.income : null) + '"' + rs + '>' + fmtSigned(h ? h.income : null) + '</td>';
       html += '<td class="c num dcell"' + rs + '>' + (h ? '<span class="days">' + h.days + '</span><i class="dunit">天</i>' : '—') + '</td>';
       html += '<td class="c mlabel">' + lbl + '</td>';
 
