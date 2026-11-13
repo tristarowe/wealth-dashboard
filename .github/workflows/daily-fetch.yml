@@ -2,10 +2,10 @@ name: daily-fetch
 
 on:
   schedule:
-    # 每天 07:50（北京时间）= 23:50 UTC 前一天
-    - cron: "50 23 * * *"
-    # 每天 21:30（北京时间）= 13:30 UTC
-    - cron: "30 13 * * *"
+    # 每天 07:45（北京时间）= 23:45 UTC 前一天：抓数 + 出图 + 微信推送（内容截至前一日）
+    - cron: "45 23 * * *"
+    # 每天 22:00（北京时间）= 14:00 UTC：抓当日净值 + 出图 + 微信推送（内容为当日）
+    - cron: "0 14 * * *"
   workflow_dispatch:
 
 permissions:
@@ -18,7 +18,7 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -30,6 +30,8 @@ jobs:
         run: |
           pip install -r daily/requirements.txt
           python -m playwright install --with-deps chromium
+          sudo apt-get update
+          sudo apt-get install -y fonts-noto-cjk
 
       - name: 抓取净值并更新数据
         env:
@@ -37,14 +39,33 @@ jobs:
           PW_CHANNEL: ""
         run: python daily/fetch_data.py
 
+      - name: 拉取云端交易
+        env:
+          PYTHONIOENCODING: utf-8
+        run: python daily/pull_cloud.py || true
+
       - name: 提交数据
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add assets/data.js daily/stats.json
+          git add assets/data.js assets/library.js assets/newproducts.js assets/transactions.js \
+                  daily/stats.json daily/library.json daily/newproducts.json
           if git diff --cached --quiet; then
             echo "无数据变化"
           else
             git commit -m "data: update $(date -u +'%Y-%m-%d')"
             git push
           fi
+
+      - name: 生成看板长图
+        env:
+          PYTHONIOENCODING: utf-8
+          PW_CHANNEL: ""
+        run: python daily/shot.py || true
+
+      - name: 微信推送
+        env:
+          PYTHONIOENCODING: utf-8
+          SERVERCHAN_SENDKEY: ${{ secrets.SERVERCHAN_SENDKEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python daily/notify.py
