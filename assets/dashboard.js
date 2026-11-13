@@ -2383,8 +2383,8 @@
     req.then(function (res) {
       if (btn) btn.disabled = false;
       if (!res || !res.ok) { toast((res && res.message) || '提交失败'); return; }
-      toast(editId ? '交易已修改，刷新持仓' : ('已录入 ' + typeEl.value + '，刷新持仓'));
-      setTimeout(function () { location.reload(); }, 700);
+      toast(editId ? '交易已修改' : ('已录入 ' + typeEl.value));
+      refreshAfterWrite();
     }).catch(function (e) {
       if (btn) btn.disabled = false;
       toast((e && e.message) || '写入交易失败，请检查网络后重试');
@@ -3028,8 +3028,8 @@
         if (!window.confirm('确认删除该笔交易？删除后持仓与收益将重新计算。')) return;
         window.STORE.remove(did).then(function (res) {
           if (!res || !res.ok) { toast((res && res.message) || '删除失败'); return; }
-          toast('交易已删除，刷新持仓');
-          setTimeout(function () { location.reload(); }, 700);
+          toast('交易已删除');
+          refreshAfterWrite();
         }).catch(function (e) { toast((e && e.message) || '删除交易失败，请检查网络后重试'); });
       }
     });
@@ -3290,12 +3290,12 @@
     if (sel) sel.onchange = function () { NP_UI.channel = this.value; renderNewProds(); };
   }
 
-  function renderAll() {
+  function renderAll(keepView) {
     refreshAggregate();
     updatePickerLabel();
     renderPickerList();
     renderProfitTable();
-    resetCalendarMonth();
+    if (!keepView) resetCalendarMonth();
     renderCalendar();
     renderTrend();
     renderProductTable();
@@ -3304,6 +3304,17 @@
     populateFlowSelects();
     renderFlows();
     renderNewProds();
+  }
+
+  /* 交易写入后原地重绘：不整页刷新、不重新拉取云端，保留当前页签与筛选 */
+  function refreshAfterWrite() {
+    var modal = document.getElementById('modal-trade');
+    if (modal) {
+      modal.hidden = true;
+      if (modal.dataset) delete modal.dataset.editId;
+      modal.removeAttribute('data-edit-id');
+    }
+    renderAll(true);
   }
 
   function applySelection() {
