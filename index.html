@@ -164,6 +164,8 @@
   #prod-table tbody td:nth-child(2),#prod-table thead th:nth-child(2){padding-left:10px}
   /* 持仓天数：整列与表头居中对齐，数字与「天」同字体、同字号、同字重 */
   #hold-table th[data-sort="holddays"],#sum-table th[data-sort="days"]{text-align:center}
+  /* 持仓汇总：净值日期保持单行，列窄时也不会断成「11-」「10」两行 */
+  #sum-table thead th:nth-child(5),#sum-table tbody td:nth-child(5){white-space:nowrap}
   #hold-table tbody td.dcell,#sum-table tbody td.dcell{white-space:nowrap;text-align:center}
   #hold-table td.dcell .days,#sum-table td.dcell .days,
   #hold-table td.dcell .dunit,#sum-table td.dcell .dunit{font-family:var(--mono);font-size:13px;font-weight:400;font-variant-numeric:tabular-nums}
@@ -313,6 +315,8 @@
   .pager{display:flex;align-items:center;gap:8px;justify-content:flex-end;padding:10px 4px;font-size:11.5px;color:var(--muted)}
   .pager button{min-width:26px;height:26px;border:1px solid #dbe7ed;background:#f6fafc;border-radius:5px;font-family:var(--mono);font-size:11.5px;cursor:pointer;color:var(--muted)}
   .pager button.on{background:#e4f0f5;border-color:#cbe0e8;color:var(--accent-deep)}
+  .pager .pg-jump{height:26px;padding:0 4px;border:1px solid #dbe7ed;background:#f6fafc;border-radius:5px;font-family:var(--mono);font-size:11.5px;color:var(--muted);cursor:pointer;text-align:center}
+  .pager .pg-jump:focus{outline:none;border-color:#cbe0e8;color:var(--accent-deep)}
   .modal{position:fixed;inset:0;background:rgba(12,32,42,.35);display:flex;align-items:center;justify-content:center;z-index:200}
   .modal[hidden]{display:none}
   .modal-card{background:#fff;border-radius:14px;width:620px;max-width:calc(100vw - 40px);max-height:calc(100vh - 60px);overflow:auto;padding:18px 20px;box-shadow:0 20px 60px rgba(9,46,60,.25)}
@@ -800,6 +804,7 @@
     .filters input{font-size:16px;min-height:36px}
     .tab{min-height:42px}
     .pager button{min-width:29px;height:29px;font-size:12px}
+    .pager .pg-jump{height:29px;font-size:12px;min-width:96px}
     tr.flow-month td{white-space:normal;font-size:12px;line-height:1.7;padding:9px 8px}
     tr.flow-month .fm-meta{display:block;margin-left:14px;font-size:11px}
   }
@@ -1284,7 +1289,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261113c';
+      s.src = './assets/dashboard.js?v=20261113d';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();

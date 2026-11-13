@@ -70,13 +70,30 @@
     return p.nav[p.nav.length - 1];
   }
 
-  /* 交易份额：未记录时按成交净值折算；净值未披露、金额未定时返回 null（显示为 —） */
+  /* 确认日成交净值：只认交易已记录的净值，或确认日当天已披露的净值；未披露返回 0（显示「待确认」） */
+  function txConfirmNav(t, p) {
+    var v = Number(t.confirmNav);
+    if (v > 0) return v;
+    var n = navOnDate(p, t.confirmDate);
+    return typeof n === 'number' && n > 0 ? n : 0;
+  }
+
+  /* 交易份额：未记录时按成交净值折算；净值未披露返回 null（显示为 —） */
   function txShares(t, p) {
     var sh = Number(t.shares);
     if (sh > 0) return sh;
-    var nav = Number(t.confirmNav) || navForConfirm(p, t.confirmDate) || 0;
+    var nav = txConfirmNav(t, p);
     var amt = Number(t.amount) || 0;
     return (nav > 0 && amt > 0) ? amt / nav : null;
+  }
+
+  /* 交易金额：未记录时按份额 × 成交净值折算；净值未披露返回 null（显示「待确认」，披露后自动更新） */
+  function txAmount(t, p) {
+    var amt = Number(t.amount);
+    if (amt > 0) return amt;
+    var sh = Number(t.shares);
+    var nav = txConfirmNav(t, p);
+    return (sh > 0 && nav > 0) ? sh * nav : null;
   }
 
   /* 确认日按申购日 T+1 自动换算，遇周末/法定节假日顺延至下一交易日 */
@@ -1849,14 +1866,17 @@
   function renderProdPager(pages, total) {
     var box = document.getElementById('prod-pages');
     var info = document.getElementById('prod-pager-info');
-    if (info) info.textContent = '共 ' + total + ' 条 · 每页 ' + PROD_PAGE_SIZE + ' 条';
+    if (info) info.textContent = '共 ' + total + ' 条';
     if (!box) return;
-    var html = '<button data-page="' + (prodUi.page - 1) + '"' + (prodUi.page <= 1 ? ' disabled' : '') + '>‹</button>';
+    /* 精简翻页：上一页/下一页 + 页码下拉直接跳转，不再平铺所有页码 */
+    var opts = '';
     for (var i = 1; i <= pages; i++) {
-      html += '<button data-page="' + i + '"' + (i === prodUi.page ? ' class="on"' : '') + '>' + i + '</button>';
+      opts += '<option value="' + i + '"' + (i === prodUi.page ? ' selected' : '') + '>第 ' + i + ' / ' + pages + ' 页</option>';
     }
-    html += '<button data-page="' + (prodUi.page + 1) + '"' + (prodUi.page >= pages ? ' disabled' : '') + '>›</button>';
-    box.innerHTML = html;
+    box.innerHTML =
+      '<button data-page="' + (prodUi.page - 1) + '"' + (prodUi.page <= 1 ? ' disabled' : '') + ' aria-label="上一页">‹</button>' +
+      (pages > 1 ? '<select class="pg-jump" aria-label="跳转页码">' + opts + '</select>' : '') +
+      '<button data-page="' + (prodUi.page + 1) + '"' + (prodUi.page >= pages ? ' disabled' : '') + ' aria-label="下一页">›</button>';
   }
 
   function applyProductCols() {
@@ -2173,6 +2193,13 @@
       var btn = e.target.closest('[data-page]');
       if (!btn || btn.disabled) return;
       var page = parseInt(btn.getAttribute('data-page'), 10);
+      if (!page || page === prodUi.page) return;
+      prodUi.page = page;
+      renderProductTable();
+    });
+    if (pager) pager.addEventListener('change', function (e) {
+      if (!e.target.classList || !e.target.classList.contains('pg-jump')) return;
+      var page = parseInt(e.target.value, 10);
       if (!page || page === prodUi.page) return;
       prodUi.page = page;
       renderProductTable();
@@ -3158,7 +3185,7 @@
         var k = t.type || '申购';
         if (!sum[k]) sum[k] = { n: 0, amt: 0 };
         sum[k].n += 1;
-        sum[k].amt += Number(t.amount) || 0;
+        sum[k].amt += txAmount(t, t._p) || 0;
       });
       var meta = ['申购', '赎回', '清仓'].filter(function (k) { return sum[k] && sum[k].n; })
         .map(function (k) { return k + ' ' + sum[k].n + ' 笔 ' + moneyBrief(sum[k].amt); })
@@ -3180,7 +3207,7 @@
           '<td class="c"><span class="tag' + (t.type === '赎回' || t.type === '清仓' ? ' new' : '') + '">' + t.type + '</span></td>' +
           '<td class="r num">' + fmtMoney(txShares(t, p)) + '</td>' +
           '<td class="r num">' + (st === '在途' ? '<span class="pending-nav">待确认</span>' : fmtNav(navOnDate(p, t.confirmDate) || t.confirmNav)) + '</td>' +
-          '<td class="r num">' + fmtMoney(t.amount) + '</td>' +
+          '<td class="r num">' + (txAmount(t, p) === null ? '<span class="pending-nav">待确认</span>' : fmtMoney(txAmount(t, p))) + '</td>' +
           '<td class="c num">' + t.confirmDate + '</td>' +
           '<td class="c"><span class="tag' + (st === '在途' ? ' np' : '') + '" title="' +
             (st === '在途' ? '在途：' + txPendingReason(t) + '，暂不计入持仓；净值披露后自动转为已确认' : '已确认并计入持仓') + '">' + st + '</span></td>' +
