@@ -1791,19 +1791,27 @@
     });
   }
 
+  /* 新品挂标：成立日起 30 天内（含第 30 天） */
+  function isNewProduct(p, m) {
+    var inc = p.inception || (m && m.inception) || '';
+    if (!inc) return false;
+    var end = parseDate(inc).getTime() + 30 * DAY;
+    var ref = DATA.asOf ? parseDate(DATA.asOf).getTime() : new Date().getTime();
+    return ref <= end;
+  }
+
   function renderProductTable() {
     var tbody = document.getElementById('prod-body');
     if (!tbody) return;
     var allModels = MODEL.concat(LIB_MODEL);
     var peerAvg30 = peerAvg30Of(allModels);
     var favList = favs();
-    var asofMonth = DATA.asOf.slice(0, 7);
 
     var list = allModels.filter(function (item) {
       var p = item.product;
       var h = HOLD_BY_PID[p.id];
       var term = termOf(p);
-      var isNew = (p.inception || item.m.inception || '').slice(0, 7) === asofMonth;
+      var isNew = isNewProduct(p, item.m);
       var isFav = favList.indexOf(p.id) !== -1;
       if (prodUi.sale && saleOf(p) !== prodUi.sale) return false;
       if (prodUi.org && orgShort(p.org) !== prodUi.org) return false;
@@ -1841,7 +1849,7 @@
       var m = item.m;
       var h = HOLD_BY_PID[p.id];
       var term = termOf(p);
-      var isNew = (p.inception || m.inception || '').slice(0, 7) === asofMonth;
+      var isNew = isNewProduct(p, m);
       var isFav = favList.indexOf(p.id) !== -1;
 
       var w7 = m.windows[0], w14 = m.windows[1], w30 = m.windows[2];
@@ -1863,7 +1871,7 @@
             '<span class="cleared-date">' +
               (h.tx && h.tx.confirmDate ? h.tx.confirmDate.slice(5) + ' ' : '') + '清仓</span>' :
             '<span class="tag new">持仓</span>') : '') +
-          (isNew ? '<span class="tag np">当月新品</span>' : '') +
+          (isNew ? '<span class="tag np">新品</span>' : '') +
           (p.manual ? '<span class="tag" style="background:#f4f7f9;color:#7d939f" title="手工添加的产品">手工</span>' : '') +
           '</span>' +
           saleSpan(p) +
@@ -2984,6 +2992,35 @@
     closePanel();
   }
 
+  /* 持仓汇总的产品名 → 产品库：清空筛选，按产品名过滤并滚动到列表 */
+  function gotoProduct(pid) {
+    var p = findProductById(pid);
+    if (!p) return;
+    switchTab('prod');
+    ['sale-sel', 'org-sel', 'risk-sel', 'term-sel'].forEach(function (id) {
+      var sel = document.getElementById(id);
+      if (!sel) return;
+      sel.value = '';
+      syncSelLabel(sel);
+    });
+    prodUi.sale = ''; prodUi.org = ''; prodUi.risk = ''; prodUi.term = '';
+    prodUi.flagNew = false; prodUi.flagFav = false;
+    Array.prototype.forEach.call(document.querySelectorAll('.filters .chip[data-flag]'), function (b) {
+      b.classList.remove('on');
+    });
+    prodUi.holdHolding = true; prodUi.holdCleared = true;
+    var holdSel = document.getElementById('hold-sel');
+    if (holdSel) { holdSel.value = ''; syncSelLabel(holdSel); }
+    var search = document.getElementById('prod-search');
+    if (search) search.value = p.short || p.name;
+    prodUi.q = p.short || p.name;
+    prodUi.page = 1;
+    renderProductTable();
+    var tbl = document.getElementById('prod-table');
+    var sec = tbl && tbl.closest('section');
+    if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   /* 交易汇总行：待确认申购计入（标记在途），已清仓按「确认日 +1 天」剔除 */
   function summaryRows() {
     var today = isoDate(new Date());
@@ -3083,7 +3120,7 @@
         ? ' title="申购待确认：确认日净值未披露，按最新净值估算计入"'
         : ' title="在途：确认日未到或确认日净值未披露，确认后自动更新"';
       return '<tr>' +
-        '<td><div class="pname"><a class="plink" href="javascript:void(0)" data-goto-trade="' + p.id + '">' +
+        '<td><div class="pname"><a class="plink" href="javascript:void(0)" data-goto-prod="' + p.id + '" title="在产品库中查看「' + p.name + '」">' +
           (p.short || p.name) + '</a>' +
           '<span class="ptags">' +
           (inflight ? '<span class="tag np"' + inflightTip + '>在途</span>' : '') +
@@ -3444,6 +3481,12 @@
     });
 
     document.addEventListener('click', function (e) {
+      var plink = e.target.closest ? e.target.closest('[data-goto-prod]') : null;
+      if (plink) {
+        e.preventDefault();
+        gotoProduct(plink.getAttribute('data-goto-prod'));
+        return;
+      }
       var link = e.target.closest ? e.target.closest('[data-goto-trade]') : null;
       if (!link) return;
       e.preventDefault();

@@ -1136,7 +1136,7 @@
           <option value="per10k">万收</option>
           <option value="ann">年化</option>
         </select>
-        <button class="chip" data-flag="new">当月新品</button>
+        <button class="chip" data-flag="new">新品</button>
         <button class="chip" data-flag="fav">★ 收藏</button>
         <input type="search" id="prod-search" placeholder="搜索产品名称" aria-label="搜索产品名称">
       </div>
@@ -1306,7 +1306,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261113g';
+      s.src = './assets/dashboard.js?v=20261113h';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();
