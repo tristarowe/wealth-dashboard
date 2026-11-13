@@ -664,7 +664,7 @@
     }
     el = document.getElementById('metric-avg');
     if (el) {
-      el.textContent = fmt2(avg);
+      el.textContent = fmtSigned(avg);
       el.className = 'ink ' + colorBy(avg);
     }
 
@@ -675,7 +675,7 @@
     }
     el = document.getElementById('metric-month-avg');
     if (el) {
-      el.textContent = fmt2(mCnt ? mPerSum / mCnt : null);
+      el.textContent = fmtSigned(mCnt ? mPerSum / mCnt : null);
       el.className = 'ink ' + colorBy(mCnt ? mPerSum / mCnt : null);
     }
 
