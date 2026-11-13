@@ -417,7 +417,7 @@
   .active-filter{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);background:#eef6f8;border:1px solid #d5e5ea;border-radius:8px;padding:6px 10px;margin-bottom:10px}
   .active-filter[hidden]{display:none}
   .active-filter b{color:var(--accent-deep)}
-  #sum-table{min-width:980px}
+  #sum-table{min-width:1032px}
   /* 交易汇总操作列：加购/赎回/清仓三个按钮同排显示，不允许换行折叠 */
   #sum-table thead th:last-child,#sum-table tbody td:last-child{white-space:nowrap}
   #sum-table tbody td:last-child .mini{white-space:nowrap}
@@ -579,7 +579,7 @@
     #hold-table thead th,#prod-table thead th{font-size:12px}
     #prod-table thead th{min-width:0 !important}
     #hold-table{min-width:1000px}
-    #sum-table{min-width:820px}
+    #sum-table{min-width:872px}
     #prod-table{min-width:880px}
     #hold-table .pname,#sum-table .pname,#prod-table .pname{font-size:12.5px}
     /* 产品名称右侧标签不换行，固定显示在名称右侧 */
@@ -652,7 +652,8 @@
     #sum-table col:nth-child(6){width:62px !important}
     #sum-table col:nth-child(7){width:62px !important}
     #sum-table col:nth-child(8){width:52px !important}
-    #sum-table col:nth-child(9){width:128px !important}
+    #sum-table col:nth-child(9){width:52px !important}
+    #sum-table col:nth-child(10){width:128px !important}
     #flow-table col:nth-child(1){width:26px !important}
     #flow-table col:nth-child(2){width:78px !important}
     #flow-table col:nth-child(3){width:150px !important}
@@ -1028,7 +1029,7 @@
           <colgroup>
             <col><col style="width:8.5%"><col style="width:8.5%"><col style="width:8.5%">
             <col style="width:8.5%"><col style="width:8.5%"><col style="width:8.5%">
-            <col style="width:8.5%"><col style="width:11.5%">
+            <col style="width:8.5%"><col style="width:8.5%"><col style="width:11.5%">
           </colgroup>
           <thead>
             <tr>
@@ -1038,6 +1039,7 @@
               <th class="c sortable" data-sort="navdate">净值<br>日期</th>
               <th class="c sortable" data-sort="nav">净值</th><th class="r sortable" data-sort="shares">持仓<br>份额</th>
               <th class="c sortable" data-sort="days">持仓<br>天数</th>
+              <th class="c sortable" data-sort="listdays">成立<br>天数</th>
               <th class="c">操作</th>
             </tr>
           </thead>

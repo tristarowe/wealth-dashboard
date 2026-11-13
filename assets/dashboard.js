@@ -143,6 +143,17 @@
     return Math.round((b.getTime() - a.getTime()) / DAY);
   }
 
+  /* 成立天数：成立日（无成立日时用首条净值日）到数据截止日的自然日数 */
+  function listingDaysOf(p) {
+    if (!p || p.manual) return null;
+    var start = p.inception || (p.dates && p.dates[0]);
+    if (!start) return null;
+    var end = DATA.asOf || p.latestDate;
+    if (!end) return null;
+    var d = dayDiff(parseDate(start), parseDate(end));
+    return d >= 0 ? d : null;
+  }
+
   function mmdd(s) {
     return s ? s.slice(5) : '—';
   }
@@ -746,7 +757,8 @@
     mv: function (h) { return h.mv; },
     profit: function (h) { return h.profit; },
     ann: function (h) { return h.ann; },
-    days: function (h) { return h.days; }
+    days: function (h) { return h.days; },
+    listdays: function (h) { return listingDaysOf(h.product); }
   };
   var WINDOW_SORT = { w7: 0, w14: 1, w30: 2, w60: 3, w90: 4, w365: 5 };
 
@@ -3086,11 +3098,13 @@
         '<td class="c num">' + fmtNav(h.latestNav) + '</td>' +
         '<td class="r num">' + fmtMoney(h.shares) + '</td>' +
         '<td class="c num dcell"><span class="days">' + h.days + '</span><i class="dunit">天</i></td>' +
+        '<td class="c num dcell">' + (listingDaysOf(p) === null ? '—' :
+          '<span class="days">' + listingDaysOf(p) + '</span><i class="dunit">天</i>') + '</td>' +
         '<td class="c"><button class="mini buy" data-act="add" data-pid="' + p.id + '">加购</button> ' +
           '<button class="mini sell" data-act="redeem" data-pid="' + p.id + '"' + (canSell ? '' : noShareTip) + '>赎回</button> ' +
           '<button class="mini warn" data-act="close" data-pid="' + p.id + '"' + (canClose ? '' : (canSell ? pendingTip : noShareTip)) + '>清仓</button></td>' +
         '</tr>';
-    }).join('') || '<tr><td colspan="9" class="c muted" style="padding:28px">' + (flowState.pid ? '该产品暂无持仓' : '暂无持仓') + '</td></tr>';
+    }).join('') || '<tr><td colspan="10" class="c muted" style="padding:28px">' + (flowState.pid ? '该产品暂无持仓' : '暂无持仓') + '</td></tr>';
 
     Array.prototype.forEach.call(document.querySelectorAll('#sum-table thead th[data-sort]'), function (th) {
       th.classList.remove('sorted-asc', 'sorted-desc');
