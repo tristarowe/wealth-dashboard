@@ -701,9 +701,9 @@
     /* 竖屏窄屏才恢复自适应列宽；横屏沿用桌面百分比列宽，列间距才均匀 */
     #hold-table,#sum-table,#prod-table,#flow-table{table-layout:auto}
     #hold-table colgroup col,#sum-table colgroup col,#prod-table colgroup col,#flow-table colgroup col{width:auto !important}
-    /* 自适应列宽下产品名会把表头筛选下拉挤扁：给「类型 / 状态」列一个最小可读宽度 */
-    #flow-table .th-select{min-width:58px;font-size:11px}
-    #flow-table thead th:nth-child(4),#flow-table thead th:nth-child(9){min-width:58px}
+    /* 自适应列宽下产品名会把表头筛选下拉挤扁：按钮按文字宽度显示，列保留最小可读宽度 */
+    #flow-table .th-select{width:auto;min-width:0;font-size:11px}
+    #flow-table thead th:nth-child(4),#flow-table thead th:nth-child(9){min-width:56px}
     .hero{padding:16px 14px 18px;border-radius:14px}
     .hero-top{flex-direction:column;align-items:stretch;gap:10px}
     .hero-actions{position:absolute;top:12px;right:12px;display:flex;flex-direction:column;justify-content:flex-end;gap:6px}
@@ -1304,7 +1304,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261113f';
+      s.src = './assets/dashboard.js?v=20261113g';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();

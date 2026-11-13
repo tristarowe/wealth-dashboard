@@ -47,6 +47,14 @@
     });
   }
 
+  /* 是否有任意在途交易（申购/赎回/清仓），与交易流水的「在途」状态联动 */
+  function hasInflightTx(pid) {
+    var items = (window.TRANSACTIONS && window.TRANSACTIONS.items) || [];
+    return items.some(function (t) {
+      return t.pid === pid && txStatus(t) === '在途';
+    });
+  }
+
   /* 产品在指定日期披露的净值，未披露返回 null */
   function navOnDate(p, date) {
     if (!p || !p.dates || !date) return null;
@@ -3057,11 +3065,16 @@
       var canClose = canSell && !hasPendingClear(p.id);
       var noShareTip = ' title="当前无可卖份额（已清仓）" disabled';
       var pendingTip = ' title="已有在途清仓单，确认后再操作" disabled';
+      /* 在途标记与交易流水联动：申购待确认，或存在在途赎回/清仓单 */
+      var inflight = !!h.pending || (!h.cleared && hasInflightTx(p.id));
+      var inflightTip = h.pending
+        ? ' title="申购待确认：确认日净值未披露，按最新净值估算计入"'
+        : ' title="在途：确认日未到或确认日净值未披露，确认后自动更新"';
       return '<tr>' +
         '<td><div class="pname"><a class="plink" href="javascript:void(0)" data-goto-trade="' + p.id + '">' +
           (p.short || p.name) + '</a>' +
           '<span class="ptags">' +
-          (h.pending ? '<span class="tag np" title="申购待确认：确认日净值未披露，按最新净值估算计入">在途</span>' : '') +
+          (inflight ? '<span class="tag np"' + inflightTip + '>在途</span>' : '') +
           (h.cleared ? '<span class="cleared-date">' +
             (h.tx && h.tx.confirmDate ? h.tx.confirmDate.slice(5).replace('-', '.') : '') + ' 清仓</span>' : '') +
           '</span>' +
