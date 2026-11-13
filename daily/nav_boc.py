@@ -170,25 +170,33 @@ def run(limit=30, delay=1.0, commit=False):
     print("官网产品索引 %d 条" % sum(len(v) for v in index.values()), flush=True)
 
     ok = 0
+    tried = False
     for i, x in enumerate(todo, 1):
         label = "%s %s" % (x["regCode"], (x.get("short") or "")[:20])
         try:
             share, raw = resolve(x, index, delay)
             if not share:
                 print("[%d/%d] %s 跳过：官网未找到份额代码" % (i, len(todo), label), flush=True)
+                x["bocTried"] = today
+                tried = True
                 continue
             rows = to_rows(raw)
             if len(rows) < 2:
                 print("[%d/%d] %s 跳过：官网暂无净值（份额 %s）"
                       % (i, len(todo), label, share), flush=True)
+                x["bocTried"] = today
+                tried = True
                 continue
             old = x.get("latestDate") or ""
-            if rows[-1]["date"] < old and len(rows) <= len(x.get("nav") or []):
-                print("[%d/%d] %s 官网数据更旧，跳过" % (i, len(todo), label), flush=True)
+            if rows[-1]["date"] <= old and len(rows) <= len(x.get("nav") or []):
+                print("[%d/%d] %s 官网暂无更新，今日不再重试" % (i, len(todo), label), flush=True)
+                x["bocTried"] = today
+                tried = True
                 continue
             fresh = promo.to_item(x, rows)
             x.update({k: fresh[k] for k in ("dates", "nav", "per10k",
                                             "latestDate", "latestNav")})
+            x.pop("bocTried", None)
             ok += 1
             print("[%d/%d] %s OK %d 条 %s~%s 最新 %s（份额 %s）"
                   % (i, len(todo), label, len(rows), rows[0]["date"], rows[-1]["date"],
@@ -196,10 +204,10 @@ def run(limit=30, delay=1.0, commit=False):
         except Exception as exc:
             print("[%d/%d] %s 失败：%s" % (i, len(todo), label, str(exc)[:100]), flush=True)
 
-    if ok:
+    if ok or tried:
         promo.save(items)
         print("中银完成：更新 %d 只" % ok, flush=True)
-        if commit:
+        if commit and ok:
             _commit("data: 中银官网补抓净值 %s" % (max(
                 (x.get("latestDate") or "") for x in items) or ""))
     else:
@@ -208,7 +216,7 @@ def run(limit=30, delay=1.0, commit=False):
 
 
 def _commit(message):
-    if os.environ.get("GITHUB_ACTIONS") != "true":
+    if os.environ.get("GITHUB_ACTIONS") != "true" or os.environ.get("NAV_NO_COMMIT") == "1":
         return
     subprocess.run(["git", "add", promo.LIB_JS, promo.LIB_JSON], check=False, timeout=120)
     if subprocess.run(["git", "diff", "--cached", "--quiet"], check=False).returncode == 0:
