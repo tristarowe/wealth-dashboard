@@ -1531,7 +1531,9 @@
     sale: '', org: '', risk: '', term: '', q: '',
     flagNew: false, flagFav: false,
     holdHolding: true, holdCleared: true, page: 1,
-    mPer10k: true, mAnn: true
+    mPer10k: true, mAnn: true,
+    /* 表头排序：默认今日万收降序；sortTouched 表示用户手动点过表头 */
+    sortKey: 'p10k', sortDir: 'desc', sortTouched: false
   };
 
   function favs() {
@@ -1620,6 +1622,85 @@
     }).map(function (o) { return o.x; });
   }
 
+  /* 产品库表头排序：取值 → 统一比较（空值始终排末尾） */
+  function riskRank(v) {
+    var m = String(v || '').match(/([1-5])/);
+    return m ? +m[1] : null;
+  }
+
+  function termRank(term) {
+    if (term === '日开') return 0;
+    var n = parseInt(term, 10);
+    return isNaN(n) ? null : n;
+  }
+
+  function prodSortValue(item, key) {
+    var p = item.product || {};
+    var m = item.m || {};
+    var w = m.windows || [];
+    function win(i) { return w[i] && typeof w[i].per === 'number' ? w[i].per : null; }
+    switch (key) {
+      case 'name': return p.short || p.name || '';
+      case 'risk': return riskRank(riskOf(p));
+      case 'term': return termRank(termOf(p));
+      case 'p10k': return typeof m.todayPer === 'number' ? m.todayPer : null;
+      case 'w7': return win(0);
+      case 'w14': return win(1);
+      case 'w30': return win(2);
+      case 'ann': return typeof m.sinceAnn === 'number' ? m.sinceAnn : null;
+      case 'nav': return typeof m.latestNav === 'number' ? m.latestNav : null;
+      case 'navdate': return m.latestDate || '';
+      case 'cdate': return m.inception || '';
+      default: return null;
+    }
+  }
+
+  function prodCompare(a, b, key, dir) {
+    var av = prodSortValue(a, key);
+    var bv = prodSortValue(b, key);
+    var aEmpty = av === null || av === undefined || av === '';
+    var bEmpty = bv === null || bv === undefined || bv === '';
+    if (aEmpty !== bEmpty) return aEmpty ? 1 : -1;
+    if (aEmpty) return 0;
+    var r = av < bv ? -1 : av > bv ? 1 : 0;
+    if (r === 0 && key !== 'name') {
+      r = String(a.product.short || a.product.name || '')
+        .localeCompare(String(b.product.short || b.product.name || ''), 'zh');
+    }
+    return dir === 'asc' ? r : -r;
+  }
+
+  function renderProductSortMarks() {
+    var ths = document.querySelectorAll('#prod-table thead th[data-sort]');
+    Array.prototype.forEach.call(ths, function (th) {
+      th.classList.remove('sorted-asc', 'sorted-desc');
+      if (th.getAttribute('data-sort') === prodUi.sortKey) {
+        th.classList.add(prodUi.sortDir === 'asc' ? 'sorted-asc' : 'sorted-desc');
+      }
+    });
+  }
+
+  function bindProdSort() {
+    Array.prototype.forEach.call(document.querySelectorAll('#prod-table thead th[data-sort]'), function (th) {
+      if (th.dataset.sortBound) return;
+      th.dataset.sortBound = '1';
+      th.addEventListener('click', function () {
+        var key = th.getAttribute('data-sort');
+        if (prodUi.sortKey === key && prodUi.sortTouched) {
+          prodUi.sortDir = prodUi.sortDir === 'asc' ? 'desc' : 'asc';
+        } else {
+          /* 文本列首次点击升序，数值列首次点击降序 */
+          var textCols = { name: 1, navdate: 1, cdate: 1 };
+          prodUi.sortKey = key;
+          prodUi.sortDir = textCols[key] ? 'asc' : 'desc';
+        }
+        prodUi.sortTouched = true;
+        prodUi.page = 1;
+        renderProductTable();
+      });
+    });
+  }
+
   function renderProductTable() {
     var tbody = document.getElementById('prod-body');
     if (!tbody) return;
@@ -1651,17 +1732,11 @@
         (p.regCode || '').toLowerCase().indexOf(q) === -1) return false;
       return true;
     });
-    /* 搜索时按「名称命中优先、编号命中最后」重排；无搜索词时按今日万收降序 */
+    /* 搜索时先按「名称命中优先、编号命中最后」重排，再按表头排序列排序 */
     list = sortBySearch(list, prodUi.q, function (it) { return it.product; });
-    if (!prodUi.q.trim()) {
+    if (!prodUi.q.trim() || prodUi.sortTouched) {
       list = list.slice().sort(function (a, b) {
-        var av = a.m ? a.m.todayPer : null;
-        var bv = b.m ? b.m.todayPer : null;
-        var aOk = typeof av === 'number' && isFinite(av);
-        var bOk = typeof bv === 'number' && isFinite(bv);
-        if (aOk !== bOk) return aOk ? -1 : 1;
-        if (!aOk) return 0;
-        return bv - av;
+        return prodCompare(a, b, prodUi.sortKey, prodUi.sortDir);
       });
     }
 
@@ -1728,6 +1803,7 @@
     renderProdPager(pages, hit);
 
     applyProductCols();
+    renderProductSortMarks();
   }
 
   function renderProdPager(pages, total) {
@@ -3570,6 +3646,7 @@
     bindCalendar();
     bindTrend();
     bindProductFilters();
+    bindProdSort();
     beautifyFilterSelects();
     bindProdSearchSuggest();
     bindTrade();
