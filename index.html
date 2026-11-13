@@ -602,6 +602,11 @@
     #hold-table thead th,#hold-table tbody td{padding:6px 2px}
     /* 区间标签（日均万收/年化）样式沿用桌面偏宽内边距，横屏下收窄 */
     #hold-table td.mlabel{padding:6px 2px;font-size:11px}
+    /* 区间数值（日均万收/年化）与持仓天数原本 13px，横屏统一到全表 11px */
+    #hold-table td.pwin,#hold-table td.awin{font-size:11px}
+    #hold-table td.dcell .days,#hold-table td.dcell .dunit{font-size:11px}
+    /* 产品名与评分说明也统一到 11px，全表只保留 † 上标略小 */
+    #hold-table .pname,#hold-table .plink,#hold-table .st i{font-size:11px}
     /* 排序箭头会撑破窄列：横屏改为列头上下边线提示，降序=下达线、升序=上达线 */
     #hold-table thead th.sorted-asc::after,#hold-table thead th.sorted-desc::after{content:none}
     #hold-table thead th.sorted-asc,#hold-table thead th.sorted-desc{color:var(--accent-deep)}
