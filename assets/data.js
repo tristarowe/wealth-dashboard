@@ -1,6 +1,6 @@
 window.REPORT_DATA = {
   "asOf": "2026-11-13",
-  "fetchedAt": "2026-11-13 19:04",
+  "fetchedAt": "2026-11-13 20:26",
   "products": [
     {
       "id": "p2150",

@@ -1599,8 +1599,8 @@
   /* ---------------- 产品库 ---------------- */
   var PROD_PAGE_SIZE = 10;
   var prodUi = {
-    sale: '', org: '', risk: '', term: '', q: '',
-    flagNew: false, flagFav: false, newMonth: '',
+    sale: '', org: '', risk: '', term: '', incep: '', q: '',
+    flagNew: false, flagFav: false,
     holdHolding: true, holdCleared: true, page: 1, pages: 1,
     mPer10k: true, mAnn: true,
     /* 表头排序：默认今日万收降序；sortTouched 表示用户手动点过表头 */
@@ -1796,35 +1796,10 @@
     return ref <= end;
   }
 
-  /* 新品月份下拉：列出产品库里所有成立月份（倒序），选某月只看该月确立的新品 */
-  function syncNewMonthOptions(allModels) {
-    var sel = document.getElementById('new-month-sel');
-    if (!sel) return;
-    var seen = {};
-    allModels.forEach(function (it) {
-      var inc = (it.product && it.product.inception) || '';
-      if (inc.length >= 7) seen[inc.slice(0, 7)] = 1;
-    });
-    var keys = Object.keys(seen).sort().reverse();
-    var sig = keys.join(',');
-    if (sel.dataset.sig !== sig) {
-      sel.innerHTML = '<option value="">全部月份</option>' + keys.map(function (k) {
-        return '<option value="' + k + '">' + k.slice(0, 4) + '年' + (+k.slice(5, 7)) + '月</option>';
-      }).join('');
-      sel.dataset.sig = sig;
-    }
-    if (keys.indexOf(prodUi.newMonth) === -1) prodUi.newMonth = '';
-    sel.value = prodUi.newMonth;
-    /* 原生 select 被包进 .sel-wrap 后要连外壳一起显示/隐藏 */
-    var box = sel.parentNode && sel.parentNode.classList && sel.parentNode.classList.contains('sel-wrap') ? sel.parentNode : sel;
-    box.hidden = !prodUi.flagNew;
-  }
-
   function renderProductTable() {
     var tbody = document.getElementById('prod-body');
     if (!tbody) return;
     var allModels = MODEL.concat(LIB_MODEL);
-    syncNewMonthOptions(allModels);
     var peerAvg30 = peerAvg30Of(allModels);
     var favList = favs();
 
@@ -1838,12 +1813,9 @@
       if (prodUi.org && orgShort(p.org) !== prodUi.org) return false;
       if (prodUi.risk && riskOf(p) !== prodUi.risk) return false;
       if (prodUi.term && termBucket(term) !== prodUi.term) return false;
-      if (prodUi.flagNew) {
-        /* 选了月份就按成立月份筛，没选仍按「成立 30 天内」判定 */
-        if (prodUi.newMonth) {
-          if ((p.inception || '').slice(0, 7) !== prodUi.newMonth) return false;
-        } else if (!isNew) return false;
-      }
+      /* 成立月份：按产品成立日所在月份筛选（手工添加/无成立日的不参与） */
+      if (prodUi.incep && String(p.inception || '').slice(0, 7) !== prodUi.incep) return false;
+      if (prodUi.flagNew && !isNew) return false;
       if (prodUi.flagFav && !isFav) return false;
       /* 仅持仓/仅清仓为唯一选择：未持有的产品不再出现 */
       if (prodUi.holdHolding !== prodUi.holdCleared) {
@@ -2094,7 +2066,7 @@
     Array.prototype.forEach.call(document.querySelectorAll('.filters select'), function (sel) {
       if (sel.parentNode && sel.parentNode.classList && sel.parentNode.classList.contains('sel-wrap')) return;
       var wrap = document.createElement('span');
-      wrap.className = 'sel-wrap' + (sel.id === 'new-month-sel' ? ' sel-wrap-chip' : '');
+      wrap.className = 'sel-wrap';
       sel.parentNode.insertBefore(wrap, sel);
       wrap.appendChild(sel);
       var label = document.createElement('span');
@@ -2248,6 +2220,23 @@
     window.addEventListener('resize', placeProdSug);
   }
 
+  function populateIncepSelect() {
+    var sel = document.getElementById('incep-sel');
+    if (!sel) return;
+    var months = [];
+    MODEL.concat(LIB_MODEL).forEach(function (item) {
+      var m = String(item.product.inception || '').slice(0, 7);
+      if (m && months.indexOf(m) === -1) months.push(m);
+    });
+    months.sort().reverse();
+    var current = sel.value;
+    sel.innerHTML = '<option value="">成立月份</option>' + months.map(function (m) {
+      return '<option value="' + m + '">' + m + '</option>';
+    }).join('');
+    sel.value = months.indexOf(current) !== -1 ? current : '';
+    syncSelLabel(sel);
+  }
+
   function bindProductFilters() {
     var ids = ['sale-sel', 'org-sel', 'risk-sel', 'term-sel'];
     ids.forEach(function (id) {
@@ -2267,28 +2256,24 @@
     Array.prototype.forEach.call(flagBtns, function (b) {
       b.addEventListener('click', function () {
         b.classList.toggle('on');
-        if (b.dataset.flag === 'new') {
-          prodUi.flagNew = b.classList.contains('on');
-          /* 关掉「新品」时月份筛选一并清空，避免残留筛选条件 */
-          if (!prodUi.flagNew) prodUi.newMonth = '';
-        }
+        if (b.dataset.flag === 'new') prodUi.flagNew = b.classList.contains('on');
         if (b.dataset.flag === 'fav') prodUi.flagFav = b.classList.contains('on');
         prodUi.page = 1;
         renderProductTable();
       });
     });
 
-    var nmSel = document.getElementById('new-month-sel');
-    if (nmSel) nmSel.addEventListener('change', function () {
-      prodUi.newMonth = nmSel.value;
-      prodUi.page = 1;
-      renderProductTable();
-    });
-
     var holdSel = document.getElementById('hold-sel');
     if (holdSel) holdSel.addEventListener('change', function () {
       prodUi.holdHolding = holdSel.value !== 'cleared';
       prodUi.holdCleared = holdSel.value !== 'holding';
+      prodUi.page = 1;
+      renderProductTable();
+    });
+
+    var incepSel = document.getElementById('incep-sel');
+    if (incepSel) incepSel.addEventListener('change', function () {
+      prodUi.incep = incepSel.value;
       prodUi.page = 1;
       renderProductTable();
     });
@@ -3034,13 +3019,13 @@
     var p = findProductById(pid);
     if (!p) return;
     switchTab('prod');
-    ['sale-sel', 'org-sel', 'risk-sel', 'term-sel'].forEach(function (id) {
+    ['sale-sel', 'org-sel', 'risk-sel', 'term-sel', 'incep-sel'].forEach(function (id) {
       var sel = document.getElementById(id);
       if (!sel) return;
       sel.value = '';
       syncSelLabel(sel);
     });
-    prodUi.sale = ''; prodUi.org = ''; prodUi.risk = ''; prodUi.term = '';
+    prodUi.sale = ''; prodUi.org = ''; prodUi.risk = ''; prodUi.term = ''; prodUi.incep = '';
     prodUi.flagNew = false; prodUi.flagFav = false;
     Array.prototype.forEach.call(document.querySelectorAll('.filters .chip[data-flag]'), function (b) {
       b.classList.remove('on');
@@ -3818,6 +3803,7 @@
     renderTrend();
     renderProductTable();
     populateOrgSelect();
+    populateIncepSelect();
     renderTradeSummary();
     populateFlowSelects();
     renderFlows();
@@ -3924,6 +3910,7 @@
     renderTrend();
     renderProductTable();
     populateOrgSelect();
+    populateIncepSelect();
     renderTradeSummary();
     populateFlowSelects();
     renderFlows();
@@ -3988,6 +3975,31 @@
       });
     }
 
+    /* 只有本机/内网服务才带抓取接口；手机打开线上 Pages 时直接走「重新拉取数据文件」 */
+    function hasLocalApi() {
+      if (location.protocol === 'file:') return false;
+      var h = location.hostname;
+      return h === 'localhost' || h === '127.0.0.1' ||
+        /^192\.168\./.test(h) || /^10\./.test(h) || /^172\.(1[6-9]|2\d|3[01])\./.test(h);
+    }
+
+    /* 手机/静态托管（GitHub Pages）没有抓取后端：退化为重新拉取已发布的最新数据文件 */
+    function fallbackReload() {
+      reloadData().then(function () {
+        var msg = DATA.asOf === prevAsOf ? '已是最新' : '已更新';
+        settle('done', msg, '已获取最新已发布数据 · 数据日期 ' + (DATA.asOf || '—'));
+        if (window.innerWidth < 760) toast(msg + ' · 数据日期 ' + (DATA.asOf || '—'));
+      }).catch(function (err) {
+        settle('error', '刷新失败', String((err && err.message) || err));
+      });
+    }
+
+    if (!hasLocalApi()) {
+      defaultTitle = '刷新数据：重新获取线上最新已发布的数据';
+      btn.title = defaultTitle;
+      btn.setAttribute('aria-label', defaultTitle);
+    }
+
     btn.addEventListener('click', function () {
       if (btn.disabled) return;
       prevAsOf = DATA.asOf;
@@ -3996,15 +4008,20 @@
       btn.classList.add('loading');
       if (labelEl) labelEl.textContent = '抓取中…';
 
+      if (!hasLocalApi()) { fallbackReload(); return; }
+
       fetch(API_BASE + '/api/refresh', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: '{}'
       }).then(function (resp) {
+        /* 静态托管没有 /api/refresh，返回 404/HTML，走「重新拉取数据文件」 */
+        if (!resp.ok) return null;
         return resp.json().then(function (json) {
           return { status: resp.status, json: json || {} };
-        });
+        }, function () { return null; });
       }).then(function (res) {
+        if (!res) { fallbackReload(); return; }
         var j = res.json;
         if (!j.ok) {
           var msg = j.message || '抓取失败，已保留原数据';
@@ -4031,6 +4048,7 @@
           settle('error', '更新失败', String((err && err.message) || err));
         });
       }).catch(function (err) {
+        if (location.protocol !== 'file:') { fallbackReload(); return; }
         if (window.console && console.error) console.error('[抓取服务不可用]', err);
         settle('error', '服务未启动', '请在项目目录运行 python daily/serve.py 后重试；页面数据未变化。');
       });
@@ -4040,6 +4058,7 @@
   /* ---------------- init ---------------- */
   function init() {
     populateOrgSelect();
+    populateIncepSelect();
     initPicker();
     bindProfitSort();
     bindSumSort();
