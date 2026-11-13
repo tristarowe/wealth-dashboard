@@ -178,8 +178,7 @@
   #hold-table thead th:nth-child(2),#hold-table tbody tr:not(.mb) > td:nth-child(2),
   #sum-table thead th:first-child,#sum-table tbody td:first-child,
   #prod-table thead th:nth-child(2),#prod-table tbody td:nth-child(2),
-  #flow-table thead th:first-child,#flow-table tbody td:first-child,
-  #flow-table thead th:nth-child(2),#flow-table tbody td:nth-child(2){text-align:left}
+  #flow-table thead th:nth-child(3),#flow-table tbody td:nth-child(3){text-align:left}
   /* 表头与数值共用同一左右内边距，居中对齐时才不会左右错位 */
   #hold-table thead th:nth-child(2),#hold-table tbody tr:not(.mb) > td:nth-child(2),
   #sum-table thead th:first-child,#sum-table tbody td:first-child,
@@ -299,6 +298,12 @@
   .cleared-date{display:inline-block;font-size:11px;font-weight:400;color:var(--muted);background:#eef2f5;border-radius:4px;padding:1px 6px;margin-left:6px;white-space:nowrap;vertical-align:1px}
   .mini{font-family:var(--font);font-size:12px;font-weight:400;padding:4px 9px;border-radius:6px;border:1px solid #dbe7ed;background:#f6fafc;cursor:pointer;color:var(--accent-deep)}
   .mini.warn{color:var(--up);border-color:#f0c8c3;background:#fdf4f2}
+  .btn.danger{background:#fdf4f2;border-color:#f0c8c3;color:var(--up)}
+  .btn.danger:hover{background:#fbe9e6}
+  .btn.danger[hidden]{display:none}
+  #flow-table td.chk-col,#flow-table th.chk-col{text-align:center;padding-left:2px;padding-right:2px}
+  #flow-table input[type=checkbox]{width:14px;height:14px;padding:0;margin:0;vertical-align:middle;accent-color:var(--accent);cursor:pointer}
+  #flow-table tr.flow-month td input[type=checkbox]{margin-right:6px}
   /* 加购 / 赎回 用不同文字颜色区分：加购深青、赎回棕金、清仓红色危险 */
   .mini.buy{color:var(--accent);border-color:#cbe0e8;background:#f2f8fa}
   .mini.sell{color:#a2701f;border-color:#f1e1c6;background:#fdf8ef}
@@ -637,15 +642,16 @@
     #sum-table col:nth-child(7){width:62px !important}
     #sum-table col:nth-child(8){width:52px !important}
     #sum-table col:nth-child(9){width:128px !important}
-    #flow-table col:nth-child(1){width:78px !important}
-    #flow-table col:nth-child(2){width:150px !important}
-    #flow-table col:nth-child(3){width:44px !important}
-    #flow-table col:nth-child(4){width:60px !important}
-    #flow-table col:nth-child(5){width:66px !important}
-    #flow-table col:nth-child(6){width:62px !important}
-    #flow-table col:nth-child(7){width:58px !important}
-    #flow-table col:nth-child(8){width:46px !important}
-    #flow-table col:nth-child(9){width:76px !important}
+    #flow-table col:nth-child(1){width:26px !important}
+    #flow-table col:nth-child(2){width:78px !important}
+    #flow-table col:nth-child(3){width:150px !important}
+    #flow-table col:nth-child(4){width:44px !important}
+    #flow-table col:nth-child(5){width:60px !important}
+    #flow-table col:nth-child(6){width:66px !important}
+    #flow-table col:nth-child(7){width:62px !important}
+    #flow-table col:nth-child(8){width:58px !important}
+    #flow-table col:nth-child(9){width:46px !important}
+    #flow-table col:nth-child(10){width:76px !important}
     /* 其余三张表与盈亏明细同一字号（11px），字重随内容层级 */
     #sum-table,#flow-table,#prod-table{font-size:11px}
     #sum-table thead th,#flow-table thead th,#prod-table thead th{font-size:11px}
@@ -1037,6 +1043,7 @@
             <button class="ms-arrow" id="flow-month-next" aria-label="下一个月" title="下一个月">›</button>
           </div>
           <span class="sp"></span>
+          <button class="btn danger" id="flow-del-sel" hidden>删除所选</button>
           <button class="btn primary" id="open-trade">＋ 新增交易</button>
         </div>
         <div class="active-filter" id="trade-filter" hidden>
@@ -1045,12 +1052,13 @@
         </div>
         <table id="flow-table">
           <colgroup>
-            <col style="width:11%"><col><col style="width:7.4%"><col style="width:9.6%">
+            <col style="width:4%"><col style="width:11%"><col><col style="width:7.4%"><col style="width:9.6%">
             <col style="width:9.2%"><col style="width:9.6%"><col style="width:9.6%">
             <col style="width:7.4%"><col style="width:9.4%">
           </colgroup>
           <thead>
             <tr>
+              <th><input type="checkbox" id="flow-check-all" title="全选当前列表"></th>
               <th>交易<br>时间</th><th>产品名称</th><th class="c">类型</th><th class="r">份额</th>
               <th class="r">成交<br>净值</th><th class="r">金额</th><th class="c">确认<br>日期</th>
               <th class="c">状态</th><th class="c">操作</th>
