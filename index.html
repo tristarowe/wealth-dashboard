@@ -271,6 +271,7 @@
   .filters input[type="search"]{font-family:var(--font);font-size:12.5px;padding:6px 10px;border:1px solid var(--rule);border-radius:7px;background:#fff;color:var(--ink);width:260px;min-width:200px}
   .filters input[type="search"]:focus{outline:none;border-color:var(--accent)}
   .filters #open-add{margin-left:auto;flex:none}
+  .filters #prod-reset{margin-left:auto;flex:none;color:#41545f}
   .filters .sp{flex:1}
   /* 筛选下拉：原生 select 展开列表字号无法控制，改为自绘下拉；文字统一居中 */
   .filters .sel-wrap{position:relative;display:inline-block;flex:none;width:80px;height:30px;border:1px solid var(--rule);border-radius:7px;background:#fff;box-sizing:border-box}
@@ -1147,6 +1148,7 @@
         <button class="chip" data-flag="new">新品</button>
         <button class="chip" data-flag="fav">★ 收藏</button>
         <input type="search" id="prod-search" placeholder="搜索产品名称" aria-label="搜索产品名称">
+        <button class="chip" id="prod-reset" title="清空搜索与全部筛选条件">↺ 重置</button>
       </div>
 
       <div class="card tbl-scroll">
@@ -1314,7 +1316,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261113k';
+      s.src = './assets/dashboard.js?v=20261113l';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();
