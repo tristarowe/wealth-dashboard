@@ -491,7 +491,7 @@
   }
 
   function fmt2(v) {
-    return v === null || v === undefined ? '—' : v.toFixed(2);
+    return v === null || v === undefined || isNaN(v) ? '—' : v.toFixed(2);
   }
 
   /* 带符号两位小数：正数显示 +，负数自带 -，0 不带符号 */
@@ -501,16 +501,16 @@
   }
 
   function fmtSigned(v) {
-    if (v === null || v === undefined) return '—';
+    if (v === null || v === undefined || isNaN(v)) return '—';
     return (v > 0 ? '+' : '') + v.toFixed(2);
   }
 
   function fmtAnn(v) {
-    return v === null || v === undefined ? '—' : v.toFixed(2) + '%';
+    return v === null || v === undefined || isNaN(v) ? '—' : v.toFixed(2) + '%';
   }
 
   function fmtNav(v) {
-    return v === null || v === undefined ? '—' : v.toFixed(6);
+    return v === null || v === undefined || isNaN(v) ? '—' : v.toFixed(6);
   }
 
   // 评分参数：市场利率基准（%，一年期定存参考），可自行调整
@@ -598,7 +598,7 @@
 
   /* ---------------- 顶部指标卡 ---------------- */
   function fmtMoney(v) {
-    if (v === null || v === undefined) return '—';
+    if (v === null || v === undefined || isNaN(v)) return '—';
     return v.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
