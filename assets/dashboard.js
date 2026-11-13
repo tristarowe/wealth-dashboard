@@ -1888,9 +1888,9 @@
     }
     box.innerHTML =
       '<button data-page="' + (prodUi.page - 1) + '"' + (prodUi.page <= 1 ? ' disabled' : '') + ' aria-label="上一页">‹</button>' +
-      (pages > 1 ? '<select class="pg-jump" aria-label="跳转页码">' + opts + '</select>' +
-        '<span class="pg-total">/ ' + pages + '</span>' : '') +
-      '<button data-page="' + (prodUi.page + 1) + '"' + (prodUi.page >= pages ? ' disabled' : '') + ' aria-label="下一页">›</button>';
+      (pages > 1 ? '<select class="pg-jump" aria-label="跳转页码">' + opts + '</select>' : '') +
+      '<button data-page="' + (prodUi.page + 1) + '"' + (prodUi.page >= pages ? ' disabled' : '') + ' aria-label="下一页">›</button>' +
+      (pages > 1 ? '<span class="pg-total">/ ' + pages + '</span>' : '');
   }
 
   function applyProductCols() {
@@ -2362,7 +2362,7 @@
   }
 
   /* ---------------- 交易 ---------------- */
-  var flowState = { pid: '', year: '', month: '' };
+  var flowState = { pid: '', year: '', month: '', type: '', status: '' };
   var flowOpenMonths = {};
   /* 交易流水批量删除：勾选态 + 当前列表 id（用于全选与计数） */
   var flowSel = {};
@@ -2889,10 +2889,16 @@
     flowState.pid = pid || '';
     flowState.year = '';
     flowState.month = '';
+    flowState.type = '';
+    flowState.status = '';
     var ys = document.getElementById('flow-year');
     var ms = document.getElementById('flow-month');
+    var ts = document.getElementById('flow-type-sel');
+    var ss = document.getElementById('flow-status-sel');
     if (ys) ys.value = '';
     if (ms) ms.value = '';
+    if (ts) ts.value = '';
+    if (ss) ss.value = '';
     /* 从产品名进入时，该产品所有流水月份全部展开，不按月份折叠 */
     flowOpenMonths = {};
     if (pid) {
@@ -3167,6 +3173,8 @@
       if (flowState.pid && t.pid !== flowState.pid) return false;
       if (flowState.year && t.applyDate.slice(0, 4) !== flowState.year) return false;
       if (flowState.month !== '' && (+t.applyDate.slice(5, 7) - 1) !== +flowState.month) return false;
+      if (flowState.type && (t.type || '申购') !== flowState.type) return false;
+      if (flowState.status && txStatus(t) !== flowState.status) return false;
       return true;
     }).sort(function (a, b) { return b.applyDate.localeCompare(a.applyDate); });
 
@@ -3282,6 +3290,10 @@
     if (ys) ys.addEventListener('change', function () { flowState.year = ys.value; renderFlows(); });
     var ms = document.getElementById('flow-month');
     if (ms) ms.addEventListener('change', function () { flowState.month = ms.value; renderFlows(); });
+    var ts = document.getElementById('flow-type-sel');
+    if (ts) ts.addEventListener('change', function () { flowState.type = ts.value; renderFlows(); });
+    var ss = document.getElementById('flow-status-sel');
+    if (ss) ss.addEventListener('change', function () { flowState.status = ss.value; renderFlows(); });
     var mp = document.getElementById('flow-month-prev');
     if (mp) mp.addEventListener('click', function () { stepFlowMonth(-1); });
     var mn = document.getElementById('flow-month-next');

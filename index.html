@@ -121,6 +121,8 @@
   .th-select{font-family:var(--font);font-size:12px;font-weight:600;color:var(--muted);background:#fff;border:1px solid var(--rule);border-radius:6px;padding:2px 3px;cursor:pointer;max-width:84px}
   .th-select:hover{border-color:#c9dbe3;color:var(--accent-deep)}
   .th-select:focus{outline:none;border-color:var(--accent);color:var(--accent-deep)}
+  /* 交易流水表头筛选：下拉宽度跟随列宽，窄屏也不撑破表格 */
+  #flow-table .th-select{width:100%;max-width:100%;font-size:11.5px;padding:1px 2px;text-align:center;text-align-last:center}
   .dag{font-size:10px;color:var(--muted);margin-left:1px}
   /* 表头手动换行标记：默认隐藏（桌面/竖屏单行），仅横屏紧凑布局启用 */
   thead th br{display:none}
@@ -1069,9 +1071,12 @@
           <thead>
             <tr>
               <th><input type="checkbox" id="flow-check-all" title="全选当前列表"></th>
-              <th>交易<br>时间</th><th>产品名称</th><th class="c">类型</th><th class="r">份额</th>
+              <th>交易<br>时间</th><th>产品名称</th>
+              <th class="c"><select class="th-select" id="flow-type-sel" title="按交易类型筛选" aria-label="按交易类型筛选"><option value="">类型</option><option>申购</option><option>赎回</option><option>清仓</option></select></th>
+              <th class="r">份额</th>
               <th class="r">成交<br>净值</th><th class="r">金额</th><th class="c">确认<br>日期</th>
-              <th class="c">状态</th><th class="c">操作</th>
+              <th class="c"><select class="th-select" id="flow-status-sel" title="按状态筛选" aria-label="按状态筛选"><option value="">状态</option><option>已确认</option><option>在途</option></select></th>
+              <th class="c">操作</th>
             </tr>
           </thead>
           <tbody id="flow-body"></tbody>
