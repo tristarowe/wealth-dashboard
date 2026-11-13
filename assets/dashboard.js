@@ -193,13 +193,16 @@
     }).map(function (p) {
       /* 尚无净值（或仅有 1 条）的新品也展示，净值与区间指标显示「待披露」 */
       if (!p.nav || !p.dates || p.dates.length < 2) {
+        /* 成立天数按成立日到看板基准日计算，净值相关指标留空 */
+        var inc = p.inception || '';
+        var heldDays = inc ? Math.max(0, dayDiff(parseDate(inc), parseDate(DATA.asOf))) : 0;
         return {
           product: p,
           pending: true,
           m: {
             latestDate: p.latestDate || '',
             latestNav: p.latestNav != null ? p.latestNav : null,
-            inception: p.inception || '', days: 0, listing: 0, sinceAnn: null, todayPer: null,
+            inception: inc, days: heldDays, listing: heldDays, sinceAnn: null, todayPer: null,
             windows: [blank, blank, blank, blank, blank, blank]
           }
         };

@@ -689,8 +689,12 @@
   @media (max-width:760px){
     body{padding:14px 12px calc(40px + env(safe-area-inset-bottom))}
     /* 竖屏窄屏才恢复自适应列宽；横屏沿用桌面百分比列宽，列间距才均匀 */
-    #hold-table,#sum-table,#prod-table,#flow-table{table-layout:auto}
+    #hold-table,#sum-table,#prod-table,#flow-table{table-layout:auto;min-width:0}
     #hold-table colgroup col,#sum-table colgroup col,#prod-table colgroup col,#flow-table colgroup col{width:auto !important}
+    /* 竖屏：表头允许换行（净值 / 日期 两行），列宽随内容收缩，尽量少滑动 */
+    #hold-table thead th,#sum-table thead th,#prod-table thead th,#flow-table thead th{white-space:normal;line-height:1.25;word-break:keep-all}
+    #hold-table thead th br,#sum-table thead th br,
+    #prod-table thead th br,#flow-table thead th br{display:inline}
     .hero{padding:16px 14px 18px;border-radius:14px}
     .hero-top{flex-direction:column;align-items:stretch;gap:10px}
     .hero-actions{position:absolute;top:12px;right:12px;display:flex;flex-direction:column;justify-content:flex-end;gap:6px}
