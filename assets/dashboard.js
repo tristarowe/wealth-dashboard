@@ -1778,13 +1778,13 @@
           '</span>' +
           saleSpan(p) +
           '</div></td>' +
-        '<td class="c pmeta">' + (riskShort(p) || '—') + '</td>' +
-        '<td class="c pmeta">' + term + '</td>' +
         '<td class="r num ' + colorBy(m.todayPer) + '" data-col="p10k">' + fmtSigned(m.todayPer) + '</td>' +
         winCell(w7) + winCell(w14) + winCell(w30) +
         '<td class="r num ' + colorBy(m.sinceAnn) + '">' + fmtAnn(m.sinceAnn) + '</td>' +
-        '<td class="r num">' + fmtNav(m.latestNav) + '</td>' +
+        '<td class="c pmeta">' + (riskShort(p) || '—') + '</td>' +
+        '<td class="c pmeta">' + term + '</td>' +
         '<td class="c num">' + mmdd(m.latestDate) + '</td>' +
+        '<td class="r num">' + fmtNav(m.latestNav) + '</td>' +
         '<td class="c cdate">' + (m.inception ?
           '<span>' + m.inception + '</span><i>' + m.listing + ' 天</i>' :
           '<span class="muted">—</span>') + '</td>' +
@@ -2868,11 +2868,11 @@
           '</span>' +
           '</div></td>' +
         '<td class="c num">' + mmdd(h.latestDate) + '</td>' +
-        '<td class="c num">' + fmtNav(h.latestNav) + '</td>' +
-        '<td class="r num">' + fmtMoney(h.shares) + '</td>' +
         '<td class="r num">' + fmtMoney(h.mv) + '</td>' +
         '<td class="r num ' + colorBy(h.profit) + '" title="持仓收益 = 市值 − 成本">' + fmtSigned(h.profit) + '</td>' +
         '<td class="r num ' + colorBy(h.ann) + '">' + fmtAnn(h.ann) + '</td>' +
+        '<td class="c num">' + fmtNav(h.latestNav) + '</td>' +
+        '<td class="r num">' + fmtMoney(h.shares) + '</td>' +
         '<td class="c num dcell"><span class="days">' + h.days + '</span><i class="dunit">天</i></td>' +
         '<td class="c"><button class="mini buy" data-act="add" data-pid="' + p.id + '">加购</button> ' +
           '<button class="mini sell" data-act="redeem" data-pid="' + p.id + '"' + (canSell ? '' : noShareTip) + '>赎回</button> ' +
