@@ -54,11 +54,27 @@
     return i === -1 ? null : p.nav[i];
   }
 
+  /* 确认日成交净值：当日已披露直接取；未披露时取确认日之后最近一日，
+     都没有才回落到最新净值（即「确认日已到、净值未披露」按最新净值估算） */
+  function navForConfirm(p, date) {
+    if (!p || !p.nav || !p.nav.length) return null;
+    var v = navOnDate(p, date);
+    if (v !== null) return v;
+    if (!date) return p.nav[p.nav.length - 1];
+    for (var i = 0; i < p.dates.length; i++) {
+      if (p.dates[i] > date && typeof p.nav[i] === 'number') return p.nav[i];
+    }
+    for (var j = p.dates.length - 1; j >= 0; j--) {
+      if (p.dates[j] < date && typeof p.nav[j] === 'number') return p.nav[j];
+    }
+    return p.nav[p.nav.length - 1];
+  }
+
   /* 交易份额：未记录时按成交净值折算；净值未披露、金额未定时返回 null（显示为 —） */
   function txShares(t, p) {
     var sh = Number(t.shares);
     if (sh > 0) return sh;
-    var nav = Number(t.confirmNav) || navOnDate(p, t.confirmDate) || 0;
+    var nav = Number(t.confirmNav) || navForConfirm(p, t.confirmDate) || 0;
     var amt = Number(t.amount) || 0;
     return (nav > 0 && amt > 0) ? amt / nav : null;
   }
@@ -303,7 +319,7 @@
       var rec = acc[p.id];
       if (!rec) rec = acc[p.id] = { product: p, shares: 0, cost: 0, realized: 0, startDate: null, lastTx: t };
       /* 成交净值缺失时按确认日净值兜底，净值披露后自动生效 */
-      var nav = Number(t.confirmNav) || navOnDate(p, t.confirmDate) || p.nav[p.nav.length - 1] || 1;
+      var nav = Number(t.confirmNav) || navForConfirm(p, t.confirmDate) || 1;
       var sh = Number(t.shares);
       if (!(sh > 0)) sh = Number(t.amount) / nav;
       if (t.type === '赎回' || t.type === '清仓') {
@@ -1543,12 +1559,26 @@
     try { localStorage.setItem('wealth3.favs', JSON.stringify(list)); } catch (e) { /* 忽略 */ }
   }
 
+  /* 持有期：优先取名称里明确的持有期天数（支持中文数字与「一个月/三个月」），
+     其次识别日开/天天开放型产品，最后才回退占位符 */
   function termOf(p) {
-    var s = (p.short || '') + (p.name || '');
-    if (/日日开|日开/.test(s)) return '日开';
-    s = s.replace(/十四/g, '14').replace(/三十/g, '30').replace(/七/g, '7');
-    var m = s.match(/持有期?\s*(\d+)\s*天/) || s.match(/(\d+)\s*天/);
-    return m ? (+m[1]) + '天' : '—';
+    var s = String((p.short || '') + (p.name || ''))
+      .replace(/一百八十/g, '180')
+      .replace(/二十一/g, '21')
+      .replace(/十四/g, '14')
+      .replace(/三十/g, '30')
+      .replace(/六十/g, '60')
+      .replace(/九十/g, '90')
+      .replace(/七/g, '7');
+    var m = s.match(/(\d+)\s*天/);
+    if (m) return (+m[1]) + '天';
+    m = s.match(/([一二三四五六七八九十]+)\s*个月/);
+    if (m) {
+      var cn = { '一': 1, '二': 2, '三': 3, '六': 6, '九': 9, '十二': 12 }[m[1]];
+      if (cn) return (cn * 30) + '天';
+    }
+    if (/日日开|天天利|天天盈|天天购|天添|天天|日日|每日开放|日开|现金管理类/.test(s)) return '日开';
+    return '—';
   }
 
   function termBucket(term) {
@@ -2795,7 +2825,7 @@
       var p = findProductById(t.pid);
       if (!p) return;
       var latestNav = p.nav[p.nav.length - 1];
-      var nav = Number(t.confirmNav) || navOnDate(p, t.confirmDate) || latestNav || 1;
+      var nav = Number(t.confirmNav) || navForConfirm(p, t.confirmDate) || latestNav || 1;
       var sh = Number(t.shares);
       if (!(sh > 0)) sh = (Number(t.amount) || 0) / nav;
       var rec = pend[p.id];
