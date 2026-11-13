@@ -123,6 +123,8 @@
   .th-select:hover{border-color:#c9dbe3;color:var(--accent-deep)}
   .th-select:focus{outline:none;border-color:var(--accent);color:var(--accent-deep)}
   .dag{font-size:10px;color:var(--muted);margin-left:1px}
+  /* 表头手动换行标记：默认隐藏（桌面/竖屏单行），仅横屏紧凑布局启用 */
+  thead th br{display:none}
   th.sortable{cursor:pointer;user-select:none}
   th.sortable:hover{color:var(--accent-deep)}
   th.sorted-asc::after{content:"\25B2";font-size:8px;margin-left:3px;color:var(--accent)}
@@ -514,7 +516,7 @@
   #hold-table{min-width:1120px}
   #prod-table{min-width:1080px}
 
-  @media (max-width:900px){
+  @media (max-width:968px){
     /* 横屏/平板宽度下日历并排会把「每日收益」压成窄条，统一改为上下堆叠 */
     .cal-split{grid-template-columns:minmax(0,1fr)}
     /* 禁止页面级横向溢出，避免横竖屏切换后整页被缩放、右侧留白 */
@@ -562,13 +564,15 @@
     #prod-search,#trade-prod-q{font-size:15px}
     html.is-ios .ms-search,html.is-ios #prod-search,html.is-ios #trade-prod-q{font-size:16px}
   }
-  /* 横屏：压缩列宽，尽量一屏看全，表头保持单行 */
-  @media (min-width:761px) and (max-width:900px){
+  /* 横屏：表头超 2 字自动分两行，列宽压到数据宽度，尽量一屏看全 */
+  @media (min-width:761px) and (max-width:968px){
     /* 横屏收窄页面左右留白，把空间让给表格 */
     body{padding:16px 10px 40px}
     #hold-table,#sum-table,#flow-table,#prod-table{width:100%;min-width:0;font-size:11.5px}
     #hold-table thead th,#sum-table thead th,#flow-table thead th,#prod-table thead th{
-      font-size:11.5px;white-space:nowrap;min-width:0 !important}
+      font-size:11.5px;white-space:normal;line-height:1.3;min-width:0 !important}
+    #hold-table thead th br,#sum-table thead th br,
+    #flow-table thead th br,#prod-table thead th br{display:inline}
     #hold-table thead th,#hold-table tbody td,
     #sum-table thead th,#sum-table tbody td,
     #flow-table thead th,#flow-table tbody td,
@@ -578,25 +582,25 @@
     #prod-table colgroup col{width:auto !important}
     #hold-table colgroup col,#sum-table colgroup col,#flow-table colgroup col{width:auto !important}
     #hold-table col:nth-child(1){width:26px !important}
-    #hold-table col:nth-child(2){width:115px !important}
-    #hold-table col:nth-child(3){width:48px !important}
-    #hold-table col:nth-child(4){width:48px !important}
-    #hold-table col:nth-child(5),
-    #hold-table col:nth-child(6),
-    #hold-table col:nth-child(7){width:48px !important}
+    #hold-table col:nth-child(2){width:92px !important}
+    #hold-table col:nth-child(3){width:36px !important}
+    #hold-table col:nth-child(4){width:42px !important}
+    #hold-table col:nth-child(5){width:42px !important}
+    #hold-table col:nth-child(6){width:48px !important}
+    #hold-table col:nth-child(7){width:42px !important}
     #hold-table col:nth-child(8){width:60px !important}
-    #hold-table col:nth-child(9){width:48px !important}
-    #hold-table col:nth-child(10){width:55px !important}
+    #hold-table col:nth-child(9){width:34px !important}
+    #hold-table col:nth-child(10){width:44px !important}
     /* 数据列的表头下拉去掉多余内边距，避免撑破单元格 */
     #hold-table thead th:nth-child(10){padding-left:1px !important;padding-right:1px !important}
     #hold-table .th-select{font-size:11px;padding:2px 1px;max-width:100%}
-    #hold-table col:nth-child(11){width:55px !important}
-    #hold-table col:nth-child(12){width:47px !important}
+    #hold-table col:nth-child(11){width:50px !important}
+    #hold-table col:nth-child(12){width:50px !important}
     #hold-table col:nth-child(13),
     #hold-table col:nth-child(14),
-    #hold-table col:nth-child(15){width:40px !important}
-    #hold-table col:nth-child(16){width:48px !important}
-    #hold-table col:nth-child(17){width:38px !important}
+    #hold-table col:nth-child(15){width:44px !important}
+    #hold-table col:nth-child(16){width:46px !important}
+    #hold-table col:nth-child(17){width:28px !important}
     /* 盈亏汇总 17 列，仅此表再降字号并收窄横向内边距，保证一屏放下 */
     #hold-table,#hold-table thead th{font-size:11px}
     #hold-table thead th,#hold-table tbody td{padding:6px 2px}
@@ -640,6 +644,14 @@
     #prod-table .st b,#prod-table .st i,
     #flow-table .st b,#flow-table .st i{font-size:11px}
     #sum-table td.dcell .days,#sum-table td.dcell .dunit{font-size:11px}
+    /* 日期/净值/元数据单元格原本 12~13px，统一到全表 11px */
+    #hold-table .cdate span,#hold-table .cdate i,#hold-table .unit-u,
+    #sum-table .cdate span,#sum-table .cdate i,#sum-table .unit-u,
+    #flow-table .cdate span,#flow-table .cdate i,#flow-table .unit-u,
+    #prod-table .cdate span,#prod-table .cdate i,#prod-table .unit-u,
+    #prod-table tbody td.num,#prod-table tbody td.pmeta,
+    #flow-table tr.flow-month td,
+    #flow-table tr.flow-month .fm-meta{font-size:11px}
     /* 盈亏日历：辅助文字 11px，主数值 12px，日期不再加粗 */
     .cal-hint,.cal-sum,.cal-sum i,.trend-sub{font-size:11px}
     .cal .wd{font-size:11px}
@@ -871,20 +883,20 @@
             <tr>
               <th class="c" style="width:44px">序号</th>
               <th class="sortable" data-sort="name">产品名称</th>
-              <th class="c sortable" data-sort="navdate">净值日期</th>
-              <th class="r sortable" data-sort="today">今日万收</th>
-              <th class="r sortable" data-sort="income">今日收益</th>
-              <th class="r sortable" data-sort="profit">持仓收益</th>
-              <th class="r sortable" data-sort="holdann">持仓年化</th>
-              <th class="r sortable" data-sort="value">持仓市值</th>
-              <th class="c sortable" data-sort="holddays">持仓天数</th>
+              <th class="c sortable" data-sort="navdate">净值<br>日期</th>
+              <th class="r sortable" data-sort="today">今日<br>万收</th>
+              <th class="r sortable" data-sort="income">今日<br>收益</th>
+              <th class="r sortable" data-sort="profit">持仓<br>收益</th>
+              <th class="r sortable" data-sort="holdann">持仓<br>年化</th>
+              <th class="r sortable" data-sort="value">持仓<br>市值</th>
+              <th class="c sortable" data-sort="holddays">持仓<br>天数</th>
               <th class="c" style="width:92px"><select class="th-select" id="hold-data-sel" title="数据" aria-label="数据"><option value="both">数据</option><option value="per10k">万收</option><option value="ann">年化</option></select></th>
               <th class="c sortable" data-sort="w7">7日</th>
               <th class="c sortable" data-sort="w14">14日</th>
               <th class="c sortable" data-sort="w30">30日</th>
               <th class="c sortable" data-sort="w60">60日</th>
               <th class="c sortable" data-sort="w90">90日</th>
-              <th class="c sortable" data-sort="w365">成立至今</th>
+              <th class="c sortable" data-sort="w365">成立<br>至今</th>
               <th class="c sortable" data-sort="score">评分</th>
             </tr>
           </thead>
@@ -983,9 +995,9 @@
           </colgroup>
           <thead>
             <tr>
-              <th class="sortable" data-sort="name">产品名称</th><th class="c sortable" data-sort="navdate">净值日期</th><th class="c sortable" data-sort="nav">净值</th>
-              <th class="r sortable" data-sort="shares">持仓份额</th><th class="r sortable" data-sort="mv">持仓市值</th>
-              <th class="r sortable" data-sort="profit">持仓收益</th><th class="r sortable" data-sort="ann">持仓年化</th><th class="c sortable" data-sort="days">持仓天数</th>
+              <th class="sortable" data-sort="name">产品名称</th><th class="c sortable" data-sort="navdate">净值<br>日期</th><th class="c sortable" data-sort="nav">净值</th>
+              <th class="r sortable" data-sort="shares">持仓<br>份额</th><th class="r sortable" data-sort="mv">持仓<br>市值</th>
+              <th class="r sortable" data-sort="profit">持仓<br>收益</th><th class="r sortable" data-sort="ann">持仓<br>年化</th><th class="c sortable" data-sort="days">持仓<br>天数</th>
               <th class="c">操作</th>
             </tr>
           </thead>
@@ -1024,8 +1036,8 @@
           </colgroup>
           <thead>
             <tr>
-              <th>交易时间</th><th>产品名称</th><th class="c">类型</th><th class="r">份额</th>
-              <th class="r">成交净值</th><th class="r">金额</th><th class="c">确认日期</th>
+              <th>交易<br>时间</th><th>产品名称</th><th class="c">类型</th><th class="r">份额</th>
+              <th class="r">成交<br>净值</th><th class="r">金额</th><th class="c">确认<br>日期</th>
               <th class="c">状态</th><th class="c">操作</th>
             </tr>
           </thead>
@@ -1093,15 +1105,15 @@
           <thead>
             <tr>
               <th style="width:34px"></th>
-              <th class="sortable" data-sort="name">产品名称</th><th class="c sortable" data-sort="risk">风险</th><th class="c sortable" data-sort="term">持有期</th>
-              <th class="r sortable" data-col="p10k" data-sort="p10k">今日万收</th>
+              <th class="sortable" data-sort="name">产品名称</th><th class="c sortable" data-sort="risk">风险</th><th class="c sortable" data-sort="term">持有<br>期</th>
+              <th class="r sortable" data-col="p10k" data-sort="p10k">今日<br>万收</th>
               <th class="c sortable" data-sort="w7">7日</th>
               <th class="c sortable" data-sort="w14">14日</th>
               <th class="c sortable" data-sort="w30">30日</th>
-              <th class="r sortable" data-sort="ann">成立年化</th>
-              <th class="r sortable" data-sort="nav">最新净值</th>
-              <th class="c sortable" data-sort="navdate">净值日期</th>
-              <th class="c sortable" data-sort="cdate">成立日期</th>
+              <th class="r sortable" data-sort="ann">成立<br>年化</th>
+              <th class="r sortable" data-sort="nav">最新<br>净值</th>
+              <th class="c sortable" data-sort="navdate">净值<br>日期</th>
+              <th class="c sortable" data-sort="cdate">成立<br>日期</th>
               <th class="c">操作</th>
             </tr>
           </thead>
