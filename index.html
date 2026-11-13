@@ -127,8 +127,11 @@
   thead th br{display:none}
   th.sortable{cursor:pointer;user-select:none}
   th.sortable:hover{color:var(--accent-deep)}
-  th.sorted-asc::after{content:"\25B2";font-size:8px;margin-left:3px;color:var(--accent)}
-  th.sorted-desc::after{content:"\25BC";font-size:8px;margin-left:3px;color:var(--accent)}
+  /* 排序状态用列头上下边线提示（降序=下边线、升序=上边线），不占用文字宽度，保证表头居中不偏移 */
+  th.sorted-asc::after,th.sorted-desc::after{content:none}
+  th.sorted-asc,th.sorted-desc{color:var(--accent-deep)}
+  th.sorted-desc{box-shadow:inset 0 -2px 0 0 var(--accent)}
+  th.sorted-asc{box-shadow:inset 0 2px 0 0 var(--accent)}
 
   #hold-table.only-ann .st.win i{font-size:13px;font-weight:400;margin-top:0}
   #hold-table.only-p10k .st.win b{font-size:13px;font-weight:400}
@@ -167,6 +170,20 @@
   #hold-table td.dcell .days,#sum-table td.dcell .days,
   #hold-table td.dcell .dunit,#sum-table td.dcell .dunit{font-family:var(--mono);font-size:13px;font-weight:400;font-variant-numeric:tabular-nums}
   #hold-table td.dcell .dunit,#sum-table td.dcell .dunit{font-style:normal;color:var(--muted);margin-left:1px;vertical-align:baseline}
+  /* 四张数据表：表头与数值统一居中，保证同一列上下对齐（产品名称/交易时间仍左对齐） */
+  #hold-table thead th,#hold-table tbody td,
+  #sum-table thead th,#sum-table tbody td,
+  #prod-table thead th,#prod-table tbody td,
+  #flow-table thead th,#flow-table tbody td{text-align:center}
+  #hold-table thead th:nth-child(2),#hold-table tbody tr:not(.mb) > td:nth-child(2),
+  #sum-table thead th:first-child,#sum-table tbody td:first-child,
+  #prod-table thead th:nth-child(2),#prod-table tbody td:nth-child(2),
+  #flow-table thead th:first-child,#flow-table tbody td:first-child,
+  #flow-table thead th:nth-child(2),#flow-table tbody td:nth-child(2){text-align:left}
+  /* 表头与数值共用同一左右内边距，居中对齐时才不会左右错位 */
+  #hold-table thead th:nth-child(2),#hold-table tbody tr:not(.mb) > td:nth-child(2),
+  #sum-table thead th:first-child,#sum-table tbody td:first-child,
+  #prod-table thead th:nth-child(2),#prod-table tbody td:nth-child(2){padding-left:10px;padding-right:10px}
 
   /* calendar */
   .cal-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
@@ -287,8 +304,8 @@
   .mini.sell{color:#a2701f;border-color:#f1e1c6;background:#fdf8ef}
   .mini[disabled]{color:#c3cfd6;border-color:#e6edf1;background:#fafcfd;cursor:not-allowed}
   .stars{color:#d9b44a;cursor:pointer;font-size:14px;background:none;border:0;padding:0;line-height:1}
-  .pager{display:flex;align-items:center;gap:10px;justify-content:flex-end;padding:12px 4px;font-size:12.5px;color:var(--muted)}
-  .pager button{min-width:28px;height:28px;border:1px solid #dbe7ed;background:#f6fafc;border-radius:6px;font-family:var(--mono);font-size:12.5px;cursor:pointer;color:var(--muted)}
+  .pager{display:flex;align-items:center;gap:8px;justify-content:flex-end;padding:10px 4px;font-size:11.5px;color:var(--muted)}
+  .pager button{min-width:26px;height:26px;border:1px solid #dbe7ed;background:#f6fafc;border-radius:5px;font-family:var(--mono);font-size:11.5px;cursor:pointer;color:var(--muted)}
   .pager button.on{background:#e4f0f5;border-color:#cbe0e8;color:var(--accent-deep)}
   .modal{position:fixed;inset:0;background:rgba(12,32,42,.35);display:flex;align-items:center;justify-content:center;z-index:200}
   .modal[hidden]{display:none}
@@ -611,19 +628,6 @@
     #hold-table td.dcell .days,#hold-table td.dcell .dunit{font-size:11px}
     /* 产品名与评分说明也统一到 11px，全表只保留 † 上标略小 */
     #hold-table .pname,#hold-table .plink,#hold-table .st i{font-size:11px}
-    /* 排序箭头会撑破窄列：横屏改为列头上下边线提示，降序=下边线、升序=上边线 */
-    #hold-table thead th.sorted-asc::after,#hold-table thead th.sorted-desc::after,
-    #sum-table thead th.sorted-asc::after,#sum-table thead th.sorted-desc::after,
-    #prod-table thead th.sorted-asc::after,#prod-table thead th.sorted-desc::after{content:none}
-    #hold-table thead th.sorted-asc,#hold-table thead th.sorted-desc,
-    #sum-table thead th.sorted-asc,#sum-table thead th.sorted-desc,
-    #prod-table thead th.sorted-asc,#prod-table thead th.sorted-desc{color:var(--accent-deep)}
-    #hold-table thead th.sorted-desc,
-    #sum-table thead th.sorted-desc,
-    #prod-table thead th.sorted-desc{box-shadow:inset 0 -2px 0 0 var(--accent)}
-    #hold-table thead th.sorted-asc,
-    #sum-table thead th.sorted-asc,
-    #prod-table thead th.sorted-asc{box-shadow:inset 0 2px 0 0 var(--accent)}
     #sum-table col:nth-child(1){width:136px !important}
     #sum-table col:nth-child(2){width:56px !important}
     #sum-table col:nth-child(3){width:62px !important}
@@ -788,7 +792,7 @@
     .filters .chip{font-size:11.5px;min-height:30px}
     .filters input{font-size:16px;min-height:36px}
     .tab{min-height:42px}
-    .pager button{min-width:34px;height:34px}
+    .pager button{min-width:29px;height:29px;font-size:12px}
     tr.flow-month td{white-space:normal;font-size:12px;line-height:1.7;padding:9px 8px}
     tr.flow-month .fm-meta{display:block;margin-left:14px;font-size:11px}
   }
@@ -1119,7 +1123,7 @@
               <th class="c sortable" data-sort="w14">14日</th>
               <th class="c sortable" data-sort="w30">30日</th>
               <th class="r sortable" data-sort="ann">成立<br>年化</th>
-              <th class="r sortable" data-sort="nav">最新<br>净值</th>
+              <th class="r sortable" data-sort="nav">净值</th>
               <th class="c sortable" data-sort="navdate">净值<br>日期</th>
               <th class="c sortable" data-sort="cdate">成立<br>日期</th>
               <th class="c">操作</th>
