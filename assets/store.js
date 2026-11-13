@@ -402,6 +402,27 @@
     });
   }
 
+  /* 批量删除：一次 DELETE 带上全部 id，本地缓存同步剔除 */
+  function removeMany(ids) {
+    if (!online) return Promise.reject(new Error('云端未配置，无法删除'));
+    ids = (ids || []).filter(Boolean);
+    if (!ids.length) return Promise.resolve({ ok: true, message: '未选择交易' });
+    var list = '(' + ids.map(function (id) {
+      return '"' + String(id).replace(/"/g, '') + '"';
+    }).join(',') + ')';
+    return req(url + '/rest/v1/' + txTable + '?id=in.' + encodeURIComponent(list), {
+      method: 'DELETE',
+      headers: headers({ Prefer: 'return=minimal' })
+    }).then(function (r) {
+      if (!r.ok) throw fail('批量删除失败', r.status);
+      var drop = {};
+      ids.forEach(function (id) { drop[id] = 1; });
+      applyTrades(fileItems().filter(function (t) { return !drop[t.id]; }));
+      writeCache(fileItems());
+      return { ok: true, message: '已删除 ' + ids.length + ' 笔交易' };
+    });
+  }
+
   /* ---------------- 手工添加的产品 ---------------- */
   /* 复用 newproducts 表，key 用 manual: 前缀区分；data.kind = manual */
   /* 历史记录同样入表，key 用 manualhist: 前缀，data.kind = manualhist */
@@ -484,6 +505,7 @@
     add: add,
     update: update,
     remove: remove,
+    removeMany: removeMany,
     addProduct: addProduct,
     removeProduct: removeProduct,
     status: status,
