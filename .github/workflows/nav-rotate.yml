@@ -1,0 +1,33 @@
+name: nav-rotate
+
+on:
+  schedule:
+    # 每小时第 7 分钟：轮换补抓产品库非建信产品净值（中国理财网限频，单轮少量）
+    - cron: "7 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nav-rotate
+  cancel-in-progress: false
+
+jobs:
+  rotate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 安装依赖
+        run: pip install requests pycryptodome
+
+      - name: 轮换补抓非建信净值
+        env:
+          PYTHONIOENCODING: utf-8
+        run: python daily/nav_rotate.py --limit 5
