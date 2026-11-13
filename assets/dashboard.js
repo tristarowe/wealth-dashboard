@@ -3150,9 +3150,9 @@
             (h.tx && h.tx.confirmDate ? h.tx.confirmDate.slice(5).replace('-', '.') : '') + ' 清仓</span>' : '') +
           '</span>' +
           '</div></td>' +
-        '<td class="r num">' + fmtMoney(h.mv) + '</td>' +
         '<td class="r num ' + colorBy(h.profit) + '" title="持仓收益 = 市值 − 成本">' + fmtSigned(h.profit) + '</td>' +
         '<td class="r num ' + colorBy(h.ann) + '">' + fmtAnn(h.ann) + '</td>' +
+        '<td class="r num">' + fmtMoney(h.mv) + '</td>' +
         '<td class="c num">' + mmdd(h.latestDate) + '</td>' +
         '<td class="c num">' + fmtNav(h.latestNav) + '</td>' +
         '<td class="r num">' + fmtMoney(h.shares) + '</td>' +

@@ -16,6 +16,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 
+import nav_boc  # noqa: E402
 import nav_bulk  # noqa: E402
 import promote_newproducts as promo  # noqa: E402
 
@@ -46,6 +47,13 @@ def main():
     ap.add_argument("--retry-days", type=int, default=3,
                     help="无净值产品抓空后多少天内不再重试，避免浪费限频额度")
     a = ap.parse_args()
+
+    # 中银官网接口免登录、不限频，先补中银，省下中国理财网的限频额度
+    boc_ok = 0
+    try:
+        boc_ok = nav_boc.run(limit=20, delay=0.8)
+    except Exception as exc:
+        print("中银官网补抓跳过：%s" % str(exc)[:120], flush=True)
 
     lib = promo.load_json(promo.LIB_JSON, {"items": []})
     items = lib.get("items") or []
@@ -104,7 +112,7 @@ def main():
     left = sum(1 for x in items if not (x.get("orgShort") or "").startswith("建信")
                and (x.get("latestDate") or "") < asof)
     print("完成：更新 %d 只，整体最新 %s，仍落后 %d 只" % (ok, asof, left), flush=True)
-    if ok:
+    if ok or boc_ok:
         commit([promo.LIB_JS, promo.LIB_JSON], "data: 轮换补抓非建信净值 %s" % asof)
     return 0
 
