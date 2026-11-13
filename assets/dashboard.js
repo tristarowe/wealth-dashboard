@@ -2298,6 +2298,32 @@
       renderProductTable();
     });
 
+    /* 一键重置：清空搜索、下拉筛选、标签与数据展示模式 */
+    var resetBtn = document.getElementById('prod-reset');
+    if (resetBtn) resetBtn.addEventListener('click', function () {
+      if (search) search.value = '';
+      closeProdSug();
+      ['sale-sel', 'org-sel', 'risk-sel', 'term-sel', 'incep-sel'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) { el.value = ''; syncSelLabel(el); }
+      });
+      var holdSel = document.getElementById('hold-sel');
+      if (holdSel) { holdSel.value = 'both'; syncSelLabel(holdSel); }
+      var mSel = document.getElementById('m-sel');
+      if (mSel) { mSel.value = 'both'; syncSelLabel(mSel); }
+      Array.prototype.forEach.call(document.querySelectorAll('.filters .chip[data-flag]'), function (b) {
+        b.classList.remove('on');
+      });
+      prodUi.q = ''; prodUi.sale = ''; prodUi.org = ''; prodUi.risk = '';
+      prodUi.term = ''; prodUi.incep = '';
+      prodUi.flagNew = false; prodUi.flagFav = false;
+      prodUi.holdHolding = true; prodUi.holdCleared = true;
+      prodUi.mPer10k = true; prodUi.mAnn = true;
+      prodUi.page = 1;
+      applyProductCols();
+      renderProductTable();
+    });
+
     var pager = document.getElementById('prod-pages');
     if (pager) pager.addEventListener('click', function (e) {
       var cur = e.target.closest('.pg-cur');
@@ -2993,7 +3019,8 @@
     window.addEventListener('scroll', function () { if (dpEl && !dpEl.hidden) placeDp(); }, true);
   }
 
-  function openTradeFor(pid) {
+  /* 交易流水按产品过滤（仅更新状态与渲染，不切换页签） */
+  function filterFlowByProduct(pid) {
     flowState.pid = pid || '';
     flowState.year = '';
     flowState.month = '';
@@ -3011,6 +3038,10 @@
     flowOpenMonths = {};
     renderFlows();
     renderTradeSummary();
+  }
+
+  function openTradeFor(pid) {
+    filterFlowByProduct(pid);
     switchTab('trade');
     closePanel();
   }
@@ -3507,7 +3538,10 @@
       var plink = e.target.closest ? e.target.closest('[data-goto-prod]') : null;
       if (plink) {
         e.preventDefault();
-        gotoProduct(plink.getAttribute('data-goto-prod'));
+        var gpid = plink.getAttribute('data-goto-prod');
+        gotoProduct(gpid);
+        /* 同时联动交易流水：按该产品过滤（切到交易流水页签即可看到） */
+        filterFlowByProduct(gpid);
         return;
       }
       var link = e.target.closest ? e.target.closest('[data-goto-trade]') : null;
