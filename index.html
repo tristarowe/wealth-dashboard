@@ -531,9 +531,12 @@
       white-space:normal;word-break:break-word;overflow-wrap:anywhere;line-height:1.45}
     /* 手机端三张宽表统一收窄列宽，提升一屏可读列数 */
     #hold-table,#sum-table,#prod-table{font-size:12.5px}
-    /* 手机端恢复自适应列宽（表头不裁切），横向滚动浏览 */
-    #hold-table,#sum-table,#prod-table,#flow-table{table-layout:auto}
-    #hold-table colgroup col,#sum-table colgroup col,#prod-table colgroup col,#flow-table colgroup col{width:auto !important}
+    /* 横屏（761–900）指标卡四列会撑爆卡片，压小字号与内边距 */
+    .metric{padding:12px 13px}
+    .metric .v{font-size:22px}
+    .metric .v em{font-size:11px}
+    .metric .m-sub{font-size:10.5px}
+    .metric .m-sub b{font-size:12px}
     #hold-table thead th,#hold-table tbody td,
     #sum-table thead th,#sum-table tbody td,
     #prod-table thead th,#prod-table tbody td,
@@ -559,8 +562,16 @@
     #prod-search,#trade-prod-q{font-size:15px}
     html.is-ios .ms-search,html.is-ios #prod-search,html.is-ios #trade-prod-q{font-size:16px}
   }
+  /* 横屏：产品库含完整日期，百分比列宽会挤掉日期，保持自适应 */
+  @media (min-width:761px) and (max-width:900px){
+    #prod-table{table-layout:auto}
+    #prod-table colgroup col{width:auto !important}
+  }
   @media (max-width:760px){
     body{padding:14px 12px calc(40px + env(safe-area-inset-bottom))}
+    /* 竖屏窄屏才恢复自适应列宽；横屏沿用桌面百分比列宽，列间距才均匀 */
+    #hold-table,#sum-table,#prod-table,#flow-table{table-layout:auto}
+    #hold-table colgroup col,#sum-table colgroup col,#prod-table colgroup col,#flow-table colgroup col{width:auto !important}
     .hero{padding:16px 14px 18px;border-radius:14px}
     .hero-top{flex-direction:column;align-items:stretch;gap:10px}
     .hero-actions{position:absolute;top:12px;right:12px;display:flex;flex-direction:column;justify-content:flex-end;gap:6px}
