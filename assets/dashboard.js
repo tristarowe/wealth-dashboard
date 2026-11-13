@@ -2388,7 +2388,8 @@
       var del = e.target.closest('[data-del-product]');
       if (del) {
         var pid = del.dataset.delProduct;
-        if (window.confirm('确认从产品库删除该手工产品？删除后本地与云端同时移除。')) {
+        confirmDialog('确认从产品库删除该手工产品？删除后本地与云端同时移除。', '删除').then(function (ok) {
+          if (!ok) return;
           del.disabled = true;
           window.STORE.removeProduct(pid).then(function () {
             mergeManualProducts();
@@ -2400,7 +2401,7 @@
             del.disabled = false;
             toast((err && err.message) || '删除失败，请检查网络');
           });
-        }
+        });
         return;
       }
       var det = e.target.closest('[data-detail]');
@@ -2535,6 +2536,30 @@
     el.classList.add('on');
     clearTimeout(toast._t);
     toast._t = setTimeout(function () { el.classList.remove('on'); }, 2600);
+  }
+
+  /* 站内确认框：只有点击「确定」才 resolve(true)，删除等危险操作一律先等确认 */
+  function confirmDialog(msg, okText) {
+    return new Promise(function (resolve) {
+      var modal = document.getElementById('modal-confirm');
+      var txt = document.getElementById('confirm-text');
+      var ok = document.getElementById('confirm-ok');
+      var cancel = document.getElementById('confirm-cancel');
+      if (!modal || !txt || !ok || !cancel) { resolve(false); return; }
+      txt.textContent = msg;
+      ok.textContent = okText || '确定';
+      modal.hidden = false;
+      function done(v) {
+        modal.hidden = true;
+        ok.onclick = null;
+        cancel.onclick = null;
+        modal.onclick = null;
+        resolve(v);
+      }
+      ok.onclick = function () { done(true); };
+      cancel.onclick = function () { done(false); };
+      modal.onclick = function (e) { if (e.target === modal) done(false); };
+    });
   }
 
   /* ---------------- 新增交易（人工录入，写入交易底稿） ---------------- */
@@ -3545,12 +3570,14 @@
       var del = e.target.closest('[data-del]');
       if (del) {
         var did = del.getAttribute('data-del');
-        if (!window.confirm('确认删除该笔交易？删除后持仓与收益将重新计算。')) return;
-        window.STORE.remove(did).then(function (res) {
-          if (!res || !res.ok) { toast((res && res.message) || '删除失败'); return; }
-          toast('交易已删除');
-          refreshAfterWrite();
-        }).catch(function (e) { toast((e && e.message) || '删除交易失败，请检查网络后重试'); });
+        confirmDialog('确认删除该笔交易？删除后持仓与收益将重新计算。', '删除').then(function (ok) {
+          if (!ok) return;
+          window.STORE.remove(did).then(function (res) {
+            if (!res || !res.ok) { toast((res && res.message) || '删除失败'); return; }
+            toast('交易已删除');
+            refreshAfterWrite();
+          }).catch(function (err) { toast((err && err.message) || '删除交易失败，请检查网络后重试'); });
+        });
       }
     });
 
@@ -3583,19 +3610,21 @@
     var btn = document.getElementById('flow-del-sel');
     if (btn) btn.addEventListener('click', function () {
       var ids = selectedFlowIds();
-      if (!ids.length) return;
-      if (!window.confirm('确认删除选中的 ' + ids.length + ' 笔交易？删除后持仓与收益将重新计算。')) return;
+      if (!ids.length || btn.disabled) return;
       if (!window.STORE || !window.STORE.removeMany) { toast('批量删除不可用'); return; }
-      btn.disabled = true;
-      window.STORE.removeMany(ids).then(function (res) {
-        btn.disabled = false;
-        if (!res || !res.ok) { toast((res && res.message) || '批量删除失败'); return; }
-        flowSel = {};
-        toast(res.message || ('已删除 ' + ids.length + ' 笔交易'));
-        refreshAfterWrite();
-      }).catch(function (err) {
-        btn.disabled = false;
-        toast((err && err.message) || '批量删除失败，请检查网络后重试');
+      confirmDialog('确认删除选中的 ' + ids.length + ' 笔交易？删除后持仓与收益将重新计算。', '删除').then(function (ok) {
+        if (!ok) return;
+        btn.disabled = true;
+        window.STORE.removeMany(ids).then(function (res) {
+          btn.disabled = false;
+          if (!res || !res.ok) { toast((res && res.message) || '批量删除失败'); return; }
+          flowSel = {};
+          toast(res.message || ('已删除 ' + ids.length + ' 笔交易'));
+          refreshAfterWrite();
+        }).catch(function (err) {
+          btn.disabled = false;
+          toast((err && err.message) || '批量删除失败，请检查网络后重试');
+        });
       });
     });
   }

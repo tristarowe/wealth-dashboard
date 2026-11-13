@@ -782,7 +782,9 @@
     .trade-tool .month-switch{flex:0 1 auto;min-width:0}
     .trade-tool .month-switch .mini-select{min-width:0;width:auto;font-size:12px;padding:5px 0}
     .trade-tool .ms-arrow{width:22px;font-size:14px}
-    .trade-tool .btn{flex:0 0 auto;margin-left:auto;min-height:32px;padding:6px 10px;font-size:12px;justify-content:center;white-space:nowrap}
+    .trade-tool .btn{flex:0 0 auto;margin-left:0;min-height:32px;padding:6px 10px;font-size:12px;justify-content:center;white-space:nowrap}
+    /* 只有「新增交易」占住左侧剩余空间，「删除所选」紧贴在它左边，不再浮在中间 */
+    .trade-tool #open-trade{margin-left:auto}
     .timeline{overflow:visible;border:0;background:transparent;border-radius:0}
     .ts-grid{display:none}
     .ts-lane{display:flex;flex-direction:column;align-items:stretch;gap:8px;border:1px solid var(--rule);border-radius:10px;background:#fff;padding:10px;margin-bottom:10px;min-width:0}
@@ -1305,6 +1307,15 @@
   </div>
 </div>
 
+<!-- 删除等危险操作统一走站内确认框，只有点「确定」才执行 -->
+<div class="modal" id="modal-confirm" hidden>
+  <div class="modal-card" style="width:380px">
+    <div class="modal-head"><b>操作确认</b></div>
+    <div class="modal-body"><p id="confirm-text" style="font-size:13.5px;line-height:1.7;color:var(--ink)"></p></div>
+    <div class="modal-foot"><button type="button" class="btn" id="confirm-cancel">取消</button><button type="button" class="btn danger" id="confirm-ok">确定</button></div>
+  </div>
+</div>
+
 <!-- 代码类脚本带版本号，改动后同步更新，避免手机端命中旧缓存；数据类脚本不带版本号，保证每日更新能取到 -->
 <script src="./_shared/js/echarts.min.js?v=20261113c" onerror="this.onerror=null;this.src='./_shared/js/echarts.min.js?t='+Date.now()"></script>
 <script src="./assets/html2canvas.min.js?v=20261113c"></script>
@@ -1323,7 +1334,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261113m';
+      s.src = './assets/dashboard.js?v=20261113n';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();
