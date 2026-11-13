@@ -245,10 +245,30 @@ BANK_SHORT = {
 }
 
 
+BANK_ALIAS = {
+    "建行": "建设银行", "工行": "工商银行", "农行": "农业银行", "中行": "中国银行",
+    "交行": "交通银行", "邮储": "邮储银行", "招行": "招商银行", "浦发": "浦发银行",
+    "中信": "中信银行", "光大": "光大银行", "民生": "民生银行", "兴业": "兴业银行",
+    "广发": "广发银行", "平安": "平安银行", "华夏": "华夏银行", "浙商": "浙商银行",
+    "渤海": "渤海银行", "恒丰": "恒丰银行",
+}
+
+
 def bank_short(name):
-    s = re.sub(r"(股份有限公司|有限责任公司|有限公司)$", "", (name or "").strip()).strip()
+    s = (name or "").strip()
+    # 去掉括号注释（如「汇丰银行（中国）」「中国建设银行（以下简称建行）」）
+    s = re.sub(r"[（(][^）)]*[）)]", "", s).strip()
+    # 分支行/营业部按总行归并：先按「银行」截断，兼容「××银行北京市分行」这类写法
+    i = s.find("银行")
+    if i >= 0:
+        s = s[: i + 2]
+    else:
+        s = re.split(r"(?:分行|支行|营业部|分部)", s)[0].strip()
+        s = re.sub(r"(股份有限公司|有限责任公司|有限公司).*$", "", s).strip()
     if s in BANK_SHORT:
         return BANK_SHORT[s]
+    if s in BANK_ALIAS:
+        return BANK_ALIAS[s]
     if s.startswith("中国") and s.endswith("银行") and len(s) > 5:
         return s[2:]
     return s
@@ -256,7 +276,7 @@ def bank_short(name):
 
 def clean_channels(raw):
     """代销机构：去重 + 统一银行简称；理财公司（发行机构）不算代销机构，直接剔除。"""
-    parts = [p.strip() for p in re.split(r"[；;/,，]", raw or "") if p.strip()]
+    parts = [p.strip() for p in re.split(r"[；;/,，、|\s]+", raw or "") if p.strip()]
     out = []
     for p in parts:
         short = bank_short(p)
