@@ -389,9 +389,9 @@ def build():
     items.sort(key=lambda x: (x["raiseStart"] or x["establish"], x["issuer"]))
     lanes = []
     for it in items:
-        short = R.short_bank(it["issuer"]) or it["issuer"]
-        if "理财有限责任公司" in short:
-            short = norm(short) or short
+        # 按代销机构分组（公告里的产品销售机构），不能用发行机构（理财公司）
+        chans = [c for c in (it.get("saleChannel") or "").split("；") if c.strip()]
+        short = chans[0].strip() if chans else "待核实"
         lane = next((l for l in lanes if l["channel"] == short), None)
         if not lane:
             lane = {"channel": short, "products": []}
