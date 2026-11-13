@@ -1883,11 +1883,29 @@
   /* ---------------- 筛选下拉：自绘列表（原生 select 展开层字号不可控） ---------------- */
   var selPop = null;
   var selPopSel = null;
+  var selPopAt = 0;
 
   function closeSelPop() {
     if (selPop && selPop.parentNode) selPop.parentNode.removeChild(selPop);
     selPop = null;
     selPopSel = null;
+  }
+
+  /* 跟随锚点重新定位；锚点滚出视口时关闭 */
+  function placeSelPop() {
+    if (!selPop || !selPopSel) return;
+    var r = selPopSel.getBoundingClientRect();
+    var vh = window.innerHeight;
+    if (r.bottom < 0 || r.top > vh) { closeSelPop(); return; }
+    var vw = window.innerWidth;
+    var pw = selPop.offsetWidth;
+    var ph = selPop.offsetHeight;
+    var left = Math.max(8, Math.min(r.left, vw - pw - 8));
+    var top = r.bottom + 6;
+    if (top + ph > vh - 8) top = r.top - ph - 6;
+    top = Math.max(8, Math.min(top, vh - ph - 8));
+    selPop.style.left = left + 'px';
+    selPop.style.top = top + 'px';
   }
 
   function openSelPop(sel) {
@@ -1915,19 +1933,11 @@
     document.body.appendChild(pop);
     selPop = pop;
     selPopSel = sel;
+    selPopAt = Date.now();
 
     var r = sel.getBoundingClientRect();
     pop.style.minWidth = Math.max(r.width, 132) + 'px';
-    var pw = pop.offsetWidth;
-    var ph = pop.offsetHeight;
-    var vw = window.innerWidth;
-    var vh = window.innerHeight;
-    var left = Math.max(8, Math.min(r.left, vw - pw - 8));
-    var top = r.bottom + 6;
-    if (top + ph > vh - 8) top = r.top - ph - 6;
-    top = Math.max(8, Math.min(top, vh - ph - 8));
-    pop.style.left = left + 'px';
-    pop.style.top = top + 'px';
+    placeSelPop();
 
     var on = pop.querySelector('.sel-opt.on');
     if (on) pop.scrollTop = Math.max(0, on.offsetTop - 40);
@@ -1978,7 +1988,13 @@
       if (e.key === 'Escape' || e.key === 'Esc') closeSelPop();
     });
     window.addEventListener('resize', closeSelPop);
-    window.addEventListener('scroll', closeSelPop, true);
+    window.addEventListener('scroll', function (e) {
+      if (!selPop) return;
+      /* 下拉列表自身滚动、以及打开瞬间由点击带入视口造成的滚动，都不关闭 */
+      if (e.target === selPop || (e.target && e.target.nodeType === 1 && selPop.contains(e.target))) return;
+      if (Date.now() - selPopAt < 400) return;
+      placeSelPop();
+    }, true);
   }
 
   /* ---------------- 产品库搜索：输入时弹出候选，点选即筛选 ---------------- */
@@ -2353,6 +2369,28 @@
     }).join('') || '<div class="sr-row" style="cursor:default"><span class="muted">未找到匹配产品</span></div>';
   }
 
+  /* 参考基金交易规则切换录入方向：申购填金额、系统折算份额；赎回/清仓填份额、系统折算金额 */
+  function applyTradeMode() {
+    var typeEl = document.getElementById('trade-type');
+    var shEl = document.getElementById('trade-shares');
+    var amtEl = document.getElementById('trade-amount');
+    var applyEl = document.getElementById('trade-apply');
+    var amtLabel = document.getElementById('trade-amount-label');
+    var shLabel = document.getElementById('trade-shares-label');
+    var applyLabel = document.getElementById('trade-apply-label');
+    var t = (typeEl && typeEl.value) || '申购';
+    var isBuy = t === '申购';
+    if (amtLabel) amtLabel.textContent = isBuy ? '申购金额' : (t + '金额');
+    if (shLabel) shLabel.textContent = isBuy ? '份额' : (t + '份额');
+    if (applyLabel) applyLabel.textContent = t + '日期';
+    if (applyEl) applyEl.placeholder = '请选择' + t + '日期';
+    if (amtEl) {
+      amtEl.readOnly = !isBuy;
+      amtEl.placeholder = isBuy ? '填写申购金额，按成交净值折算份额' : '按份额与成交净值自动计算';
+    }
+    if (shEl) shEl.readOnly = isBuy || t === '清仓';
+  }
+
   function syncTradeForm() {
     var p = tradeProduct();
     if (!p) return;
@@ -2373,11 +2411,20 @@
     }
     var navVal = Number(navEl && navEl.value) || 0;
     var h = HOLD_BY_PID[p.id];
-    if (typeEl && typeEl.value === '清仓') {
-      if (shEl) shEl.value = h && h.shares > 0 ? h.shares.toFixed(2) : '';
-      if (amtEl) amtEl.value = (shEl && shEl.value && navVal) ? (Number(shEl.value) * navVal).toFixed(2) : '';
+    var t = (typeEl && typeEl.value) || '申购';
+    var isBuy = t === '申购';
+    applyTradeMode();
+    if (shEl) {
+      if (isBuy) shEl.placeholder = '按金额与成交净值自动计算';
+      else if (t === '清仓') {
+        shEl.value = h && h.shares > 0 ? h.shares.toFixed(2) : '';
+        shEl.placeholder = '';
+      } else {
+        shEl.placeholder = '可卖 ' + ((h && h.shares) ? h.shares.toFixed(2) : '0.00') + ' 份';
+      }
     }
-    if (amtEl && typeEl && typeEl.value === '赎回' && shEl && shEl.value && navVal) {
+    /* 赎回/清仓：金额 = 份额 × 成交净值 */
+    if (!isBuy && shEl && shEl.value && navVal && amtEl) {
       amtEl.value = (Number(shEl.value) * navVal).toFixed(2);
     }
   }
@@ -2464,6 +2511,7 @@
       syncTradeForm();
       applyTypeLimits();
     }
+    applyTradeMode();
     modal.hidden = false;
   }
 
@@ -2497,9 +2545,13 @@
       }
       if (shEl && tType === '清仓') shEl.value = hold.toFixed(2);
     }
-    if (!(shares > 0) && amount > 0 && nav > 0) shares = amount / nav;
-    if (!(amount > 0) && shares > 0 && nav > 0) amount = shares * nav;
-    if (tType === '清仓' && !editId) amount = shares * nav;
+    if (tType === '申购') {
+      if (!(shares > 0) && amount > 0 && nav > 0) shares = amount / nav;
+      if (!(amount > 0) && shares > 0 && nav > 0) amount = shares * nav;
+    } else if (shares > 0 && nav > 0) {
+      /* 赎回/清仓以份额为准，金额一律由份额 × 成交净值算出 */
+      amount = shares * nav;
+    }
     if (!dateEl.value && applyEl && applyEl.value) dateEl.value = nextWorkday(applyEl.value);
     /* 确认日净值尚未披露：申购可先按金额提交，份额与净值待确认；赎回/清仓需等净值披露 */
     var navPending = !(nav > 0);
@@ -2508,11 +2560,11 @@
       if (!(amount > 0)) { toast('请填写申购金额'); return; }
     }
     if (!dateEl.value || (applyEl && !applyEl.value)) {
-      toast('请选择申购日期');
+      toast('请选择' + tType + '日期');
       return;
     }
     if (!navPending && !(shares > 0)) {
-      toast('请填写份额（或金额）后提交');
+      toast(tType === '申购' ? '请填写申购金额' : '请填写' + tType + '份额');
       return;
     }
     var btn = document.getElementById('trade-submit');
