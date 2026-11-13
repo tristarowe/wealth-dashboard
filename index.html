@@ -562,10 +562,69 @@
     #prod-search,#trade-prod-q{font-size:15px}
     html.is-ios .ms-search,html.is-ios #prod-search,html.is-ios #trade-prod-q{font-size:16px}
   }
-  /* 横屏：产品库含完整日期，百分比列宽会挤掉日期，保持自适应 */
+  /* 横屏：压缩列宽，尽量一屏看全，表头保持单行 */
   @media (min-width:761px) and (max-width:900px){
+    /* 横屏收窄页面左右留白，把空间让给表格 */
+    body{padding:16px 10px 40px}
+    #hold-table,#sum-table,#flow-table,#prod-table{width:100%;min-width:0;font-size:11.5px}
+    #hold-table thead th,#sum-table thead th,#flow-table thead th,#prod-table thead th{
+      font-size:11.5px;white-space:nowrap;min-width:0 !important}
+    #hold-table thead th,#hold-table tbody td,
+    #sum-table thead th,#sum-table tbody td,
+    #flow-table thead th,#flow-table tbody td,
+    #prod-table thead th,#prod-table tbody td{padding:6px 4px}
+    /* 产品库含完整日期，保持自适应才不会被日期撑列 */
     #prod-table{table-layout:auto}
     #prod-table colgroup col{width:auto !important}
+    #hold-table colgroup col,#sum-table colgroup col,#flow-table colgroup col{width:auto !important}
+    #hold-table col:nth-child(1){width:26px !important}
+    #hold-table col:nth-child(2){width:115px !important}
+    #hold-table col:nth-child(3){width:48px !important}
+    #hold-table col:nth-child(4){width:48px !important}
+    #hold-table col:nth-child(5),
+    #hold-table col:nth-child(6),
+    #hold-table col:nth-child(7){width:48px !important}
+    #hold-table col:nth-child(8){width:60px !important}
+    #hold-table col:nth-child(9){width:48px !important}
+    #hold-table col:nth-child(10){width:55px !important}
+    /* 数据列的表头下拉去掉多余内边距，避免撑破单元格 */
+    #hold-table thead th:nth-child(10){padding-left:1px !important;padding-right:1px !important}
+    #hold-table .th-select{font-size:11px;padding:2px 1px;max-width:100%}
+    #hold-table col:nth-child(11){width:55px !important}
+    #hold-table col:nth-child(12){width:47px !important}
+    #hold-table col:nth-child(13),
+    #hold-table col:nth-child(14),
+    #hold-table col:nth-child(15){width:40px !important}
+    #hold-table col:nth-child(16){width:48px !important}
+    #hold-table col:nth-child(17){width:38px !important}
+    /* 盈亏汇总 17 列，仅此表再降字号并收窄横向内边距，保证一屏放下 */
+    #hold-table,#hold-table thead th{font-size:11px}
+    #hold-table thead th,#hold-table tbody td{padding:6px 2px}
+    /* 区间标签（日均万收/年化）样式沿用桌面偏宽内边距，横屏下收窄 */
+    #hold-table td.mlabel{padding:6px 2px;font-size:11px}
+    /* 排序箭头会撑破窄列：横屏改为列头上下边线提示，降序=下达线、升序=上达线 */
+    #hold-table thead th.sorted-asc::after,#hold-table thead th.sorted-desc::after{content:none}
+    #hold-table thead th.sorted-asc,#hold-table thead th.sorted-desc{color:var(--accent-deep)}
+    #hold-table thead th.sorted-desc{box-shadow:inset 0 -2px 0 0 var(--accent)}
+    #hold-table thead th.sorted-asc{box-shadow:inset 0 2px 0 0 var(--accent)}
+    #sum-table col:nth-child(1){width:136px !important}
+    #sum-table col:nth-child(2){width:56px !important}
+    #sum-table col:nth-child(3){width:62px !important}
+    #sum-table col:nth-child(4){width:70px !important}
+    #sum-table col:nth-child(5){width:66px !important}
+    #sum-table col:nth-child(6){width:62px !important}
+    #sum-table col:nth-child(7){width:62px !important}
+    #sum-table col:nth-child(8){width:52px !important}
+    #sum-table col:nth-child(9){width:128px !important}
+    #flow-table col:nth-child(1){width:78px !important}
+    #flow-table col:nth-child(2){width:150px !important}
+    #flow-table col:nth-child(3){width:44px !important}
+    #flow-table col:nth-child(4){width:60px !important}
+    #flow-table col:nth-child(5){width:66px !important}
+    #flow-table col:nth-child(6){width:62px !important}
+    #flow-table col:nth-child(7){width:58px !important}
+    #flow-table col:nth-child(8){width:46px !important}
+    #flow-table col:nth-child(9){width:76px !important}
   }
   @media (max-width:760px){
     body{padding:14px 12px calc(40px + env(safe-area-inset-bottom))}
