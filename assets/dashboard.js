@@ -3544,6 +3544,24 @@
       var nowCompact = (window.innerWidth || 1200) < 480;
       if (nowCompact !== wasCompact) { wasCompact = nowCompact; renderCalendar(); }
     });
+
+    /* 横竖屏切换：浏览器可能沿用旧布局宽度或缩放，强制重置视口并重排 */
+    var vpMeta = document.querySelector('meta[name="viewport"]');
+    var VP_CONTENT = 'width=device-width, initial-scale=1.0, viewport-fit=cover';
+    var rotTimer = null;
+    window.addEventListener('orientationchange', function () {
+      clearTimeout(rotTimer);
+      rotTimer = setTimeout(function () {
+        if (vpMeta) {
+          vpMeta.setAttribute('content', 'width=device-width, initial-scale=1, minimum-scale=1, viewport-fit=cover');
+          setTimeout(function () { vpMeta.setAttribute('content', VP_CONTENT); }, 200);
+        }
+        var scrollers = document.querySelectorAll('.tbl-scroll');
+        for (var i = 0; i < scrollers.length; i++) scrollers[i].scrollLeft = 0;
+        if (trendChart) trendChart.resize();
+        renderCalendar();
+      }, 260);
+    });
   }
 
   /* 云端后台刷新完成后由页面调用，重新计算持仓并重绘（等首屏 init 完成后再跑） */
