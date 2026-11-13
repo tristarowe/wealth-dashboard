@@ -10,7 +10,7 @@ import os
 import subprocess
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -41,6 +41,10 @@ def main():
     ap = argparse.ArgumentParser(description="非建信产品净值轮换补抓")
     ap.add_argument("--limit", type=int, default=5)
     ap.add_argument("--gap", type=float, default=2.0)
+    ap.add_argument("--prefer", choices=["auto", "empty", "lag"], default="auto",
+                    help="优先补无净值的新品(empty)还是落后产品(lag)")
+    ap.add_argument("--retry-days", type=int, default=3,
+                    help="无净值产品抓空后多少天内不再重试，避免浪费限频额度")
     a = ap.parse_args()
 
     lib = promo.load_json(promo.LIB_JSON, {"items": []})
@@ -50,10 +54,20 @@ def main():
     asof = max((x.get("latestDate") or "") for x in items) or ""
     lag = [x for x in pool if (x.get("latestDate") or "") and x["latestDate"] < asof]
     lag.sort(key=lambda x: x["latestDate"])
-    empty = [x for x in pool if not (x.get("latestDate") or "")]
-    todo = (lag + empty)[: a.limit]
-    print("非建信待补 %d 只（落后 %d 只，无净值 %d 只，基准 %s）"
-          % (len(todo), len(lag), len(empty), asof), flush=True)
+    today = datetime.now().strftime("%Y-%m-%d")
+    cutoff = (datetime.now() - timedelta(days=a.retry_days)).strftime("%Y-%m-%d")
+    # 无净值的按成立日倒序（新品优先），排除近期抓空过的
+    empty = [x for x in pool if not (x.get("latestDate") or "")
+             and (x.get("navTried") or "") < cutoff]
+    empty.sort(key=lambda x: x.get("inception") or "", reverse=True)
+    if a.prefer == "empty":
+        todo = (empty + lag)[: a.limit]
+    elif a.prefer == "lag":
+        todo = (lag + empty)[: a.limit]
+    else:
+        todo = (lag + empty)[: a.limit]
+    print("非建信待补 %d 只（落后 %d 只，无净值 %d 只，基准 %s，优先 %s）"
+          % (len(todo), len(lag), len(empty), asof, a.prefer), flush=True)
 
     ok, blocked = 0, 0
     for i, x in enumerate(todo, 1):
@@ -78,6 +92,9 @@ def main():
             ok += 1
             print("  OK %d 条，最新 %s" % (len(rows), x["latestDate"]), flush=True)
         else:
+            if not old:
+                # 抓空过（中国理财网暂无该产品净值）：记录日期，近期不再占用额度
+                x["navTried"] = today
             print("  仍无新净值", flush=True)
         if a.gap:
             time.sleep(a.gap)

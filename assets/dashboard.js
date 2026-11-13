@@ -1600,7 +1600,7 @@
   var PROD_PAGE_SIZE = 10;
   var prodUi = {
     sale: '', org: '', risk: '', term: '', q: '',
-    flagNew: false, flagFav: false,
+    flagNew: false, flagFav: false, newMonth: '',
     holdHolding: true, holdCleared: true, page: 1, pages: 1,
     mPer10k: true, mAnn: true,
     /* 表头排序：默认今日万收降序；sortTouched 表示用户手动点过表头 */
@@ -1796,10 +1796,35 @@
     return ref <= end;
   }
 
+  /* 新品月份下拉：列出产品库里所有成立月份（倒序），选某月只看该月确立的新品 */
+  function syncNewMonthOptions(allModels) {
+    var sel = document.getElementById('new-month-sel');
+    if (!sel) return;
+    var seen = {};
+    allModels.forEach(function (it) {
+      var inc = (it.product && it.product.inception) || '';
+      if (inc.length >= 7) seen[inc.slice(0, 7)] = 1;
+    });
+    var keys = Object.keys(seen).sort().reverse();
+    var sig = keys.join(',');
+    if (sel.dataset.sig !== sig) {
+      sel.innerHTML = '<option value="">全部月份</option>' + keys.map(function (k) {
+        return '<option value="' + k + '">' + k.slice(0, 4) + '年' + (+k.slice(5, 7)) + '月</option>';
+      }).join('');
+      sel.dataset.sig = sig;
+    }
+    if (keys.indexOf(prodUi.newMonth) === -1) prodUi.newMonth = '';
+    sel.value = prodUi.newMonth;
+    /* 原生 select 被包进 .sel-wrap 后要连外壳一起显示/隐藏 */
+    var box = sel.parentNode && sel.parentNode.classList && sel.parentNode.classList.contains('sel-wrap') ? sel.parentNode : sel;
+    box.hidden = !prodUi.flagNew;
+  }
+
   function renderProductTable() {
     var tbody = document.getElementById('prod-body');
     if (!tbody) return;
     var allModels = MODEL.concat(LIB_MODEL);
+    syncNewMonthOptions(allModels);
     var peerAvg30 = peerAvg30Of(allModels);
     var favList = favs();
 
@@ -1813,7 +1838,12 @@
       if (prodUi.org && orgShort(p.org) !== prodUi.org) return false;
       if (prodUi.risk && riskOf(p) !== prodUi.risk) return false;
       if (prodUi.term && termBucket(term) !== prodUi.term) return false;
-      if (prodUi.flagNew && !isNew) return false;
+      if (prodUi.flagNew) {
+        /* 选了月份就按成立月份筛，没选仍按「成立 30 天内」判定 */
+        if (prodUi.newMonth) {
+          if ((p.inception || '').slice(0, 7) !== prodUi.newMonth) return false;
+        } else if (!isNew) return false;
+      }
       if (prodUi.flagFav && !isFav) return false;
       /* 仅持仓/仅清仓为唯一选择：未持有的产品不再出现 */
       if (prodUi.holdHolding !== prodUi.holdCleared) {
@@ -2064,7 +2094,7 @@
     Array.prototype.forEach.call(document.querySelectorAll('.filters select'), function (sel) {
       if (sel.parentNode && sel.parentNode.classList && sel.parentNode.classList.contains('sel-wrap')) return;
       var wrap = document.createElement('span');
-      wrap.className = 'sel-wrap';
+      wrap.className = 'sel-wrap' + (sel.id === 'new-month-sel' ? ' sel-wrap-chip' : '');
       sel.parentNode.insertBefore(wrap, sel);
       wrap.appendChild(sel);
       var label = document.createElement('span');
@@ -2237,11 +2267,22 @@
     Array.prototype.forEach.call(flagBtns, function (b) {
       b.addEventListener('click', function () {
         b.classList.toggle('on');
-        if (b.dataset.flag === 'new') prodUi.flagNew = b.classList.contains('on');
+        if (b.dataset.flag === 'new') {
+          prodUi.flagNew = b.classList.contains('on');
+          /* 关掉「新品」时月份筛选一并清空，避免残留筛选条件 */
+          if (!prodUi.flagNew) prodUi.newMonth = '';
+        }
         if (b.dataset.flag === 'fav') prodUi.flagFav = b.classList.contains('on');
         prodUi.page = 1;
         renderProductTable();
       });
+    });
+
+    var nmSel = document.getElementById('new-month-sel');
+    if (nmSel) nmSel.addEventListener('change', function () {
+      prodUi.newMonth = nmSel.value;
+      prodUi.page = 1;
+      renderProductTable();
     });
 
     var holdSel = document.getElementById('hold-sel');
