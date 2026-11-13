@@ -187,27 +187,27 @@
   var LIB_MODEL = [];
   function computeLibrary() {
     var lib = (window.PRODUCT_LIBRARY && window.PRODUCT_LIBRARY.items) || [];
+    var blank = { per: null, ann: null, fallback: false };
     LIB_MODEL = lib.filter(function (p) {
-      /* 手工添加的产品可能只有一条净值，仅展示净值与净值日期，不计算区间指标 */
-      if (!p || !p.nav || !p.nav.length) return false;
-      return p.dates && p.dates.length > (p.manual ? 0 : 1);
+      return !!p;
     }).map(function (p) {
-      p.dailyAnn = p.nav.map(function (v, i) {
-        if (i === 0) return null;
-        return (v / p.nav[i - 1] - 1) * 365 * 100;
-      });
-      if (p.manual && p.dates.length < 2) {
-        var blank = { per: null, ann: null, fallback: false };
+      /* 尚无净值（或仅有 1 条）的新品也展示，净值与区间指标显示「待披露」 */
+      if (!p.nav || !p.dates || p.dates.length < 2) {
         return {
           product: p,
+          pending: true,
           m: {
-            latestDate: p.latestDate, latestNav: p.latestNav,
-            inception: p.inception || '', days: 0, listing: 0,
-            sinceAnn: null, todayPer: null,
+            latestDate: p.latestDate || '',
+            latestNav: p.latestNav != null ? p.latestNav : null,
+            inception: p.inception || '', days: 0, listing: 0, sinceAnn: null, todayPer: null,
             windows: [blank, blank, blank, blank, blank, blank]
           }
         };
       }
+      p.dailyAnn = p.nav.map(function (v, i) {
+        if (i === 0) return null;
+        return (v / p.nav[i - 1] - 1) * 365 * 100;
+      });
       var mm = calc(p);
       if (p.manual) {
         /* 手工产品没有「成立日期」，不展示首条净值日冒充成立日 */
@@ -1814,8 +1814,8 @@
         '<td class="r num ' + colorBy(m.sinceAnn) + '">' + fmtAnn(m.sinceAnn) + '</td>' +
         '<td class="c pmeta">' + (riskShort(p) || '—') + '</td>' +
         '<td class="c pmeta">' + term + '</td>' +
-        '<td class="c num">' + mmdd(m.latestDate) + '</td>' +
-        '<td class="r num">' + fmtNav(m.latestNav) + '</td>' +
+        '<td class="c num">' + (m.latestDate ? mmdd(m.latestDate) : '<span class="muted">待披露</span>') + '</td>' +
+        '<td class="r num">' + (m.latestNav != null ? fmtNav(m.latestNav) : '<span class="muted">待披露</span>') + '</td>' +
         '<td class="c cdate">' + (m.inception ?
           '<span>' + m.inception + '</span><i>' + m.listing + ' 天</i>' :
           '<span class="muted">—</span>') + '</td>' +

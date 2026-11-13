@@ -154,20 +154,13 @@ def fill_nav(items, limit, delay):
 
 
 def _save(kept):
-    kept = sorted(kept, key=lambda x: x["inception"], reverse=True)
-    asof = max(x["latestDate"] for x in kept)
-    payload = {
-        "asOf": asof,
-        "fetchedAt": datetime.now().strftime("%Y-%m-%d %H:%M"),
-        "source": "建行新品公告·销售文件要素表 + 中国理财网净值",
-        "window": {"start": LIB_START, "end": asof},
-        "items": kept,
-    }
-    with open(OUT_JSON, "w", encoding="utf-8") as f:
-        json.dump(payload, f, ensure_ascii=False, indent=2)
-    with open(OUT_JS, "w", encoding="utf-8") as f:
-        f.write("window.PRODUCT_LIBRARY = " + json.dumps(payload, ensure_ascii=False) + ";\n")
-    return payload
+    """增量落盘：新抓到的产品合并进现有产品库，不能覆盖已有产品。"""
+    import promote_newproducts as promo
+    old = promo.load_json(promo.LIB_JSON, {"items": []}).get("items") or []
+    seen = {str(x.get("regCode")) for x in kept}
+    merged = kept + [x for x in old if str(x.get("regCode")) not in seen]
+    promo.save(merged)
+    return merged
 
 
 def _org_short(issuer):
@@ -196,8 +189,8 @@ def main():
         return 1
     kept = fill_nav(items, a.nav_limit, a.nav_delay)
     if not kept:
-        print("全部净值抓取失败，保留原有 library.js")
-        return 2
+        print("本次没有新增净值完整的产品，产品库保持不变")
+        return 0
 
     _save(kept)
     print("完成：候选 %d → 入库 %d 款，覆盖 %d 家机构"
