@@ -193,16 +193,13 @@
     }).map(function (p) {
       /* 尚无净值（或仅有 1 条）的新品也展示，净值与区间指标显示「待披露」 */
       if (!p.nav || !p.dates || p.dates.length < 2) {
-        /* 成立天数按成立日到看板基准日计算，净值相关指标留空 */
-        var inc = p.inception || '';
-        var heldDays = inc ? Math.max(0, dayDiff(parseDate(inc), parseDate(DATA.asOf))) : 0;
         return {
           product: p,
           pending: true,
           m: {
             latestDate: p.latestDate || '',
             latestNav: p.latestNav != null ? p.latestNav : null,
-            inception: inc, days: heldDays, listing: heldDays, sinceAnn: null, todayPer: null,
+            inception: p.inception || '', days: 0, listing: 0, sinceAnn: null, todayPer: null,
             windows: [blank, blank, blank, blank, blank, blank]
           }
         };
@@ -663,10 +660,7 @@
       el.className = 'v ' + colorBy(todayCnt ? today : null);
     }
     el = document.getElementById('metric-avg');
-    if (el) {
-      el.textContent = fmtSigned(avg);
-      el.className = 'ink ' + colorBy(avg);
-    }
+    if (el) el.textContent = fmt2(avg);
 
     el = document.getElementById('metric-month');
     if (el) {
@@ -674,10 +668,7 @@
       el.className = 'v ' + colorBy(mCnt ? month : null);
     }
     el = document.getElementById('metric-month-avg');
-    if (el) {
-      el.textContent = fmtSigned(mCnt ? mPerSum / mCnt : null);
-      el.className = 'ink ' + colorBy(mCnt ? mPerSum / mCnt : null);
-    }
+    if (el) el.textContent = fmt2(mCnt ? mPerSum / mCnt : null);
 
     el = document.getElementById('metric-profit');
     if (el) {
@@ -791,7 +782,7 @@
       var rs = dual ? ' rowspan="2"' : '';
       var lbl = holdMetric === 'ann' ? '年化' : '日均万收';
       html += '<tr class="ma' + (dual ? ' dual' : '') + '">';
-      html += '<td class="c num hcol-idx"' + rs + '>' + (i + 1) + '</td>';
+      html += '<td class="c num"' + rs + '>' + (i + 1) + '</td>';
       html += '<td' + rs + '><div class="pname"><a class="plink" href="javascript:void(0)" data-goto-trade="' + p.id + '" title="查看「' + p.name + '」的交易记录">' + (p.short || p.name) + '</a>' + badge + '</div></td>';
       html += '<td class="c num"' + rs + '>' + mmdd(m.latestDate) + '</td>';
       html += '<td class="r num today-col ' + colorBy(tv) + '"' + rs + '>' + fmtSigned(tv) + '</td>';
@@ -801,7 +792,7 @@
       html += '<td class="r num ' + colorBy(h ? h.ann : null) + '"' + rs + '>' + fmtAnn(h ? h.ann : null) + '</td>';
       html += '<td class="r num"' + rs + '>' + (h ? fmtMoney(h.mv) : '—') + '</td>';
       html += '<td class="c num dcell"' + rs + '>' + (h ? '<span class="days">' + h.days + '</span><i class="dunit">天</i>' : '—') + '</td>';
-      html += '<td class="c mlabel hcol-metric">' + lbl + '</td>';
+      html += '<td class="c mlabel">' + lbl + '</td>';
 
       var perCells = '';
       var annCells = '';
@@ -813,15 +804,15 @@
         var annTip = w.ann === null ? '历史区间不足'
           : w.ann.toFixed(4) + '%（' + w.start + ' 至 ' + m.latestDate + '，按 ' + w.span + ' 天年化）' +
             (w.fallback ? '；成立不足 1 年，按成立以来计算' : '');
-        perCells += '<td class="c num pwin hcol-win" title="' + perTip + '">' + fmt2(w.per) + mark + '</td>';
-        annCells += '<td class="c num awin hcol-win" title="' + annTip + '">' + fmtAnn(w.ann) + mark + '</td>';
+        perCells += '<td class="c num pwin" title="' + perTip + '">' + fmt2(w.per) + mark + '</td>';
+        annCells += '<td class="c num awin" title="' + annTip + '">' + fmtAnn(w.ann) + mark + '</td>';
       });
       html += holdMetric === 'ann' ? annCells : perCells;
 
       html += scoreCell(row, 'c', dual ? 2 : 0);
       html += '</tr>';
 
-      if (dual) html += '<tr class="mb"><td class="c mlabel hcol-metric">年化</td>' + annCells + '</tr>';
+      if (dual) html += '<tr class="mb"><td class="c mlabel">年化</td>' + annCells + '</tr>';
     });
 
     tbody.innerHTML = html || '<tr><td colspan="17" class="c muted" style="padding:28px">未选择产品，请在顶部「覆盖产品」中选择</td></tr>';
@@ -1046,7 +1037,7 @@
           '<span class="d">' + st.pos + '</span>' +
           '<span class="d">' + st.neg + '</span>' +
           '<span class="d">' + st.flat + '</span>' +
-          '<span class="rate-cell ' + rateLevel(st.ann) + '" style="--w:' + barW(st.ann) + '">' + fmtAnn(st.ann) + thumb + '</span>' +
+          '<span class="rate-cell ' + rateLevel(st.ann) + '">' + fmtAnn(st.ann) + thumb + '</span>' +
           '</div>';
       });
       html += '</div>';
@@ -1117,13 +1108,6 @@
     return 'lv1';
   }
 
-  /* 年化数据条宽度：5% 年化满格，按绝对值取比例，最小 8% 保证可见 */
-  function barW(v) {
-    if (v === null || v === undefined || !isFinite(v)) return '0%';
-    var r = Math.abs(v) / 5 * 100;
-    return Math.max(8, Math.min(100, r)).toFixed(1) + '%';
-  }
-
   function renderYearView() {
     var tbody = document.getElementById('year-body');
     if (!tbody) return;
@@ -1155,7 +1139,7 @@
         '<td class="num cnt">' + s.pos + '</td>' +
         '<td class="num cnt">' + s.neg + '</td>' +
         '<td></td>' +
-        '<td><div class="rate-cell ' + rateLv(ann) + '" style="--w:' + barW(ann) + '">' + (ann === null ? '—' : ann.toFixed(2) + '%') + '</div></td>' +
+        '<td><div class="rate-cell ' + rateLv(ann) + '">' + (ann === null ? '—' : ann.toFixed(2) + '%') + '</div></td>' +
         '</tr>';
     }).join('');
   }
@@ -1843,6 +1827,10 @@
 
     tbody.innerHTML = html || '<tr><td colspan="13" class="c muted" style="padding:28px">当前筛选条件下暂无产品</td></tr>';
 
+    var totalEl = document.getElementById('prod-total');
+    if (totalEl) totalEl.textContent = allModels.length;
+    var hitEl = document.getElementById('prod-hit');
+    if (hitEl) hitEl.textContent = hit;
     renderProdPager(pages, hit);
 
     applyProductCols();
@@ -1990,11 +1978,7 @@
       if (e.key === 'Escape' || e.key === 'Esc') closeSelPop();
     });
     window.addEventListener('resize', closeSelPop);
-    /* 滚动页面才收起；下拉内部滚动保留，否则选项一滚就消失、点不到 */
-    window.addEventListener('scroll', function (e) {
-      if (selPop && (selPop === e.target || selPop.contains(e.target))) return;
-      closeSelPop();
-    }, true);
+    window.addEventListener('scroll', closeSelPop, true);
   }
 
   /* ---------------- 产品库搜索：输入时弹出候选，点选即筛选 ---------------- */
