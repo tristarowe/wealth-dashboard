@@ -131,9 +131,12 @@
   }
 
   function txToRow(t) {
-    var shares = (t.shares === undefined || t.shares === null)
-      ? Math.round((Number(t.amount) / Number(t.confirmNav)) * 100) / 100
-      : t.shares;
+    var shares = t.shares;
+    if (shares === undefined || shares === null) {
+      /* 成交净值待确认时不折算份额，留空等净值披露后再算 */
+      var nav = Number(t.confirmNav);
+      shares = nav > 0 ? Math.round((Number(t.amount) / nav) * 100) / 100 : null;
+    }
     return {
       id: t.id,
       pid: t.pid,
