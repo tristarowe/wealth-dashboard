@@ -1,0 +1,38 @@
+name: add-products
+
+on:
+  workflow_dispatch:
+    inputs:
+      items:
+        description: "每行一个产品：名称|登记编码|ecd|发行机构|风险等级|代销机构（未知留空）"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  add:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 安装依赖
+        run: pip install requests pycryptodome
+
+      - name: 补入产品库
+        env:
+          PYTHONIOENCODING: utf-8
+          ITEMS: ${{ inputs.items }}
+        run: |
+          while IFS='|' read -r name reg ecd org risk sale; do
+            name="$(echo "$name" | sed 's/^ *//;s/ *$//')"
+            [ -z "$name" ] && continue
+            echo "=== $name"
+            python daily/add_products.py --name "$name" --reg "$reg" --ecd "$ecd" \
+              --org "$org" --risk "$risk" --sale "$sale" || true
+          done <<< "$ITEMS"
