@@ -334,7 +334,11 @@
       var alive = rec.shares > 0.000001;
       var mv = rec.shares * latestNav;
       var profit = mv - rec.cost + rec.realized;
-      var days = alive ? dayDiff(parseDate(rec.startDate), asof) : 0;
+      /* 持仓截止日取「交易快照日」与「该产品最新净值日」的较晚者：
+         当日申购且净值已披露时，净值为最新数据，避免出现负数天数 */
+      var end = asof;
+      if (p.latestDate && p.latestDate > isoDate(asof)) end = parseDate(p.latestDate);
+      var days = alive ? Math.max(0, dayDiff(parseDate(rec.startDate), end)) : 0;
       var costNav = alive ? rec.cost / rec.shares : 0;
       var lastPer = p.per10k[n - 1];
       var h = {
