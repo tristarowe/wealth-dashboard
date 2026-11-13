@@ -143,14 +143,12 @@
     return Math.round((b.getTime() - a.getTime()) / DAY);
   }
 
-  /* 成立天数：成立日（无成立日时用首条净值日）到数据截止日的自然日数 */
+  /* 成立天数：成立日（无成立日时用首条净值日）到今天（当日）的自然日数 */
   function listingDaysOf(p) {
     if (!p || p.manual) return null;
     var start = p.inception || (p.dates && p.dates[0]);
     if (!start) return null;
-    var end = DATA.asOf || p.latestDate;
-    if (!end) return null;
-    var d = dayDiff(parseDate(start), parseDate(end));
+    var d = dayDiff(parseDate(start), parseDate(isoDate(new Date())));
     return d >= 0 ? d : null;
   }
 
@@ -196,7 +194,6 @@
       latestNav: p.nav[n - 1],
       inception: p.dates[0],
       days: days,
-      listing: dayDiff(parseDate(p.inception || p.dates[0]), parseDate(DATA.asOf)),
       sinceAnn: sinceAnn,
       todayPer: todayPer,
       windows: windows
@@ -235,7 +232,7 @@
           m: {
             latestDate: p.latestDate || '',
             latestNav: p.latestNav != null ? p.latestNav : null,
-            inception: p.inception || '', days: 0, listing: 0, sinceAnn: null, todayPer: null,
+            inception: p.inception || '', days: 0, sinceAnn: null, todayPer: null,
             windows: [blank, blank, blank, blank, blank, blank]
           }
         };
@@ -248,7 +245,6 @@
       if (p.manual) {
         /* 手工产品没有「成立日期」，不展示首条净值日冒充成立日 */
         mm.inception = '';
-        mm.listing = 0;
       }
       return { product: p, m: mm };
     });
@@ -1883,8 +1879,8 @@
         '<td class="c pmeta">' + term + '</td>' +
         '<td class="c num">' + (m.latestDate ? mmdd(m.latestDate) : '<span class="muted">待披露</span>') + '</td>' +
         '<td class="r num">' + (m.latestNav != null ? fmtNav(m.latestNav) : '<span class="muted">待披露</span>') + '</td>' +
-        '<td class="c cdate">' + (m.inception ?
-          '<span>' + m.inception + '</span><i>' + m.listing + ' 天</i>' :
+        '<td class="c cdate">' + (m.inception && listingDaysOf(p) !== null ?
+          '<span>' + m.inception + '</span><i>' + listingDaysOf(p) + ' 天</i>' :
           '<span class="muted">—</span>') + '</td>' +
         '<td class="c">' + (h ? '<button class="mini" data-detail="' + p.id + '">详情</button>' : '') +
           (p.manual ? '<button class="mini warn" data-del-product="' + p.id + '" style="margin-left:4px">删除</button>' : '') +
