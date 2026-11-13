@@ -105,6 +105,11 @@ def send(title, desp):
 
 
 def main():
+    # 微信推送只允许 GitHub Actions 触发，避免本地/Gitee 流水线重复推送
+    if os.environ.get("GITHUB_ACTIONS") != "true" and os.environ.get("FORCE_PUSH") != "1":
+        print("非 GitHub Actions 环境，跳过微信推送（本地测试可设 FORCE_PUSH=1）")
+        return 0
+
     if not KEY:
         print("未配置 SERVERCHAN_SENDKEY，跳过推送")
         return 0
