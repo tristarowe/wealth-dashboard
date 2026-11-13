@@ -698,24 +698,28 @@
     #hold-table thead th br,#sum-table thead th br,
     #prod-table thead th br,#flow-table thead th br{display:inline}
     /* 盈亏汇总竖屏：只保留 9 个核心列（序号、数据切换、7日~成立至今按需到产品库查看），一屏放下不横滑 */
-    #hold-table{table-layout:fixed;font-size:11px}
+    #hold-table{table-layout:fixed;font-size:10.5px}
     #hold-table col:nth-child(1),#hold-table col:nth-child(n+10):nth-child(-n+16){width:0 !important}
-    #hold-table col:nth-child(2){width:74px !important}
+    #hold-table col:nth-child(2){width:58px !important}
     #hold-table col:nth-child(3){width:32px !important}
-    #hold-table col:nth-child(4){width:34px !important}
-    #hold-table col:nth-child(5){width:34px !important}
+    #hold-table col:nth-child(4){width:33px !important}
+    #hold-table col:nth-child(5){width:33px !important}
     #hold-table col:nth-child(6){width:46px !important}
-    #hold-table col:nth-child(7){width:34px !important}
-    #hold-table col:nth-child(8){width:58px !important}
-    #hold-table col:nth-child(9){width:24px !important}
-    #hold-table col:nth-child(17){width:28px !important}
+    #hold-table col:nth-child(7){width:40px !important}
+    #hold-table col:nth-child(8){width:56px !important}
+    #hold-table col:nth-child(9){width:30px !important}
+    #hold-table col:nth-child(17){width:34px !important}
     /* 隐藏列不能 display:none（会导致整行单元格错列），改为零宽 + 隐藏内容 */
     #hold-table thead th:nth-child(1),#hold-table thead th:nth-child(n+10):nth-child(-n+16),
     #hold-table tbody td.hcol-idx,#hold-table tbody td.hcol-metric,#hold-table tbody td.hcol-win{
       width:0;padding:0 !important;border:0 !important;font-size:0;line-height:0;overflow:hidden;visibility:hidden
     }
-    #hold-table tr.mb{display:none}
+    /* 年化行不能 display:none：上一行前 9 个单元格有 rowspan=2，删行会让下一款产品的整行错列 */
+    #hold-table tr.mb{visibility:hidden}
+    #hold-table tr.mb td{height:0;padding:0 !important;border:0 !important;font-size:0;line-height:0}
     #hold-table thead th,#hold-table tbody td{padding:6px 1px}
+    /* 竖屏列窄，数值改用 10px，保证 10,000.00 这类长数字不溢出到相邻列 */
+    #hold-table tbody td.num{font-size:10px}
     #hold-table thead th{font-size:10.5px}
     .hero{padding:16px 14px 18px;border-radius:14px}
     .hero-top{flex-direction:column;align-items:stretch;gap:10px}

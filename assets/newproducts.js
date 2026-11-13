@@ -1,6 +1,6 @@
 window.NEW_PRODUCTS = {
   "asOf": "2026-11-13",
-  "fetchedAt": "2026-11-13 14:49",
+  "fetchedAt": "2026-11-13 19:09",
   "source": "六大行及股份制银行新品公告 · 销售文件要素表",
   "window": {
     "start": "2026-11-13",
@@ -139,7 +139,7 @@ window.NEW_PRODUCTS = {
     }
   ],
   "stats": {
-    "notices": 48,
+    "notices": 51,
     "candidates": 12,
     "kept": 4,
     "dropped": 8
