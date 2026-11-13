@@ -3988,7 +3988,7 @@
       reloadData().then(function () {
         var msg = DATA.asOf === prevAsOf ? '已是最新' : '已更新';
         settle('done', msg, '已获取最新已发布数据 · 数据日期 ' + (DATA.asOf || '—'));
-        if (window.innerWidth < 760) toast(msg + ' · 数据日期 ' + (DATA.asOf || '—'));
+        if (window.innerWidth < 760) toast(msg + ' · ' + (DATA.asOf || '').slice(5));
       }).catch(function (err) {
         settle('error', '刷新失败', String((err && err.message) || err));
       });
