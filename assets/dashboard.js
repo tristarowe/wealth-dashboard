@@ -2267,6 +2267,10 @@
   /* ---------------- 交易 ---------------- */
   var flowState = { pid: '', year: '', month: '' };
   var flowOpenMonths = {};
+  /* 交易流水批量删除：勾选态 + 当前列表 id（用于全选与计数） */
+  var flowSel = {};
+  var flowIds = [];
+  var flowIdMonth = {};
 
   function toast(msg) {
     var el = document.getElementById('toast');
@@ -3029,6 +3033,14 @@
       return true;
     }).sort(function (a, b) { return b.applyDate.localeCompare(a.applyDate); });
 
+    /* 当前筛选结果：供全选、按月全选、批量删除使用；切走的选择自动清理 */
+    flowIds = items.map(function (t) { return t.id; });
+    flowIdMonth = {};
+    items.forEach(function (t) { flowIdMonth[t.id] = t.applyDate.slice(0, 7); });
+    Object.keys(flowSel).forEach(function (id) {
+      if (!flowIdMonth[id]) delete flowSel[id];
+    });
+
     var groups = {};
     var months = [];
     items.forEach(function (t) {
@@ -3056,12 +3068,16 @@
         .map(function (k) { return k + ' ' + sum[k].n + ' 笔 ' + moneyBrief(sum[k].amt); })
         .join(' · ');
       var head = '<tr class="flow-month' + (open ? ' open' : '') + '" data-mk="' + mk + '">' +
-        '<td colspan="9"><span class="fm-caret">▸</span>' + mk.slice(0, 4) + '年' + (+mk.slice(5, 7)) + '月' +
+        '<td colspan="10"><input type="checkbox" data-mk-chk="' + mk + '"' +
+        (list.every(function (t) { return flowSel[t.id]; }) ? ' checked' : '') + '>' +
+        '<span class="fm-caret">▸</span>' + mk.slice(0, 4) + '年' + (+mk.slice(5, 7)) + '月' +
         '<span class="fm-meta">共 ' + list.length + ' 笔 · ' + meta + '</span></td></tr>';
       var rows = list.map(function (t) {
         var p = t._p;
         var st = txStatus(t);
         return '<tr class="flow-detail"' + (open ? '' : ' hidden') + '>' +
+          '<td class="chk-col"><input type="checkbox" data-chk="' + t.id + '"' +
+            (flowSel[t.id] ? ' checked' : '') + '></td>' +
           '<td class="num">' + t.applyDate + '</td>' +
           '<td><div class="pname">' + (p ? (p.short || p.name) : t.pid) +
             (t.saleChannel ? '<span class="salech">' + t.saleChannel + '</span>' : '') + '</div></td>' +
@@ -3077,7 +3093,7 @@
           '</tr>';
       }).join('');
       return head + rows;
-    }).join('') || '<tr><td colspan="9" class="c muted" style="padding:28px">暂无符合条件的交易流水</td></tr>';
+    }).join('') || '<tr><td colspan="10" class="c muted" style="padding:28px">暂无符合条件的交易流水</td></tr>';
 
     var filterEl = document.getElementById('trade-filter');
     var nameEl = document.getElementById('trade-filter-name');
@@ -3090,6 +3106,38 @@
       }
     }
     updateFlowArrows();
+    syncFlowSelBar();
+  }
+
+  /* 勾选计数 → 全选态、按月勾选态、批量删除按钮显隐 */
+  function syncFlowSelBar() {
+    var ids = Object.keys(flowSel);
+    var n = ids.length;
+    var btn = document.getElementById('flow-del-sel');
+    if (btn) {
+      btn.hidden = !n;
+      btn.textContent = n ? '删除所选 ' + n : '删除所选';
+    }
+    var all = document.getElementById('flow-check-all');
+    if (all) {
+      all.checked = flowIds.length > 0 && n >= flowIds.length;
+      all.indeterminate = n > 0 && n < flowIds.length;
+    }
+    Array.prototype.forEach.call(document.querySelectorAll('#flow-body [data-mk-chk]'), function (box) {
+      var mk = box.getAttribute('data-mk-chk');
+      var total = 0, hit = 0;
+      flowIds.forEach(function (id) {
+        if (flowIdMonth[id] !== mk) return;
+        total++;
+        if (flowSel[id]) hit++;
+      });
+      box.checked = total > 0 && hit === total;
+      box.indeterminate = hit > 0 && hit < total;
+    });
+  }
+
+  function selectedFlowIds() {
+    return Object.keys(flowSel).filter(function (id) { return flowSel[id]; });
   }
 
   function bindTrade() {
@@ -3124,6 +3172,23 @@
 
     var flow = document.getElementById('flow-body');
     if (flow) flow.addEventListener('click', function (e) {
+      var chk = e.target.closest('[data-chk]');
+      if (chk) {
+        var cid = chk.getAttribute('data-chk');
+        if (chk.checked) flowSel[cid] = 1; else delete flowSel[cid];
+        syncFlowSelBar();
+        return;
+      }
+      var mchk = e.target.closest('[data-mk-chk]');
+      if (mchk) {
+        var mkm = mchk.getAttribute('data-mk-chk');
+        flowIds.forEach(function (id) {
+          if (flowIdMonth[id] !== mkm) return;
+          if (mchk.checked) flowSel[id] = 1; else delete flowSel[id];
+        });
+        renderFlows();
+        return;
+      }
       var mh = e.target.closest('tr.flow-month');
       if (mh) {
         var mk = mh.getAttribute('data-mk');
@@ -3155,6 +3220,35 @@
       if (!link) return;
       e.preventDefault();
       openTradeFor(link.getAttribute('data-goto-trade'));
+    });
+  }
+
+  /* 交易流水：全选 + 批量删除 */
+  function bindFlowBulk() {
+    var all = document.getElementById('flow-check-all');
+    if (all) all.addEventListener('change', function () {
+      if (all.checked) flowIds.forEach(function (id) { flowSel[id] = 1; });
+      else flowSel = {};
+      renderFlows();
+    });
+
+    var btn = document.getElementById('flow-del-sel');
+    if (btn) btn.addEventListener('click', function () {
+      var ids = selectedFlowIds();
+      if (!ids.length) return;
+      if (!window.confirm('确认删除选中的 ' + ids.length + ' 笔交易？删除后持仓与收益将重新计算。')) return;
+      if (!window.STORE || !window.STORE.removeMany) { toast('批量删除不可用'); return; }
+      btn.disabled = true;
+      window.STORE.removeMany(ids).then(function (res) {
+        btn.disabled = false;
+        if (!res || !res.ok) { toast((res && res.message) || '批量删除失败'); return; }
+        flowSel = {};
+        toast(res.message || ('已删除 ' + ids.length + ' 笔交易'));
+        refreshAfterWrite();
+      }).catch(function (err) {
+        btn.disabled = false;
+        toast((err && err.message) || '批量删除失败，请检查网络后重试');
+      });
     });
   }
 
@@ -3650,6 +3744,7 @@
     beautifyFilterSelects();
     bindProdSearchSuggest();
     bindTrade();
+    bindFlowBulk();
     bindTradeModal();
     initDatePicker();
     bindAddModal();
