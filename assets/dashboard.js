@@ -3001,13 +3001,8 @@
     if (ms) ms.value = '';
     if (ts) ts.value = '';
     if (ss) ss.value = '';
-    /* 从产品名进入时，该产品所有流水月份全部展开，不按月份折叠 */
+    /* 月份默认展开，折叠仅由人工点击月份行触发 */
     flowOpenMonths = {};
-    if (pid) {
-      ((window.TRANSACTIONS && window.TRANSACTIONS.items) || []).forEach(function (t) {
-        if (t.pid === pid) flowOpenMonths[String(t.applyDate).slice(0, 7)] = true;
-      });
-    }
     renderFlows();
     renderTradeSummary();
     switchTab('trade');
@@ -3339,7 +3334,7 @@
 
     tbody.innerHTML = months.map(function (mk) {
       var list = groups[mk];
-      var open = !!flowOpenMonths[mk];
+      var open = flowOpenMonths[mk] !== false;
       var sum = {};
       list.forEach(function (t) {
         var k = t.type || '申购';
@@ -3479,7 +3474,7 @@
       var mh = e.target.closest('tr.flow-month');
       if (mh) {
         var mk = mh.getAttribute('data-mk');
-        flowOpenMonths[mk] = !flowOpenMonths[mk];
+        flowOpenMonths[mk] = (flowOpenMonths[mk] === false);
         renderFlows();
         return;
       }

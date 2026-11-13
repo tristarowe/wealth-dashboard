@@ -36,6 +36,7 @@ import re
 import subprocess
 import sys
 import time
+from datetime import datetime
 
 import requests
 
@@ -151,10 +152,13 @@ def run(limit=30, delay=1.0, commit=False):
     items = lib.get("items") or []
     boc = [x for x in items if (x.get("orgShort") or "").startswith("中银")]
     asof = max((x.get("latestDate") or "") for x in items) or ""
+    today = datetime.now().strftime("%Y-%m-%d")
     empty = [x for x in boc if len(x.get("nav") or []) < 2]
     empty.sort(key=lambda x: x.get("inception") or "", reverse=True)
+    # 当天已抓过且官网确实没有更新的，不再重复占用请求
     lag = [x for x in boc if len(x.get("nav") or []) >= 2
-           and (x.get("latestDate") or "") < asof]
+           and (x.get("latestDate") or "") < asof
+           and x.get("bocTried") != today]
     lag.sort(key=lambda x: x["latestDate"])
     todo = (empty + lag)[:limit]
     print("中银官网待补 %d 只（无净值 %d，落后 %d，产品库基准 %s）"

@@ -7,6 +7,7 @@
 """
 import argparse
 import os
+import re
 import subprocess
 import sys
 import time
@@ -22,7 +23,7 @@ import promote_newproducts as promo  # noqa: E402
 
 
 def commit(files, message):
-    if os.environ.get("GITHUB_ACTIONS") != "true":
+    if os.environ.get("GITHUB_ACTIONS") != "true" or os.environ.get("NAV_NO_COMMIT") == "1":
         return
     subprocess.run(["git", "add"] + files, check=False, timeout=120)
     diff = subprocess.run(["git", "diff", "--cached", "--quiet"], check=False)
@@ -36,6 +37,15 @@ def commit(files, message):
         if subprocess.run(["git", "push"], check=False, timeout=180).returncode == 0:
             return
         time.sleep(5)
+
+
+def holding_codes():
+    """持仓产品（assets/data.js 里的 REPORT_DATA.products）登记编码集合。"""
+    js = os.path.join(ROOT, "assets", "data.js")
+    if not os.path.exists(js):
+        return set()
+    raw = open(js, encoding="utf-8", errors="ignore").read()
+    return set(re.findall(r'"regCode"\s*:\s*"([^"]+)"', raw))
 
 
 def main():
@@ -69,14 +79,15 @@ def main():
     empty = [x for x in pool if not (x.get("latestDate") or "")
              and (x.get("navTried") or "") < cutoff]
     empty.sort(key=lambda x: x.get("inception") or "", reverse=True)
-    if a.prefer == "empty":
-        todo = (empty + lag)[: a.limit]
-    elif a.prefer == "lag":
-        todo = (lag + empty)[: a.limit]
-    else:
-        todo = (lag + empty)[: a.limit]
-    print("非建信待补 %d 只（落后 %d 只，无净值 %d 只，基准 %s，优先 %s）"
-          % (len(todo), len(lag), len(empty), asof, a.prefer), flush=True)
+    # 持仓产品最先抓：净值直接影响盈亏与当日收益，其余额度再轮换
+    holds = holding_codes()
+    holding = [x for x in pool if x.get("regCode") in holds]
+    holding.sort(key=lambda x: x.get("latestDate") or "")
+    rest = [x for x in (empty + lag if a.prefer == "empty" else lag + empty)
+            if x.get("regCode") not in holds]
+    todo = (holding + rest)[: a.limit]
+    print("本轮 %d 只（持仓 %d 只优先，落后 %d 只，无净值 %d 只，基准 %s，优先 %s）"
+          % (len(todo), len(holding), len(lag), len(empty), asof, a.prefer), flush=True)
 
     ok, blocked = 0, 0
     for i, x in enumerate(todo, 1):
