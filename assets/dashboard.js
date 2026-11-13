@@ -1967,7 +1967,13 @@
     tbl.classList.toggle('only-p10k', on.per10k && !on.ann);
     tbl.querySelectorAll('.m-p10k').forEach(function (el) { el.style.display = on.per10k ? '' : 'none'; });
     tbl.querySelectorAll('.m-ann').forEach(function (el) { el.style.display = on.ann ? '' : 'none'; });
-    tbl.querySelectorAll('[data-col="p10k"]').forEach(function (el) { el.style.display = on.per10k ? '' : 'none'; });
+    tbl.classList.toggle('no-p10k', !on.per10k);
+    tbl.querySelectorAll('[data-col="p10k"]').forEach(function (el) {
+      /* 不能用 display:none：表头少一格会让整行单元格错位、数值压到相邻列上 */
+      el.style.display = '';
+      el.style.visibility = on.per10k ? '' : 'hidden';
+      el.style.padding = on.per10k ? '' : '0';
+    });
     var p10kCol = document.getElementById('prod-p10k-col');
     if (p10kCol) p10kCol.style.width = on.per10k ? '6.1%' : '0';
   }

@@ -71,9 +71,10 @@ def main():
             if not (x.get("orgShort") or "").startswith(("建信", "中银"))]
     # 以产品库整体最新净值日为基准：只补落后的，尚无净值的排最后，避免浪费限频额度
     asof = max((x.get("latestDate") or "") for x in items) or ""
-    lag = [x for x in pool if (x.get("latestDate") or "") and x["latestDate"] < asof]
-    lag.sort(key=lambda x: x["latestDate"])
     today = datetime.now().strftime("%Y-%m-%d")
+    lag = [x for x in pool if (x.get("latestDate") or "") and x["latestDate"] < asof
+           and (x.get("navTried") or "") < today]
+    lag.sort(key=lambda x: x["latestDate"])
     cutoff = (datetime.now() - timedelta(days=a.retry_days)).strftime("%Y-%m-%d")
     # 无净值的按成立日倒序（新品优先），排除近期抓空过的
     empty = [x for x in pool if not (x.get("latestDate") or "")
@@ -81,7 +82,9 @@ def main():
     empty.sort(key=lambda x: x.get("inception") or "", reverse=True)
     # 持仓产品最先抓：净值直接影响盈亏与当日收益，其余额度再轮换
     holds = holding_codes()
-    holding = [x for x in pool if x.get("regCode") in holds]
+    holding = [x for x in pool if x.get("regCode") in holds
+               and (x.get("latestDate") or "") < asof
+               and (x.get("navTried") or "") < today]
     holding.sort(key=lambda x: x.get("latestDate") or "")
     rest = [x for x in (empty + lag if a.prefer == "empty" else lag + empty)
             if x.get("regCode") not in holds]
@@ -112,9 +115,8 @@ def main():
             ok += 1
             print("  OK %d 条，最新 %s" % (len(rows), x["latestDate"]), flush=True)
         else:
-            if not old:
-                # 抓空过（中国理财网暂无该产品净值）：记录日期，近期不再占用额度
-                x["navTried"] = today
+            # 今日已抓过且无新净值：当天不再重复占用额度（抓空的新品另按 retry-days 冷却）
+            x["navTried"] = today
             print("  仍无新净值", flush=True)
         if a.gap:
             time.sleep(a.gap)
