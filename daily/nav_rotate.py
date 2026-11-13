@@ -57,7 +57,8 @@ def main():
 
     lib = promo.load_json(promo.LIB_JSON, {"items": []})
     items = lib.get("items") or []
-    pool = [x for x in items if not (x.get("orgShort") or "").startswith("建信")]
+    pool = [x for x in items
+            if not (x.get("orgShort") or "").startswith(("建信", "中银"))]
     # 以产品库整体最新净值日为基准：只补落后的，尚无净值的排最后，避免浪费限频额度
     asof = max((x.get("latestDate") or "") for x in items) or ""
     lag = [x for x in pool if (x.get("latestDate") or "") and x["latestDate"] < asof]
@@ -109,7 +110,8 @@ def main():
 
     promo.save(items)
     asof = max((x.get("latestDate") or "") for x in items) or ""
-    left = sum(1 for x in items if not (x.get("orgShort") or "").startswith("建信")
+    left = sum(1 for x in items
+               if not (x.get("orgShort") or "").startswith(("建信", "中银"))
                and (x.get("latestDate") or "") < asof)
     print("完成：更新 %d 只，整体最新 %s，仍落后 %d 只" % (ok, asof, left), flush=True)
     if ok or boc_ok:
