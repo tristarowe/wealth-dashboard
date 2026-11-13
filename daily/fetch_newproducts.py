@@ -31,7 +31,11 @@ urllib3.disable_warnings()
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SKILL = os.path.expanduser(r"~\.trae-cn\skills\wealth-newproduct-radar")
-sys.path.insert(0, os.path.join(SKILL, "scripts"))
+SKILL_DIR = os.path.join(SKILL, "scripts")
+if not os.path.isdir(SKILL_DIR):
+    # 云端（GitHub Actions）没有本机 skill，用仓库内置副本兜底
+    SKILL_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "np", "skill", "scripts")
+sys.path.insert(0, SKILL_DIR)
 
 from rules import Rules, norm                      # noqa: E402
 import fetch_notice as FN                          # noqa: E402

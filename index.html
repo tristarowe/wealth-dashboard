@@ -220,12 +220,14 @@
   .month-item .d{font-family:var(--mono);color:var(--muted);text-align:right}
   .month-item .rate-cell{width:100%;max-width:120px;min-width:0;margin:0 auto}
   .month-item .thumb{margin-left:3px;font-size:10px;line-height:1}
-  .rate-cell{display:flex;align-items:center;justify-content:center;height:22px;border-radius:5px;font-family:var(--mono);font-size:13px;font-weight:600;background:#eaf3f6;color:#4a6b76}
-  .rate-cell.lv1{background:#eef4f6;color:#5f7883}
-  .rate-cell.lv2{background:#d6e8ee;color:#35626f}
-  .rate-cell.lv3{background:#b6d6df;color:#1b5364}
-  .rate-cell.lv4{background:#7fb2c1;color:#fff}
-  .rate-cell.lv5{background:#4a8b9e;color:#fff}
+  /* 年化数据条：底色为浅底，左侧按数值比例填充色条（5% 年化满格），文字压在条上 */
+  .rate-cell{position:relative;display:flex;align-items:center;justify-content:center;height:22px;border-radius:5px;font-family:var(--mono);font-size:13px;font-weight:600;background:#f4f8fa;color:#3c5c67;overflow:hidden}
+  .rate-cell::before{content:"";position:absolute;left:0;top:0;bottom:0;width:var(--w,0%);background:var(--bar,#d3e2e7);border-radius:5px 0 0 5px}
+  .rate-cell.lv1{--bar:#d6e4e9;color:#5f7883}
+  .rate-cell.lv2{--bar:#b3d1db;color:#35626f}
+  .rate-cell.lv3{--bar:#8fbfcd;color:#1b5364}
+  .rate-cell.lv4{--bar:#6ea6b6;color:#fff}
+  .rate-cell.lv5{--bar:#4a8b9e;color:#fff}
   .cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;flex:1;align-content:start}
   .cal .wd{text-align:center;font-size:12.5px;font-weight:600;color:var(--accent);padding:6px 0}
   .cell{background:#fff;border:1px solid #e8eef1;border-radius:7px;min-height:58px;padding:5px 7px}

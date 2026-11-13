@@ -1037,7 +1037,7 @@
           '<span class="d">' + st.pos + '</span>' +
           '<span class="d">' + st.neg + '</span>' +
           '<span class="d">' + st.flat + '</span>' +
-          '<span class="rate-cell ' + rateLevel(st.ann) + '">' + fmtAnn(st.ann) + thumb + '</span>' +
+          '<span class="rate-cell ' + rateLevel(st.ann) + '" style="--w:' + barW(st.ann) + '">' + fmtAnn(st.ann) + thumb + '</span>' +
           '</div>';
       });
       html += '</div>';
@@ -1108,6 +1108,13 @@
     return 'lv1';
   }
 
+  /* 年化数据条宽度：5% 年化满格，按绝对值取比例，最小 8% 保证可见 */
+  function barW(v) {
+    if (v === null || v === undefined || !isFinite(v)) return '0%';
+    var r = Math.abs(v) / 5 * 100;
+    return Math.max(8, Math.min(100, r)).toFixed(1) + '%';
+  }
+
   function renderYearView() {
     var tbody = document.getElementById('year-body');
     if (!tbody) return;
@@ -1139,7 +1146,7 @@
         '<td class="num cnt">' + s.pos + '</td>' +
         '<td class="num cnt">' + s.neg + '</td>' +
         '<td></td>' +
-        '<td><div class="rate-cell ' + rateLv(ann) + '">' + (ann === null ? '—' : ann.toFixed(2) + '%') + '</div></td>' +
+        '<td><div class="rate-cell ' + rateLv(ann) + '" style="--w:' + barW(ann) + '">' + (ann === null ? '—' : ann.toFixed(2) + '%') + '</div></td>' +
         '</tr>';
     }).join('');
   }
@@ -1978,7 +1985,11 @@
       if (e.key === 'Escape' || e.key === 'Esc') closeSelPop();
     });
     window.addEventListener('resize', closeSelPop);
-    window.addEventListener('scroll', closeSelPop, true);
+    /* 滚动页面才收起；下拉内部滚动保留，否则选项一滚就消失、点不到 */
+    window.addEventListener('scroll', function (e) {
+      if (selPop && (selPop === e.target || selPop.contains(e.target))) return;
+      closeSelPop();
+    }, true);
   }
 
   /* ---------------- 产品库搜索：输入时弹出候选，点选即筛选 ---------------- */

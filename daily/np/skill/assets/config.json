@@ -1,0 +1,269 @@
+{
+  "_说明": "理财新品抓取口径配置。改这里即可调整范围，无需改代码。所有字段均为可编辑配置。",
+  "理财公司白名单": {
+    "_说明": "作为【发行机构】的 16 家理财公司，映射到母行（仅供展示，绝不作为代销结论）",
+    "映射": {
+      "工银理财有限责任公司": "中国工商银行股份有限公司",
+      "招银理财有限责任公司": "招商银行股份有限公司",
+      "中银理财有限责任公司": "中国银行股份有限公司",
+      "建信理财有限责任公司": "中国建设银行股份有限公司",
+      "农银理财有限责任公司": "中国农业银行股份有限公司",
+      "交银理财有限责任公司": "交通银行股份有限公司",
+      "中邮理财有限责任公司": "中国邮政储蓄银行股份有限公司",
+      "兴银理财有限责任公司": "兴业银行股份有限公司",
+      "信银理财有限责任公司": "中信银行股份有限公司",
+      "光大理财有限责任公司": "中国光大银行股份有限公司",
+      "浦银理财有限责任公司": "上海浦东发展银行股份有限公司",
+      "民生理财有限责任公司": "中国民生银行股份有限公司",
+      "平安理财有限责任公司": "平安银行股份有限公司",
+      "华夏理财有限责任公司": "华夏银行股份有限公司",
+      "广银理财有限责任公司": "广发银行股份有限公司",
+      "贝莱德建信理财有限责任公司": "中国建设银行股份有限公司"
+    }
+  },
+  "全国性银行白名单": {
+    "_说明": "六大行 + 12 家全国性股份制银行。既是【发行机构】白名单，也是判定『地方性银行』的基准：不在此列的银行类机构一律视为地方性银行。",
+    "列表": [
+      "中国工商银行", "中国农业银行", "中国银行", "中国建设银行", "交通银行", "中国邮政储蓄银行",
+      "招商银行", "中信银行", "上海浦东发展银行", "浦发银行", "兴业银行",
+      "中国民生银行", "民生银行", "中国光大银行", "光大银行", "广发银行",
+      "平安银行", "华夏银行", "浙商银行", "恒丰银行", "渤海银行"
+    ]
+  },
+  "代销机构简称": {
+    "中国建设银行股份有限公司": "建行", "中国工商银行股份有限公司": "工行",
+    "中国农业银行股份有限公司": "农行", "中国银行股份有限公司": "中行",
+    "交通银行股份有限公司": "交行", "中国邮政储蓄银行股份有限公司": "邮储",
+    "招商银行股份有限公司": "招行", "中信银行股份有限公司": "中信",
+    "上海浦东发展银行股份有限公司": "浦发", "兴业银行股份有限公司": "兴业",
+    "中国民生银行股份有限公司": "民生", "中国光大银行股份有限公司": "光大",
+    "华夏银行股份有限公司": "华夏", "平安银行股份有限公司": "平安",
+    "广发银行股份有限公司": "广发", "浙商银行股份有限公司": "浙商",
+    "恒丰银行股份有限公司": "恒丰", "渤海银行股份有限公司": "渤海"
+  },
+  "简称还原全称": {
+    "工行": "中国工商银行", "农行": "中国农业银行", "中行": "中国银行",
+    "建行": "中国建设银行", "交行": "交通银行", "邮储": "中国邮政储蓄银行",
+    "招行": "招商银行", "中信": "中信银行", "浦发": "上海浦东发展银行",
+    "兴业": "兴业银行", "民生": "中国民生银行", "光大": "中国光大银行",
+    "广发": "广发银行", "平安": "平安银行", "华夏": "华夏银行",
+    "浙商": "浙商银行", "恒丰": "恒丰银行", "渤海": "渤海银行"
+  },
+  "状态口径": {
+    "待售": "collSDate > 今天（尚未开始募集）",
+    "募集": "collSDate <= 今天 <= collEDate（正在募集）",
+    "存续": "prodSDate <= 今天（已成立）",
+    "不限": "平台状态码 02,04,06；总量约 5 万条，建议一次性抓取后本地过滤",
+    "默认陷阱": "平台默认只勾『募集』(02)，待售(06) 新品会被整体漏掉，必须显式点选或改用『不限』"
+  },
+  "业务口径": {
+    "口径1_今日及未来开募": "collSDate >= 今天",
+    "口径2_今日起仍可申购": "collEDate >= 今天 且 状态 ∈ {待售, 募集}",
+    "默认采用": "口径2",
+    "运作模式": "仅开放式净值型；结束日期为 9999/2099 开头的视为无固定期限（开放式）",
+    "币种": "仅人民币；产品名含 美元/USD/欧元/港币/英镑/日元/澳元/外币/QDII 一律排除"
+  },
+  "地方性银行口径": {
+    "判定": "不属于全国性银行白名单的银行类机构（城商行/农商行/农信社/村镇银行等）",
+    "默认策略": "仅剔除纯地方性",
+    "纯地方性": "代销机构全部为地方性银行 → 产品整条移出清单",
+    "混合渠道": "含地方性 + 全国性银行 → 产品保留，代销机构收敛为全国性银行并留痕",
+    "保留": "待实测空值、管理人直销（非银行渠道）均不因本口径剔除"
+  },
+  "R级风险等级": {
+    "中文等级映射": {"一级": "R1", "二级": "R2", "三级": "R3", "四级": "R4", "五级": "R5"},
+    "优先级": "官网销售文件 PRx / Rx 原文 > 中文等级 1:1 映射",
+    "重要提示": "R 级属管理人内部评级，销售文件明确『评级应当以销售机构最终披露的评级结果为准』，不可直接当销售端结论"
+  },
+  "代销机构证据分级": {
+    "A": "销售文件标题按渠道分版，如『（宁波银行销售20261109版）』（信披平台 salesDocuments[].tittle）",
+    "B": "说明书要素表『销售机构名称 / 理财产品销售机构 / 产品销售机构』字段（PDF 原文）",
+    "C": "风险揭示书模板套话（『可能涉及/可能委托/包括但不限于』）——不采信",
+    "D": "母行推定——已证伪，永不写入结论",
+    "E": "第三方新发日历——仅作交叉验证线索，不落表",
+    "F": "代销行官网公告托管的销售文件 PDF（要素表同 B 级）"
+  },
+  "铁律": [
+    "代销机构只填 A/B/F 级实测值；未实测一律留空并标注已检测渠道，绝不拿母行推定填空",
+    "登记编码去重，同一产品只保留一条",
+    "抓取结束必须断言『去重条数 == total』，不等则标记快照不完整、错峰续跑，绝不静默 break",
+    "PDF 下载与解析全部本地缓存，支持离线重解析",
+    "正常浏览器交互、低频（请求间隔）、断点续跑；不逆向签名、不绕过验证码与 429"
+  ],
+  "输出列": [
+    "产品名称", "登记编码", "发行机构", "产品状态", "募集起始日期", "募集结束日期",
+    "成立日期_产品起始日", "产品结束日期", "风险等级", "风险等级_R级", "R级依据",
+    "投资性质", "运作模式", "期限类型", "募集方式", "募集币种", "业绩比较基准",
+    "最短持有期", "销售区域", "产品ID", "代销机构", "代销机构_全称", "核实状态",
+    "代销机构可信等级", "代销机构来源", "指定名单内代销行", "母行推定_仅供参考",
+    "机构类别", "评级提示"
+  ],
+  "渠道公告数据源": {
+    "_说明": "按代销渠道自动发现新品。真实浏览器打开理财频道首页后站点自动种匿名会话，即可分页读取明文 JSON 公告列表；无需登录、无需签名。",
+    "建行理财频道首页": "https://finance3.ccb.com/cn/finance/index.html",
+    "公告列表接口": "/tran/WCCMainPlatV5?CCB_IBSVersion=V5&isAjaxRequest=true&SERVLET_NAME=WCCMainPlatV5&TXCODE=NF5011&TG_TYPE={2852|2776}&PAGE={n}&PERPAGE={m}",
+    "栏目": {"2852": "新产品发布公告", "2776": "已发售产品公告"},
+    "列表字段": ["TITLE", "STARTTIME", "UPDATEDTIME", "TITLE_LINK", "DCRINDEX", "ENDTIME", "ISTOP"],
+    "详情页主机": "https://wealth.ccb.com",
+    "附件路径前缀": "/chn/attachDir/",
+    "已知死链路": ["queryFinanceProdList.gsp（totalCount=0，老自营产品已迁移子公司）", "NF5011 裸 curl（缺匿名会话，返回请重新登录）"],
+    "合规边界": "原生 App 私有接口需登录态/设备绑定/签名，不接；仅走公开 H5 + 正常浏览器交互 + 明文响应",
+    "铁律": "公告标题不含登记编码，名称匹配仅为线索，结论必须以 PDF 要素表登记编码核对；风险揭示书『可能涉及委托 XX 银行』为 C 级模板套话，不采信"
+  },
+  "多行渠道公告数据源": {
+    "_说明": "六大行 + 12 家全国性股份制银行公开 H5 / 官网公告渠道统一入口（共 18 家）。只走公开页面 + 正常浏览器交互 + 明文响应 / 公开 PDF；原生 App 私有接口不接。2026-11-11 实测：静态可达 3 家（光大/浙商/浦发）、浏览器渲染可达 6 家（渤海/民生/华夏/广发/中信/兴业），招银/平安/恒丰偶因沙箱 IP 被 WAF/反爬拦截需在干净 IP（Trea）运行。",
+    "统一脚本": "scripts/fetch_bank_channels.py",
+    "统一输出": "多行渠道公告要素库.csv",
+    "可覆盖字段": "在『渠道』里改同名键即可替换入口（home / api / detail / detail_api / pdf / extra / month_dir / detail_host），无需改代码；中文键仅作说明不参与运行",
+    "统一自检": "python scripts/fetch_bank_channels.py --selftest（79 项，离线）；scripts/export_xlsx.py --selftest（8 项）",
+    "不能接": [
+      "各行原生 App 私有接口：需登录态 + 设备绑定 + 加密签名，沙箱无真机 / adb / frida，越过它违反合规边界",
+      "建行 queryFinanceProdList.gsp：已废弃，全参数组合 totalCount=0",
+      "中行 boc.cn/fimarkets/bocwm/fp81 旧栏目：2026-01 起停更，已迁至 bocwm.cn",
+      "工行 m.icbc.com.cn 移动版静态页：空壳，数据靠 JS 加载",
+      "中银理财说明书详情页页脚固定的『客户投诉渠道与投诉处理流程』PDF：不是产品说明书，脚本已显式排除"
+    ],
+    "渠道": {
+      "ccb": {
+        "名称": "建行", "模式": "browser_json",
+        "home": "https://finance3.ccb.com/cn/finance/index.html",
+        "detail_host": "https://wealth.ccb.com",
+        "接口": "/tran/WCCMainPlatV5?CCB_IBSVersion=V5&isAjaxRequest=true&SERVLET_NAME=WCCMainPlatV5&TXCODE=NF5011&TG_TYPE={2852|2776}&PAGE={n}&PERPAGE=20",
+        "实证": "2852 新产品发布公告 + 2776 已发售公告，各 20 条/页，最新 2026-11-10；真实浏览器打开首页种匿名会话后可同源 fetch"
+      },
+      "icbc": {
+        "名称": "工行", "模式": "browser_json",
+        "home": "https://www.icbc.com.cn/webpage/finance/disclosure/?type=2",
+        "api": "https://papi.icbc.com.cn/finance/deposit/general/productList",
+        "detail": "https://www.icbc.com.cn/webpage/finance/disclosure/detail?prodId=",
+        "接口参数": "POST JSON {pageIndex:1, pageSize:15, saleTarget:'2'}；注意是 pageIndex 不是 pageNum",
+        "实证": "Vue SPA 自动请求该接口，响应明文 JSON（code=0 / total=4913 / 328 页），字段 prodId、pubDate、prodName、sysTitle；最新 2026-11-10"
+      },
+      "abc": {
+        "名称": "农行", "模式": "html_pdf",
+        "home": "https://ewealth.abchina.com/fs/Information/OtherAnnouncements/",
+        "month_dir": "https://ewealth.abchina.com/fs/Information/OtherAnnouncements/",
+        "接口": "栏目页 option value 给出月度目录 yzgg__YYYYMM/default.htm（当前月双下划线，历史月单下划线），目录页 default_N.htm 翻页",
+        "实证": "2026-11 目录 14 份发行公告 PDF，title 属性含 YYYYMMDD + 产品名 + 销售代码；PDF 内直接给登记编码 / 成立日 / 募集币种"
+      },
+      "boc": {
+        "名称": "中行", "模式": "html_detail",
+        "home": "https://www.bocwm.cn/html/1//198/200/index.html",
+        "extra": "https://www.bocwm.cn/html/1//198/197/index.html",
+        "detail_host": "https://www.bocwm.cn",
+        "接口": "产品说明书(200) + 产品公告(197)，分页 index.html → list-N.html",
+        "实证": "两栏目各 20 条/页，最新 2026-11-11；公告详情页内联产品代码 / 成立日期 / 募集规模，说明书附件为动态加载，本渠道仅作线索，登记编码留空标注待实测"
+      },
+      "bocom": {
+        "名称": "交行", "模式": "post_json",
+        "home": "https://www.bankcomm.com/BankCommSite/shtml/jyjr/cn/includes/infoDisclosureHome.shtml",
+        "api": "https://www.bankcomm.com/SITE/querySingleDisclosure.do",
+        "detail_api": "https://www.bankcomm.com/SITE/queryDisclosureDetail.do",
+        "detail": "https://www.bankcomm.com/BankCommSite/shtml/jyjr/cn/includes/infoDisclosureDetail.shtml",
+        "pdf": "https://www.bankcomm.com/SITE/lcpdNoticePdfDownload.upload",
+        "接口": "POST REQ_MESSAGE=URL编码(JSON{REQ_HEAD:{}, REQ_BODY:{type:'01',pageNum,channelType:'0',...}})，无需浏览器会话",
+        "实证": "最优链路：13 条/页明文 JSON，最新 2026-11-10；详情接口返回 docId → PDF 直链 → 登记编码。实测披露浦银理财等他行产品，是代销线索主渠道"
+      },
+      "psbc": {
+        "名称": "邮储", "模式": "html_detail",
+        "home": "https://www.psbc.com/cn/grfw/tzlc/lc/ywgg/clgg/",
+        "接口": "发行公告栏目 index.html / index_N.html（共 361 页），详情页 HTML 表格",
+        "实证": "10 条/页，最新 2026-11-11；详情页正文直接给登记编码 / 产品代码 / 成立日 / 募集币种，无需 PDF；销售文件按『邮储银行销售YYYYMMDD版』分版可作 A 级证据"
+      },
+      "ceb": {
+        "名称": "光大", "模式": "html_detail",
+        "home": "https://www.cebbank.com/site/gryw/yglc/lccp38/116979380/index.html",
+        "detail_host": "https://www.cebbank.com",
+        "接口": "光大理财公司产品·发行公告列表 <li><a title=发行公告 href=…/index.html><span>日期；详情页取 PDF 直链",
+        "实证": "2026-11-11 实测 92 条，最新 2026-11-10；详情页内嵌发行公告 PDF（含登记编码 / 募集期 / 销售机构），静态 HTML 可直接 curl"
+      },
+      "czb": {
+        "名称": "浙商", "模式": "html_pdf",
+        "home": "https://www.czbank.com/cn/fin_kno/xxcxpt1/grcpfxgg1/",
+        "接口": "本行理财发行/成立公告，a[href*=P020…pdf] 直链",
+        "实证": "2026-11-11 实测 22 条 PDF 直链，标题含产品名 + 公告类型；PDF 内给登记编码"
+      },
+      "spdb": {
+        "名称": "浦发", "模式": "html_pdf",
+        "home": "https://www.spdb-wm.com/xxpl/lccpfxgg/index.shtml",
+        "detail_host": "https://www.spdb-wm.com",
+        "接口": "浦银理财官网『理财产品发行公告』栏目 a[href*=P020…pdf]，index_N.shtml 翻页；日期取 P020 文件名 YYMMDD",
+        "实证": "2026-11-11 实测 7 条发行公告 PDF（原 cor.spdb.com.cn 对公公告页只有费率优惠 shtml，已弃用）；PDF 内给登记编码，发行公告不含销售机构→留空待实测"
+      },
+      "cbhb": {
+        "名称": "渤海", "模式": "browser_html",
+        "home": "https://www.cbhbwm.com.cn/cbhbwm/xxpl/gmcpgg/index.html",
+        "detail_host": "https://www.cbhbwm.com.cn",
+        "接口": "公募产品公告列表（浏览器渲染）+ 产品详情 queryGPro（含『销售商名称』= 代销机构，最优代销线索）",
+        "实证": "2026-11-11 实测 34 条；详情页『销售商名称：渤海银行股份有限公司』可作代销实测"
+      },
+      "cmbc": {
+        "名称": "民生", "模式": "browser_html",
+        "home": "https://www.cmbc.com.cn/cmbc_new/khfw/fwjmb68/mffw/index.html?type=OWC01",
+        "api": "https://www.cmbc.com.cn/gw/po_web/EntQuerypfpProduct.do",
+        "接口": "财富管理产品（issuer=民生理财），浏览器渲染列表；EntQuerypfpProduct.do 为产品接口",
+        "实证": "2026-11-11 实测 19 条；浏览器触发后可见产品接口，详情含发行机构"
+      },
+      "hxb": {
+        "名称": "华夏", "模式": "browser_html",
+        "home": "https://wap.hxb.com.cn/hxb/gsjr/zyxlcp/cpgg/index.shtml",
+        "detail_host": "https://wap.hxb.com.cn",
+        "接口": "华夏理财产品公告（列表 JS 加载，浏览器渲染后取 a[href]）",
+        "实证": "2026-11-11 实测 34 条"
+      },
+      "gdb": {
+        "名称": "广发", "模式": "browser_html",
+        "home": "https://m.cgbchina.com.cn/Channel/27197140",
+        "detail_host": "https://m.cgbchina.com.cn",
+        "接口": "理财公告栏目（广银理财/招银理财/兴银理财等发行·到期·费率公告，列表 JS 加载，浏览器渲染取 a[href]）",
+        "实证": "2026-11-11 实测 25 条；原 financing_details.jsp 为产品详情空壳页，已弃用"
+      },
+      "cmb": {
+        "名称": "招银", "模式": "browser_html",
+        "home": "https://www.cmbchinawm.com/publicoffering",
+        "detail_host": "https://www.cmbchinawm.com",
+        "接口": "招银理财公开列表（SPA，prod-api 接口，浏览器渲染取产品条目）",
+        "实证": "沙箱 IP 偶发 403 WAF，干净 IP（Trea）通常可用；SPA 需更长的渲染等待"
+      },
+      "pab": {
+        "名称": "平安", "模式": "browser_html",
+        "home": "https://ebank.pingan.com.cn/aum/notices/notice/index.html?isSD=1",
+        "detail_host": "https://ebank.pingan.com.cn",
+        "接口": "理财公告（SPA，webpack bundle，浏览器渲染取公告条目）",
+        "实证": "沙箱 IP 偶发 403 WAF，干净 IP（Trea）通常可用"
+      },
+      "citic": {
+        "名称": "中信", "模式": "browser_html",
+        "home": "https://www.citicbank.com/citic_topic/axzx/?yhzq=app",
+        "detail_host": "https://www.citicbank.com",
+        "接口": "理财产品公告（浏览器渲染）；发行公告 PDF 在 history/YYYYMM/P020…",
+        "实证": "2026-11-11 实测 17 条；沙箱 IP 曾 403，本次可达，干净 IP 更稳定"
+      },
+      "cib": {
+        "名称": "兴业", "模式": "browser_html",
+        "home": "https://www.cib.com.cn/cn/personal/wealth-management/wealth.html",
+        "detail_host": "https://www.cib.com.cn",
+        "接口": "理财信息首页（浏览器渲染）；发行公告 PDF 在 download.cib.com.cn",
+        "实证": "2026-11-11 实测 23 条；沙箱 IP 曾 403，本次可达"
+      },
+      "hfb": {
+        "名称": "恒丰", "模式": "browser_html",
+        "home": "https://www.hfbank.com.cn/gryw/lcgg/index.shtml",
+        "detail_host": "https://www.hfbank.com.cn",
+        "接口": "理财公告（反爬 $_ts token，需浏览器执行 JS；干净 IP 可用）",
+        "实证": "沙箱偶发 0 条（反爬/403），干净 IP（Trea）通常可用"
+      }
+    },
+    "合规边界": "正常浏览器交互、低频（默认 0.5s 间隔）、增量落盘、本地缓存、断点续跑、离线重解析；不登录、不伪造签名、不绕过验证码与 429。工行 papi 为跨域公开接口，页面内 fetch 需浏览器放宽同源策略，但不改变服务端权限",
+    "铁律": "发行公告通常不含销售机构字段 → 留空并标注『待实测』，绝不拿母行推定填空；名称匹配仅作线索，代销结论必须以要素表登记编码核对"
+  },
+  "接口字段映射": {
+    "prodName": "产品名称", "prodRegCode": "登记编码", "orgName": "发行机构",
+    "prodStatusName": "产品状态", "collSDate": "募集起始日期", "collEDate": "募集结束日期",
+    "prodSDate": "成立日期_产品起始日", "prodEDate": "产品结束日期",
+    "prodRiskLevelName": "风险等级", "prodInvestNatureName": "投资性质",
+    "prodOperateModeName": "运作模式", "prodTermName": "期限类型",
+    "prodCollectMethName": "募集方式", "collCCY": "募集币种", "benchmark": "业绩比较基准",
+    "minHoldTerm": "最短持有期", "prodSaleZone": "销售区域", "prodId": "产品ID"
+  }
+}
