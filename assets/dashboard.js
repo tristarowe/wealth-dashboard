@@ -1585,7 +1585,7 @@
   var prodUi = {
     sale: '', org: '', risk: '', term: '', q: '',
     flagNew: false, flagFav: false,
-    holdHolding: true, holdCleared: true, page: 1,
+    holdHolding: true, holdCleared: true, page: 1, pages: 1,
     mPer10k: true, mAnn: true,
     /* 表头排序：默认今日万收降序；sortTouched 表示用户手动点过表头 */
     sortKey: 'p10k', sortDir: 'desc', sortTouched: false
@@ -1876,19 +1876,57 @@
     renderProductSortMarks();
   }
 
+  var pgPop = null;
+
+  function closePagePop() {
+    if (pgPop && pgPop.parentNode) pgPop.parentNode.removeChild(pgPop);
+    pgPop = null;
+  }
+
+  /* 页码弹层：5 列小格子，最多 4 行高，手机和网页都不占屏 */
+  function openPagePop(anchor) {
+    closePagePop();
+    var pages = prodUi.pages;
+    var pop = document.createElement('div');
+    pop.className = 'pg-pop';
+    var html = '';
+    for (var i = 1; i <= pages; i++) {
+      html += '<button type="button" data-page="' + i + '"' + (i === prodUi.page ? ' class="on"' : '') + '>' + i + '</button>';
+    }
+    pop.innerHTML = html;
+    document.body.appendChild(pop);
+    var r = anchor.getBoundingClientRect();
+    var w = pop.offsetWidth, h = pop.offsetHeight;
+    var left = Math.max(8, Math.min(r.left + r.width / 2 - w / 2, window.innerWidth - w - 8));
+    var top = r.top - h - 6;
+    if (top < 8) top = r.bottom + 6;
+    pop.style.left = left + 'px';
+    pop.style.top = top + 'px';
+    pop.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-page]');
+      if (!btn) return;
+      var page = parseInt(btn.getAttribute('data-page'), 10);
+      closePagePop();
+      if (page && page !== prodUi.page) {
+        prodUi.page = page;
+        renderProductTable();
+      }
+    });
+    pgPop = pop;
+    var on = pop.querySelector('.on');
+    if (on) pop.scrollTop = Math.max(0, on.offsetTop - 30);
+  }
+
   function renderProdPager(pages, total) {
     var box = document.getElementById('prod-pages');
     var info = document.getElementById('prod-pager-info');
     if (info) info.textContent = '';
+    prodUi.pages = pages;
     if (!box) return;
-    /* 精简翻页：‹ 当前页 / 总页数 ›，页码下拉直接跳转 */
-    var opts = '';
-    for (var i = 1; i <= pages; i++) {
-      opts += '<option value="' + i + '"' + (i === prodUi.page ? ' selected' : '') + '>' + i + '</option>';
-    }
+    /* 精简翻页：‹ 当前页 › / 总页数，点当前页弹出页码格子 */
     box.innerHTML =
       '<button data-page="' + (prodUi.page - 1) + '"' + (prodUi.page <= 1 ? ' disabled' : '') + ' aria-label="上一页">‹</button>' +
-      (pages > 1 ? '<select class="pg-jump" aria-label="跳转页码">' + opts + '</select>' : '') +
+      (pages > 1 ? '<button type="button" class="pg-cur" aria-haspopup="true" aria-label="跳转页码">' + prodUi.page + '</button>' : '') +
       '<button data-page="' + (prodUi.page + 1) + '"' + (prodUi.page >= pages ? ' disabled' : '') + ' aria-label="下一页">›</button>' +
       (pages > 1 ? '<span class="pg-total">/ ' + pages + '</span>' : '');
   }
