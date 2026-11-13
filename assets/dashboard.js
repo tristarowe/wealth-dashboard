@@ -1572,10 +1572,11 @@
       .replace(/七/g, '7');
     var m = s.match(/(\d+)\s*天/);
     if (m) return (+m[1]) + '天';
-    m = s.match(/([一二三四五六七八九十]+)\s*个月/);
+    m = s.match(/([一二三四五六七八九十]+|\d+)\s*个月/);
     if (m) {
       var cn = { '一': 1, '二': 2, '三': 3, '六': 6, '九': 9, '十二': 12 }[m[1]];
-      if (cn) return (cn * 30) + '天';
+      var months = cn || parseInt(m[1], 10);
+      if (months) return (months * 30) + '天';
     }
     if (/日日开|天天利|天天盈|天天购|天添|天天|日日|每日开放|日开|现金管理类/.test(s)) return '日开';
     return '—';
