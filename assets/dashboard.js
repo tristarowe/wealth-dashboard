@@ -1063,7 +1063,7 @@
           '<span class="d">' + st.pos + '</span>' +
           '<span class="d">' + st.neg + '</span>' +
           '<span class="d">' + st.flat + '</span>' +
-          '<span class="rate-cell ' + rateLevel(st.ann) + '">' + fmtAnn(st.ann) + thumb + '</span>' +
+          '<span class="rate-cell ' + rateLevel(st.ann) + '" style="--w:' + barW(st.ann) + '">' + fmtAnn(st.ann) + thumb + '</span>' +
           '</div>';
       });
       html += '</div>';
@@ -1125,6 +1125,13 @@
     updateCalArrows();
   }
 
+  /* 年化数据条宽度：5% 年化满格，按绝对值取比例，最小 8% 保证可见 */
+  function barW(v) {
+    if (v === null || v === undefined || !isFinite(v)) return '0%';
+    var r = Math.abs(v) / 5 * 100;
+    return Math.max(8, Math.min(100, r)).toFixed(1) + '%';
+  }
+
   function rateLv(v) {
     if (v === null || v === undefined) return 'lv1';
     if (v >= 4.5) return 'lv5';
@@ -1165,7 +1172,7 @@
         '<td class="num cnt">' + s.pos + '</td>' +
         '<td class="num cnt">' + s.neg + '</td>' +
         '<td></td>' +
-        '<td><div class="rate-cell ' + rateLv(ann) + '">' + (ann === null ? '—' : ann.toFixed(2) + '%') + '</div></td>' +
+        '<td><div class="rate-cell ' + rateLv(ann) + '" style="--w:' + barW(ann) + '">' + (ann === null ? '—' : ann.toFixed(2) + '%') + '</div></td>' +
         '</tr>';
     }).join('');
   }
