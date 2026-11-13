@@ -271,7 +271,9 @@
   .filters input[type="search"]{font-family:var(--font);font-size:12.5px;padding:6px 10px;border:1px solid var(--rule);border-radius:7px;background:#fff;color:var(--ink);width:260px;min-width:200px}
   .filters input[type="search"]:focus{outline:none;border-color:var(--accent)}
   .filters #open-add{margin-left:auto;flex:none}
-  .filters #prod-reset{margin-left:auto;flex:none;color:#41545f}
+  .filters #prod-reset{flex:none;color:#41545f}
+  .filters .filter-tail{display:flex;align-items:center;gap:8px;flex:1 1 auto;min-width:0}
+  .filters .filter-tail #prod-search{flex:1 1 auto;min-width:160px}
   .filters .sp{flex:1}
   /* 筛选下拉：原生 select 展开列表字号无法控制，改为自绘下拉；文字统一居中 */
   .filters .sel-wrap{position:relative;display:inline-block;flex:none;width:80px;height:30px;border:1px solid var(--rule);border-radius:7px;background:#fff;box-sizing:border-box}
@@ -772,6 +774,10 @@
     .filters .fl-sep{display:none}
     .filters .chip{flex:0 0 auto;width:auto;min-width:0;font-size:11.5px;padding:4px 10px}
     .filters input{flex:1 1 0;min-width:0;width:auto}
+    /* 手机端：成立月份、新品、收藏、重置、搜索框同一行 */
+    .filters .filter-tail{flex:1 1 0;min-width:0;gap:4px}
+    .filters .filter-tail .chip{flex:0 0 auto;font-size:11px;padding:4px 6px;white-space:nowrap}
+    .filters .filter-tail #prod-search{flex:1 1 0;min-width:44px;padding:5px 6px;font-size:12px}
     .trade-tool{flex-wrap:nowrap;gap:6px}
     .trade-tool .sp{display:none}
     .trade-tool .month-switch{flex:0 1 auto;min-width:0}
@@ -1146,9 +1152,11 @@
           <option value="">成立月份</option>
         </select>
         <button class="chip" data-flag="new">新品</button>
-        <button class="chip" data-flag="fav">★ 收藏</button>
-        <input type="search" id="prod-search" placeholder="搜索产品名称" aria-label="搜索产品名称">
-        <button class="chip" id="prod-reset" title="清空搜索与全部筛选条件">↺ 重置</button>
+        <span class="filter-tail">
+          <button class="chip" data-flag="fav">★ 收藏</button>
+          <button class="chip" id="prod-reset" title="清空搜索与全部筛选条件">↺ 重置</button>
+          <input type="search" id="prod-search" placeholder="搜索产品名称" aria-label="搜索产品名称">
+        </span>
       </div>
 
       <div class="card tbl-scroll">
