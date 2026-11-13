@@ -630,6 +630,30 @@
     #flow-table col:nth-child(7){width:58px !important}
     #flow-table col:nth-child(8){width:46px !important}
     #flow-table col:nth-child(9){width:76px !important}
+    /* 其余三张表与盈亏明细同一字号（11px），字重随内容层级 */
+    #sum-table,#flow-table,#prod-table{font-size:11px}
+    #sum-table thead th,#flow-table thead th,#prod-table thead th{font-size:11px}
+    #sum-table .pname,#sum-table .plink,
+    #prod-table .pname,#prod-table .plink,
+    #flow-table .pname,#flow-table .plink{font-size:11px}
+    #sum-table .st b,#sum-table .st i,
+    #prod-table .st b,#prod-table .st i,
+    #flow-table .st b,#flow-table .st i{font-size:11px}
+    #sum-table td.dcell .days,#sum-table td.dcell .dunit{font-size:11px}
+    /* 盈亏日历：辅助文字 11px，主数值 12px，日期不再加粗 */
+    .cal-hint,.cal-sum,.cal-sum i,.trend-sub{font-size:11px}
+    .cal .wd{font-size:11px}
+    .cal-sub{font-size:12px;font-weight:600}
+    .cell .d{font-size:11px;font-weight:400}
+    .cell .v{font-size:12px}
+    .cell .a{font-size:11px}
+    .cal-sum b{font-size:12px}
+    .cal-sum .lead b{font-size:13px}
+    .year-table{font-size:11.5px}
+    .year-table thead th{font-size:11px}
+    .year-table td{font-size:12px}
+    .rate-cell{font-size:12px}
+    .seg button{font-size:11.5px}
   }
   @media (max-width:760px){
     body{padding:14px 12px calc(40px + env(safe-area-inset-bottom))}
