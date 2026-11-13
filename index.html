@@ -116,8 +116,6 @@
   #hold-table tr.mb td:first-child{border-left:1px solid var(--rule)}
   #hold-table td.mlabel{font-size:12px;color:var(--muted);white-space:nowrap;padding:6px 8px}
   #hold-table td.pwin,#hold-table td.awin{font-size:13px;font-weight:400;text-align:center}
-  #hold-table td.pwin{color:var(--ink)}
-  #hold-table td.awin{color:#6f8089}
   .lbl span{display:block;font-size:11px;color:var(--muted);white-space:nowrap}
   .th-lbl{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:3px;white-space:nowrap}
   .th-select{font-family:var(--font);font-size:12px;font-weight:600;color:var(--muted);background:#fff;border:1px solid var(--rule);border-radius:6px;padding:2px 3px;cursor:pointer;max-width:84px}
@@ -149,11 +147,10 @@
   .prod-tbl .pname{font-weight:400;font-size:13px;line-height:1.35}
   .prod-tbl.only-ann .st i{font-size:13px;font-weight:700}
   .prod-tbl.only-p10k .st b{font-size:13px}
-  /* 产品库仅「今日万收」保留正红负绿并加粗，其余区间万收按黑色不加粗 */
+  /* 全站统一：正收益红色、负收益绿色；非收益数值（净值等）保持黑色 */
   .prod-tbl tbody td[data-col="p10k"]{font-weight:700}
-  .prod-tbl .st b.m-p10k{color:var(--ink);font-weight:400}
-  .prod-tbl .st i.m-ann{color:#6f8089}
-  .prod-tbl tbody td.num:not([data-col="p10k"]){color:var(--ink)}
+  .prod-tbl .st b.m-p10k{font-weight:400}
+  .prod-tbl tbody td.num:not([data-col="p10k"]):not([data-col="ann"]){color:var(--ink)}
   /* 产品库：风险等级 / 持有期两列与今日万收等数值列同字号同字体观感 */
   .prod-tbl tbody td.pmeta{font-family:Consolas,'Microsoft YaHei',monospace;font-size:12.5px;color:#41545f}
   /* 四张数据表：固定列宽，相同内容同列宽，收紧列距 */
@@ -180,6 +177,8 @@
   #sum-table thead th:first-child,#sum-table tbody td:first-child,
   #prod-table thead th:nth-child(2),#prod-table tbody td:nth-child(2),
   #flow-table thead th:nth-child(3),#flow-table tbody td:nth-child(3){text-align:left}
+  /* 月份汇总行：整行左侧靠齐 */
+  #flow-table tbody tr.flow-month td{text-align:left}
   /* 表头与数值共用同一左右内边距，居中对齐时才不会左右错位 */
   #hold-table thead th:nth-child(2),#hold-table tbody tr:not(.mb) > td:nth-child(2),
   #sum-table thead th:first-child,#sum-table tbody td:first-child,

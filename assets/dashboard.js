@@ -312,7 +312,10 @@
          清仓按确认日生效：确认日已到即使当日净值尚未披露也按最新净值估算扣减，保证清仓当天可见 */
       if (txStatus(t) === '在途') {
         var cd = t.confirmDate || t.applyDate;
-        if (!(t.type === '清仓' && cd && cd <= todayStr)) return;
+        var pp0 = findProductById(t.pid);
+        var knownNav = Number(t.confirmNav) || (pp0 ? navForConfirm(pp0, t.confirmDate) : 0) || 0;
+        /* 赎回/清仓在净值披露前不落地，避免用占位净值算出错误收益；净值抓取到后自动生效 */
+        if (!(t.type === '清仓' && knownNav > 0 && cd && cd <= todayStr)) return;
       }
       var p = findProductById(t.pid);
       if (!p) return;
@@ -660,7 +663,10 @@
       el.className = 'v ' + colorBy(todayCnt ? today : null);
     }
     el = document.getElementById('metric-avg');
-    if (el) el.textContent = fmt2(avg);
+    if (el) {
+      el.textContent = fmt2(avg);
+      el.className = colorBy(avg) || 'ink';
+    }
 
     el = document.getElementById('metric-month');
     if (el) {
@@ -668,7 +674,10 @@
       el.className = 'v ' + colorBy(mCnt ? month : null);
     }
     el = document.getElementById('metric-month-avg');
-    if (el) el.textContent = fmt2(mCnt ? mPerSum / mCnt : null);
+    if (el) {
+      el.textContent = fmt2(mCnt ? mPerSum / mCnt : null);
+      el.className = colorBy(mCnt ? mPerSum / mCnt : null) || 'ink';
+    }
 
     el = document.getElementById('metric-profit');
     if (el) {
@@ -678,14 +687,14 @@
     el = document.getElementById('metric-momprofit');
     if (el) {
       el.textContent = momProfit === null ? '—' : (momProfit > 0 ? '+' : '') + momProfit.toFixed(2);
-      el.className = 'ink ' + colorBy(momProfit);
+      el.className = colorBy(momProfit) || 'ink';
     }
     el = document.getElementById('metric-value');
     if (el) el.innerHTML = hs.length ? fmtMoney(mv) + '<em>元</em>' : '—';
     el = document.getElementById('metric-mom');
     if (el) {
       el.textContent = mom === null ? '—' : (mom > 0 ? '+' : '') + mom.toFixed(2) + '%';
-      el.className = 'ink ' + colorBy(mom);
+      el.className = colorBy(mom) || 'ink';
     }
 
     var heroAsOf = document.getElementById('hero-asof');
@@ -804,8 +813,8 @@
         var annTip = w.ann === null ? '历史区间不足'
           : w.ann.toFixed(4) + '%（' + w.start + ' 至 ' + m.latestDate + '，按 ' + w.span + ' 天年化）' +
             (w.fallback ? '；成立不足 1 年，按成立以来计算' : '');
-        perCells += '<td class="c num pwin" title="' + perTip + '">' + fmt2(w.per) + mark + '</td>';
-        annCells += '<td class="c num awin" title="' + annTip + '">' + fmtAnn(w.ann) + mark + '</td>';
+        perCells += '<td class="c num pwin ' + colorBy(w.per) + '" title="' + perTip + '">' + fmt2(w.per) + mark + '</td>';
+        annCells += '<td class="c num awin ' + colorBy(w.ann) + '" title="' + annTip + '">' + fmtAnn(w.ann) + mark + '</td>';
       });
       html += holdMetric === 'ann' ? annCells : perCells;
 
@@ -1542,7 +1551,7 @@
   }
 
   /* ---------------- 产品库 ---------------- */
-  var PROD_PAGE_SIZE = 20;
+  var PROD_PAGE_SIZE = 10;
   var prodUi = {
     sale: '', org: '', risk: '', term: '', q: '',
     flagNew: false, flagFav: false,
@@ -1811,7 +1820,7 @@
           '</div></td>' +
         '<td class="r num ' + colorBy(m.todayPer) + '" data-col="p10k">' + fmtSigned(m.todayPer) + '</td>' +
         winCell(w7) + winCell(w14) + winCell(w30) +
-        '<td class="r num ' + colorBy(m.sinceAnn) + '">' + fmtAnn(m.sinceAnn) + '</td>' +
+        '<td class="r num ' + colorBy(m.sinceAnn) + '" data-col="ann">' + fmtAnn(m.sinceAnn) + '</td>' +
         '<td class="c pmeta">' + (riskShort(p) || '—') + '</td>' +
         '<td class="c pmeta">' + term + '</td>' +
         '<td class="c num">' + (m.latestDate ? mmdd(m.latestDate) : '<span class="muted">待披露</span>') + '</td>' +
@@ -2553,11 +2562,15 @@
       amount = shares * nav;
     }
     if (!dateEl.value && applyEl && applyEl.value) dateEl.value = nextWorkday(applyEl.value);
-    /* 确认日净值尚未披露：申购可先按金额提交，份额与净值待确认；赎回/清仓需等净值披露 */
+    /* 净值待确认也可以先提交：申购记金额、赎回/清仓记份额，净值披露后自动折算并计入持仓 */
     var navPending = !(nav > 0);
     if (navPending) {
-      if (tType !== '申购') { toast('确认日净值尚未披露，请待净值披露后再' + tType); return; }
-      if (!(amount > 0)) { toast('请填写申购金额'); return; }
+      if (tType === '申购') {
+        if (!(amount > 0)) { toast('请填写申购金额'); return; }
+      } else if (!(shares > 0)) {
+        toast('请填写' + tType + '份额');
+        return;
+      }
     }
     if (!dateEl.value || (applyEl && !applyEl.value)) {
       toast('请选择' + tType + '日期');
@@ -2572,7 +2585,7 @@
     var body = {
       pid: p.id,
       type: tType,
-      shares: navPending ? 0 : Math.round(shares * 100) / 100,
+      shares: (navPending && tType === '申购') ? 0 : Math.round(shares * 100) / 100,
       amount: Math.round(amount * 100) / 100,
       confirmNav: nav > 0 ? nav : 0,
       applyDate: applyEl ? applyEl.value : dateEl.value,
@@ -2583,7 +2596,7 @@
     req.then(function (res) {
       if (btn) btn.disabled = false;
       if (!res || !res.ok) { toast((res && res.message) || '提交失败'); return; }
-      toast(editId ? '交易已修改' : ('已录入 ' + typeEl.value));
+      toast(editId ? '交易已修改' : ('已录入 ' + typeEl.value + (navPending ? '（净值待确认，披露后自动更新）' : '')));
       refreshAfterWrite();
     }).catch(function (e) {
       if (btn) btn.disabled = false;
