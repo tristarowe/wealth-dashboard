@@ -513,6 +513,11 @@
   #prod-table{min-width:1080px}
 
   @media (max-width:900px){
+    /* 横屏/平板宽度下日历并排会把「每日收益」压成窄条，统一改为上下堆叠 */
+    .cal-split{grid-template-columns:minmax(0,1fr)}
+    /* 禁止页面级横向溢出，避免横竖屏切换后整页被缩放、右侧留白 */
+    html,body{width:100%;max-width:100%;overflow-x:hidden}
+    .page{width:100%}
     .swipe-tip{display:block}
     #prod-table tbody td:nth-child(2) .pname{white-space:normal}
     /* 手机端产品名称：限制列宽并允许换行，避免名称撑宽整张表 */
