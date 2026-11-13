@@ -783,9 +783,10 @@
     .trade-tool .month-switch .mini-select{min-width:0;width:auto;font-size:12px;padding:5px 0}
     .trade-tool .ms-arrow{width:22px;font-size:14px}
     .trade-tool .btn{flex:0 0 auto;margin-left:0;min-height:32px;padding:6px 10px;font-size:12px;justify-content:center;white-space:nowrap}
-    /* 只有「新增交易」占住左侧剩余空间，「删除所选」紧贴在它左边，不再浮在中间 */
+    /* 未选中时由「新增交易」占住左侧空隙；勾选后改由「删除所选」占位，两按钮并排靠右、间距 4px */
     .trade-tool #open-trade{margin-left:auto}
-    .trade-tool #flow-del-sel{margin-right:4px}
+    .trade-tool:has(#flow-del-sel:not([hidden])) #flow-del-sel{margin-left:auto;margin-right:4px}
+    .trade-tool:has(#flow-del-sel:not([hidden])) #open-trade{margin-left:0}
     .timeline{overflow:visible;border:0;background:transparent;border-radius:0}
     .ts-grid{display:none}
     .ts-lane{display:flex;flex-direction:column;align-items:stretch;gap:8px;border:1px solid var(--rule);border-radius:10px;background:#fff;padding:10px;margin-bottom:10px;min-width:0}
