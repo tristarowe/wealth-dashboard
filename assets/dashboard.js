@@ -54,6 +54,15 @@
     return i === -1 ? null : p.nav[i];
   }
 
+  /* 交易份额：未记录时按成交净值折算；净值未披露、金额未定时返回 null（显示为 —） */
+  function txShares(t, p) {
+    var sh = Number(t.shares);
+    if (sh > 0) return sh;
+    var nav = Number(t.confirmNav) || navOnDate(p, t.confirmDate) || 0;
+    var amt = Number(t.amount) || 0;
+    return (nav > 0 && amt > 0) ? amt / nav : null;
+  }
+
   /* 确认日按申购日 T+1 自动换算，遇周末/法定节假日顺延至下一交易日 */
   var MARKET_HOLIDAYS = [
     ['2025-01-01', '2025-01-01'],
@@ -294,7 +303,8 @@
       if (!p) return;
       var rec = acc[p.id];
       if (!rec) rec = acc[p.id] = { product: p, shares: 0, cost: 0, realized: 0, startDate: null, lastTx: t };
-      var nav = Number(t.confirmNav) || 1;
+      /* 成交净值缺失时按确认日净值兜底，净值披露后自动生效 */
+      var nav = Number(t.confirmNav) || navOnDate(p, t.confirmDate) || p.nav[p.nav.length - 1] || 1;
       var sh = Number(t.shares);
       if (!(sh > 0)) sh = Number(t.amount) / nav;
       if (t.type === '赎回' || t.type === '清仓') {
@@ -2235,22 +2245,29 @@
   function syncTradeForm() {
     var p = tradeProduct();
     if (!p) return;
-    var n = p.nav.length;
     var navEl = document.getElementById('trade-nav');
     var applyEl = document.getElementById('trade-apply');
     var dateEl = document.getElementById('trade-confirm');
     var typeEl = document.getElementById('trade-type');
     var shEl = document.getElementById('trade-shares');
     var amtEl = document.getElementById('trade-amount');
-    if (navEl) navEl.value = Number(p.nav[n - 1]).toFixed(6);
-    if (dateEl) dateEl.value = nextWorkday(applyEl ? applyEl.value : '');
+    var confirmDate = nextWorkday(applyEl ? applyEl.value : '');
+    /* 成交净值只取确认日当日净值；确认日净值未披露时显示「待确认」，不用最近净值预估 */
+    var navOn = confirmDate ? navOnDate(p, confirmDate) : null;
+    if (dateEl) dateEl.value = confirmDate;
+    if (navEl && navEl.readOnly) {
+      navEl.value = navOn ? Number(navOn).toFixed(6) : '';
+      navEl.placeholder = navOn ? '' : '待确认';
+      navEl.classList.toggle('pending', !navOn);
+    }
+    var navVal = Number(navEl && navEl.value) || 0;
     var h = HOLD_BY_PID[p.id];
     if (typeEl && typeEl.value === '清仓') {
       if (shEl) shEl.value = h && h.shares > 0 ? h.shares.toFixed(2) : '';
-      if (amtEl && shEl && shEl.value) amtEl.value = (Number(shEl.value) * Number(navEl.value)).toFixed(2);
+      if (amtEl) amtEl.value = (shEl && shEl.value && navVal) ? (Number(shEl.value) * navVal).toFixed(2) : '';
     }
-    if (amtEl && typeEl && typeEl.value === '赎回' && shEl && shEl.value) {
-      amtEl.value = (Number(shEl.value) * Number(navEl.value)).toFixed(2);
+    if (amtEl && typeEl && typeEl.value === '赎回' && shEl && shEl.value && navVal) {
+      amtEl.value = (Number(shEl.value) * navVal).toFixed(2);
     }
   }
 
@@ -2314,7 +2331,17 @@
       var edShares = edit.shares || (edit.confirmNav > 0 ? edit.amount / edit.confirmNav : 0);
       if (shEl) shEl.value = edShares ? String(Math.round(edShares * 100) / 100) : '';
       if (amtEl) amtEl.value = edit.amount ? String(edit.amount) : '';
-      if (navEl) navEl.value = Number(edit.confirmNav || 0).toFixed(6);
+      if (navEl) {
+        if (edit.confirmNav > 0) {
+          navEl.value = Number(edit.confirmNav).toFixed(6);
+          navEl.placeholder = '';
+          navEl.classList.remove('pending');
+        } else {
+          navEl.value = '';
+          navEl.placeholder = '待确认';
+          navEl.classList.add('pending');
+        }
+      }
       if (applyEl) applyEl.value = edit.applyDate || edit.confirmDate || '';
       if (dateEl) dateEl.value = edit.confirmDate || edit.applyDate || '';
       if (chEl) chEl.value = edit.saleChannel || '建设银行';
@@ -2363,8 +2390,18 @@
     if (!(amount > 0) && shares > 0 && nav > 0) amount = shares * nav;
     if (tType === '清仓' && !editId) amount = shares * nav;
     if (!dateEl.value && applyEl && applyEl.value) dateEl.value = nextWorkday(applyEl.value);
-    if (!(shares > 0) || !(nav > 0) || !dateEl.value || (applyEl && !applyEl.value)) {
-      toast('请填写份额（或金额）与申购日期后提交');
+    /* 确认日净值尚未披露：申购可先按金额提交，份额与净值待确认；赎回/清仓需等净值披露 */
+    var navPending = !(nav > 0);
+    if (navPending) {
+      if (tType !== '申购') { toast('确认日净值尚未披露，请待净值披露后再' + tType); return; }
+      if (!(amount > 0)) { toast('请填写申购金额'); return; }
+    }
+    if (!dateEl.value || (applyEl && !applyEl.value)) {
+      toast('请选择申购日期');
+      return;
+    }
+    if (!navPending && !(shares > 0)) {
+      toast('请填写份额（或金额）后提交');
       return;
     }
     var btn = document.getElementById('trade-submit');
@@ -2372,9 +2409,9 @@
     var body = {
       pid: p.id,
       type: tType,
-      shares: Math.round(shares * 100) / 100,
+      shares: navPending ? 0 : Math.round(shares * 100) / 100,
       amount: Math.round(amount * 100) / 100,
-      confirmNav: nav,
+      confirmNav: nav > 0 ? nav : 0,
       applyDate: applyEl ? applyEl.value : dateEl.value,
       confirmDate: dateEl.value,
       saleChannel: chEl ? chEl.value : ''
@@ -2426,8 +2463,11 @@
     });
     var applyEl = document.getElementById('trade-apply');
     if (applyEl) applyEl.addEventListener('change', function () {
-      var dateEl = document.getElementById('trade-confirm');
-      if (dateEl) dateEl.value = nextWorkday(applyEl.value);
+      var sh0 = document.getElementById('trade-shares');
+      if (sh0) sh0.value = '';
+      var amt0 = document.getElementById('trade-amount');
+      if (amt0) amt0.value = '';
+      syncTradeForm();
     });
     var typeEl = document.getElementById('trade-type');
     if (typeEl) typeEl.addEventListener('change', function () {
@@ -2675,7 +2715,7 @@
       var p = findProductById(t.pid);
       if (!p) return;
       var latestNav = p.nav[p.nav.length - 1];
-      var nav = Number(t.confirmNav) || latestNav || 1;
+      var nav = Number(t.confirmNav) || navOnDate(p, t.confirmDate) || latestNav || 1;
       var sh = Number(t.shares);
       if (!(sh > 0)) sh = (Number(t.amount) || 0) / nav;
       var rec = pend[p.id];
@@ -2950,7 +2990,7 @@
           '<td><div class="pname">' + (p ? (p.short || p.name) : t.pid) +
             (t.saleChannel ? '<span class="salech">' + t.saleChannel + '</span>' : '') + '</div></td>' +
           '<td class="c"><span class="tag' + (t.type === '赎回' || t.type === '清仓' ? ' new' : '') + '">' + t.type + '</span></td>' +
-          '<td class="r num">' + fmtMoney(t.shares || (t.amount / t.confirmNav)) + '</td>' +
+          '<td class="r num">' + fmtMoney(txShares(t, p)) + '</td>' +
           '<td class="r num">' + (st === '在途' ? '<span class="pending-nav">待确认</span>' : fmtNav(navOnDate(p, t.confirmDate) || t.confirmNav)) + '</td>' +
           '<td class="r num">' + fmtMoney(t.amount) + '</td>' +
           '<td class="c num">' + t.confirmDate + '</td>' +
