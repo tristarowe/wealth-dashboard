@@ -13,10 +13,11 @@ import os
 import subprocess
 import sys
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
+CN = timezone(timedelta(hours=8))
 sys.path.insert(0, HERE)
 
 import sources  # noqa: E402
@@ -107,10 +108,10 @@ def to_item(p, rows):
 
 def save(items):
     items.sort(key=lambda x: x.get("inception") or "", reverse=True)
-    asof = max((x.get("latestDate") or "") for x in items) or datetime.now().strftime("%Y-%m-%d")
+    asof = max((x.get("latestDate") or "") for x in items) or datetime.now(CN).strftime("%Y-%m-%d")
     payload = {
         "asOf": asof,
-        "fetchedAt": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "fetchedAt": datetime.now(CN).strftime("%Y-%m-%d %H:%M"),
         "source": "建行新品公告·销售文件要素表 + 中国理财网净值",
         "window": {"start": LIB_START, "end": asof},
         "items": items,
