@@ -317,9 +317,11 @@
   .pager{display:flex;align-items:center;gap:8px;justify-content:flex-end;padding:10px 4px;font-size:11.5px;color:var(--muted)}
   .pager button{min-width:26px;height:26px;border:1px solid #dbe7ed;background:#f6fafc;border-radius:5px;font-family:var(--mono);font-size:11.5px;cursor:pointer;color:var(--muted)}
   .pager button.on{background:#e4f0f5;border-color:#cbe0e8;color:var(--accent-deep)}
-  .pager .pg-jump{height:26px;min-width:40px;padding:0 2px;border:1px solid #dbe7ed;background:#f6fafc;border-radius:5px;font-family:var(--mono);font-size:11.5px;color:var(--accent-deep);cursor:pointer;text-align:center}
-  .pager .pg-jump:focus{outline:none;border-color:#cbe0e8}
+  .pager .pg-cur{min-width:30px;height:26px;padding:0 5px;border:1px solid #dbe7ed;background:#f6fafc;border-radius:5px;font-family:var(--mono);font-size:11.5px;color:var(--accent-deep);cursor:pointer}
   .pager .pg-total{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-left:-2px}
+  .pg-pop{position:fixed;z-index:250;display:grid;grid-template-columns:repeat(5,30px);gap:4px;padding:6px;background:#fff;border:1px solid #dbe7ed;border-radius:8px;box-shadow:0 10px 30px rgba(9,46,60,.18);max-height:134px;overflow:auto}
+  .pg-pop button{height:26px;border:1px solid #e6edf1;background:#f8fbfc;border-radius:4px;font-family:var(--mono);font-size:11.5px;color:var(--muted);cursor:pointer}
+  .pg-pop button.on{background:#e4f0f5;border-color:#cbe0e8;color:var(--accent-deep);font-weight:600}
   #prod-pages{display:flex;align-items:center;gap:8px}
   .modal{position:fixed;inset:0;background:rgba(12,32,42,.35);display:flex;align-items:center;justify-content:center;z-index:200}
   .modal[hidden]{display:none}
@@ -808,8 +810,10 @@
     .filters input{font-size:16px;min-height:36px}
     .tab{min-height:42px}
     .pager button{min-width:29px;height:29px;font-size:12px}
-    .pager .pg-jump{height:29px;font-size:12px;min-width:44px}
+    .pager .pg-cur{height:29px;min-width:34px;font-size:12px}
     .pager .pg-total{font-size:12px}
+    .pg-pop{grid-template-columns:repeat(5,34px);gap:5px;max-height:158px}
+    .pg-pop button{height:30px;font-size:12px}
     tr.flow-month td{white-space:normal;font-size:12px;line-height:1.7;padding:9px 8px}
     tr.flow-month .fm-meta{display:block;margin-left:14px;font-size:11px}
   }

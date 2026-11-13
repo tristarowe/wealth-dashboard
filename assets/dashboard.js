@@ -1877,6 +1877,7 @@
   }
 
   var pgPop = null;
+  var pgPopAt = 0;   /* 打开时间：忽略打开瞬间由点击带入视口产生的滚动，避免弹层刚出现就被关掉 */
 
   function closePagePop() {
     if (pgPop && pgPop.parentNode) pgPop.parentNode.removeChild(pgPop);
@@ -1913,6 +1914,7 @@
       }
     });
     pgPop = pop;
+    pgPopAt = Date.now();
     var on = pop.querySelector('.on');
     if (on) pop.scrollTop = Math.max(0, on.offsetTop - 30);
   }
@@ -2242,6 +2244,11 @@
 
     var pager = document.getElementById('prod-pages');
     if (pager) pager.addEventListener('click', function (e) {
+      var cur = e.target.closest('.pg-cur');
+      if (cur) {
+        if (pgPop) closePagePop(); else openPagePop(cur);
+        return;
+      }
       var btn = e.target.closest('[data-page]');
       if (!btn || btn.disabled) return;
       var page = parseInt(btn.getAttribute('data-page'), 10);
@@ -2249,12 +2256,19 @@
       prodUi.page = page;
       renderProductTable();
     });
-    if (pager) pager.addEventListener('change', function (e) {
-      if (!e.target.classList || !e.target.classList.contains('pg-jump')) return;
-      var page = parseInt(e.target.value, 10);
-      if (!page || page === prodUi.page) return;
-      prodUi.page = page;
-      renderProductTable();
+    document.addEventListener('click', function (e) {
+      if (!pgPop) return;
+      if (pgPop.contains(e.target) || (e.target.closest && e.target.closest('.pg-cur'))) return;
+      closePagePop();
+    }, true);
+    window.addEventListener('scroll', function (e) {
+      if (!pgPop) return;
+      if (Date.now() - pgPopAt < 400) return;
+      if (e.target === pgPop || (e.target && e.target.nodeType === 1 && pgPop.contains(e.target))) return;
+      closePagePop();
+    }, true);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closePagePop();
     });
 
     var tbody = document.getElementById('prod-body');
