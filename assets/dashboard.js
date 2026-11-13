@@ -663,7 +663,10 @@
       el.className = 'v ' + colorBy(todayCnt ? today : null);
     }
     el = document.getElementById('metric-avg');
-    if (el) el.textContent = fmt2(avg);
+    if (el) {
+      el.textContent = fmt2(avg);
+      el.className = 'ink ' + colorBy(avg);
+    }
 
     el = document.getElementById('metric-month');
     if (el) {
@@ -671,7 +674,10 @@
       el.className = 'v ' + colorBy(mCnt ? month : null);
     }
     el = document.getElementById('metric-month-avg');
-    if (el) el.textContent = fmt2(mCnt ? mPerSum / mCnt : null);
+    if (el) {
+      el.textContent = fmt2(mCnt ? mPerSum / mCnt : null);
+      el.className = 'ink ' + colorBy(mCnt ? mPerSum / mCnt : null);
+    }
 
     el = document.getElementById('metric-profit');
     if (el) {
@@ -785,7 +791,7 @@
       var rs = dual ? ' rowspan="2"' : '';
       var lbl = holdMetric === 'ann' ? '年化' : '日均万收';
       html += '<tr class="ma' + (dual ? ' dual' : '') + '">';
-      html += '<td class="c num"' + rs + '>' + (i + 1) + '</td>';
+      html += '<td class="c num hcol-idx"' + rs + '>' + (i + 1) + '</td>';
       html += '<td' + rs + '><div class="pname"><a class="plink" href="javascript:void(0)" data-goto-trade="' + p.id + '" title="查看「' + p.name + '」的交易记录">' + (p.short || p.name) + '</a>' + badge + '</div></td>';
       html += '<td class="c num"' + rs + '>' + mmdd(m.latestDate) + '</td>';
       html += '<td class="r num today-col ' + colorBy(tv) + '"' + rs + '>' + fmtSigned(tv) + '</td>';
@@ -795,7 +801,7 @@
       html += '<td class="r num ' + colorBy(h ? h.ann : null) + '"' + rs + '>' + fmtAnn(h ? h.ann : null) + '</td>';
       html += '<td class="r num"' + rs + '>' + (h ? fmtMoney(h.mv) : '—') + '</td>';
       html += '<td class="c num dcell"' + rs + '>' + (h ? '<span class="days">' + h.days + '</span><i class="dunit">天</i>' : '—') + '</td>';
-      html += '<td class="c mlabel">' + lbl + '</td>';
+      html += '<td class="c mlabel hcol-metric">' + lbl + '</td>';
 
       var perCells = '';
       var annCells = '';
@@ -807,15 +813,15 @@
         var annTip = w.ann === null ? '历史区间不足'
           : w.ann.toFixed(4) + '%（' + w.start + ' 至 ' + m.latestDate + '，按 ' + w.span + ' 天年化）' +
             (w.fallback ? '；成立不足 1 年，按成立以来计算' : '');
-        perCells += '<td class="c num pwin" title="' + perTip + '">' + fmt2(w.per) + mark + '</td>';
-        annCells += '<td class="c num awin" title="' + annTip + '">' + fmtAnn(w.ann) + mark + '</td>';
+        perCells += '<td class="c num pwin hcol-win" title="' + perTip + '">' + fmt2(w.per) + mark + '</td>';
+        annCells += '<td class="c num awin hcol-win" title="' + annTip + '">' + fmtAnn(w.ann) + mark + '</td>';
       });
       html += holdMetric === 'ann' ? annCells : perCells;
 
       html += scoreCell(row, 'c', dual ? 2 : 0);
       html += '</tr>';
 
-      if (dual) html += '<tr class="mb"><td class="c mlabel">年化</td>' + annCells + '</tr>';
+      if (dual) html += '<tr class="mb"><td class="c mlabel hcol-metric">年化</td>' + annCells + '</tr>';
     });
 
     tbody.innerHTML = html || '<tr><td colspan="17" class="c muted" style="padding:28px">未选择产品，请在顶部「覆盖产品」中选择</td></tr>';
@@ -1837,10 +1843,6 @@
 
     tbody.innerHTML = html || '<tr><td colspan="13" class="c muted" style="padding:28px">当前筛选条件下暂无产品</td></tr>';
 
-    var totalEl = document.getElementById('prod-total');
-    if (totalEl) totalEl.textContent = allModels.length;
-    var hitEl = document.getElementById('prod-hit');
-    if (hitEl) hitEl.textContent = hit;
     renderProdPager(pages, hit);
 
     applyProductCols();
