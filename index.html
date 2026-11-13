@@ -570,7 +570,7 @@
     body{padding:16px 10px 40px}
     #hold-table,#sum-table,#flow-table,#prod-table{width:100%;min-width:0;font-size:11.5px}
     #hold-table thead th,#sum-table thead th,#flow-table thead th,#prod-table thead th{
-      font-size:11.5px;white-space:normal;line-height:1.3;min-width:0 !important}
+      font-size:11.5px;white-space:normal;line-height:1.3;vertical-align:middle;min-width:0 !important}
     #hold-table thead th br,#sum-table thead th br,
     #flow-table thead th br,#prod-table thead th br{display:inline}
     #hold-table thead th,#hold-table tbody td,
@@ -600,7 +600,7 @@
     #hold-table col:nth-child(14),
     #hold-table col:nth-child(15){width:44px !important}
     #hold-table col:nth-child(16){width:46px !important}
-    #hold-table col:nth-child(17){width:28px !important}
+    #hold-table col:nth-child(17){width:38px !important}
     /* 盈亏汇总 17 列，仅此表再降字号并收窄横向内边距，保证一屏放下 */
     #hold-table,#hold-table thead th{font-size:11px}
     #hold-table thead th,#hold-table tbody td{padding:6px 2px}
@@ -611,11 +611,19 @@
     #hold-table td.dcell .days,#hold-table td.dcell .dunit{font-size:11px}
     /* 产品名与评分说明也统一到 11px，全表只保留 † 上标略小 */
     #hold-table .pname,#hold-table .plink,#hold-table .st i{font-size:11px}
-    /* 排序箭头会撑破窄列：横屏改为列头上下边线提示，降序=下达线、升序=上达线 */
-    #hold-table thead th.sorted-asc::after,#hold-table thead th.sorted-desc::after{content:none}
-    #hold-table thead th.sorted-asc,#hold-table thead th.sorted-desc{color:var(--accent-deep)}
-    #hold-table thead th.sorted-desc{box-shadow:inset 0 -2px 0 0 var(--accent)}
-    #hold-table thead th.sorted-asc{box-shadow:inset 0 2px 0 0 var(--accent)}
+    /* 排序箭头会撑破窄列：横屏改为列头上下边线提示，降序=下边线、升序=上边线 */
+    #hold-table thead th.sorted-asc::after,#hold-table thead th.sorted-desc::after,
+    #sum-table thead th.sorted-asc::after,#sum-table thead th.sorted-desc::after,
+    #prod-table thead th.sorted-asc::after,#prod-table thead th.sorted-desc::after{content:none}
+    #hold-table thead th.sorted-asc,#hold-table thead th.sorted-desc,
+    #sum-table thead th.sorted-asc,#sum-table thead th.sorted-desc,
+    #prod-table thead th.sorted-asc,#prod-table thead th.sorted-desc{color:var(--accent-deep)}
+    #hold-table thead th.sorted-desc,
+    #sum-table thead th.sorted-desc,
+    #prod-table thead th.sorted-desc{box-shadow:inset 0 -2px 0 0 var(--accent)}
+    #hold-table thead th.sorted-asc,
+    #sum-table thead th.sorted-asc,
+    #prod-table thead th.sorted-asc{box-shadow:inset 0 2px 0 0 var(--accent)}
     #sum-table col:nth-child(1){width:136px !important}
     #sum-table col:nth-child(2){width:56px !important}
     #sum-table col:nth-child(3){width:62px !important}
@@ -1105,7 +1113,7 @@
           <thead>
             <tr>
               <th style="width:34px"></th>
-              <th class="sortable" data-sort="name">产品名称</th><th class="c sortable" data-sort="risk">风险</th><th class="c sortable" data-sort="term">持有<br>期</th>
+              <th class="sortable" data-sort="name">产品名称</th><th class="c sortable" data-sort="risk">风险</th><th class="c sortable" data-sort="term">持有期</th>
               <th class="r sortable" data-col="p10k" data-sort="p10k">今日<br>万收</th>
               <th class="c sortable" data-sort="w7">7日</th>
               <th class="c sortable" data-sort="w14">14日</th>
