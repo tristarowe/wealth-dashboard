@@ -494,6 +494,12 @@
     return v === null || v === undefined ? '—' : v.toFixed(2);
   }
 
+  /* 带符号两位小数：正数显示 +，负数自带 -，0 不带符号 */
+  function fmtSigned2(v) {
+    if (v === null || v === undefined || isNaN(v)) return '—';
+    return (v > 0 ? '+' : '') + v.toFixed(2);
+  }
+
   function fmtSigned(v) {
     if (v === null || v === undefined) return '—';
     return (v > 0 ? '+' : '') + v.toFixed(2);
@@ -681,7 +687,7 @@
     }
     el = document.getElementById('metric-avg');
     if (el) {
-      el.textContent = fmt2(avg);
+      el.textContent = fmtSigned2(avg);
       el.className = colorBy(avg) || 'ink';
     }
 
@@ -692,7 +698,7 @@
     }
     el = document.getElementById('metric-month-avg');
     if (el) {
-      el.textContent = fmt2(mCnt ? mPerSum / mCnt : null);
+      el.textContent = fmtSigned2(mCnt ? mPerSum / mCnt : null);
       el.className = colorBy(mCnt ? mPerSum / mCnt : null) || 'ink';
     }
 
@@ -1873,16 +1879,17 @@
   function renderProdPager(pages, total) {
     var box = document.getElementById('prod-pages');
     var info = document.getElementById('prod-pager-info');
-    if (info) info.textContent = '共 ' + total + ' 条';
+    if (info) info.textContent = '';
     if (!box) return;
-    /* 精简翻页：上一页/下一页 + 页码下拉直接跳转，不再平铺所有页码 */
+    /* 精简翻页：‹ 当前页 / 总页数 ›，页码下拉直接跳转 */
     var opts = '';
     for (var i = 1; i <= pages; i++) {
-      opts += '<option value="' + i + '"' + (i === prodUi.page ? ' selected' : '') + '>第 ' + i + ' / ' + pages + ' 页</option>';
+      opts += '<option value="' + i + '"' + (i === prodUi.page ? ' selected' : '') + '>' + i + '</option>';
     }
     box.innerHTML =
       '<button data-page="' + (prodUi.page - 1) + '"' + (prodUi.page <= 1 ? ' disabled' : '') + ' aria-label="上一页">‹</button>' +
-      (pages > 1 ? '<select class="pg-jump" aria-label="跳转页码">' + opts + '</select>' : '') +
+      (pages > 1 ? '<select class="pg-jump" aria-label="跳转页码">' + opts + '</select>' +
+        '<span class="pg-total">/ ' + pages + '</span>' : '') +
       '<button data-page="' + (prodUi.page + 1) + '"' + (prodUi.page >= pages ? ' disabled' : '') + ' aria-label="下一页">›</button>';
   }
 
