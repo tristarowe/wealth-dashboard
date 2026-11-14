@@ -1,6 +1,6 @@
 window.REPORT_DATA = {
-  "asOf": "2026-11-13",
-  "fetchedAt": "2026-11-13 20:26",
+  "asOf": "2026-11-14",
+  "fetchedAt": "2026-11-14 08:21",
   "products": [
     {
       "id": "p2150",
@@ -37,7 +37,7 @@ window.REPORT_DATA = {
         1.0003,
         1.0003,
         1.0004,
-        1.0004
+        1.0005
       ],
       "per10k": [
         null,
@@ -50,7 +50,7 @@ window.REPORT_DATA = {
         1.0,
         0.0,
         1.0,
-        0.0
+        1.0
       ],
       "sourceName": "交银理财官网"
     },
@@ -1024,7 +1024,7 @@ window.REPORT_DATA = {
       "regCode": "Z7001926001090",
       "shareCode": "2601NB045A",
       "inception": "2026-08-26",
-      "latestDate": "2026-11-11",
+      "latestDate": "2026-11-12",
       "officialAnnual": null,
       "officialAsOf": null,
       "dates": [
@@ -1079,7 +1079,8 @@ window.REPORT_DATA = {
         "2026-11-06",
         "2026-11-09",
         "2026-11-10",
-        "2026-11-11"
+        "2026-11-11",
+        "2026-11-12"
       ],
       "nav": [
         1.0,
@@ -1133,7 +1134,8 @@ window.REPORT_DATA = {
         1.0049,
         1.005,
         1.005,
-        1.0046
+        1.0046,
+        1.0042
       ],
       "per10k": [
         null,
@@ -1187,6 +1189,7 @@ window.REPORT_DATA = {
         1.0,
         1.0,
         0.0,
+        -4.0,
         -4.0
       ],
       "sourceName": "中国理财网"
