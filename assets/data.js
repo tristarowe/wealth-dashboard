@@ -1,6 +1,6 @@
 window.REPORT_DATA = {
-  "asOf": "2026-11-14",
-  "fetchedAt": "2026-11-14 22:35",
+  "asOf": "2026-11-15",
+  "fetchedAt": "2026-11-15 08:17",
   "products": [
     {
       "id": "p2150",
@@ -62,7 +62,7 @@ window.REPORT_DATA = {
       "regCode": "Z7000726000157",
       "shareCode": "",
       "inception": "2026-03-03",
-      "latestDate": "2026-11-13",
+      "latestDate": "2026-11-14",
       "officialAnnual": null,
       "officialAsOf": null,
       "dates": [
@@ -321,7 +321,8 @@ window.REPORT_DATA = {
         "2026-11-10",
         "2026-11-11",
         "2026-11-12",
-        "2026-11-13"
+        "2026-11-13",
+        "2026-11-14"
       ],
       "nav": [
         1.0,
@@ -579,7 +580,8 @@ window.REPORT_DATA = {
         1.022326,
         1.022272,
         1.0222,
-        1.022066
+        1.022066,
+        1.022112
       ],
       "per10k": [
         null,
@@ -837,7 +839,8 @@ window.REPORT_DATA = {
         0.05,
         -0.54,
         -0.72,
-        -1.34
+        -1.34,
+        0.46
       ],
       "sourceName": "建设银行代销净值"
     },
