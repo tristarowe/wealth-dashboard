@@ -1874,12 +1874,12 @@
           '</span>' +
           saleSpan(p) +
           '</div></td>' +
+        '<td class="c num">' + (m.latestDate ? mmdd(m.latestDate) : '<span class="muted">待披露</span>') + '</td>' +
         '<td class="r num ' + colorBy(m.todayPer) + '" data-col="p10k">' + fmtSigned(m.todayPer) + '</td>' +
         winCell(w7) + winCell(w14) + winCell(w30) +
         '<td class="r num ' + colorBy(m.sinceAnn) + '" data-col="ann">' + fmtAnn(m.sinceAnn) + '</td>' +
         '<td class="c pmeta">' + (riskShort(p) || '—') + '</td>' +
         '<td class="c pmeta">' + term + '</td>' +
-        '<td class="c num">' + (m.latestDate ? mmdd(m.latestDate) : '<span class="muted">待披露</span>') + '</td>' +
         '<td class="r num">' + (m.latestNav != null ? fmtNav(m.latestNav) : '<span class="muted">待披露</span>') + '</td>' +
         '<td class="c cdate">' + (m.inception && listingDaysOf(p) !== null ?
           '<span>' + m.inception + '</span><i>' + listingDaysOf(p) + ' 天</i>' :
@@ -3902,6 +3902,9 @@
       if (modal.dataset) delete modal.dataset.editId;
       modal.removeAttribute('data-edit-id');
     }
+    /* 增删改交易会改变持仓，先重算持仓与产品选择范围，否则盈亏日历/持仓表仍是旧数据 */
+    computeHoldings();
+    syncPickerScope();
     renderAll(true);
   }
 
