@@ -8,8 +8,15 @@ import os
 import sys
 from pathlib import Path
 
-from playwright.sync_api import sync_playwright
-from PIL import Image
+# 依赖缺失时把原因写进 shot_error.txt，推送里能直接看到，不用翻流水线日志
+try:
+    from playwright.sync_api import sync_playwright
+    from PIL import Image
+except ImportError as exc:
+    (Path(__file__).resolve().parent / "shot_error.txt").write_text(
+        f"缺少依赖：{exc}", encoding="utf-8"
+    )
+    raise
 
 ROOT = Path(__file__).resolve().parent.parent
 SNAP = ROOT / "snapshots"
