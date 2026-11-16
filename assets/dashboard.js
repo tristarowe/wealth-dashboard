@@ -409,9 +409,10 @@
       HOLDINGS.push(h);
       HOLD_BY_PID[p.id] = h;
     });
+    /* 同步对外暴露的引用：computeHoldings 会整体重建数组，旧引用会一直指向过期数据 */
+    window.DASHBOARD_HOLDINGS = HOLDINGS;
   }
   computeHoldings();
-  window.DASHBOARD_HOLDINGS = HOLDINGS;
 
   // 当前选中的产品（顶部“覆盖产品”多选）
   /* 顶部产品多选的可选范围：与「交易汇总」联动，列出汇总中的全部产品（含当日清仓、在途申购） */
