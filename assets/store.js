@@ -11,11 +11,31 @@
   var online = !!(url && key);
   var source = 'file';
   var CACHE_KEY = 'wealth3.trades.cache';
+  var DEL_KEY = 'wealth3.trades.del';
   var refreshing = null;
   var TIMEOUT = 8000;
 
+  /* 已删除交易墓碑：页面交易底稿在静态文件里，DELETE 云端对底稿行是空操作，
+     因此把删除记录存到云端 newproducts 表（key=tradel:ID）+ 本地，刷新后依然生效 */
+  var delIds = {};
+  try {
+    (JSON.parse(window.localStorage.getItem(DEL_KEY) || '[]') || []).forEach(function (id) {
+      delIds[id] = 1;
+    });
+  } catch (e) { /* 隐私模式，忽略 */ }
+
+  function saveDelIds() {
+    try {
+      window.localStorage.setItem(DEL_KEY, JSON.stringify(Object.keys(delIds)));
+    } catch (e) { /* 忽略 */ }
+  }
+
+  function dropDeleted(items) {
+    return (items || []).filter(function (t) { return !delIds[t.id]; });
+  }
+
   function fileItems() {
-    return (window.TRANSACTIONS && window.TRANSACTIONS.items) || [];
+    return dropDeleted((window.TRANSACTIONS && window.TRANSACTIONS.items) || []);
   }
 
   function readCache() {
@@ -52,7 +72,7 @@
 
   function applyTrades(items) {
     window.TRANSACTIONS = window.TRANSACTIONS || {};
-    window.TRANSACTIONS.items = items;
+    window.TRANSACTIONS.items = dropDeleted(items);
   }
 
   /* ---------------- 代销机构口径 ---------------- */
@@ -170,7 +190,15 @@
       window.MANUAL_PRODUCTS = all.filter(function (o) { return o.kind === 'manual'; });
       window.MANUAL_HISTORY = all.filter(function (o) { return o.kind === 'manualhist'; })
         .sort(function (a, b) { return String(b.at || '').localeCompare(String(a.at || '')); });
-      return all.filter(function (o) { return o.kind !== 'manual' && o.kind !== 'manualhist'; });
+      /* 交易删除墓碑：跨设备、跨刷新生效 */
+      var del = all.filter(function (o) { return o.kind === 'tradel' && o.id; });
+      if (del.length) {
+        del.forEach(function (o) { delIds[o.id] = 1; });
+        saveDelIds();
+      }
+      return all.filter(function (o) {
+        return o.kind !== 'manual' && o.kind !== 'manualhist' && o.kind !== 'tradel';
+      });
     });
   }
 
@@ -315,13 +343,19 @@
     var base = sig();
     var baseNp = npSignature();
     var baseManual = manualSignature();
+    var baseDel = Object.keys(delIds).length;
 
     window.STORE_REFRESH = refreshing = Promise.all([
       sbTrades().then(function (txs) {
         if (!txs.length) return;
-        applyTrades(txs);
+        /* 云端行与页面底稿按 id 合并：底稿里未登记到云端的历史交易不能丢 */
+        var byId = {};
+        fileItems().forEach(function (t) { byId[t.id] = t; });
+        txs.forEach(function (t) { byId[t.id] = t; });
+        var merged = Object.keys(byId).map(function (k) { return byId[k]; });
+        applyTrades(merged);
         source = 'supabase';
-        writeCache(txs);
+        writeCache(window.TRANSACTIONS.items);
       }).catch(function (e) {
         console.warn(e.message + '，本次使用本地缓存的交易数据');
       }),
@@ -329,7 +363,10 @@
         console.warn(e.message + '，本次使用页面内置新品底稿');
       })
     ]).then(function () {
-      return sig() !== base || npSignature() !== baseNp || manualSignature() !== baseManual;
+      /* 云端墓碑可能晚于本地缓存到达，重新过滤一次已删除交易 */
+      applyTrades(fileItems());
+      return sig() !== base || npSignature() !== baseNp ||
+        manualSignature() !== baseManual || Object.keys(delIds).length !== baseDel;
     });
     return Promise.resolve(fileItems());
   }
@@ -389,16 +426,34 @@
     });
   }
 
+  /* 删除墓碑：写云端（newproducts 表 key=tradel:ID）+ 本地，保证刷新/换设备后依然隐藏 */
+  function tombstone(ids) {
+    var rows = ids.map(function (id) {
+      return { key: 'tradel:' + id, data: { kind: 'tradel', id: id, at: new Date().toISOString() } };
+    });
+    return req(url + '/rest/v1/' + npTable + '?on_conflict=key', {
+      method: 'POST',
+      headers: headers({ Prefer: 'resolution=merge-duplicates,return=minimal' }),
+      body: JSON.stringify(rows)
+    }).catch(function () { /* 云端墓碑失败不阻断：本地已有记录 */ });
+  }
+
   function remove(id) {
     if (!online) return Promise.reject(new Error('云端未配置，无法删除'));
-    return req(url + '/rest/v1/' + txTable + '?id=eq.' + encodeURIComponent(id), {
-      method: 'DELETE',
-      headers: headers({ Prefer: 'return=minimal' })
-    }).then(function (r) {
-      if (!r.ok) throw fail('交易删除失败', r.status);
-      applyTrades(fileItems().filter(function (t) { return t.id !== id; }));
-      writeCache(fileItems());
-      return { ok: true, message: '已删除云端交易' };
+    delIds[id] = 1;
+    saveDelIds();
+    applyTrades(window.TRANSACTIONS && window.TRANSACTIONS.items || []);
+    writeCache(window.TRANSACTIONS.items);
+    return Promise.all([
+      req(url + '/rest/v1/' + txTable + '?id=eq.' + encodeURIComponent(id), {
+        method: 'DELETE',
+        headers: headers({ Prefer: 'return=minimal' })
+      }).then(function (r) {
+        if (!r.ok) console.warn('交易行删除失败', r.status);
+      }).catch(function (e) { console.warn(e.message); }),
+      tombstone([id])
+    ]).then(function () {
+      return { ok: true, message: '已删除交易' };
     });
   }
 
@@ -407,18 +462,23 @@
     if (!online) return Promise.reject(new Error('云端未配置，无法删除'));
     ids = (ids || []).filter(Boolean);
     if (!ids.length) return Promise.resolve({ ok: true, message: '未选择交易' });
+    var drop = {};
+    ids.forEach(function (id) { drop[id] = delIds[id] = 1; });
+    saveDelIds();
+    applyTrades(window.TRANSACTIONS && window.TRANSACTIONS.items || []);
+    writeCache(window.TRANSACTIONS.items);
     var list = '(' + ids.map(function (id) {
       return '"' + String(id).replace(/"/g, '') + '"';
     }).join(',') + ')';
-    return req(url + '/rest/v1/' + txTable + '?id=in.' + encodeURIComponent(list), {
-      method: 'DELETE',
-      headers: headers({ Prefer: 'return=minimal' })
-    }).then(function (r) {
-      if (!r.ok) throw fail('批量删除失败', r.status);
-      var drop = {};
-      ids.forEach(function (id) { drop[id] = 1; });
-      applyTrades(fileItems().filter(function (t) { return !drop[t.id]; }));
-      writeCache(fileItems());
+    return Promise.all([
+      req(url + '/rest/v1/' + txTable + '?id=in.' + encodeURIComponent(list), {
+        method: 'DELETE',
+        headers: headers({ Prefer: 'return=minimal' })
+      }).then(function (r) {
+        if (!r.ok) console.warn('交易行批量删除失败', r.status);
+      }).catch(function (e) { console.warn(e.message); }),
+      tombstone(ids)
+    ]).then(function () {
       return { ok: true, message: '已删除 ' + ids.length + ' 笔交易' };
     });
   }
