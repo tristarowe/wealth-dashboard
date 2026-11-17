@@ -297,11 +297,17 @@
     /* 每次以云端手工产品为准整体重建，新增/修改/删除都能同步 */
     var items = src.filter(function (p) { return !p.manual; });
     var seen = {};
-    items.forEach(function (p) { seen[p.id] = 1; });
+    items.forEach(function (p) {
+      seen[p.id] = 1;
+      if (p.regCode) seen['R:' + p.regCode] = 1;
+    });
     list.forEach(function (m) {
       var p = manualToProduct(m);
       if (!p || seen[p.id]) return;
+      /* 正式库已按登记编码收录的产品，不再重复显示手工条目（正式数据更全） */
+      if (p.regCode && seen['R:' + p.regCode]) return;
       seen[p.id] = 1;
+      if (p.regCode) seen['R:' + p.regCode] = 1;
       items.push(p);
     });
     window.PRODUCT_LIBRARY.items = items;
