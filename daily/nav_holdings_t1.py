@@ -4,14 +4,20 @@
 根因是旧轮换脚本只走中国理财网（T+N 时滞）且只认 data.js 的 4 只持仓。
 本脚本按「真实持仓清单优先」实时抓取，能用多路径取到 T-1 就取：
 
-  路径 1 建行官网代销净值 NLC165（wealth3.ccb.com，免登录，全量 ~7700 只，
-         实测当日已到 T-1）——按产品全名精确匹配，最稳，覆盖大多数持仓；
-  路径 2 中邮理财官网列表（psbc-wm.com，返回 Z7 登记编码 + 最新净值 + 日期）——
-         补 NLC165 未命中的中邮产品；
-  路径 3 建信理财官网 chart（wealthccb.com，凭 ccb_map.json 的 ecd）——
+  路径 1a 建行官网 NLC165 精确渠道代码 ECD（IvsmPd_ECD）——最可靠，
+         凭 reg_alias.json「登记编码 -> ECD」映射，跨渠道改名/加前后缀仍能精确命中；
+         解决「南极星/（代销）/（数字人民币专享）」等名称写法不一致导致的匹配失败；
+  路径 1b 建行官网 NLC165 产品全名归一匹配（含 contains 兜底）——覆盖大多数持仓；
+  路径 2  中邮理财官网列表（psbc-wm.com，返回 Z7 登记编码 + 最新净值 + 日期）——
+         按需（--psbc-pages）补 NLC165 未命中的中邮产品；
+  路径 3  建信理财官网 chart（wealthccb.com，凭 ccb_map.json 的 ecd）——
          补建信系产品历史净值序列；
-  路径 4 中国理财网主源（nav_bulk，按 Z7 登记编码，含全量历史）——兜底，
-         覆盖 NLC165 未命中的中邮/中银/贝莱德等（限频，仅对仍落后且未命中的调用）。
+  路径 4  中国理财网主源（nav_bulk，按 Z7 登记编码）——最后兜底，
+         仅当上面官网渠道都取不到 T-1 时才用（默认关闭 --cw，限频防人机验证）。
+
+匹配优先级：ECD 精确 > 名称归一 > 其他官网 > 理财网兜底。绝不伪造净值；
+若某产品所有官方渠道都未披露 T-1（如部分中邮产品披露时滞长），则取全网最新可得点，
+并在末尾 T-1 覆盖汇总中如实标记为「滞后」，前端显示真实披露日。
 
 只写「比现有更新」的净值点：不回退、不重复、不覆盖历史序列，不碰隔离数据。
 净值追加到该产品的 dates/nav/per10k 末尾，并刷新 latestDate/latestNav。
@@ -40,6 +46,7 @@ LIB_JS = os.path.join(ROOT, "assets", "library.js")
 LIB_JSON = os.path.join(HERE, "library.json")
 TX_JS = os.path.join(ROOT, "assets", "transactions.js")
 CCB_MAP = os.path.join(HERE, "ccb_map.json")
+REG_ALIAS = os.path.join(HERE, "reg_alias.json")
 CN = timezone(timedelta(hours=8))
 
 DESKTOP_UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -159,8 +166,14 @@ NLC165_REF = "https://wealth3.ccb.com/cn/finance/products/net_value/list.html"
 
 
 def pull_nlc165(gap):
-    """返回 {name_key: (date, nav)}，只保留有效净值点。"""
-    idx = {}
+    """返回 (by_name, by_ecd) 两个索引，只保留有效净值点。
+
+    by_name: {name_key: (date, nav)}   —— 名称匹配兜底
+    by_ecd:  {IvsmPd_ECD: (date, nav)} —— 渠道精确代码，跨渠道改名时最可靠
+    """
+    by_name = {}
+    by_ecd = {}
+    today = datetime.now(CN).strftime("%Y-%m-%d")
     page = 1
     while page <= 20:
         code, text = http_get(NLC165.format(page=page), referer=NLC165_REF,
@@ -178,18 +191,24 @@ def pull_nlc165(gap):
             nd = norm_date(x.get("Valt_Dt"))
             nav = fnum(x.get("Unit_Ast_NetVal"))
             nm = name_key(x.get("Fnd_Nm"))
-            if not nd or nav is None or nav <= 0 or not nm or nd > datetime.now(CN).strftime("%Y-%m-%d"):
+            ecd = str(x.get("IvsmPd_ECD") or "").strip()
+            if not nd or nav is None or nav <= 0 or nd > today:
                 continue
-            prev = idx.get(nm)
-            if prev is None or nd > prev[0]:
-                idx[nm] = (nd, nav)
+            if nm:
+                prev = by_name.get(nm)
+                if prev is None or nd > prev[0]:
+                    by_name[nm] = (nd, nav)
+            if ecd:
+                prev = by_ecd.get(ecd)
+                if prev is None or nd > prev[0]:
+                    by_ecd[ecd] = (nd, nav)
         total_page = int(j.get("TOTAL_PAGE") or 1)
         if not arr or page >= total_page:
             break
         page += 1
         if gap:
             time.sleep(gap)
-    return idx
+    return by_name, by_ecd
 
 
 # ---------------- 路径 2：中邮理财官网列表 ----------------
@@ -339,9 +358,18 @@ def main():
     before = {pid: (byid[pid].get("latestDate") or "") for pid, _, _ in holds}
     data_pids = set(x["id"] for x in data.get("products", []))  # 区分写回哪个文件
 
+    # 精确渠道代码映射：登记编码 -> {ecd,...}，跨渠道改名时仍可精确命中
+    alias = {}
+    if os.path.exists(REG_ALIAS):
+        try:
+            alias = json.load(open(REG_ALIAS, encoding="utf-8")).get("aliases", {})
+        except Exception:
+            alias = {}
+
     print("抓取建行官网 NLC165 全量...", flush=True)
-    nlc = pull_nlc165(a.gap)
-    print("  NLC165 有效净值 %d 只" % len(nlc), flush=True)
+    nlc_by_name, nlc_by_ecd = pull_nlc165(a.gap)
+    print("  NLC165 有效净值 %d 只（名称 %d / ECD %d）" %
+          (len(nlc_by_name), len(nlc_by_name), len(nlc_by_ecd)), flush=True)
     psbc = {}
     if a.psbc_pages:
         print("抓取中邮理财官网列表（%d 页）..." % a.psbc_pages, flush=True)
@@ -355,23 +383,31 @@ def main():
     changed = 0
     changed_data = False
     changed_lib = False
+    t1_report = []  # (pid, short, best_date, reached, src) 供末尾汇总
     for pid, reg, _prod in holds:
         # 关键：必须取自主函数 load 的 byid，apply_point 的修改才会被 save 写回
         prod = byid.get(pid)
         if prod is None:
             continue
         candidates = []  # (date, nav, source)
-        hit = lookup_nlc(nlc, prod.get("name"))
+        # 路径 1a（最可靠）：精确渠道代码 ECD —— 优先用映射表，其次 ccb_map（建信自用）
+        ecd = (alias.get(str(reg)) or {}).get("ecd") or cmap.get(str(reg))
+        if ecd and ecd in nlc_by_ecd:
+            h = nlc_by_ecd[ecd]
+            candidates.append((h[0], h[1], "建行官网ECD"))
+        # 路径 1b：名称归一匹配（含 contains 兜底）
+        hit = lookup_nlc(nlc_by_name, prod.get("name"))
         if hit:
             candidates.append((hit[0], hit[1], "建行官网"))
         if reg in psbc:
             candidates.append((psbc[reg][0], psbc[reg][1], "中邮官网"))
-        ecd = cmap.get(str(reg))
-        if ecd:
-            rows = pull_ccb_chart(ecd)
+        # 建信官网 chart（ccb_map 的 ecd，通常是 JX/JXJXB 前缀）
+        chart_ecd = cmap.get(str(reg))
+        if chart_ecd and chart_ecd != ecd:
+            rows = pull_ccb_chart(chart_ecd)
             if rows:
                 candidates.append((rows[-1][0], rows[-1][1], "建信官网"))
-        # 路径 4：上面没取到 T-1（11-16）就补中国理财网主源
+        # 路径 4：上面没取到 T-1 就补中国理财网主源（官网优先，理财网仅兜底）
         best_so_far = max([c[0] for c in candidates], default="")
         if a.cw and best_so_far < t1 and cw_used < a.cw_max:
             cw_used += 1
@@ -389,15 +425,18 @@ def main():
                 if "验证" in str(exc):
                     print("  中国理财网触发人机验证，跳过该产品", flush=True)
                 # 其它异常静默跳过，不影响其它路径
+        short = (prod.get("short") or prod.get("name", ""))[:26]
         if not candidates:
-            print("  %-18s %-28s 无新源命中（保持 %s）" %
-                  (pid, (prod.get("short") or prod.get("name", ""))[:26], before[pid]), flush=True)
+            best = before[pid]
+            t1_report.append((pid, short, best, best >= t1, "-"))
+            print("  %-18s %-28s 无新源命中（保持 %s）" % (pid, short, best), flush=True)
             continue
         candidates.sort(key=lambda x: x[0], reverse=True)
         date, nav, src = candidates[0]
+        t1_report.append((pid, short, date, date >= t1, src))
         if date <= before[pid]:
             print("  %-18s %-28s 最优源 %s=%s 不比现有新（%s）" %
-                  (pid, (prod.get("short") or prod.get("name", ""))[:26], src, date, before[pid]), flush=True)
+                  (pid, short, src, date, before[pid]), flush=True)
             continue
         if not a.dry_run:
             if not apply_point(prod, date, nav):
@@ -409,8 +448,17 @@ def main():
         else:
             changed_lib = True
         print("  %-18s %-28s %s -> %s  nav=%s  [%s]" %
-              (pid, (prod.get("short") or prod.get("name", ""))[:26],
-               before[pid] or "-", date, nav, src), flush=True)
+              (pid, short, before[pid] or "-", date, nav, src), flush=True)
+
+    # T-1 覆盖汇总：让"是否取到 T-1"一目了然
+    reached = [r for r in t1_report if r[3]]
+    lagging = [r for r in t1_report if not r[3]]
+    print("\n=== T-1(%s) 覆盖：%d/%d 已达标 ===" % (t1, len(reached), len(t1_report)), flush=True)
+    for pid, short, date, ok, src in sorted(t1_report, key=lambda r: (r[3], r[2])):
+        print("  [%s] %-18s %-28s %s  %s" %
+              ("OK" if ok else "滞后", pid, short, date, src), flush=True)
+    if lagging:
+        print("  说明：滞后产品为各官方渠道均未披露 T-1，已取全网最新可得点（不伪造净值）。", flush=True)
 
     if a.dry_run:
         print("DRY-RUN：将更新 %d 只，未写文件" % changed, flush=True)
