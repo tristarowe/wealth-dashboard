@@ -1,0 +1,9 @@
+# Python 缓存
+__pycache__/
+*.pyc
+# 新品抓取临时缓存与备份
+daily/.np_cache/
+daily/.np_fetch_out/
+*.bak.*
+# 本地内部说明（不推公开仓库）
+同步操作说明.md

@@ -60,6 +60,19 @@ jobs:
           PYTHONIOENCODING: utf-8
         run: python daily/backfill_risk.py || true
 
+      - name: 抓取新品预告（建行官网公告 · 销售文件要素表）
+        env:
+          PYTHONIOENCODING: utf-8
+        # 代销机构从销售文件要素表实测（A/B/F 级证据），未取到才留"待核实"
+        run: python daily/fetch_newproducts.py --days 14 --limit 200 --gap 1.2 || true
+
+      - name: 新品成立后自动并入产品库
+        env:
+          PYTHONIOENCODING: utf-8
+        # 幂等：仅并入"成立日<=今天且登记编码未入库"的新品，并为占位产品补抓净值
+        # 提交统一交给下方「提交数据」步骤，避免双重 push 竞态
+        run: python daily/promote_newproducts.py --gap 1.2 --no-self-commit || true
+
       - name: 提交数据
         run: |
           git config user.name "github-actions[bot]"
