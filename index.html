@@ -112,10 +112,12 @@
   #hold-table .st i{font-size:12px}
   /* 盈亏明细：7日~成立至今 拆成「日均万收」「年化」两行，评分纵向合并 */
   #hold-table tr.ma.dual > td:not([rowspan]){border-bottom:1px solid #f0f4f6}
-  #hold-table th:nth-child(10),#hold-table td:nth-child(10){border-left:1px solid var(--rule)}
+  /* 盈亏明细竖分割线：天数|数据、数据|7日 两处，贯穿表头与主/子数据行，避免「年化」子行错位断线 */
+  #hold-table th:nth-child(9),#hold-table th:nth-child(10),
+  #hold-table tbody tr:not(.mb) > td:nth-child(9),#hold-table tbody tr:not(.mb) > td:nth-child(10),
+  #hold-table tbody tr.mb > td:nth-child(1),#hold-table tbody tr.mb > td:nth-child(2){border-left:1px solid var(--rule)}
   /* 今日收益 / 持仓收益 之间加分割线（仅主行，避免「年化」子行错位画到 90日 列） */
   #hold-table th:nth-child(6),#hold-table tbody tr:not(.mb) > td:nth-child(6){border-left:1px solid var(--rule)}
-  #hold-table tr.mb td:first-child{border-left:1px solid var(--rule)}
   #hold-table td.mlabel{font-size:12px;color:var(--muted);white-space:nowrap;padding:6px 8px}
   #hold-table td.pwin,#hold-table td.awin{font-size:13px;font-weight:400;text-align:center}
   .lbl span{display:block;font-size:11px;color:var(--muted);white-space:nowrap}
