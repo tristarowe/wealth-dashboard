@@ -174,6 +174,19 @@ window.TRANSACTIONS = {
       "status": "已确认",
       "saleChannel": "建设银行",
       "source": "人工录入"
+    },
+    {
+      "id": "TX20261118460",
+      "pid": "LZ7001026001506",
+      "type": "申购",
+      "applyDate": "2026-11-17",
+      "confirmDate": "2026-11-18",
+      "amount": 5000.0,
+      "shares": 0.0,
+      "confirmNav": 0.0,
+      "status": "已确认",
+      "saleChannel": "建设银行",
+      "source": "人工录入"
     }
   ]
 };

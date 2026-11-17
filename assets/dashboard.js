@@ -252,6 +252,10 @@
   }
   computeLibrary();
 
+  /* 手工产品正式入库后，旧手工 id -> 正式产品 id 的别名映射。
+     历史交易可能仍引用手工 id，靠登记编码桥接让它们联动到正式产品 */
+  var PID_ALIAS = {};
+
   /* 手工添加的产品（云端 MANUAL_PRODUCTS）合并进产品库，按 id 去重 */
   function manualToProduct(m) {
     if (!m || !m.id || !m.name) return null;
@@ -297,15 +301,20 @@
     /* 每次以云端手工产品为准整体重建，新增/修改/删除都能同步 */
     var items = src.filter(function (p) { return !p.manual; });
     var seen = {};
+    var formalByReg = {};
     items.forEach(function (p) {
       seen[p.id] = 1;
-      if (p.regCode) seen['R:' + p.regCode] = 1;
+      if (p.regCode) { seen['R:' + p.regCode] = 1; formalByReg[p.regCode] = p.id; }
     });
     list.forEach(function (m) {
       var p = manualToProduct(m);
       if (!p || seen[p.id]) return;
-      /* 正式库已按登记编码收录的产品，不再重复显示手工条目（正式数据更全） */
-      if (p.regCode && seen['R:' + p.regCode]) return;
+      /* 正式库已按登记编码收录的产品，不再重复显示手工条目（正式数据更全）。
+         但要把手工 id 记入别名表，让引用旧 id 的历史交易仍能联动到正式产品 */
+      if (p.regCode && seen['R:' + p.regCode]) {
+        if (formalByReg[p.regCode]) PID_ALIAS[p.id] = formalByReg[p.regCode];
+        return;
+      }
       seen[p.id] = 1;
       if (p.regCode) seen['R:' + p.regCode] = 1;
       items.push(p);
@@ -328,7 +337,13 @@
   }
 
   function findProductById(pid) {
-    return tradeProducts().filter(function (p) { return p.id === pid; })[0] || null;
+    var pool = tradeProducts();
+    var hit = pool.filter(function (p) { return p.id === pid; })[0];
+    if (!hit && PID_ALIAS[pid]) {
+      /* 历史交易引用旧手工 id：桥接到正式入库的产品 */
+      hit = pool.filter(function (p) { return p.id === PID_ALIAS[pid]; })[0];
+    }
+    return hit || null;
   }
 
   // 产品库中已产生交易的产品，纳入统计与盈亏明细
