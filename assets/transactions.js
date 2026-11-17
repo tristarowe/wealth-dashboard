@@ -37,7 +37,7 @@ window.TRANSACTIONS = {
       "pid": "LZ7002626002218",
       "type": "申购",
       "applyDate": "2026-08-20",
-      "confirmDate": "2026-08-26",
+      "confirmDate": "2026-08-25",
       "amount": 23503.52,
       "shares": 23503.52,
       "confirmNav": 1.0,
