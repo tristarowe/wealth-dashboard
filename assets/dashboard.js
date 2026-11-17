@@ -1811,6 +1811,8 @@
       .replace(/[（(][^）)]*[）)]/g, '')                 // 去所有括号修饰
       .replace(/[\u4e00-\u9fa5]{2,6}[·•\-－—]/, '')     // 去系列子名前缀（优盛·等）
       .replace(/最短持有|最低持有|持有期|固定收益类|固收类|理财产品|理财计划/g, '')
+      /* 去风险收益定位词（非产品系列名）：固收稳利/增利稳健/固收增利等，系列名（安盈象/阳光金/稳富等）保留 */
+      .replace(/固收稳利|增利稳健|固收增利|固收增强|固收精选|固收添益|固收/g, '')
       .replace(/产品(?=第\d+期|$)/g, '')                 // 去「产品」字样（如 添利产品第2期 → 添利第2期）
       .replace(/\s{2,}/g, ' ').trim();
     /* 机构简称：orgShort / org / issuer 依次兜底；去掉公司后缀与「理财」 */
@@ -1837,6 +1839,12 @@
       out.push(item);
     });
     return out;
+  }
+
+  /* 全站统一的产品清单（各产品搜索框共用）：与「产品库」完全同一去重口径（按 regCode，持仓优先），
+     保证搜索下拉里的产品名称与产品库展示名称联动一致，不再出现同一产品的新旧两个名字 */
+  function allUniqueProducts() {
+    return mergeProductModels().map(function (it) { return it.product; });
   }
 
   function renderProductTable() {
@@ -2266,16 +2274,13 @@
   function prodSugItems(kw) {
     var q = (kw || '').trim().toLowerCase();
     if (!q) return [];
-    var hit = MODEL.concat(LIB_MODEL).filter(function (it) {
-      var p = it.product;
+    var hit = allUniqueProducts().filter(function (p) {
       return (p.name || '').toLowerCase().indexOf(q) !== -1 ||
         (p.short || '').toLowerCase().indexOf(q) !== -1 ||
         prodDispName(p).toLowerCase().indexOf(q) !== -1 ||
         (p.regCode || '').toLowerCase().indexOf(q) !== -1;
     });
-    return sortBySearch(hit, kw, function (it) { return it.product; }).slice(0, 8).map(function (it) {
-      return it.product;
-    });
+    return sortBySearch(hit, kw).slice(0, 8);
   }
 
   /* 弹层跟随输入框定位：滚动/键盘弹出导致视口变化时重新贴靠，不关闭列表 */
@@ -2701,7 +2706,7 @@
       return;
     }
     list.hidden = false;
-    var items = sortBySearch(tradeProducts().filter(function (p) {
+    var items = sortBySearch(allUniqueProducts().filter(function (p) {
       return (p.short || '').toLowerCase().indexOf(kw) !== -1 ||
         (p.name || '').toLowerCase().indexOf(kw) !== -1 ||
         prodDispName(p).toLowerCase().indexOf(kw) !== -1 ||
