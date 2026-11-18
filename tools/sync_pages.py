@@ -1,7 +1,8 @@
 """把看板文件同步到 GitHub Pages 仓库（Trae 端的唯一写入路径）。
 
 三道守卫（标记清单见 tools/code_guard_marks.json，两端共用，禁止在本脚本硬编码）：
-  A. 标记守卫：受保护文件缺少关键功能标记 → 整体拒推（防止旧版覆盖造成功能丢失）。
+  A. 标记守卫：受保护文件缺少关键功能标记 → 整体拒推（清单有 min_counts 时按出现次数校验，
+     避免「标记有多处、只被改坏一处」时被判为通过）。
   B. 整批中止守卫：受保护文件的远端内容在本机基线之后被他人改过 → 本次不写任何文件，
      必须先运行 tools/pull_from_github.py 合并。
   C. 数据时间戳守卫：数据文件允许被任一端覆盖，但 asOf / fetchedAt 不得倒退。
@@ -112,7 +113,9 @@ def load_marks():
     data = json.loads(MARKS_FILE.read_text(encoding="utf-8"))
     protected = {k: v for k, v in data.get("protected", {}).items() if not k.startswith("_")}
     data_files = {k: v for k, v in data.get("data", {}).items() if not k.startswith("_")}
-    return protected, data_files
+    # min_counts 是可选顶层键：老清单没有时，每个标记按「至少出现 1 次」校验
+    min_counts = {k: v for k, v in (data.get("min_counts") or {}).items() if not k.startswith("_")}
+    return protected, data_files, min_counts
 
 
 def load_state():
@@ -163,15 +166,30 @@ def remote_content(rel, headers):
     return base64.b64decode(resp.json()["content"])
 
 
-def guard_marks(protected):
-    """A. 标记守卫。返回 (是否通过, 问题列表)。"""
+def guard_marks(protected, min_counts=None):
+    """A. 标记守卫。返回 (是否通过, 问题列表)。
+
+    清单给了 min_counts 里的期望次数时按「出现次数」校验（只判存在会漏掉
+    「同一标记有多处、只被改坏一处」的旧版覆盖），没给则按存在 1 次。
+    """
     problems = []
+    min_counts = min_counts or {}
     for rel, markers in protected.items():
         local = ROOT / rel
         if not markers or not local.exists():
             continue
         text = local.read_bytes().decode("utf-8", "ignore")
-        missing = [m for m in markers if m not in text]
+        need_map = min_counts.get(rel) or {}
+        missing = []
+        for m in markers:
+            need = int(need_map.get(m, 1) or 1)
+            actual = text.count(m)
+            if actual >= need:
+                continue
+            if need > 1:
+                missing.append("「%s」需 ≥%d 次，实际 %d 次" % (m, need, actual))
+            else:
+                missing.append("「%s」" % m)
         if missing:
             problems.append("%s 缺少标记：%s" % (rel, "、".join(missing)))
     return (not problems), problems
@@ -207,6 +225,7 @@ def log_bypass(reason, files, state, stale):
 
 
 def commit_batch(changes, headers, message):
+    """整批提交。返回 True=成功，False=失败，"stale"=远端在本流程期间前进（需重取基线）。"""
     ref = requests.get(f"{API}/git/ref/heads/{BRANCH}", headers=headers, timeout=30)
     if ref.status_code != 200:
         print("读取分支失败", ref.status_code, ref.text[:160], file=sys.stderr)
@@ -239,6 +258,10 @@ def commit_batch(changes, headers, message):
 
     update = requests.patch(f"{API}/git/refs/heads/{BRANCH}", headers=headers, timeout=60,
                             json={"sha": commit.json()["sha"], "force": False})
+    if update.status_code == 422:
+        # 取 head 与 base tree 之间远端前进了：拿同一份旧 base 重试必然失败，必须重取基线
+        print("更新分支被拒（远端已前进），需重新读取基线", file=sys.stderr)
+        return "stale"
     if update.status_code not in (200, 201):
         print("更新分支失败", update.status_code, update.text[:160], file=sys.stderr)
         return False
@@ -263,46 +286,9 @@ def commit_one(rel, content, sha, headers, message):
     return ok
 
 
-def main():
-    args = sys.argv[1:]
-    force = "--force-sync" in args
-    reason = ""
-    if force and "--reason" in args:
-        i = args.index("--reason")
-        if i + 1 < len(args):
-            reason = args[i + 1]
-    if force and not reason:
-        reason = "未填写原因"
+def collect_changes(tree, headers, state, data_files, force):
+    """按远端树逐文件比对，返回 (待推列表, {rel: (本地 sha, 远端 sha)})。"""
 
-    token = load_token()
-    if not token:
-        print("未配置 GitHub 令牌，跳过线上看板同步")
-        return 0
-    headers = dict(HEADERS, Authorization="Bearer " + token)
-
-    protected, data_files = load_marks()
-    state = load_state()
-    initialized = False
-    if not state:
-        state = dict(remote_tree(headers))
-        save_state(state)
-        initialized = True
-        print("已初始化同步基线（%d 个文件），本次不做覆盖校验。" % len(state))
-
-    # A. 标记守卫
-    ok, problems = guard_marks(protected)
-    if not ok:
-        if force:
-            print("!! 强制跳过标记守卫：\n  " + "\n  ".join(problems), file=sys.stderr)
-        else:
-            print("拒推：本地代码缺少关键功能标记（疑似旧版/回退）：", file=sys.stderr)
-            for p in problems:
-                print("  - " + p, file=sys.stderr)
-            print("请从 tools/code_guard_marks.json 核对，或确认无误后使用 --force-sync。", file=sys.stderr)
-            return 2
-
-    # 收集待推文件（远端 sha 来自一次 tree 请求）
-    tree = remote_tree(headers)
     changes, stale = [], {}
     for rel in FILES:
         local = ROOT / rel
@@ -333,46 +319,120 @@ def main():
                     state[rel] = rsha
                     continue
         changes.append((rel, content))
+    return changes, stale
 
-    # B. 整批中止守卫
-    touched = guard_protected({k: v for k, v in stale.items() if k in protected},
-                              headers, state, initialized)
-    if touched and not force:
-        print("拒推：以下受保护文件的远端已被他人修改，必须先合并：", file=sys.stderr)
-        for rel in touched:
-            print("  - " + rel, file=sys.stderr)
-        print("请先运行：python tools/pull_from_github.py --apply", file=sys.stderr)
-        print("本次未写入任何文件（整批中止）。", file=sys.stderr)
-        return 3
-    if touched and force:
-        print("!! 强制跳过整批中止守卫：", "、".join(touched), file=sys.stderr)
 
-    if force and changes:
-        log_bypass(reason, [r for r, _ in changes], state, stale)
-
-    if not changes:
-        save_state(state)
-        print("线上已是最新，无需提交")
-        return 0
-
-    message = "chore: 更新看板 %s" % as_of()
-    done = False
+def push_changes(changes, headers, message):
+    """批量提交并重试。返回 True / False / "stale"（远端前进，需重取基线）。"""
+    result = False
     for attempt in range(1, 4):
         try:
-            if commit_batch(changes, headers, message):
-                done = True
-                break
+            result = commit_batch(changes, headers, message)
         except Exception as exc:
             print("批量提交异常（第 %d 次）：%s" % (attempt, str(exc)[:120]), file=sys.stderr)
+            result = False
+        if result is True or result == "stale":
+            return result
         time.sleep(3 * attempt)
+    return result
 
-    if done:
-        for rel, content in changes:
-            state[rel] = blob_sha(content)
-        save_state(state)
+
+def commit_message(changes):
+    """工具/脚本类改动用独立信息，避免与每日数据更新混在一句里，便于事故回溯。"""
+    if changes and all(rel.startswith("tools/") for rel, _ in changes):
+        return "chore(tools): 更新推送守卫脚本 %s" % as_of()
+    return "chore: 更新看板 %s" % as_of()
+
+
+def main():
+    args = sys.argv[1:]
+    force = "--force-sync" in args
+    reason = ""
+    if force and "--reason" in args:
+        i = args.index("--reason")
+        if i + 1 < len(args):
+            reason = args[i + 1]
+    if force and not reason:
+        reason = "未填写原因"
+
+    token = load_token()
+    if not token:
+        print("未配置 GitHub 令牌，跳过线上看板同步")
         return 0
+    headers = dict(HEADERS, Authorization="Bearer " + token)
 
-    print("批量提交失败，退回逐文件提交", file=sys.stderr)
+    protected, data_files, min_counts = load_marks()
+    state = load_state()
+    initialized = False
+    if not state:
+        state = dict(remote_tree(headers))
+        save_state(state)
+        initialized = True
+        print("已初始化同步基线（%d 个文件），本次不做覆盖校验。" % len(state))
+
+    # A. 标记守卫
+    ok, problems = guard_marks(protected, min_counts)
+    if not ok:
+        if force:
+            print("!! 强制跳过标记守卫：\n  " + "\n  ".join(problems), file=sys.stderr)
+        else:
+            print("拒推：本地代码缺少关键功能标记（疑似旧版/回退）：", file=sys.stderr)
+            for p in problems:
+                print("  - " + p, file=sys.stderr)
+            print("请从 tools/code_guard_marks.json 核对，或确认无误后使用 --force-sync。", file=sys.stderr)
+            return 2
+
+    changes, tree, message = [], {}, ""
+    round_no = 0
+    while True:
+        tree = remote_tree(headers)
+        changes, stale = collect_changes(tree, headers, state, data_files, force)
+
+        # B. 整批中止守卫
+        touched = guard_protected({k: v for k, v in stale.items() if k in protected},
+                                  headers, state, initialized)
+        if touched and not force:
+            print("拒推：以下受保护文件的远端已被他人修改，必须先合并：", file=sys.stderr)
+            for rel in touched:
+                print("  - " + rel, file=sys.stderr)
+            print("请先运行：python tools/pull_from_github.py --apply", file=sys.stderr)
+            print("本次未写入任何文件（整批中止）。", file=sys.stderr)
+            return 3
+        if touched and force:
+            print("!! 强制跳过整批中止守卫：", "、".join(touched), file=sys.stderr)
+
+        if force and changes:
+            log_bypass(reason, [r for r, _ in changes], state, stale)
+
+        if not changes:
+            save_state(state)
+            print("线上已是最新，无需提交")
+            return 0
+
+        message = commit_message(changes)
+        result = push_changes(changes, headers, message)
+        if result is True:
+            for rel, content in changes:
+                state[rel] = blob_sha(content)
+            save_state(state)
+            return 0
+        if result == "stale" and round_no < 2:
+            round_no += 1
+            print("远端在本轮期间前进，重新读取基线并重跑守卫（第 %d 次）" % round_no)
+            continue
+        break
+
+    # 逐文件回退：受保护文件绝不降级，避免留下「部分已更新」的混合状态
+    protected_in_changes = [rel for rel, _ in changes if rel in protected]
+    if protected_in_changes:
+        print("拒推：批量提交失败，且本次待推含受保护文件，禁止逐文件降级：", file=sys.stderr)
+        for rel in protected_in_changes:
+            print("  - " + rel, file=sys.stderr)
+        print("本次未写入任何文件。请重跑 python tools/sync_pages.py；"
+              "若仍失败，先运行 python tools/pull_from_github.py --apply 合并。", file=sys.stderr)
+        return 4
+
+    print("批量提交失败，退回逐文件提交（仅非受保护文件）", file=sys.stderr)
     failed = []
     for rel, content in changes:
         sha = tree.get(rel)

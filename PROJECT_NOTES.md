@@ -4,13 +4,15 @@
 
 ## 1. 项目定位
 
-静态单页看板，展示 4 只持仓理财产品的每日净值、当日收益与持仓收益。数据由脚本抓取写入
-`assets/data.js`，交易底稿在 `assets/transactions.js`，页面无构建、无框架、无 CDN，双击 `index.html` 即可打开。
+静态单页看板，展示持仓理财产品的每日净值、当日收益与持仓收益。净值数据由脚本抓取写入
+`assets/data.js`；交易与持仓以云端 Supabase 为准，`assets/transactions.js` 只是本地兜底底稿。
+页面无构建、无框架、无 CDN，双击 `index.html` 即可打开。
 
 - 本地目录：`C:\Users\luomeiting\Documents\Trae-CN\default\wealth-3-products`
-- 线上地址（GitHub Pages）：`https://tristarowe.github.io/wealth-skill/`
-- 对应仓库：`tristarowe/wealth-skill`（`main` 分支，Pages 托管根目录）
-- 今日数据状态：`asOf = 2026-11-10`，最近净值 2026-11-09，当日收益 +4.17 元，持仓收益 +365.08 元
+- 线上地址（GitHub Pages）：`https://tristarowe.github.io/wealth-dashboard/`
+- 对应仓库：`tristarowe/wealth-dashboard`（`main` 分支，Pages 托管根目录）
+- 今日数据状态：`assets/data.js` 的 `asOf = 2026-11-18`、`fetchedAt = 2026-11-18 08:35`，最近净值 2026-11-17；
+  跟踪 4 只产品，产品库 211 只，新品预告 2 只（持仓只数由交易底稿推算，不在文档里写死）
 
 ## 2. 快速开始
 
@@ -22,7 +24,7 @@ Start-Process "C:\Users\luomeiting\Documents\Trae-CN\default\wealth-3-products\i
 cd C:\Users\luomeiting\Documents\Trae-CN\default\wealth-3-products
 python daily/fetch_data.py
 
-# 启动本地服务：页面里的「数据抓取」按钮会调用它真正抓数
+# 启动本地服务：页面里的「数据抓取」按钮会调用它真正抓数（serve.py 仅本机保留，不进仓库）
 python daily/serve.py
 # 然后访问 http://127.0.0.1:8765/ （加 --open 可自动打开浏览器）
 
@@ -44,7 +46,7 @@ python daily/notify.py
 | `assets/dashboard.js` | IIFE 渲染：首页盈亏明细/盈亏日历/盈亏趋势、交易空状态、产品库/新品预告/数据说明、产品多选、数据抓取 |
 | `assets/data.js` | 唯一数据源 `window.REPORT_DATA = {asOf, products[]}` |
 | `daily/fetch_data.py` | 按源链抓取 → 合并 → 校验 → 重写 data.js、stats.json |
-| `daily/serve.py` | 本地服务：静态托管 + `POST /api/refresh` 真实执行抓取 + `GET /api/status` |
+| `daily/serve.py` | 本地服务（仅本机保留，不进仓库）：静态托管 + `POST /api/refresh` 真实执行抓取 + `GET /api/status` |
 | `daily/sources_config.json` | 每款产品的数据源链与参数（顺序即优先级，靠前优先） |
 | `daily/sources/*.py` | 各站点适配器，统一 `fetch(params, start, end) -> [{date, nav}]` |
 | `daily/chinawealth_nv.py` | 中国理财网抓取器（被 `sources/chinawealth.py` 以子进程调用） |
@@ -55,8 +57,8 @@ python daily/notify.py
 | `tools/pull_from_github.py` | 从仓库拉取（三方比对，保护本地未推送改动） |
 | `tools/code_guard_marks.json` | 关键功能标记清单，两端共用 |
 | `daily/run_daily.cmd` | 本地一键跑：抓取 → 截图 → 推送，日志写 `daily/logs/run.log` |
-| `.github/workflows/daily.yml` | 云端每日 08:30（UTC 00:30）抓取、截图、提交、推送 |
-| `.workflow/*.yml` | Gitee Go 备用流水线（未启用时忽略） |
+| `.github/workflows/daily-fetch.yml` | 云端每日 08:30（UTC 00:30）抓取、截图、提交、推送；另有三条流水线 `nav-rotate` / `add-products` / `weekly-expand` |
+| `.workflow/*.yml` | Gitee Go 备用流水线（仅本机保留，不进仓库） |
 | `_shared/js/echarts.min.js`、`assets/html2canvas.min.js` | 本地依赖，勿改 CDN |
 
 ## 4. 数据契约
@@ -84,8 +86,8 @@ products[i] = {
 - **首页**：01 盈亏明细（17 列持仓视角：净值日期/今日万收/今日收益/持仓收益/持仓年化/持仓市值/持仓天数 + 7/14/30/60/90 日 + 成立至今 + 评分，表头数据下拉可切换全部/万收/年化）→
   02 盈亏日历（左：年度月度收益表，月度收益 = 当月每日收益合计，单位元；右：按月日历，下：当月收益/正收益/回撤/挂0）→
   03 盈亏趋势（ECharts 当日收益，7/14/30/90/成立至今；90 日横轴按周、成立至今按月取刻度）
-- **交易**：01 交易汇总（4 只持仓，加购/赎回/清仓入口）、02 交易流水（年份/月份/产品筛选，4 笔真实交易）
-- **产品**：01 新品预告（时间轴骨架，暂无已披露新品）→ 02 产品库（4 只真实产品，机构/风险/持有期/收藏/持仓筛选）→
+- **交易**：01 交易汇总（持仓产品，加购/赎回/清仓入口）、02 交易流水（年份/月份/产品/类型/状态筛选）
+- **产品**：01 新品预告（2 只）→ 02 产品库（211 只真实产品，机构/风险/持有期/收藏/持仓/成立月份筛选）→
   03 数据说明（`assets/数据说明.pdf` 单卡片）
 
 顶部 4 个指标卡：今日收益 / 本月收益 / 持仓收益 / 持仓金额。
@@ -107,7 +109,7 @@ products[i] = {
 | `bocom` | 交银 `/SITE/queryJylcProductDetail.do` + `/queryJylcBreakDetail.do`，`REQ_MESSAGE` 为 JSON urlencode | p2150 |
 | `chinawealth` | 中国理财网，登记编码 + 份额代码，子进程调用 | p2218、p1090（及全部产品兜底） |
 
-产品与来源对照（2026-11-10 实测，仅保留 4 只持仓）：
+产品与来源对照（2026-11-10 实测，`assets/data.js` 跟踪 4 只产品）：
 
 | id | 简称 | 来源 |
 | --- | --- | --- |
@@ -118,12 +120,12 @@ products[i] = {
 
 ## 6. 每日自动化
 
-- **云端**：`.github/workflows/daily.yml`，`cron: "30 0 * * *"`（北京时间 08:30），步骤为
+- **云端**：`.github/workflows/daily-fetch.yml`，`cron: "30 0 * * *"`（北京时间 08:30），步骤为
   装依赖（含 `playwright install --with-deps chromium`、`fonts-noto-cjk`）→ 抓取 → 截图 →
   提交 `assets/data.js snapshots/` → 推送微信 → 失败时发告警
 - **本地**：Windows 计划任务 `WealthDashboardDaily`，每日 08:30 调 `daily/run_daily.cmd`
   （关机不补跑，需要补跑时手动执行该 cmd）
-- **Gitee Go**：`.workflow/daily.yml` 备用，额外跑 `sync_pages.py` 同步线上
+- **Gitee Go**：`.workflow/daily.yml` 备用（仅本机保留，不进仓库），额外跑 `tools/sync_pages.py` 同步线上
 - 密钥：`daily/serverchan.key`、`daily/github.token`、`daily/stats.json`、`daily/logs/`、`snapshots/`
   均被 `.gitignore` 排除；GitHub 侧用 Secrets `SERVERCHAN_SENDKEY`
 
