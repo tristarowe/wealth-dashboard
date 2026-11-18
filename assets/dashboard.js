@@ -39,7 +39,7 @@
   /* 当前可卖份额：只认已确认的持仓，已清仓为 0 */
   function sellableShares(pid) {
     var map = HOLD_BY_PID || {};
-    var h = map[pid];
+    var h = map[canonicalPidById(pid)] || map[pid];
     return h && h.shares > 0.000001 ? h.shares : 0;
   }
 
@@ -47,7 +47,7 @@
   function hasPendingClear(pid) {
     var items = (window.TRANSACTIONS && window.TRANSACTIONS.items) || [];
     return items.some(function (t) {
-      return t.pid === pid && t.type === '清仓' && txStatus(t) === '在途';
+      return samePid(t.pid, pid) && t.type === '清仓' && txStatus(t) === '在途';
     });
   }
 
@@ -55,7 +55,7 @@
   function hasInflightTx(pid) {
     var items = (window.TRANSACTIONS && window.TRANSACTIONS.items) || [];
     return items.some(function (t) {
-      return t.pid === pid && txStatus(t) === '在途';
+      return samePid(t.pid, pid) && txStatus(t) === '在途';
     });
   }
 
@@ -262,6 +262,50 @@
      历史交易可能仍引用手工 id，靠登记编码桥接让它们联动到正式产品 */
   var PID_ALIAS = {};
 
+  /* 全站统一身份：登记编码(Z7)优先，正式持仓数据 > 正式产品库 > 手工产品。
+     同一 Z7 在持仓/交易/筛选/产品库必须归一到同一个 canonical id。 */
+  var REG_CANONICAL = {};
+  function buildCanonicalIds() {
+    REG_CANONICAL = {};
+    function reg(p, priority) {
+      if (!p || !p.regCode || !p.id) return;
+      var old = REG_CANONICAL[p.regCode];
+      if (!old || priority < old.priority) REG_CANONICAL[p.regCode] = { id: p.id, priority: priority };
+    }
+    (DATA.products || []).forEach(function (p) { reg(p, 0); });
+    var libItems = (window.PRODUCT_LIBRARY && window.PRODUCT_LIBRARY.items) || [];
+    libItems.forEach(function (p) { if (!p.manual) reg(p, 1); });
+    libItems.forEach(function (p) { if (p.manual) reg(p, 2); });
+    /* 所有非 canonical id（含旧交易引用的 LZ… 与手工 id）都登记为别名 */
+    (DATA.products || []).concat(libItems).forEach(function (p) {
+      if (!p || !p.regCode || !p.id) return;
+      var c = REG_CANONICAL[p.regCode];
+      if (c && c.id !== p.id) PID_ALIAS[p.id] = c.id;
+    });
+  }
+  buildCanonicalIds();
+
+  function canonicalPidById(pid) {
+    var id = pid, guard = 0;
+    while (PID_ALIAS[id] && guard++ < 8) id = PID_ALIAS[id];
+    return id;
+  }
+  function canonicalPid(p) {
+    if (!p) return '';
+    if (p.regCode && REG_CANONICAL[p.regCode]) return REG_CANONICAL[p.regCode].id;
+    return canonicalPidById(p.id);
+  }
+  function samePid(a, b) {
+    if (a === b) return true;
+    var ca = canonicalPidById(a), cb = canonicalPidById(b);
+    return !!ca && ca === cb;
+  }
+  window.REG_CANONICAL_IDS = (function () {
+    var o = {};
+    Object.keys(REG_CANONICAL).forEach(function (k) { o[k] = REG_CANONICAL[k].id; });
+    return o;
+  })();
+
   /* 手工添加的产品（云端 MANUAL_PRODUCTS）合并进产品库，按 id 去重 */
   function manualToProduct(m) {
     if (!m || !m.id || !m.name) return null;
@@ -318,11 +362,19 @@
       /* 正式库已按登记编码收录的产品，不再重复显示手工条目（正式数据更全）。
          但要把手工 id 记入别名表，让引用旧 id 的历史交易仍能联动到正式产品 */
       if (p.regCode && seen['R:' + p.regCode]) {
-        if (formalByReg[p.regCode]) PID_ALIAS[p.id] = formalByReg[p.regCode];
+        var canon = REG_CANONICAL[p.regCode];
+        if (canon) PID_ALIAS[p.id] = canon.id;
+        else if (formalByReg[p.regCode]) PID_ALIAS[p.id] = formalByReg[p.regCode];
         return;
       }
       seen[p.id] = 1;
-      if (p.regCode) seen['R:' + p.regCode] = 1;
+      if (p.regCode) {
+        seen['R:' + p.regCode] = 1;
+        if (!REG_CANONICAL[p.regCode]) {
+          REG_CANONICAL[p.regCode] = { id: p.id, priority: 2 };
+          window.REG_CANONICAL_IDS[p.regCode] = p.id;
+        }
+      }
       items.push(p);
     });
     window.PRODUCT_LIBRARY.items = items;
@@ -344,11 +396,10 @@
 
   function findProductById(pid) {
     var pool = tradeProducts();
-    var hit = pool.filter(function (p) { return p.id === pid; })[0];
-    if (!hit && PID_ALIAS[pid]) {
-      /* 历史交易引用旧手工 id：桥接到正式入库的产品 */
-      hit = pool.filter(function (p) { return p.id === PID_ALIAS[pid]; })[0];
-    }
+    /* 历史交易可能引用旧手工 id 或产品库的 LZ… id：先归一到 canonical id 再找 */
+    var id = canonicalPidById(pid);
+    var hit = pool.filter(function (p) { return p.id === id; })[0];
+    if (!hit && id !== pid) hit = pool.filter(function (p) { return p.id === pid; })[0];
     return hit || null;
   }
 
@@ -512,7 +563,9 @@
   function inGlobalScope(pid) {
     var total = pickableProducts().length;
     if (selectedIds.length >= total) return true;
-    return selectedIds.indexOf(pid) !== -1;
+    var p = findProductById(pid);
+    var canon = p ? canonicalPid(p) : canonicalPidById(pid);
+    return selectedIds.indexOf(canon) !== -1 || selectedIds.indexOf(pid) !== -1;
   }
 
   // 合计口径：按持仓份额把万收折算为当日收益（元），年化按当日前一净值日市值折算
@@ -2915,7 +2968,8 @@
     var titleEl = document.getElementById('trade-modal-title');
     if (titleEl) titleEl.textContent = edit ? '修改交易' : '新增交易';
     var hid = document.getElementById('trade-prod');
-    if (hid) hid.value = (edit ? edit.pid : pid) || '';
+    /* 新增/修改交易都写 canonical id，避免再产生 LZ… 与 p… 两套 pid */
+    if (hid) hid.value = canonicalPidById((edit ? edit.pid : pid) || '');
     var qEl = document.getElementById('trade-prod-q');
     var curP = findProductById(hid ? hid.value : '');
     if (qEl) qEl.value = curP ? prodDispName(curP) : '';
@@ -3065,7 +3119,7 @@
       if (!row) return;
       var pid = row.getAttribute('data-pid');
       var hid = document.getElementById('trade-prod');
-      if (hid) hid.value = pid;
+      if (hid) hid.value = canonicalPidById(pid);
       /* 选中后把产品名称回填到搜索框，并收起候选列表 */
       var picked = findProductById(pid);
       if (qEl) qEl.value = picked ? prodDispName(picked) : (row.querySelector('span') || {}).textContent || '';
@@ -3289,7 +3343,7 @@
 
   /* 交易流水按产品过滤（仅更新状态与渲染，不切换页签） */
   function filterFlowByProduct(pid) {
-    flowState.pid = pid || '';
+    flowState.pid = pid ? canonicalPidById(pid) : '';
     flowState.year = '';
     flowState.month = '';
     flowState.type = '';
@@ -3303,9 +3357,9 @@
     if (ts) ts.value = '';
     if (ss) ss.value = '';
     /* 从产品库点进某只产品时，若它不在当前全局筛选范围内，先纳入选中，避免被全局筛选挡掉 */
-    if (pid && selectedIds.indexOf(pid) === -1 &&
-        pickableProducts().some(function (p) { return p.id === pid; })) {
-      selectedIds.push(pid);
+    if (flowState.pid && selectedIds.indexOf(flowState.pid) === -1 &&
+        pickableProducts().some(function (p) { return p.id === flowState.pid; })) {
+      selectedIds.push(flowState.pid);
       applySelection();
     }
     /* 月份默认展开，折叠仅由人工点击月份行触发 */
@@ -3416,7 +3470,7 @@
     if (!tbody) return;
     var rows = summaryRows().filter(function (r) { return inGlobalScope(r.product.id); });
     if (flowState.pid) {
-      rows = rows.filter(function (r) { return r.product.id === flowState.pid; });
+      rows = rows.filter(function (r) { return samePid(r.product.id, flowState.pid); });
     }
     if (sumState.key && sumSorters[sumState.key]) {
       var get = sumSorters[sumState.key];
@@ -3531,7 +3585,7 @@
     var items = (window.TRANSACTIONS && window.TRANSACTIONS.items) || [];
     var set = {};
     items.forEach(function (t) {
-      if (flowState.pid && t.pid !== flowState.pid) return;
+      if (flowState.pid && !samePid(t.pid, flowState.pid)) return;
       set[t.applyDate.slice(0, 7)] = 1;
     });
     return Object.keys(set).sort();
@@ -3613,7 +3667,7 @@
 
     items = items.filter(function (t) {
       if (!inGlobalScope(t.pid)) return false;
-      if (flowState.pid && t.pid !== flowState.pid) return false;
+      if (flowState.pid && !samePid(t.pid, flowState.pid)) return false;
       if (flowState.year && t.applyDate.slice(0, 4) !== flowState.year) return false;
       if (flowState.month !== '' && (+t.applyDate.slice(5, 7) - 1) !== +flowState.month) return false;
       if (flowState.type && (t.type || '申购') !== flowState.type) return false;
@@ -4106,6 +4160,31 @@
     if (sel) sel.onchange = function () { NP_UI.channel = this.value; renderNewProds(); };
   }
 
+  /* 产品身份一致性自检：同一登记编码只能有一个身份；持仓/交易必须能解析到产品库。
+     暴露给 __auditProductIdentity 便于浏览器回归测试，异常只在控制台告警不影响渲染。 */
+  function auditProductIdentity() {
+    var issues = [];
+    var merged = mergeProductModels();
+    var byCanon = {};
+    merged.forEach(function (x) {
+      var c = canonicalPid(x.product);
+      if (byCanon[c]) issues.push('产品库重复身份: ' + c);
+      byCanon[c] = x.product;
+    });
+    Object.keys(HOLD_BY_PID).forEach(function (id) {
+      var p = HOLD_BY_PID[id].product;
+      var c = canonicalPid(p);
+      if (!byCanon[c]) issues.push('持仓产品未出现在产品库: ' + (p.short || p.name) + ' (' + c + ')');
+    });
+    ((window.TRANSACTIONS && window.TRANSACTIONS.items) || []).forEach(function (t) {
+      var p = findProductById(t.pid);
+      if (!p) issues.push('交易无法解析产品: ' + t.pid);
+      else if (!byCanon[canonicalPid(p)]) issues.push('交易产品未出现在产品库: ' + t.pid);
+    });
+    return { ok: issues.length === 0, issues: issues, canonicalIds: window.REG_CANONICAL_IDS };
+  }
+  window.__auditProductIdentity = auditProductIdentity;
+
   function renderAll(keepView) {
     refreshAggregate();
     updatePickerLabel();
@@ -4395,6 +4474,8 @@
     initDatePicker();
     bindAddModal();
     renderAll();
+    var identityAudit = auditProductIdentity();
+    if (!identityAudit.ok) console.warn('[产品身份自检]', identityAudit.issues);
 
     var wasCompact = (window.innerWidth || 1200) < 480;
     window.addEventListener('resize', function () {
