@@ -302,6 +302,11 @@ def collect_changes(tree, headers, state, data_files, force):
         content = local.read_bytes()
         lsha = blob_sha(content)
         rsha = tree.get(rel)
+        # Windows 工作区是 CRLF、远端是 LF：仅行尾不同按「已一致」处理，
+        # 否则 B 守卫会把纯行尾差异误判成「远端被他人改过」而整批中止
+        if rsha is not None and lsha != rsha and b"\r\n" in content:
+            if blob_sha(content.replace(b"\r\n", b"\n")) == rsha:
+                lsha = rsha
         stale[rel] = (lsha, rsha)
         if rsha == lsha:
             print("已是最新：", rel)
