@@ -1091,9 +1091,26 @@
     return map;
   }
 
-  function monthStats(p, perMap, annMap, y, m) {
+  /* 万收（每万元当日收益）按日期映射。单产品口径 = (今日净值−昨日净值)×10000；
+     合计视图(AGG)的 raw/per10k 存的是元金额，需按「当日收益 ÷ 前一日市值 × 10000」折算，
+     这样与年化自洽：日均万收 × 3.65 ≈ 年化%。 */
+  function wanMapOf(p) {
+    var map = {};
+    var arr = p.raw || p.per10k;
+    var prev = p.prevMv;
+    for (var i = 0; i < p.dates.length; i++) {
+      if (arr[i] === null || arr[i] === undefined) continue;
+      var base = prev && prev[i] > 0 ? prev[i] : 0;
+      if (!base) continue;
+      map[p.dates[i]] = arr[i] / base * 10000;
+    }
+    return map;
+  }
+
+  function monthStats(p, perMap, annMap, wanMap, y, m) {
     var prefix = y + '-' + String(m + 1).padStart(2, '0') + '-';
     var sum = 0, cnt = 0, pos = 0, neg = 0, flat = 0, annSum = 0, annCnt = 0;
+    var wanSum = 0, wanCnt = 0;
     p.dates.forEach(function (dt) {
       if (dt.indexOf(prefix) !== 0) return;
       var v = perMap[dt];
@@ -1104,10 +1121,12 @@
       else if (v < -0.005) neg += 1;
       else flat += 1;
       if (annMap[dt] !== undefined) { annSum += annMap[dt]; annCnt += 1; }
+      var wv = wanMap[dt];
+      if (wv !== undefined) { wanSum += wv; wanCnt += 1; }
     });
     return {
       sum: sum,
-      avg: cnt ? sum / cnt : null,
+      avg: wanCnt ? wanSum / wanCnt : null,
       cnt: cnt,
       pos: pos,
       neg: neg,
@@ -1186,8 +1205,9 @@
 
     var perMap = perMapOf(p);
     var annMap = annMapOf(p);
-    /* 月度合计改用未取整的原始万收累加，避免逐日四舍五入后求和产生 0.01~0.02 元偏差 */
+    /* 月度合计改用未取整的原始收益累加，避免逐日四舍五入后求和产生 0.01~0.02 元偏差 */
     var sumMap = rawMapOf(p);
+    var wanMap = wanMapOf(p);
 
     // 年 / 月下拉
     var ySel = document.getElementById('cal-year-sel');
@@ -1214,13 +1234,13 @@
     var list = document.getElementById('month-list');
     if (list) {
       var monthRows = months.map(function (m) {
-        return { m: m, st: monthStats(p, sumMap, annMap, calState.y, m) };
+        return { m: m, st: monthStats(p, sumMap, annMap, wanMap, calState.y, m) };
       });
       var bestAnn = null;
       monthRows.forEach(function (r) {
         if (r.st.ann !== null && (bestAnn === null || r.st.ann > bestAnn)) bestAnn = r.st.ann;
       });
-      var html = '<div class="month-row mhead"><span>月份</span><span>收益</span><span>日均收益</span><span>正收益</span><span>回撤</span><span>挂0</span><span>年化</span></div>';
+      var html = '<div class="month-row mhead"><span>月份</span><span>收益</span><span>日均万收</span><span>正收益</span><span>回撤</span><span>挂0</span><span>年化</span></div>';
       html += '<div class="month-rows">';
       monthRows.slice().reverse().forEach(function (r) {
         var st = r.st;
@@ -1326,22 +1346,26 @@
       var y = d.slice(0, 4);
       var v = AGG.raw ? AGG.raw[i] : AGG.per10k[i];
       if (v === null || v === undefined) return;
-      if (!map[y]) map[y] = { sum: 0, cnt: 0, pos: 0, neg: 0, prev: 0 };
+      if (!map[y]) map[y] = { sum: 0, cnt: 0, pos: 0, neg: 0, prev: 0, wanSum: 0, wanCnt: 0 };
       map[y].sum += v;
       map[y].cnt += 1;
       if (v > 0.005) map[y].pos += 1;
       else if (v < -0.005) map[y].neg += 1;
-      map[y].prev += (AGG.prevMv && AGG.prevMv[i]) || 0;
+      var base = AGG.prevMv && AGG.prevMv[i] > 0 ? AGG.prevMv[i] : 0;
+      map[y].prev += base || 0;
+      /* 日均万收按「当日收益÷前一日市值×10000」逐日折算后取平均 */
+      if (base > 0) { map[y].wanSum += v / base * 10000; map[y].wanCnt += 1; }
     });
     var years = Object.keys(map).sort().reverse();
     var latestYear = years[0];
     tbody.innerHTML = years.map(function (y) {
       var s = map[y];
       var ann = s.prev > 0 ? s.sum / s.prev * 365 * 100 : null;
+      var avgWan = s.wanCnt ? s.wanSum / s.wanCnt : null;
       return '<tr data-year="' + y + '" class="' + (y === latestYear ? 'on' : '') + '">' +
         '<td class="ym">' + y + '</td>' +
         '<td class="r num ' + colorBy(s.sum) + '">' + (s.sum > 0 ? '+' : '') + fmtMoney(s.sum) + '</td>' +
-        '<td class="r num cnt">' + (s.cnt ? (s.sum / s.cnt > 0 ? '+' : '') + (s.sum / s.cnt).toFixed(2) : '—') + '</td>' +
+        '<td class="r num cnt">' + (avgWan === null ? '—' : (avgWan > 0 ? '+' : '') + avgWan.toFixed(2)) + '</td>' +
         '<td class="num cnt">' + s.pos + '</td>' +
         '<td class="num cnt">' + s.neg + '</td>' +
         '<td></td>' +
