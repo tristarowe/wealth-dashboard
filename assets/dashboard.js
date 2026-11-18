@@ -415,6 +415,10 @@
       var days = alive ? Math.max(0, dayDiff(parseDate(rec.startDate), parseDate(todayStr))) : 0;
       var costNav = alive ? rec.cost / rec.shares : 0;
       var lastPer = p.per10k[n - 1];
+      /* 银行理财规则：T 日申购按 T 日净值成交、T+1 确认份额并起息。
+         起息日之前（含申购日）披露的净值涨跌属于买入前的产品历史表现，不属于本笔持仓；
+         只有最新净值日 >= 起息日，最近一天的万收才归属本持仓。 */
+      var incomePending = !alive || !p.latestDate || !rec.startDate || p.latestDate < rec.startDate;
       var h = {
         tx: rec.lastTx,
         product: p,
@@ -429,7 +433,8 @@
         profitRate: rec.cost > 0 ? profit / rec.cost * 100 : null,
         ann: (days > 0 && rec.cost > 0) ? profit / rec.cost * 365 / days * 100 : null,
         days: days,
-        income: (lastPer === null || lastPer === undefined || !alive) ? 0 : lastPer * rec.shares / 10000,
+        income: (lastPer === null || lastPer === undefined || incomePending) ? 0 : lastPer * rec.shares / 10000,
+        incomePending: incomePending,
         cleared: !alive,
         realized: rec.realized
       };
@@ -665,8 +670,9 @@
     hs.forEach(function (h) {
       var p = h.product;
       if (h.income !== null) { today += h.income; todayCnt += 1; }
-      /* 今日平均万收只统计在持产品，已清仓产品不进分子也不进分母 */
-      if (h.cleared) return;
+      /* 今日平均万收只统计已起息的在持产品：已清仓、或确认日尚未到最新净值日的产品
+         均不进分子分母，否则会把买入前的产品万收算进组合当日表现 */
+      if (h.cleared || h.incomePending) return;
       perSum += p.per10k[p.per10k.length - 1] || 0;
       perCnt += 1;
     });
@@ -847,7 +853,8 @@
         if (minV === null || v < minV) minV = v;
       }
       var hh = HOLD_BY_PID[row.item.product.id];
-      var inc = hh ? hh.income : null;
+      /* 未起息产品今日收益记 0，但不参与「今日收益最低」排名，避免刚确认的持仓被误挂灰👎 */
+      var inc = (hh && !hh.incomePending) ? hh.income : null;
       if (inc !== null && inc !== undefined && isFinite(inc)) {
         if (maxIncome === null || inc > maxIncome) maxIncome = inc;
         if (minIncome === null || inc < minIncome) minIncome = inc;
@@ -866,7 +873,7 @@
         if (Math.abs(tv - maxV) < 1e-9) badge = '<span class="thumb-under" title="今日万收最高">' + THUMB_UP + '</span>';
       }
       var downBadge = '';
-      if (minIncome !== null && maxIncome !== minIncome && h && h.income !== null
+      if (minIncome !== null && maxIncome !== minIncome && h && !h.incomePending && h.income !== null
           && h.income !== undefined && isFinite(h.income)
           && Math.abs(h.income - minIncome) < 1e-9) {
         downBadge = '<span class="thumb-under thumb-down" title="今日收益最低">' + THUMB_DOWN + '</span>';
@@ -882,7 +889,9 @@
       html += '<td' + rs + '><div class="pname"><a class="plink" href="javascript:void(0)" data-goto-trade="' + p.id + '" title="查看「' + (p.name || '') + '」的交易记录">' + prodDispName(p) + '</a>' + badge + downBadge + mvUnder + '</div></td>';
       html += '<td class="c num"' + rs + '>' + mmdd(m.latestDate) + '</td>';
       html += '<td class="r num today-col ' + colorBy(tv) + '"' + rs + '>' + fmtSigned(tv) + '</td>';
-      html += '<td class="r num income-col ' + colorBy(h ? h.income : null) + '"' + rs + '>' + fmtSigned(h ? h.income : null) + '</td>';
+      html += '<td class="r num income-col ' + colorBy(h && !h.incomePending ? h.income : null) + '"' + rs +
+        ' title="' + (h && h.incomePending ? '确认日 ' + (h.startDate || '') + ' 起息，首笔收益待下一净值日披露' : '') + '">' +
+        (h && h.incomePending ? '<span class="muted">—</span>' : fmtSigned(h ? h.income : null)) + '</td>';
       html += '<td class="r num ' + colorBy(h ? h.profit : null) + '"' + rs + ' title="' +
         (h ? '市值 ' + fmtMoney(h.mv) + ' − 成本 ' + fmtMoney(h.cost) : '暂无持仓') + '">' + fmtSigned(h ? h.profit : null) + '</td>';
       html += '<td class="r num ' + colorBy(h ? h.ann : null) + '"' + rs + '>' + fmtAnn(h ? h.ann : null) + '</td>';
