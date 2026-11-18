@@ -6,6 +6,14 @@
   var THUMB_UP = '👍';
   var THUMB_DOWN = '👎';
 
+  /* 披露节奏红色角标（+N）：净值日 T 的净值为何晚于 T+1 披露，按登记编码人工核定后登记到这里，
+     优先级高于自动推断。格式：'登记编码': N（工作日）。未登记的产品走 disclosureLagOf 的自动推断。
+     口径与 PDF 一致：+N 表示净值披露节奏（T 日净值于 T+N 工作日披露），与份额确认 T+1/T+2 无关；
+     周频/停止更新的产品不标注。 */
+  var DISCLOSURE_LAG_OVERRIDE = {
+    /* 例：'Z7001926001090': 2  // 中邮鸿锦7天45号：说明书约定 T+2 披露 */
+  };
+
   function parseDate(s) {
     var p = s.split('-');
     return new Date(+p[0], +p[1] - 1, +p[2]);
@@ -160,6 +168,52 @@
 
   function mmdd(s) {
     return s ? s.slice(5) : '—';
+  }
+
+  /* 两个工作日之间相隔的工作日数（周一~周五），用于按净值日推断披露节奏 lag。
+     a=净值日、b=基准日，返回 (a,b] 区间内的工作日天数；b 为周末时不计入。 */
+  function workdayGap(a, b) {
+    if (!a || !b) return 0;
+    var s = parseDate(a), e = parseDate(b), n = 0;
+    if (s > e) return 0;
+    s = new Date(s.getTime() + DAY);
+    while (s <= e) {
+      var wd = s.getDay();
+      if (wd !== 0 && wd !== 6) n += 1;
+      s = new Date(s.getTime() + DAY);
+    }
+    return n;
+  }
+
+  /* 产品披露节奏 lag（工作日）：+2 表示净值日 T 的净值在 T+2 工作日才披露。
+     ① 登记编码在 DISCLOSURE_LAG_OVERRIDE 中 → 用人工核定值（最高优先）。
+     ② 否则自动推断：用净值日相对「当天」的工作日差。基准日取产品所属数据源的 asOf：
+        data.js 产品用 DATA.asOf（抓取当天），library.js 产品用 PRODUCT_LIBRARY.asOf。
+        恰好 2 个工作日才标 +2：1 个是正常 T+1，≥3 多为周频/停止更新（按 PDF 规则不标注）。
+     ③ 无净值日/新品（净值序列<2）不标注。 */
+  function disclosureLagOf(p) {
+    if (!p) return 0;
+    var reg = p.regCode || '';
+    if (DISCLOSURE_LAG_OVERRIDE[reg]) return DISCLOSURE_LAG_OVERRIDE[reg];
+    var latest = p.latestDate || (p.dates && p.dates.length ? p.dates[p.dates.length - 1] : '');
+    if (!latest) return 0;
+    var isLib = false;
+    /* 用引用判断归属：LIB_MODEL 里的 product 对象来自 PRODUCT_LIBRARY */
+    for (var i = 0; i < LIB_MODEL.length; i++) {
+      if (LIB_MODEL[i].product === p) { isLib = true; break; }
+    }
+    var libAsOf = (window.PRODUCT_LIBRARY && window.PRODUCT_LIBRARY.asOf) || '';
+    var asOf = isLib && libAsOf ? libAsOf : (DATA.asOf || '');
+    var gap = workdayGap(latest, asOf);
+    return gap === 2 ? 2 : 0;
+  }
+
+  /* 净值日期单元格的红色 +N 角标 HTML（N=2 时显示 +2）。无 lag 返回空串。 */
+  function navLagBadge(p) {
+    var lag = disclosureLagOf(p);
+    if (!lag) return '';
+    return '<sup class="nav-lag" title="净值披露节奏：净值日 T 的净值于 T+' + lag +
+      ' 个工作日披露">+' + lag + '</sup>';
   }
 
   function calc(p) {
@@ -1039,7 +1093,7 @@
         ? '<span class="mv-under" title="持仓市值 ¥' + fmtMoney(h.mv) + '">¥' + fmtMoney(h.mv) + '</span>' : '';
       html += '<td class="c num"' + rs + '>' + (i + 1) + '</td>';
       html += '<td' + rs + '><div class="pname"><a class="plink" href="javascript:void(0)" data-goto-trade="' + p.id + '" title="查看「' + (p.name || '') + '」的交易记录">' + prodDispName(p) + '</a>' + badge + downBadge + mvUnder + '</div></td>';
-      html += '<td class="c num"' + rs + '>' + mmdd(m.latestDate) + '</td>';
+      html += '<td class="c num"' + rs + '>' + (m.latestDate ? mmdd(m.latestDate) + navLagBadge(p) : '—') + '</td>';
       html += '<td class="r num today-col ' + colorBy(tv) + '"' + rs + '>' + fmtSigned(tv) + '</td>';
       html += '<td class="r num income-col ' + colorBy(h && !h.incomePending ? h.income : null) + '"' + rs +
         ' title="' + (h && h.incomePending ? '确认日 ' + (h.startDate || '') + ' 起息，首笔收益待下一净值日披露' : '') + '">' +
@@ -2159,7 +2213,7 @@
           (p.manual ? '<span class="tag" style="background:#f4f7f9;color:#7d939f" title="手工添加的产品">手工</span>' : '') +
           '</span>' +
           '</div></td>' +
-        '<td class="c num">' + (m.latestDate ? mmdd(m.latestDate) : '<span class="muted">待披露</span>') + '</td>' +
+        '<td class="c num">' + (m.latestDate ? mmdd(m.latestDate) + navLagBadge(p) : '<span class="muted">待披露</span>') + '</td>' +
         '<td class="r num ' + colorBy(m.todayPer) + '" data-col="p10k">' + fmtSigned(m.todayPer) + '</td>' +
         winCell(w7) + winCell(w14) + winCell(w30) +
         '<td class="r num ' + colorBy(m.sinceAnn) + '" data-col="ann">' + fmtAnn(m.sinceAnn) + '</td>' +
@@ -3602,7 +3656,7 @@
             (h.tx && h.tx.confirmDate ? h.tx.confirmDate.slice(5).replace('-', '.') : '') + ' 清仓</span>' : '') +
           '</span>' +
           '</div></td>' +
-        '<td class="c num">' + mmdd(h.latestDate) + '</td>' +
+        '<td class="c num">' + (h.latestDate ? mmdd(h.latestDate) + navLagBadge(h.product) : '—') + '</td>' +
         '<td class="r num ' + colorBy(h.profit) + '" title="持仓收益 = 市值 − 成本">' + fmtSigned(h.profit) + '</td>' +
         '<td class="r num ' + colorBy(h.ann) + '">' + fmtAnn(h.ann) + '</td>' +
         '<td class="r num">' + fmtMoney(h.mv) + '</td>' +

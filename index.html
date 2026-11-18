@@ -561,6 +561,8 @@
   .thumb-under{display:inline-block;font-size:11px;line-height:1;margin-left:4px;vertical-align:middle}
   /* 今日收益最低角标：灰色倒立大拇指 */
   .thumb-down{filter:grayscale(1);opacity:.6}
+  /* 净值披露节奏角标：净值日期右上角的红色 +N（T+N 工作日披露），小号、不撑破窄列 */
+  sup.nav-lag{display:inline-block;font-family:var(--mono);font-size:9px;font-weight:700;line-height:1;color:#d13b32;background:#fdecea;border:1px solid #f5c6c0;border-radius:3px;padding:0 2px;margin-left:2px;vertical-align:super;position:relative;top:-.2em;white-space:nowrap;cursor:help}
 
   /* 横向滚动 + 冻结首列 */
   .tbl-scroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
@@ -1360,7 +1362,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261118m';
+      s.src = './assets/dashboard.js?v=20261118n';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();
