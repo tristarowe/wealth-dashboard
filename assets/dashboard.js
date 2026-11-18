@@ -1259,9 +1259,13 @@
     return map;
   }
 
-  /* 自然日口径的统一区间统计：区间收益 ÷ 期初市值 ÷ 实际自然日数。
-     AGG.raw[i] 对应 prevDates[i] → dates[i] 这一段的收益，prevMv[i] 是这段的期初市值。
-     周末/节假日虽然不披露净值，其累计涨跌仍按真实跨越的自然日摊销；
+  /* 自然日口径的统一区间统计：逐段按「该段收益 ÷ 该段期初市值」折算万收，
+     再按各段真实跨越的自然日天数加权平均（时间加权）。
+     —— 必须逐段用自己的期初市值：组合里陆续申购/赎回时，若拿「区间首日市值」当固定分母，
+        后续加仓的收益会被摊到首日的小市值上（严重高估），赎回后的收益会被摊到大市值上（低估）。
+        这正是本次 2026 年度 14.40%、10 月 14.33%、11 月 11.27% 偏高的原因。
+     —— 周末/节假日不披露净值，其累计涨跌按该段真实跨越的自然日摊销。
+     —— 首段可能跨月/跨年，只把落在本期内的天数与对应收益计入本期。
      年化严格由日均万收换算：日均万收 × 3.65 = 年化%。 */
   function cumulativePeriodStats(p, prefix) {
     var idxs = [];
@@ -1269,18 +1273,32 @@
       if (p.dates[i].indexOf(prefix) === 0) idxs.push(i);
     }
     if (!idxs.length) return { avg: null, ann: null, days: 0, sum: 0 };
-    var first = idxs[0], last = idxs[idxs.length - 1];
-    var sum = 0;
+    var periodStart = prefix + (/^\d{4}-$/.test(prefix) ? '01-01' : '01');
+    var sum = 0, acc = 0, days = 0;
     idxs.forEach(function (i) {
-      var v = p.raw ? p.raw[i] : p.per10k[i];
-      if (v !== null && v !== undefined) sum += v;
+      var raw = p.raw ? p.raw[i] : p.per10k[i];
+      if (raw === null || raw === undefined) return;
+      sum += raw;
+      var base = p.prevMv && p.prevMv[i] > 0 ? p.prevMv[i] : 0;
+      var segStart = (p.prevDates && p.prevDates[i]) || p.dates[i];
+      var gap = p.gaps && p.gaps[i] > 0 ? p.gaps[i] : 1;
+      var v = raw;
+      if (segStart < periodStart) {
+        var inside = dayDiff(parseDate(periodStart), parseDate(p.dates[i]));
+        if (!(inside > 0)) return;
+        v = raw * inside / gap;
+        gap = inside;
+      }
+      if (!(base > 0) || !(gap > 0)) return;
+      /* v/base 是「该段累计收益率」（段内 gap 天合计），先按段累加收益率，
+         最后统一除以总天数：avg = Σ(段收益率) / Σ(段天数) × 10000。
+         不能写成 Σ(段收益率 × 天数)：段收益率本身已含 gap 天，再乘天数会把周更产品的权重放大 gap 倍。 */
+      acc += v / base;
+      days += gap;
     });
-    var base = p.prevMv && p.prevMv[first] > 0 ? p.prevMv[first] : 0;
-    var start = (p.prevDates && p.prevDates[first]) || p.dates[first];
-    var span = dayDiff(parseDate(start), parseDate(p.dates[last]));
-    if (!(base > 0) || !(span > 0)) return { avg: null, ann: null, days: span, sum: sum };
-    var avg = sum / base * 10000 / span;
-    return { avg: avg, ann: avg * 3.65, days: span, sum: sum };
+    if (!(days > 0)) return { avg: null, ann: null, days: 0, sum: sum };
+    var avg = acc / days * 10000;
+    return { avg: avg, ann: avg * 3.65, days: days, sum: sum };
   }
 
   function monthStats(p, perMap, y, m) {
@@ -1671,9 +1689,21 @@
       var rv = rawSeries[ri];
       if (rv !== null && rv !== undefined) sumRaw += rv;
     }
+    /* 区间日均收益（元/天）与区间年化都按自然日：年化逐段用各自期初市值加权，
+       避免组合在区间内加仓/赎回时被单一首日市值放大或缩小。 */
     var spanStart = (p.prevDates && p.prevDates[start]) || firstDate;
     var spanDays = Math.max(1, dayDiff(parseDate(spanStart), parseDate(lastDate)));
     var avg = sumRaw / spanDays;
+    var wanAcc = 0, wanDays = 0;
+    for (var wi = start; wi < p.dates.length; wi++) {
+      var wv = rawSeries[wi];
+      var wb = p.prevMv ? p.prevMv[wi] : 0;
+      var wg = p.gaps && p.gaps[wi] > 0 ? p.gaps[wi] : 1;
+      if (wv === null || wv === undefined || !(wb > 0) || !(wg > 0)) continue;
+      /* 同区间统计：累加段收益率，最后除以总天数 */
+      wanAcc += wv / wb;
+      wanDays += wg;
+    }
     var minV = nonNull.length ? Math.min(0, Math.min.apply(null, nonNull)) : 0;
     var maxV = nonNull.length ? Math.max(0, Math.max.apply(null, nonNull)) : 0;
     var maxIdx = -1, minIdx = -1;
@@ -1696,8 +1726,7 @@
 
     var sub = document.getElementById('trend-sub');
     if (sub) {
-      var baseMv = (p.prevMv && p.prevMv[start]) || 0;
-      var rangeAnn = baseMv > 0 ? sumRaw / baseMv * 365 / spanDays * 100 : null;
+      var rangeAnn = wanDays > 0 ? wanAcc / wanDays * 365 * 100 : null;
       sub.innerHTML = '区间日均收益 <b class="' + colorBy(avg) + '">' +
         (avg >= 0 ? '+' : '') + avg.toFixed(2) + ' 元</b>' +
         '<span class="sep">·</span>区间持仓年化 <b class="' + colorBy(rangeAnn) + '">' +
