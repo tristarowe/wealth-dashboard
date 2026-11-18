@@ -34,8 +34,17 @@
     return (items || []).filter(function (t) { return !delIds[t.id]; });
   }
 
+  /* 页面内置底稿快照：load() 里 applyTrades(cached) 会覆盖 window.TRANSACTIONS，
+     必须在覆盖前留存。云端合并只认「底稿 ∪ 云端」，缓存行不参与——
+     旧缓存里的已删交易曾借合并并回数据，表现为「删了又冒出来」的幽灵持仓 */
+  var DRAFT = ((window.TRANSACTIONS && window.TRANSACTIONS.items) || []).slice();
+
   function fileItems() {
     return dropDeleted((window.TRANSACTIONS && window.TRANSACTIONS.items) || []);
+  }
+
+  function draftItems() {
+    return dropDeleted(DRAFT);
   }
 
   function readCache() {
@@ -382,9 +391,11 @@
       sbTrades().then(function (txs) {
         netOk = true;
         if (!txs.length) return;
-        /* 云端行与页面底稿按 id 合并：底稿里未登记到云端的历史交易不能丢 */
+        /* 云端行与页面底稿按 id 合并：底稿里未登记到云端的历史交易不能丢。
+           只认底稿（DRAFT），不认当前集——当前集可能来自旧缓存，
+           已删交易会借并集复活成幽灵持仓（2026-11-18 修复） */
         var byId = {};
-        fileItems().forEach(function (t) { byId[t.id] = t; });
+        draftItems().forEach(function (t) { byId[t.id] = t; });
         txs.forEach(function (t) { byId[t.id] = t; });
         var merged = Object.keys(byId).map(function (k) { return byId[k]; });
         applyTrades(merged);
