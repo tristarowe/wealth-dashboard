@@ -10,3 +10,5 @@ daily/.np_fetch_out/
 # 跨端同步守卫的本地状态（仅本机，禁止进版本库；见 tools/code_guard_marks.json）
 .sync_state.json
 guard_bypass.log
+# pull_from_github.py 的本机备份目录（每次 --apply 生成）
+_backup_before_pull_*/
