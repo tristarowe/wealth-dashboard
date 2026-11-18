@@ -41,6 +41,9 @@
     ],
     ".githooks/pre-push": [
       "core.hooksPath"
+    ],
+    "tools/api_push.py": [
+      "def load_marks"
     ]
   },
   "min_counts": {
