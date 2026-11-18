@@ -870,7 +870,7 @@ window.REPORT_DATA = {
       "org": "信银理财",
       "regCode": "Z7002626002218",
       "shareCode": "AF266423B",
-      "inception": "2026-08-26",
+      "inception": "2026-08-25",
       "latestDate": "2026-11-17",
       "officialAnnual": null,
       "officialAsOf": null,

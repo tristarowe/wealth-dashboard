@@ -199,7 +199,11 @@ def main():
         p["dates"] = dates
         p["nav"] = nav
         p["per10k"] = per10k
-        p["inception"] = dates[0]
+        # 成立日 ≠ 首个净值日：产品往往募集结束次日成立、次日起才披露净值（如信银 08-25 成立、08-26 首净值）。
+        # 仅当原值为空、或原值晚于首净值日（脏数据）时才用首净值日兜底，绝不无条件覆盖。
+        incep = p.get("inception") or ""
+        if not incep or incep > dates[0]:
+            p["inception"] = dates[0]
         p["latestDate"] = latest
         p["sourceName"] = source_name
         print("  -> %s（%s）共 %d 条" % (latest, source_name, len(dates)), flush=True)

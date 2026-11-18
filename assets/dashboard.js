@@ -157,10 +157,28 @@
     return Math.round((b.getTime() - a.getTime()) / DAY);
   }
 
-  /* 成立天数：成立日（无成立日时用首条净值日）到今天（当日）的自然日数 */
+  /* 真实成立日：产品成立日 ≠ 首个净值日（成立日通常早 1 天，募集结束次日成立、次日起披露净值）。
+     优先级：产品库（说明书要素抓取）成立日 > 数据里的 inception > 首个净值日；
+     且成立日不可能晚于首个净值日，晚于则视为脏数据回退首净值日，避免出现"成立晚于净值"。 */
+  function inceptionDateOf(p) {
+    if (!p) return '';
+    var first = p.dates && p.dates.length ? p.dates[0] : '';
+    var libInc = '';
+    if (p.regCode) {
+      var items = (typeof PRODUCT_LIBRARY !== 'undefined' && PRODUCT_LIBRARY.items) || [];
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].regCode === p.regCode) { libInc = items[i].inception || ''; break; }
+      }
+    }
+    var cand = libInc || p.inception || first;
+    if (first && cand > first) cand = first;
+    return cand || first || '';
+  }
+
+  /* 成立天数：真实成立日到今天（当日）的自然日数 */
   function listingDaysOf(p) {
     if (!p || p.manual) return null;
-    var start = p.inception || (p.dates && p.dates[0]);
+    var start = inceptionDateOf(p);
     if (!start) return null;
     var d = dayDiff(parseDate(start), parseDate(isoDate(new Date())));
     return d >= 0 ? d : null;
@@ -277,7 +295,9 @@
     return {
       latestDate: p.dates[n - 1],
       latestNav: p.nav[n - 1],
-      inception: p.dates[0],
+      /* 展示用成立日取真实成立日；收益/年化的区间起点仍用首净值日 p.dates[0]（上面 days/sinceAnn） */
+      inception: inceptionDateOf(p),
+      navStart: p.dates[0],
       days: days,
       sinceAnn: sinceAnn,
       todayPer: todayPer,
@@ -610,13 +630,16 @@
       var profit = mv - rec.cost + rec.realized;
       /* 持仓天数按建行理财口径：持仓天数 = t 日 − 起息日（t 日 = 今天）。
          起息日 = 份额确认日（T 日申购按 T 日净值成交，T+1 确认份额并起息）。
-         确认日早于产品成立日时（新发产品先确认、后成立），起息日按成立日计，
-         不能把产品尚未成立的日子算进持有期，否则持仓天数会大于成立天数。
+         确认日早于产品首个净值日时（新发产品成立当天确认、次日起才有净值），
+         起息日按首个净值日计：产品没有净值的日子不可能产生收益，也不能算进持有期。
+         例：信银安盈象14天165号 08-25 成立并确认、08-26 首个净值日，
+         持仓天数按 08-26 起算（84 天），与建行 App 一致；成立天数仍按 08-25 算（85 天）。
          年化分母另用「计息天数 = 最新净值日 − 起息日」：收益只覆盖到最新净值日，
          若拿今天当分母，会把尚未披露收益的那一天也算进持有期、系统性低估年化。 */
       var accrualEnd = p.latestDate || todayStr;
       var daysStart = rec.startDate;
-      if (p.inception && daysStart && daysStart < p.inception) daysStart = p.inception;
+      var navFirst = p.dates && p.dates.length ? p.dates[0] : '';
+      if (navFirst && daysStart && daysStart < navFirst) daysStart = navFirst;
       var days = alive ? Math.max(0, dayDiff(parseDate(daysStart), parseDate(todayStr))) : 0;
       var accrualDays = alive ? Math.max(0, dayDiff(parseDate(daysStart), parseDate(accrualEnd))) : 0;
       var costNav = alive ? rec.cost / rec.shares : 0;
@@ -1152,7 +1175,7 @@
       var daysTip = (h ? '持仓天数 ' + h.days + ' 天 = 今天 − 起息日 ' + (h.effStartDate || '') +
           '；年化按计息 ' + h.accrualDays + ' 天（至最新净值日 ' + (h.latestDate || '') + '）折算' : '') +
         (listDays !== null ? (h ? '；' : '') + '成立天数 ' + listDays + ' 天 = 今天 − 成立日 ' +
-          (p.inception || (p.dates && p.dates[0]) || '') : '');
+          (inceptionDateOf(p) || '') : '');
       html += '<td class="c num dcell daystack"' + rs + ' title="' + daysTip + '">' +
         (h ? '<span class="days">' + h.days + '</span>' : '—') +
         (listDays !== null ? '<span class="dsep"></span><span class="days sub">' + listDays + '</span>' : '') + '</td>';
