@@ -21,6 +21,8 @@
 import base64
 import hashlib
 import json
+import os
+import re
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -31,6 +33,7 @@ TOOLS = Path(__file__).resolve().parent
 ROOT = TOOLS.parent
 STATE_FILE = TOOLS / ".sync_state.json"
 TOKEN_FILES = [TOOLS / "github.token", ROOT / "daily" / "github.token"]
+CRED_FILE = ROOT / ".git" / "git-credentials"
 
 REPO = "tristarowe/wealth-dashboard"
 BRANCH = "main"
@@ -47,12 +50,22 @@ def blob_sha(data):
 
 
 def load_token():
+    """令牌来源依次为：环境变量 GITHUB_TOKEN → tools/github.token → daily/github.token
+    → .git/git-credentials（WorkBuddy 侧本机凭据，不进版本库）。"""
+    token = (os.environ.get("GITHUB_TOKEN") or "").strip()
+    if token:
+        return token
     for f in TOKEN_FILES:
         if f.exists():
             token = f.read_text(encoding="utf-8").strip()
             if token:
                 return token
-    raise RuntimeError("未找到 github.token，无法读取仓库")
+    if CRED_FILE.exists():
+        m = re.search(r"gh[pous]_[A-Za-z0-9]+",
+                      CRED_FILE.read_text(encoding="utf-8", errors="ignore"))
+        if m:
+            return m.group(0)
+    raise RuntimeError("未找到 github.token（也不在环境变量/凭据文件里），无法读取仓库")
 
 
 def remote_tree(headers):
@@ -84,14 +97,21 @@ def save_state(files, init_pending=False):
         ensure_ascii=False, indent=1), encoding="utf-8")
 
 
-def classify(rel, lsha, rsha, bsha, init_pending=False):
-    """返回 (动作, 说明)。动作：same / pull / local_dirty / conflict / new。"""
+def classify(rel, lsha, rsha, bsha, init_pending=False, lnorm=None):
+    """返回 (动作, 说明)。动作：same / pull / local_dirty / conflict / new。
+
+    lnorm：本地内容把 CRLF 归一成 LF 后的 blob sha。Windows 侧工作区是 CRLF、
+    远端是 LF，同一份内容会算出不同 sha；不认这一层就会把几十个文件误判成"待拉取"，
+    一 --apply 就把整个工作区改成 LF（假 diff 满地）。内容等价时直接判 same，不下载。
+    """
     if lsha is None:
         # 本地缺失一律按远端恢复：没有本地内容可被冲掉，且避免首次初始化基线后
         # 把"尚未拉取过的文件"误判成"本地删除"
         return "new", "本地缺失，按远端恢复"
     if lsha == rsha:
         return "same", "已一致"
+    if lnorm is not None and lnorm == rsha:
+        return "same", "仅行尾差异（工作区 CRLF / 远端 LF），内容一致"
     if bsha is None:
         # 基线里没有：多为本机新加的文件（远端已有同名内容不同）。
         # 此时无法判断谁更新，按"本地改动"保留，避免静默覆盖。
@@ -123,8 +143,12 @@ def main():
     plan, skipped = [], []
     for rel, rsha in sorted(remote.items()):
         local = ROOT / rel
-        lsha = blob_sha(local.read_bytes()) if local.exists() else None
-        action, why = classify(rel, lsha, rsha, state.get(rel), init_pending)
+        raw = local.read_bytes() if local.exists() else None
+        lsha = blob_sha(raw) if raw is not None else None
+        lnorm = None
+        if raw is not None and lsha != rsha and b"\r\n" in raw:
+            lnorm = blob_sha(raw.replace(b"\r\n", b"\n"))
+        action, why = classify(rel, lsha, rsha, state.get(rel), init_pending, lnorm)
         if action == "pull" or action == "new":
             plan.append((rel, rsha, why))
         elif action in ("local_dirty", "conflict"):
