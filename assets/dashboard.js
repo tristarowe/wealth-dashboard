@@ -608,15 +608,17 @@
       var alive = rec.shares > 0.000001;
       var mv = rec.shares * latestNav;
       var profit = mv - rec.cost + rec.realized;
-      /* 持仓天数统一取到本次收益对应的最新净值日，而不是系统今天：
-         净值/收益只披露到 T-1 时，分母再算到今天会系统性低估年化。
-         自成立持有不变的产品，其持仓年化应与成立年化一致。
-         另：确认日早于产品成立日时（新发产品先确认、后成立），持仓天数从成立日起算，
-         不能把产品尚未成立的日子算进持有期，否则持仓天数会大于成立天数。 */
-      var navEnd = p.latestDate || todayStr;
+      /* 持仓天数按建行理财口径：持仓天数 = t 日 − 起息日（t 日 = 今天）。
+         起息日 = 份额确认日（T 日申购按 T 日净值成交，T+1 确认份额并起息）。
+         确认日早于产品成立日时（新发产品先确认、后成立），起息日按成立日计，
+         不能把产品尚未成立的日子算进持有期，否则持仓天数会大于成立天数。
+         年化分母另用「计息天数 = 最新净值日 − 起息日」：收益只覆盖到最新净值日，
+         若拿今天当分母，会把尚未披露收益的那一天也算进持有期、系统性低估年化。 */
+      var accrualEnd = p.latestDate || todayStr;
       var daysStart = rec.startDate;
       if (p.inception && daysStart && daysStart < p.inception) daysStart = p.inception;
-      var days = alive ? Math.max(0, dayDiff(parseDate(daysStart), parseDate(navEnd))) : 0;
+      var days = alive ? Math.max(0, dayDiff(parseDate(daysStart), parseDate(todayStr))) : 0;
+      var accrualDays = alive ? Math.max(0, dayDiff(parseDate(daysStart), parseDate(accrualEnd))) : 0;
       var costNav = alive ? rec.cost / rec.shares : 0;
       var lastPer = p.per10k[n - 1];
       /* 今日收益按「截至最新净值日已起息的份额」计算（而非全部持仓份额）：
@@ -632,11 +634,14 @@
         latestNav: latestNav,
         latestDate: p.latestDate,
         startDate: rec.startDate,
+        /* 实际起息日：首次确认日，但不早于产品成立日 */
+        effStartDate: daysStart,
         mv: mv,
         profit: profit,
         profitRate: rec.cost > 0 ? profit / rec.cost * 100 : null,
-        ann: (days > 0 && rec.cost > 0) ? profit / rec.cost * 365 / days * 100 : null,
+        ann: (accrualDays > 0 && rec.cost > 0) ? profit / rec.cost * 365 / accrualDays * 100 : null,
         days: days,
+        accrualDays: accrualDays,
         income: incomePending ? 0 : lastPer * incomeShares / 10000,
         incomeShares: incomeShares,
         incomePending: incomePending,
@@ -1144,7 +1149,11 @@
         (h ? '市值 ' + fmtMoney(h.mv) + ' − 成本 ' + fmtMoney(h.cost) : '暂无持仓') + '">' + fmtSigned(h ? h.profit : null) + '</td>';
       html += '<td class="r num ' + colorBy(h ? h.ann : null) + '"' + rs + '>' + fmtAnn(h ? h.ann : null) + '</td>';
       var listDays = listingDaysOf(p);
-      html += '<td class="c num dcell daystack"' + rs + '>' +
+      var daysTip = (h ? '持仓天数 ' + h.days + ' 天 = 今天 − 起息日 ' + (h.effStartDate || '') +
+          '；年化按计息 ' + h.accrualDays + ' 天（至最新净值日 ' + (h.latestDate || '') + '）折算' : '') +
+        (listDays !== null ? (h ? '；' : '') + '成立天数 ' + listDays + ' 天 = 今天 − 成立日 ' +
+          (p.inception || (p.dates && p.dates[0]) || '') : '');
+      html += '<td class="c num dcell daystack"' + rs + ' title="' + daysTip + '">' +
         (h ? '<span class="days">' + h.days + '</span>' : '—') +
         (listDays !== null ? '<span class="dsep"></span><span class="days sub">' + listDays + '</span>' : '') + '</td>';
       html += '<td class="c mlabel">' + lbl + '</td>';
@@ -3617,7 +3626,7 @@
       rows.push({
         product: h.product, latestDate: h.latestDate, latestNav: h.latestNav,
         shares: h.shares, cost: h.cost, mv: h.mv, profit: h.profit, ann: h.ann,
-        days: h.days, cleared: h.cleared, tx: h.tx, pending: false
+        days: h.days, accrualDays: h.accrualDays, cleared: h.cleared, tx: h.tx, pending: false
       });
     });
     var pend = {};
@@ -3650,7 +3659,8 @@
         row.cost += q.cost;
         row.mv = row.shares * row.latestNav;
         row.profit = row.mv - row.cost;
-        row.ann = (row.days > 0 && row.cost > 0) ? row.profit / row.cost * 365 / row.days * 100 : row.ann;
+        var accDays = row.accrualDays || row.days;
+        row.ann = (accDays > 0 && row.cost > 0) ? row.profit / row.cost * 365 / accDays * 100 : row.ann;
         row.pending = true;
       } else {
         rows.push({
@@ -3713,7 +3723,9 @@
         '<td class="r num">' + fmtMoney(h.mv) + '</td>' +
         '<td class="c num">' + fmtNav(h.latestNav) + '</td>' +
         '<td class="r num">' + fmtMoney(h.shares) + '</td>' +
-        '<td class="c num dcell"><span class="days">' + h.days + '</span><i class="dunit">天</i></td>' +
+        '<td class="c num dcell" title="持仓天数 ' + h.days + ' 天 = 今天 − 起息日 ' + (h.effStartDate || '') +
+          '；年化按计息 ' + (h.accrualDays || h.days) + ' 天（至最新净值日 ' + (h.latestDate || '') + '）折算">' +
+          '<span class="days">' + h.days + '</span><i class="dunit">天</i></td>' +
         '<td class="c num dcell">' + (listingDaysOf(p) === null ? '—' :
           '<span class="days">' + listingDaysOf(p) + '</span><i class="dunit">天</i>') + '</td>' +
         '<td class="c"><button class="mini buy" data-act="add" data-pid="' + p.id + '">加购</button> ' +
