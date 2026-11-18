@@ -29,7 +29,13 @@
     "daily/nav_rotate.py": [],
     "daily/nav_holdings_t1.py": [],
     "daily/backfill_byname.py": [],
-    ".github/workflows/daily-fetch.yml": []
+    ".github/workflows/daily-fetch.yml": [],
+    "tools/sync_pages.py": [
+      "def guard_marks"
+    ],
+    "tools/pull_from_github.py": [
+      "def classify"
+    ]
   },
   "data": {
     "_doc": "数据文件：允许被任一端覆盖推送（每日抓数会正常更新），但时间戳键必须单调不倒退。",
