@@ -222,7 +222,13 @@
     var incep = parseDate(p.dates[0]);
     var days = dayDiff(incep, latest);
     var sinceAnn = (p.nav[n - 1] / p.nav[0] - 1) * 365 / days * 100;
-    var todayPer = (p.nav[n - 1] - p.nav[n - 2]) * 10000;
+    /* 今日万收统一为市值口径（每万元市值当日收益 = 每万份收益 ÷ 昨日净值）。
+       份额在分子分母中约掉，故无持仓的产品库产品同样可算；per10k 缺失时退回净值差。 */
+    var prevNav0 = p.nav[n - 2];
+    var lastPer0 = p.per10k && p.per10k.length ? p.per10k[n - 1] : null;
+    var todayPer = prevNav0 > 0
+      ? (lastPer0 !== null && lastPer0 !== undefined ? lastPer0 / prevNav0 : (p.nav[n - 1] - prevNav0) / prevNav0 * 10000)
+      : null;
     var windows = [7, 14, 30, 60, 90, 365].map(function (w) {
       var target = latest.getTime() - w * DAY;
       var idx = -1;
@@ -242,7 +248,9 @@
       var ret = p.nav[n - 1] / p.nav[idx] - 1;
       return {
         days: w,
-        per: (p.nav[n - 1] - p.nav[idx]) * 10000 / span,
+        /* 日均万收统一为市值口径：收益 ÷ 起始市值 × 10000 ÷ 天数 = ret*10000/span，
+           与年化(ret*365/span*100)严格自洽：日均万收 × 3.65 = 年化%。 */
+        per: ret * 10000 / span,
         ann: ret * 365 / span * 100,
         span: span,
         start: p.dates[idx],
@@ -986,10 +994,10 @@
   };
   var WINDOW_SORT = { w7: 0, w14: 1, w30: 2, w60: 3, w90: 4, w365: 5 };
 
-  /* 盈亏汇总表「今日万收」= 看板指标卡同口径（组合市值加权）：
+  /* 盈亏汇总表「今日万收」= 看板指标卡同口径（市值加权）：
      单产品 = 今日收益(元) ÷ 前一日市值(元) × 10000 = per10k_last ÷ 昨日净值。
-     单位净值≠1 时与「每万份收益」(Δnav×10000，m.todayPer) 不同，故不能再用 m.todayPer。
-     产品库表仍用每万份收益（产品固有属性、大多无持仓，无法按市值折算），本函数只服务盈亏汇总。
+     份额在分子分母中约掉，与是否持仓无关；产品库表 m.todayPer 已同步为同口径（见 calc），
+     故看板/盈亏汇总/产品库三处今日万收数值一致。
      未起息/清仓/无昨日净值时返回 null（与看板 todayBase 判空一致，显示「—」）。 */
   function todayWanOf(p) {
     var h = HOLD_BY_PID[p.id];
@@ -1112,7 +1120,7 @@
       m.windows.forEach(function (w) {
         var mark = w.fallback ? '<sup class="dag">†</sup>' : '';
         var perTip = w.per === null ? '历史区间不足'
-          : w.per.toFixed(4) + ' 元 / 万份（' + w.start + ' 至 ' + m.latestDate + '，' + w.span + ' 天）' +
+          : w.per.toFixed(4) + ' 元 / 万元市值（' + w.start + ' 至 ' + m.latestDate + '，' + w.span + ' 天）' +
             (w.fallback ? '；成立不足 1 年，按成立以来计算' : '');
         var annTip = w.ann === null ? '历史区间不足'
           : w.ann.toFixed(4) + '%（' + w.start + ' 至 ' + m.latestDate + '，按 ' + w.span + ' 天年化）' +
@@ -1208,9 +1216,9 @@
     return map;
   }
 
-  /* 万收（每万元当日收益）按日期映射。单产品口径 = (今日净值−昨日净值)×10000；
-     合计视图(AGG)的 raw/per10k 存的是元金额，需按「当日收益 ÷ 前一日市值 × 10000」折算，
-     这样与年化自洽：日均万收 × 3.65 ≈ 年化%。 */
+  /* 万收（每万元市值当日收益）按日期映射，全站统一市值口径：当日收益 ÷ 前一日市值 × 10000。
+     合计视图(AGG)的 raw/per10k 存元金额、prevMv 存前一日市值，直接折算即可；
+     这样与年化严格自洽：日均万收 × 3.65 = 年化%。 */
   function wanMapOf(p) {
     var map = {};
     var arr = p.raw || p.per10k;
