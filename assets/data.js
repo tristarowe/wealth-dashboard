@@ -1,6 +1,6 @@
 window.REPORT_DATA = {
-  "asOf": "2026-11-17",
-  "fetchedAt": "2026-11-17 22:52",
+  "asOf": "2026-11-18",
+  "fetchedAt": "2026-11-18 08:35",
   "products": [
     {
       "id": "p2150",
@@ -10,7 +10,7 @@ window.REPORT_DATA = {
       "regCode": "Z7000926002150",
       "shareCode": "5811226799",
       "inception": "2026-10-29",
-      "latestDate": "2026-11-16",
+      "latestDate": "2026-11-17",
       "officialAnnual": null,
       "officialAsOf": null,
       "dates": [
@@ -26,7 +26,8 @@ window.REPORT_DATA = {
         "2026-11-11",
         "2026-11-12",
         "2026-11-13",
-        "2026-11-16"
+        "2026-11-16",
+        "2026-11-17"
       ],
       "nav": [
         1.0,
@@ -40,6 +41,7 @@ window.REPORT_DATA = {
         1.0003,
         1.0004,
         1.0004,
+        1.0005,
         1.0005,
         1.0005
       ],
@@ -56,6 +58,7 @@ window.REPORT_DATA = {
         1.0,
         0.0,
         1.0,
+        0.0,
         0.0
       ],
       "sourceName": "交银理财官网"
@@ -68,7 +71,7 @@ window.REPORT_DATA = {
       "regCode": "Z7000726000157",
       "shareCode": "",
       "inception": "2026-03-03",
-      "latestDate": "2026-11-16",
+      "latestDate": "2026-11-17",
       "officialAnnual": null,
       "officialAsOf": null,
       "dates": [
@@ -330,7 +333,8 @@ window.REPORT_DATA = {
         "2026-11-13",
         "2026-11-14",
         "2026-11-15",
-        "2026-11-16"
+        "2026-11-16",
+        "2026-11-17"
       ],
       "nav": [
         1.0,
@@ -591,7 +595,8 @@ window.REPORT_DATA = {
         1.022066,
         1.022112,
         1.022158,
-        1.021967
+        1.021967,
+        1.022572
       ],
       "per10k": [
         null,
@@ -852,9 +857,11 @@ window.REPORT_DATA = {
         -1.34,
         0.46,
         0.46,
-        -1.91
+        -1.91,
+        6.05
       ],
-      "sourceName": "建设银行代销净值"
+      "sourceName": "建设银行代销净值",
+      "latestNav": 1.022572
     },
     {
       "id": "p2218",
@@ -1048,7 +1055,7 @@ window.REPORT_DATA = {
       "regCode": "Z7001926001090",
       "shareCode": "2601NB045A",
       "inception": "2026-08-26",
-      "latestDate": "2026-11-13",
+      "latestDate": "2026-11-16",
       "officialAnnual": null,
       "officialAsOf": null,
       "dates": [
@@ -1105,7 +1112,8 @@ window.REPORT_DATA = {
         "2026-11-10",
         "2026-11-11",
         "2026-11-12",
-        "2026-11-13"
+        "2026-11-13",
+        "2026-11-16"
       ],
       "nav": [
         1.0,
@@ -1161,7 +1169,8 @@ window.REPORT_DATA = {
         1.005,
         1.0046,
         1.0042,
-        1.0035
+        1.0035,
+        1.0027
       ],
       "per10k": [
         null,
@@ -1217,7 +1226,8 @@ window.REPORT_DATA = {
         0.0,
         -4.0,
         -4.0,
-        -7.0
+        -7.0,
+        -8.0
       ],
       "sourceName": "中国理财网"
     }
