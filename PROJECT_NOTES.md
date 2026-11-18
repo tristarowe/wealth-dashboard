@@ -8,20 +8,22 @@
 `assets/data.js`；交易与持仓以云端 Supabase 为准，`assets/transactions.js` 只是本地兜底底稿。
 页面无构建、无框架、无 CDN，双击 `index.html` 即可打开。
 
-- 本地目录：`C:\Users\luomeiting\Documents\Trae-CN\default\wealth-3-products`
+- 本地目录：本仓库的克隆目录（下文统一称「项目根目录」，不绑定任何某台机器的路径）
 - 线上地址（GitHub Pages）：`https://tristarowe.github.io/wealth-dashboard/`
 - 对应仓库：`tristarowe/wealth-dashboard`（`main` 分支，Pages 托管根目录）
 - 今日数据状态：`assets/data.js` 的 `asOf = 2026-11-18`、`fetchedAt = 2026-11-18 08:35`，最近净值 2026-11-17；
-  跟踪 4 只产品，产品库 211 只，新品预告 2 只（持仓只数由交易底稿推算，不在文档里写死）
+  持仓 13 只，净值跟踪 4 只，产品库 211 只，新品预告 2 只
 
 ## 2. 快速开始
 
 ```powershell
+# 以下命令均在项目根目录执行
+cd <项目根目录>
+
 # 直接看页面（务必用浏览器打开，不要用编辑器看，否则只会看到源码）
-Start-Process "C:\Users\luomeiting\Documents\Trae-CN\default\wealth-3-products\index.html"
+Start-Process .\index.html
 
 # 跑一次完整抓取（会重写 assets/data.js 与 daily/stats.json）
-cd C:\Users\luomeiting\Documents\Trae-CN\default\wealth-3-products
 python daily/fetch_data.py
 
 # 启动本地服务：页面里的「数据抓取」按钮会调用它真正抓数（serve.py 仅本机保留，不进仓库）

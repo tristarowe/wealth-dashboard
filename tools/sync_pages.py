@@ -339,8 +339,12 @@ def push_changes(changes, headers, message):
 
 def commit_message(changes):
     """工具/脚本类改动用独立信息，避免与每日数据更新混在一句里，便于事故回溯。"""
-    if changes and all(rel.startswith("tools/") for rel, _ in changes):
+    rels = [rel for rel, _c in changes]
+    tool_like = ("tools/", ".githooks/")
+    if rels and all(r.startswith(tool_like) for r in rels):
         return "chore(tools): 更新推送守卫脚本 %s" % as_of()
+    if rels and all(r == "PROJECT_NOTES.md" or r.startswith(tool_like) for r in rels):
+        return "docs: 更新守卫清单与交接说明 %s" % as_of()
     return "chore: 更新看板 %s" % as_of()
 
 
