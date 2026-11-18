@@ -1,0 +1,395 @@
+"""把看板文件同步到 GitHub Pages 仓库（Trae 端的唯一写入路径）。
+
+三道守卫（标记清单见 tools/code_guard_marks.json，两端共用，禁止在本脚本硬编码）：
+  A. 标记守卫：受保护文件缺少关键功能标记 → 整体拒推（防止旧版覆盖造成功能丢失）。
+  B. 整批中止守卫：受保护文件的远端内容在本机基线之后被他人改过 → 本次不写任何文件，
+     必须先运行 tools/pull_from_github.py 合并。
+  C. 数据时间戳守卫：数据文件允许被任一端覆盖，但 asOf / fetchedAt 不得倒退。
+
+逃生口：--force-sync --reason "原因" 会跳过全部守卫，并在 tools/guard_bypass.log 留痕。
+注意：比对一律使用二进制读取 + git blob 口径，禁止文本模式或 git hash-object（CRLF 会让结果不一致）。
+"""
+import base64
+import hashlib
+import json
+import os
+import re
+import sys
+import time
+from datetime import datetime
+from pathlib import Path
+from urllib.parse import quote
+
+import requests
+
+TOOLS = Path(__file__).resolve().parent
+ROOT = TOOLS.parent
+MARKS_FILE = TOOLS / "code_guard_marks.json"
+STATE_FILE = TOOLS / ".sync_state.json"
+BYPASS_LOG = TOOLS / "guard_bypass.log"
+STATS = ROOT / "daily" / "stats.json"
+TOKEN_FILES = [TOOLS / "github.token", ROOT / "daily" / "github.token"]
+
+REPO = "tristarowe/wealth-dashboard"
+BRANCH = "main"
+API = f"https://api.github.com/repos/{REPO}"
+HEADERS = {"Accept": "application/vnd.github+json", "User-Agent": "wealth-dashboard-sync"}
+
+# 本地路径 → 仓库内路径（页面文件与数据一起保持同步）
+FILES = [
+    ".github/workflows/daily-fetch.yml",
+    ".github/workflows/nav-rotate.yml",
+    ".github/workflows/add-products.yml",
+    ".github/workflows/weekly-expand.yml",
+    "assets/data.js",
+    "index.html",
+    "assets/dashboard.js",
+    "assets/library.js",
+    "assets/newproducts.js",
+    "assets/risk_levels.js",
+    "assets/transactions.js",
+    "assets/store.js",
+    "assets/supabase-config.js",
+    "assets/数据说明.pdf",
+    "daily/library.json",
+    "daily/risk_levels.json",
+    "daily/newproducts.json",
+    "daily/reg_alias.json",
+    "daily/promote_newproducts.py",
+    "daily/fetch_newproducts.py",
+    "daily/fetch_data.py",
+    "daily/fetch_manual.py",
+    "daily/build_library.py",
+    "daily/backfill_library.py",
+    "daily/backfill_risk.py",
+    "daily/backfill_byname.py",
+    "daily/make_data_pdf.py",
+    "daily/refresh_candidates.py",
+    "daily/nav_bulk.py",
+    "daily/nav_official.py",
+    "daily/nav_rotate.py",
+    "daily/nav_boc.py",
+    "daily/nav_holdings_t1.py",
+    "daily/add_products.py",
+    "daily/ccb_map.json",
+    "daily/np/skill/scripts/rules.py",
+    "daily/np/skill/scripts/fetch_notice.py",
+    "daily/np/skill/assets/config.json",
+    "daily/chinawealth_nv.py",
+    "daily/pull_cloud.py",
+    "daily/shot.py",
+    "daily/notify.py",
+    "daily/img_host.py",
+    "daily/requirements.txt",
+    "tools/sync_pages.py",
+    "tools/pull_from_github.py",
+    "tools/code_guard_marks.json",
+]
+
+
+def blob_sha(data):
+    """与 GitHub blob sha 同口径：原始字节（含 CRLF）计算。"""
+    h = hashlib.sha1()
+    h.update(b"blob %d\0" % len(data))
+    h.update(data)
+    return h.hexdigest()
+
+
+def load_token():
+    token = os.environ.get("GITHUB_TOKEN", "").strip()
+    if token:
+        return token
+    for f in TOKEN_FILES:
+        if f.exists():
+            token = f.read_text(encoding="utf-8").strip()
+            if token:
+                return token
+    return ""
+
+
+def load_marks():
+    data = json.loads(MARKS_FILE.read_text(encoding="utf-8"))
+    protected = {k: v for k, v in data.get("protected", {}).items() if not k.startswith("_")}
+    data_files = {k: v for k, v in data.get("data", {}).items() if not k.startswith("_")}
+    return protected, data_files
+
+
+def load_state():
+    if not STATE_FILE.exists():
+        return {}
+    try:
+        return json.loads(STATE_FILE.read_text(encoding="utf-8")).get("files", {})
+    except Exception:
+        return {}
+
+
+def save_state(files):
+    pending = False
+    if STATE_FILE.exists():
+        try:
+            pending = bool(json.loads(STATE_FILE.read_text(encoding="utf-8")).get("init_pending"))
+        except Exception:
+            pending = False
+    STATE_FILE.write_text(json.dumps(
+        {"updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+         "init_pending": pending, "files": files},
+        ensure_ascii=False, indent=1), encoding="utf-8")
+
+
+def as_of():
+    if STATS.exists():
+        return json.loads(STATS.read_text(encoding="utf-8")).get("asOf", "")
+    return ""
+
+
+def match_time(text, key):
+    m = re.search(r'["\']?%s["\']?\s*[:=]\s*["\']([^"\']+)' % re.escape(key), text)
+    return m.group(1) if m else ""
+
+
+def remote_tree(headers):
+    resp = requests.get(f"{API}/git/trees/{BRANCH}?recursive=1", headers=headers, timeout=60)
+    if resp.status_code != 200:
+        raise RuntimeError("读取仓库文件树失败：HTTP %s %s" % (resp.status_code, resp.text[:160]))
+    return {i["path"]: i["sha"] for i in resp.json().get("tree", []) if i.get("type") == "blob"}
+
+
+def remote_content(rel, headers):
+    resp = requests.get(f"{API}/contents/{quote(rel)}", headers=headers,
+                        params={"ref": BRANCH}, timeout=60)
+    if resp.status_code != 200:
+        return None
+    return base64.b64decode(resp.json()["content"])
+
+
+def guard_marks(protected):
+    """A. 标记守卫。返回 (是否通过, 问题列表)。"""
+    problems = []
+    for rel, markers in protected.items():
+        local = ROOT / rel
+        if not markers or not local.exists():
+            continue
+        text = local.read_bytes().decode("utf-8", "ignore")
+        missing = [m for m in markers if m not in text]
+        if missing:
+            problems.append("%s 缺少标记：%s" % (rel, "、".join(missing)))
+    return (not problems), problems
+
+
+def guard_protected(stale, headers, state, initialized):
+    """B. 整批中止守卫。stale = {rel: (local_sha, remote_sha)}。"""
+    touched = []
+    for rel, (lsha, rsha) in stale.items():
+        bsha = state.get(rel)
+        if rsha is None:
+            continue  # 远端还没有该文件，属新增
+        if bsha is None:
+            if initialized:
+                print("  基线未登记，跳过覆盖校验：", rel)
+            continue
+        if rsha != bsha and rsha != lsha:
+            # 远端在本机基线之后被改过，且与本地内容不同 → 推送会覆盖他人改动
+            touched.append(rel)
+    return touched
+
+
+def log_bypass(reason, files, state, stale):
+    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    who = os.environ.get("USERNAME") or os.environ.get("USER") or "unknown"
+    lines = []
+    for rel in files:
+        lines.append("%s | %s | %s | %s | 基线 %s | 远端 %s" % (
+            ts, who, reason, rel, state.get(rel) or "-",
+            (stale.get(rel) or (None, None))[1] or "-"))
+    with open(BYPASS_LOG, "a", encoding="utf-8") as fh:
+        fh.write("\n".join(lines) + "\n")
+
+
+def commit_batch(changes, headers, message):
+    ref = requests.get(f"{API}/git/ref/heads/{BRANCH}", headers=headers, timeout=30)
+    if ref.status_code != 200:
+        print("读取分支失败", ref.status_code, ref.text[:160], file=sys.stderr)
+        return False
+    head = ref.json()["object"]["sha"]
+    base = requests.get(f"{API}/git/commits/{head}", headers=headers, timeout=30).json()["tree"]["sha"]
+
+    tree = []
+    for rel, content in changes:
+        blob = requests.post(f"{API}/git/blobs", headers=headers, timeout=60,
+                             json={"content": base64.b64encode(content).decode("ascii"),
+                                   "encoding": "base64"})
+        if blob.status_code not in (200, 201):
+            print("上传内容失败", rel, blob.status_code, blob.text[:160], file=sys.stderr)
+            return False
+        tree.append({"path": rel, "mode": "100644", "type": "blob", "sha": blob.json()["sha"]})
+
+    new_tree = requests.post(f"{API}/git/trees", headers=headers, timeout=60,
+                             json={"base_tree": base, "tree": tree})
+    if new_tree.status_code not in (200, 201):
+        print("建立目录树失败", new_tree.status_code, new_tree.text[:160], file=sys.stderr)
+        return False
+
+    commit = requests.post(f"{API}/git/commits", headers=headers, timeout=60,
+                           json={"message": message, "tree": new_tree.json()["sha"],
+                                 "parents": [head]})
+    if commit.status_code not in (200, 201):
+        print("创建提交失败", commit.status_code, commit.text[:160], file=sys.stderr)
+        return False
+
+    update = requests.patch(f"{API}/git/refs/heads/{BRANCH}", headers=headers, timeout=60,
+                            json={"sha": commit.json()["sha"], "force": False})
+    if update.status_code not in (200, 201):
+        print("更新分支失败", update.status_code, update.text[:160], file=sys.stderr)
+        return False
+    print("已批量提交 %d 个文件：%s" % (len(changes), message))
+    for rel, _c in changes:
+        print("  已同步：", rel)
+    return True
+
+
+def commit_one(rel, content, sha, headers, message):
+    body = {"message": message, "content": base64.b64encode(content).decode("ascii"),
+            "branch": BRANCH}
+    if sha:
+        body["sha"] = sha
+    try:
+        put = requests.put(f"{API}/contents/{quote(rel)}", headers=headers, json=body, timeout=120)
+    except Exception as exc:
+        print("同步异常：" + rel, str(exc)[:120], file=sys.stderr)
+        return False
+    ok = put.status_code in (200, 201)
+    print(("已同步：" if ok else "同步失败：") + rel, put.status_code)
+    return ok
+
+
+def main():
+    args = sys.argv[1:]
+    force = "--force-sync" in args
+    reason = ""
+    if force and "--reason" in args:
+        i = args.index("--reason")
+        if i + 1 < len(args):
+            reason = args[i + 1]
+    if force and not reason:
+        reason = "未填写原因"
+
+    token = load_token()
+    if not token:
+        print("未配置 GitHub 令牌，跳过线上看板同步")
+        return 0
+    headers = dict(HEADERS, Authorization="Bearer " + token)
+
+    protected, data_files = load_marks()
+    state = load_state()
+    initialized = False
+    if not state:
+        state = dict(remote_tree(headers))
+        save_state(state)
+        initialized = True
+        print("已初始化同步基线（%d 个文件），本次不做覆盖校验。" % len(state))
+
+    # A. 标记守卫
+    ok, problems = guard_marks(protected)
+    if not ok:
+        if force:
+            print("!! 强制跳过标记守卫：\n  " + "\n  ".join(problems), file=sys.stderr)
+        else:
+            print("拒推：本地代码缺少关键功能标记（疑似旧版/回退）：", file=sys.stderr)
+            for p in problems:
+                print("  - " + p, file=sys.stderr)
+            print("请从 tools/code_guard_marks.json 核对，或确认无误后使用 --force-sync。", file=sys.stderr)
+            return 2
+
+    # 收集待推文件（远端 sha 来自一次 tree 请求）
+    tree = remote_tree(headers)
+    changes, stale = [], {}
+    for rel in FILES:
+        local = ROOT / rel
+        if not local.exists():
+            print("本地缺少文件，跳过：", rel)
+            continue
+        content = local.read_bytes()
+        lsha = blob_sha(content)
+        rsha = tree.get(rel)
+        stale[rel] = (lsha, rsha)
+        if rsha == lsha:
+            print("已是最新：", rel)
+            continue
+
+        # C. 数据时间戳守卫（逐文件跳过，不整批中止）
+        if rel in data_files and rsha:
+            remote_bytes = remote_content(rel, headers)
+            if remote_bytes is not None:
+                rt = remote_bytes.decode("utf-8", "ignore")
+                lt = content.decode("utf-8", "ignore")
+                backwards = []
+                for key in data_files[rel]:
+                    rv, lv = match_time(rt, key), match_time(lt, key)
+                    if rv and lv and rv > lv:
+                        backwards.append("%s %s > %s" % (key, rv, lv))
+                if backwards and not force:
+                    print("线上数据更新（%s），跳过覆盖：%s" % ("，".join(backwards), rel))
+                    state[rel] = rsha
+                    continue
+        changes.append((rel, content))
+
+    # B. 整批中止守卫
+    touched = guard_protected({k: v for k, v in stale.items() if k in protected},
+                              headers, state, initialized)
+    if touched and not force:
+        print("拒推：以下受保护文件的远端已被他人修改，必须先合并：", file=sys.stderr)
+        for rel in touched:
+            print("  - " + rel, file=sys.stderr)
+        print("请先运行：python tools/pull_from_github.py --apply", file=sys.stderr)
+        print("本次未写入任何文件（整批中止）。", file=sys.stderr)
+        return 3
+    if touched and force:
+        print("!! 强制跳过整批中止守卫：", "、".join(touched), file=sys.stderr)
+
+    if force and changes:
+        log_bypass(reason, [r for r, _ in changes], state, stale)
+
+    if not changes:
+        save_state(state)
+        print("线上已是最新，无需提交")
+        return 0
+
+    message = "chore: 更新看板 %s" % as_of()
+    done = False
+    for attempt in range(1, 4):
+        try:
+            if commit_batch(changes, headers, message):
+                done = True
+                break
+        except Exception as exc:
+            print("批量提交异常（第 %d 次）：%s" % (attempt, str(exc)[:120]), file=sys.stderr)
+        time.sleep(3 * attempt)
+
+    if done:
+        for rel, content in changes:
+            state[rel] = blob_sha(content)
+        save_state(state)
+        return 0
+
+    print("批量提交失败，退回逐文件提交", file=sys.stderr)
+    failed = []
+    for rel, content in changes:
+        sha = tree.get(rel)
+        okfile = False
+        for _ in range(3):
+            if commit_one(rel, content, sha, headers, message):
+                okfile = True
+                state[rel] = blob_sha(content)
+                break
+            time.sleep(2)
+        if not okfile:
+            failed.append(rel)
+    save_state(state)
+    if failed:
+        print("同步失败的文件：", "、".join(failed), file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
