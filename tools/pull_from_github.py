@@ -187,6 +187,12 @@ def main():
         content = base64.b64decode(resp.json()["content"])
         dst = ROOT / rel
         if dst.exists():
+            # 保持本机工作区的行尾风格：Windows 侧是 CRLF，远端是 LF，
+            # 直接写 LF 会让整文件在 git status 里显示为改动（假 diff 满地）
+            old_bytes = dst.read_bytes()
+            if b"\r\n" in old_bytes and b"\r\n" not in content:
+                content = content.replace(b"\n", b"\r\n")
+        if dst.exists():
             bak = backup / rel
             bak.parent.mkdir(parents=True, exist_ok=True)
             bak.write_bytes(dst.read_bytes())

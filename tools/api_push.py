@@ -130,6 +130,19 @@ def load_state():
         return {}
 
 
+def save_state(files):
+    """推送成功后把基线刷新为刚推上去的 sha，避免下次预拉取把自己的推送误报成冲突。"""
+    p = ROOT / "tools" / ".sync_state.json"
+    try:
+        raw = json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}
+    except Exception:
+        raw = {}
+    raw.setdefault("files", {}).update(files)
+    raw["updated"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    raw.setdefault("init_pending", False)
+    p.write_text(json.dumps(raw, ensure_ascii=False, indent=1), encoding="utf-8")
+
+
 def main():
     args = sys.argv[1:]
     force = "--force-sync" in args or "--force" in args
@@ -233,6 +246,7 @@ def main():
     if up.status_code not in (200, 201):
         print("更新分支失败", up.status_code, up.text[:200], file=sys.stderr)
         return 1
+    save_state({rel: sha for rel, _d, sha in payload})
     print("已推送", new[:8], "->", message)
     return 0
 
