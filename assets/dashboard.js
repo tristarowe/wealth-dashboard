@@ -185,26 +185,37 @@
     return n;
   }
 
-  /* 产品披露节奏 lag（工作日）：+2 表示净值日 T 的净值在 T+2 工作日才披露。
-     ① 登记编码在 DISCLOSURE_LAG_OVERRIDE 中 → 用人工核定值（最高优先）。
-     ② 否则自动推断：用净值日相对「当天」的工作日差。基准日取产品所属数据源的 asOf：
-        data.js 产品用 DATA.asOf（抓取当天），library.js 产品用 PRODUCT_LIBRARY.asOf。
-        恰好 2 个工作日才标 +2：1 个是正常 T+1，≥3 多为周频/停止更新（按 PDF 规则不标注）。
-     ③ 无净值日/新品（净值序列<2）不标注。 */
-  function disclosureLagOf(p) {
-    if (!p) return 0;
-    var reg = p.regCode || '';
-    if (DISCLOSURE_LAG_OVERRIDE[reg]) return DISCLOSURE_LAG_OVERRIDE[reg];
-    var latest = p.latestDate || (p.dates && p.dates.length ? p.dates[p.dates.length - 1] : '');
-    if (!latest) return 0;
-    var isLib = false;
-    /* 用引用判断归属：LIB_MODEL 里的 product 对象来自 PRODUCT_LIBRARY */
-    for (var i = 0; i < LIB_MODEL.length; i++) {
-      if (LIB_MODEL[i].product === p) { isLib = true; break; }
+  /* 找到产品对应的「持仓产品对象」（data.js 来源）。持有产品统一以持仓对象为准判定 lag，
+     这样盈亏汇总/持仓汇总/产品库对同一产品结论一致，不受各自数据源 asOf/净值日不同步影响。
+     非持仓产品、已清仓产品返回 null（按需求：仅对当前持仓产品标识 +N）。 */
+  function heldProductOf(p) {
+    if (!p) return null;
+    var keys = Object.keys(HOLD_BY_PID);
+    for (var i = 0; i < keys.length; i++) {
+      var h = HOLD_BY_PID[keys[i]];
+      if (h.cleared) continue;
+      var hp = h.product;
+      if (hp === p) return hp;
+      if (p.regCode && hp.regCode && p.regCode === hp.regCode) return hp;
+      if (p.id && hp.id && samePid(p.id, hp.id)) return hp;
     }
-    var libAsOf = (window.PRODUCT_LIBRARY && window.PRODUCT_LIBRARY.asOf) || '';
-    var asOf = isLib && libAsOf ? libAsOf : (DATA.asOf || '');
-    var gap = workdayGap(latest, asOf);
+    return null;
+  }
+
+  /* 产品披露节奏 lag（工作日）：+2 表示净值日 T 的净值在 T+2 工作日才披露。
+     ① 仅对当前持仓产品标识（heldProductOf），不限模块；非持仓/已清仓不标。
+     ② 登记编码在 DISCLOSURE_LAG_OVERRIDE 中 → 用人工核定值（最高优先）。
+     ③ 否则自动推断：统一用持仓产品的净值日相对看板抓取当天 DATA.asOf 的工作日差。
+        恰好 2 个工作日才标 +2：1 个是正常 T+1，≥3 多为周频/停止更新（按 PDF 规则不标注）。
+     ④ 无净值日/新品（净值序列<2）不标注。 */
+  function disclosureLagOf(p) {
+    var hp = heldProductOf(p);
+    if (!hp) return 0;
+    var reg = hp.regCode || '';
+    if (DISCLOSURE_LAG_OVERRIDE[reg]) return DISCLOSURE_LAG_OVERRIDE[reg];
+    var latest = hp.latestDate || (hp.dates && hp.dates.length ? hp.dates[hp.dates.length - 1] : '');
+    if (!latest) return 0;
+    var gap = workdayGap(latest, DATA.asOf || '');
     return gap === 2 ? 2 : 0;
   }
 
@@ -214,6 +225,12 @@
     if (!lag) return '';
     return '<sup class="nav-lag" title="净值披露节奏：净值日 T 的净值于 T+' + lag +
       ' 个工作日披露">+' + lag + '</sup>';
+  }
+
+  /* 角标 absolute 需要一个 positioned 锚点；仅当确有角标时包裹，避免无谓 DOM 变化。
+     锚点宽度只等于文本本身，角标浮于右上角，日期/数值的居中对齐不再被角标挤偏。 */
+  function withBadge(text, badge) {
+    return badge ? '<span class="lag-anchor">' + text + badge + '</span>' : text;
   }
 
   function calc(p) {
@@ -1101,7 +1118,7 @@
         ? '<span class="mv-under" title="持仓市值 ¥' + fmtMoney(h.mv) + '">¥' + fmtMoney(h.mv) + '</span>' : '';
       html += '<td class="c num"' + rs + '>' + (i + 1) + '</td>';
       html += '<td' + rs + '><div class="pname"><a class="plink" href="javascript:void(0)" data-goto-trade="' + p.id + '" title="查看「' + (p.name || '') + '」的交易记录">' + prodDispName(p) + '</a>' + badge + downBadge + mvUnder + '</div></td>';
-      html += '<td class="c num"' + rs + '>' + (m.latestDate ? mmdd(m.latestDate) + navLagBadge(p) : '—') + '</td>';
+      html += '<td class="c num"' + rs + '>' + (m.latestDate ? withBadge(mmdd(m.latestDate), navLagBadge(p)) : '—') + '</td>';
       html += '<td class="r num today-col ' + colorBy(tv) + '"' + rs + '>' + fmtSigned(tv) + '</td>';
       html += '<td class="r num income-col ' + colorBy(h && !h.incomePending ? h.income : null) + '"' + rs +
         ' title="' + (h && h.incomePending ? '确认日 ' + (h.startDate || '') + ' 起息，首笔收益待下一净值日披露' : '') + '">' +
@@ -1125,8 +1142,8 @@
         var annTip = w.ann === null ? '历史区间不足'
           : w.ann.toFixed(4) + '%（' + w.start + ' 至 ' + m.latestDate + '，按 ' + w.span + ' 天年化）' +
             (w.fallback ? '；成立不足 1 年，按成立以来计算' : '');
-        perCells += '<td class="c num pwin ' + colorBy(w.per) + '" title="' + perTip + '">' + fmt2(w.per) + mark + '</td>';
-        annCells += '<td class="c num awin ' + colorBy(w.ann) + '" title="' + annTip + '">' + fmtAnn(w.ann) + mark + '</td>';
+        perCells += '<td class="c num pwin ' + colorBy(w.per) + '" title="' + perTip + '">' + withBadge(fmt2(w.per), mark) + '</td>';
+        annCells += '<td class="c num awin ' + colorBy(w.ann) + '" title="' + annTip + '">' + withBadge(fmtAnn(w.ann), mark) + '</td>';
       });
       html += holdMetric === 'ann' ? annCells : perCells;
 
@@ -2201,8 +2218,8 @@
       var w7 = m.windows[0], w14 = m.windows[1], w30 = m.windows[2];
       function winCell(w) {
         var mark = w.fallback ? '<sup class="dag">†</sup>' : '';
-        return '<td class="c st"><b class="m-p10k ' + colorBy(w.per) + '">' + fmt2(w.per) + mark +
-          '</b><i class="m-ann ' + colorBy(w.ann) + '">' + fmtAnn(w.ann) + mark + '</i></td>';
+        return '<td class="c st"><b class="m-p10k ' + colorBy(w.per) + '">' + withBadge(fmt2(w.per), mark) +
+          '</b><i class="m-ann ' + colorBy(w.ann) + '">' + withBadge(fmtAnn(w.ann), mark) + '</i></td>';
       }
 
       return '<tr data-pid="' + p.id + '">' +
@@ -2221,7 +2238,7 @@
           (p.manual ? '<span class="tag" style="background:#f4f7f9;color:#7d939f" title="手工添加的产品">手工</span>' : '') +
           '</span>' +
           '</div></td>' +
-        '<td class="c num">' + (m.latestDate ? mmdd(m.latestDate) + navLagBadge(p) : '<span class="muted">待披露</span>') + '</td>' +
+        '<td class="c num">' + (m.latestDate ? withBadge(mmdd(m.latestDate), navLagBadge(p)) : '<span class="muted">待披露</span>') + '</td>' +
         '<td class="r num ' + colorBy(m.todayPer) + '" data-col="p10k">' + fmtSigned(m.todayPer) + '</td>' +
         winCell(w7) + winCell(w14) + winCell(w30) +
         '<td class="r num ' + colorBy(m.sinceAnn) + '" data-col="ann">' + fmtAnn(m.sinceAnn) + '</td>' +
@@ -3664,7 +3681,7 @@
             (h.tx && h.tx.confirmDate ? h.tx.confirmDate.slice(5).replace('-', '.') : '') + ' 清仓</span>' : '') +
           '</span>' +
           '</div></td>' +
-        '<td class="c num">' + (h.latestDate ? mmdd(h.latestDate) + navLagBadge(h.product) : '—') + '</td>' +
+        '<td class="c num">' + (h.latestDate ? withBadge(mmdd(h.latestDate), navLagBadge(h.product)) : '—') + '</td>' +
         '<td class="r num ' + colorBy(h.profit) + '" title="持仓收益 = 市值 − 成本">' + fmtSigned(h.profit) + '</td>' +
         '<td class="r num ' + colorBy(h.ann) + '">' + fmtAnn(h.ann) + '</td>' +
         '<td class="r num">' + fmtMoney(h.mv) + '</td>' +
