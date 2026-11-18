@@ -1,0 +1,15 @@
+#!/bin/sh
+# 跨端覆盖防护：推送前校验受保护文件（清单见 tools/code_guard_marks.json）
+# 启用方式：git config core.hooksPath .githooks
+DIR=$(git rev-parse --show-toplevel) || exit 0
+
+PY=""
+for c in python3 python py; do
+  if command -v "$c" >/dev/null 2>&1; then PY="$c"; break; fi
+done
+if [ -z "$PY" ]; then
+  echo "[guard] 未找到 python，跳过守卫" >&2
+  exit 0
+fi
+
+exec "$PY" "$DIR/.githooks/pre_push_guard.py"
