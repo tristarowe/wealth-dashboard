@@ -1411,25 +1411,42 @@
   })();
 </script>
 <script>
-  // 页签切换
+  // 页签切换（状态同时写入 URL hash 与本地存储：编辑/刷新导致 hash 丢失时仍能回到原页签）
   (function () {
     var tabs = document.querySelectorAll('.tab');
+    var KEY = 'wb_active_tab';
+    var VALID = ['hold', 'trade', 'prod'];
     function show(id) {
       tabs.forEach(function (t) { t.classList.toggle('on', t.dataset.tab === id); });
-      ['hold', 'trade', 'prod'].forEach(function (k) {
+      VALID.forEach(function (k) {
         var pane = document.getElementById('pane-' + k);
         if (pane) pane.hidden = (k !== id);
       });
-      location.hash = id;
+      try { localStorage.setItem(KEY, id); } catch (e) {}
+      try {
+        if (location.hash !== '#' + id) history.replaceState(null, '', '#' + id);
+      } catch (e) {
+        if (location.hash !== '#' + id) location.hash = id;
+      }
       window.dispatchEvent(new Event('resize'));
     }
     tabs.forEach(function (t) {
       t.addEventListener('click', function () { show(t.dataset.tab); });
     });
-    if (location.hash) {
-      var key = location.hash.slice(1);
-      if (['hold', 'trade', 'prod'].indexOf(key) !== -1) show(key);
-    }
+    // 恢复优先级：显式深链(#trade/#prod) > 本地记忆 > 默认首页。
+    // 预览环境的「编辑」按钮重载页面时会丢 hash 或重置为 #hold，
+    // 若只认 hash 就会被弹回首页——这是 2026-11-18 该问题的根因。
+    var hashKey = (location.hash || '').slice(1);
+    var saved = '';
+    try { saved = localStorage.getItem(KEY) || ''; } catch (e) {}
+    var key = (hashKey !== 'hold' && VALID.indexOf(hashKey) !== -1) ? hashKey
+            : (VALID.indexOf(saved) !== -1 ? saved : 'hold');
+    show(key);
+    window.addEventListener('hashchange', function () {
+      var k = (location.hash || '').slice(1);
+      var cur = document.querySelector('.tab.on');
+      if (VALID.indexOf(k) !== -1 && (!cur || cur.dataset.tab !== k)) show(k);
+    });
   })();
 
   // 导出整页看板为 PNG 图片
