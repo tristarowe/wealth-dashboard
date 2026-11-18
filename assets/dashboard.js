@@ -252,10 +252,6 @@
   }
   computeLibrary();
 
-  /* 手工产品正式入库后，旧手工 id -> 正式产品 id 的别名映射。
-     历史交易可能仍引用手工 id，靠登记编码桥接让它们联动到正式产品 */
-  var PID_ALIAS = {};
-
   /* 手工添加的产品（云端 MANUAL_PRODUCTS）合并进产品库，按 id 去重 */
   function manualToProduct(m) {
     if (!m || !m.id || !m.name) return null;
@@ -301,22 +297,11 @@
     /* 每次以云端手工产品为准整体重建，新增/修改/删除都能同步 */
     var items = src.filter(function (p) { return !p.manual; });
     var seen = {};
-    var formalByReg = {};
-    items.forEach(function (p) {
-      seen[p.id] = 1;
-      if (p.regCode) { seen['R:' + p.regCode] = 1; formalByReg[p.regCode] = p.id; }
-    });
+    items.forEach(function (p) { seen[p.id] = 1; });
     list.forEach(function (m) {
       var p = manualToProduct(m);
       if (!p || seen[p.id]) return;
-      /* 正式库已按登记编码收录的产品，不再重复显示手工条目（正式数据更全）。
-         但要把手工 id 记入别名表，让引用旧 id 的历史交易仍能联动到正式产品 */
-      if (p.regCode && seen['R:' + p.regCode]) {
-        if (formalByReg[p.regCode]) PID_ALIAS[p.id] = formalByReg[p.regCode];
-        return;
-      }
       seen[p.id] = 1;
-      if (p.regCode) seen['R:' + p.regCode] = 1;
       items.push(p);
     });
     window.PRODUCT_LIBRARY.items = items;
@@ -337,13 +322,7 @@
   }
 
   function findProductById(pid) {
-    var pool = tradeProducts();
-    var hit = pool.filter(function (p) { return p.id === pid; })[0];
-    if (!hit && PID_ALIAS[pid]) {
-      /* 历史交易引用旧手工 id：桥接到正式入库的产品 */
-      hit = pool.filter(function (p) { return p.id === PID_ALIAS[pid]; })[0];
-    }
-    return hit || null;
+    return tradeProducts().filter(function (p) { return p.id === pid; })[0] || null;
   }
 
   // 产品库中已产生交易的产品，纳入统计与盈亏明细
@@ -768,7 +747,7 @@
   var holdMetric = 'both';
   var sumState = { key: 'mv', dir: 'desc' };
   var sumSorters = {
-    name: function (h) { return prodDispName(h.product); },
+    name: function (h) { return h.product.short || h.product.name; },
     navdate: function (h) { return h.latestDate || ''; },
     nav: function (h) { return h.latestNav; },
     shares: function (h) { return h.shares; },
@@ -783,7 +762,7 @@
   function profitSortValue(row, key) {
     var m = row.item.m;
     var h = HOLD_BY_PID[row.item.product.id];
-    if (key === 'name') return prodDispName(row.item.product);
+    if (key === 'name') return row.item.product.short || row.item.product.name;
     if (key === 'navdate') return m.latestDate;
     if (key === 'today') return m.todayPer;
     if (key === 'income') return h ? h.income : null;
@@ -852,20 +831,16 @@
       var rs = dual ? ' rowspan="2"' : '';
       var lbl = holdMetric === 'ann' ? '年化' : '日均万收';
       html += '<tr class="ma' + (dual ? ' dual' : '') + '">';
-      var mvUnder = (h && h.mv !== null && h.mv !== undefined && !isNaN(h.mv))
-        ? '<span class="mv-under" title="持仓市值 ¥' + fmtMoney(h.mv) + '">¥' + fmtMoney(h.mv) + '</span>' : '';
       html += '<td class="c num"' + rs + '>' + (i + 1) + '</td>';
-      html += '<td' + rs + '><div class="pname"><a class="plink" href="javascript:void(0)" data-goto-trade="' + p.id + '" title="查看「' + (p.name || '') + '」的交易记录">' + prodDispName(p) + '</a>' + badge + mvUnder + '</div></td>';
+      html += '<td' + rs + '><div class="pname"><a class="plink" href="javascript:void(0)" data-goto-trade="' + p.id + '" title="查看「' + p.name + '」的交易记录">' + (p.short || p.name) + '</a>' + badge + '</div></td>';
       html += '<td class="c num"' + rs + '>' + mmdd(m.latestDate) + '</td>';
       html += '<td class="r num today-col ' + colorBy(tv) + '"' + rs + '>' + fmtSigned(tv) + '</td>';
       html += '<td class="r num income-col ' + colorBy(h ? h.income : null) + '"' + rs + '>' + fmtSigned(h ? h.income : null) + '</td>';
       html += '<td class="r num ' + colorBy(h ? h.profit : null) + '"' + rs + ' title="' +
         (h ? '市值 ' + fmtMoney(h.mv) + ' − 成本 ' + fmtMoney(h.cost) : '暂无持仓') + '">' + fmtSigned(h ? h.profit : null) + '</td>';
       html += '<td class="r num ' + colorBy(h ? h.ann : null) + '"' + rs + '>' + fmtAnn(h ? h.ann : null) + '</td>';
-      var listDays = listingDaysOf(p);
-      html += '<td class="c num dcell daystack"' + rs + '>' +
-        (h ? '<span class="days">' + h.days + '</span>' : '—') +
-        (listDays !== null ? '<span class="dsep"></span><span class="days sub">' + listDays + '</span>' : '') + '</td>';
+      html += '<td class="r num"' + rs + '>' + (h ? fmtMoney(h.mv) : '—') + '</td>';
+      html += '<td class="c num dcell"' + rs + '>' + (h ? '<span class="days">' + h.days + '</span><i class="dunit">天</i>' : '—') + '</td>';
       html += '<td class="c mlabel">' + lbl + '</td>';
 
       var perCells = '';
@@ -889,7 +864,7 @@
       if (dual) html += '<tr class="mb"><td class="c mlabel">年化</td>' + annCells + '</tr>';
     });
 
-    tbody.innerHTML = html || '<tr><td colspan="16" class="c muted" style="padding:28px">未选择产品，请在顶部「覆盖产品」中选择</td></tr>';
+    tbody.innerHTML = html || '<tr><td colspan="17" class="c muted" style="padding:28px">未选择产品，请在顶部「覆盖产品」中选择</td></tr>';
 
     var ths = document.querySelectorAll('#hold-table thead th[data-sort]');
     Array.prototype.forEach.call(ths, function (th) {
@@ -1625,8 +1600,7 @@
   /* ---------------- 产品库 ---------------- */
   var PROD_PAGE_SIZE = 10;
   var prodUi = {
-    /* 多选筛选：数组为空表示不限；多选时按「命中任一」过滤 */
-    sale: [], org: [], risk: [], term: [], incep: [], q: '',
+    sale: '', org: '', risk: '', term: '', incep: '', q: '',
     flagNew: false, flagFav: false,
     holdHolding: true, holdCleared: true, page: 1, pages: 1,
     mPer10k: true, mAnn: true,
@@ -1753,7 +1727,7 @@
     var w = m.windows || [];
     function win(i) { return w[i] && typeof w[i].per === 'number' ? w[i].per : null; }
     switch (key) {
-      case 'name': return prodDispName(p);
+      case 'name': return p.short || p.name || '';
       case 'risk': return riskRank(riskOf(p));
       case 'term': return termRank(termOf(p));
       case 'p10k': return typeof m.todayPer === 'number' ? m.todayPer : null;
@@ -1777,7 +1751,8 @@
     if (aEmpty) return 0;
     var r = av < bv ? -1 : av > bv ? 1 : 0;
     if (r === 0 && key !== 'name') {
-      r = prodDispName(a.product).localeCompare(prodDispName(b.product), 'zh');
+      r = String(a.product.short || a.product.name || '')
+        .localeCompare(String(b.product.short || b.product.name || ''), 'zh');
     }
     return dir === 'asc' ? r : -r;
   }
@@ -1822,56 +1797,10 @@
     return ref <= end;
   }
 
-  /* 全站产品展示名统一：发行机构简称 + 产品系列 + 持有期 + 期号。
-     去掉括号修饰、系列子名前缀（优盛·/合盛多元·等）、冗余词（最短持有/持有期/固收类/理财产品）。
-     已符合风格的短名（如「中邮鸿锦7天45号」）会保留机构前缀不重复添加。
-     机构来源兼容三类数据：持仓 org、产品库 orgShort、新品 issuer。 */
-  function prodDispName(p) {
-    if (!p) return '—';
-    var base = String(p.short || p.name || '—')
-      .replace(/[（(][^）)]*[）)]/g, '')                 // 去所有括号修饰
-      .replace(/[\u4e00-\u9fa5]{2,6}[·•\-－—]/, '')     // 去系列子名前缀（优盛·等）
-      .replace(/最短持有|最低持有|持有期|固定收益类|固收类|理财产品|理财计划/g, '')
-      /* 去风险收益定位词（非产品系列名）：固收稳利/增利稳健/固收增利等，系列名（安盈象/阳光金/稳富等）保留 */
-      .replace(/固收稳利|增利稳健|固收增利|固收增强|固收精选|固收添益|固收/g, '')
-      .replace(/产品(?=第\d+期|$)/g, '')                 // 去「产品」字样（如 添利产品第2期 → 添利第2期）
-      .replace(/\s{2,}/g, ' ').trim();
-    /* 机构简称：orgShort / org / issuer 依次兜底；去掉公司后缀与「理财」 */
-    var org = String(p.orgShort || p.org || p.issuer || '')
-      .replace(/(有限责任公司|股份有限公司|有限公司|公司)$/g, '')
-      .replace(/理财$/g, '')
-      .trim();
-    /* 若短名尚未带机构简称，则补上；已带则避免重复 */
-    if (org && base.indexOf(org) !== 0) base = org + base;
-    return base || '—';
-  }
-
-  /* 产品库合并去重：同一登记编码（regCode）只保留一条，优先保留持仓产品（MODEL 在前）。
-     无登记编码时退回 id。 */
-  function mergeProductModels() {
-    var seen = Object.create(null);
-    var out = [];
-    MODEL.concat(LIB_MODEL).forEach(function (item) {
-      var p = item && item.product;
-      if (!p) return;
-      var key = p.regCode ? ('R:' + String(p.regCode)) : ('I:' + String(p.id));
-      if (seen[key]) return;
-      seen[key] = 1;
-      out.push(item);
-    });
-    return out;
-  }
-
-  /* 全站统一的产品清单（各产品搜索框共用）：与「产品库」完全同一去重口径（按 regCode，持仓优先），
-     保证搜索下拉里的产品名称与产品库展示名称联动一致，不再出现同一产品的新旧两个名字 */
-  function allUniqueProducts() {
-    return mergeProductModels().map(function (it) { return it.product; });
-  }
-
   function renderProductTable() {
     var tbody = document.getElementById('prod-body');
     if (!tbody) return;
-    var allModels = mergeProductModels();
+    var allModels = MODEL.concat(LIB_MODEL);
     var peerAvg30 = peerAvg30Of(allModels);
     var favList = favs();
 
@@ -1881,12 +1810,12 @@
       var term = termOf(p);
       var isNew = isNewProduct(p, item.m);
       var isFav = favList.indexOf(p.id) !== -1;
-      if (prodUi.sale.length && prodUi.sale.indexOf(saleOf(p)) === -1) return false;
-      if (prodUi.org.length && prodUi.org.indexOf(orgShort(p.org)) === -1) return false;
-      if (prodUi.risk.length && prodUi.risk.indexOf(riskOf(p)) === -1) return false;
-      if (prodUi.term.length && prodUi.term.indexOf(termBucket(term)) === -1) return false;
+      if (prodUi.sale && saleOf(p) !== prodUi.sale) return false;
+      if (prodUi.org && orgShort(p.org) !== prodUi.org) return false;
+      if (prodUi.risk && riskOf(p) !== prodUi.risk) return false;
+      if (prodUi.term && termBucket(term) !== prodUi.term) return false;
       /* 成立月份：按产品成立日所在月份筛选（手工添加/无成立日的不参与） */
-      if (prodUi.incep.length && prodUi.incep.indexOf(String(p.inception || '').slice(0, 7)) === -1) return false;
+      if (prodUi.incep && String(p.inception || '').slice(0, 7) !== prodUi.incep) return false;
       if (prodUi.flagNew && !isNew) return false;
       if (prodUi.flagFav && !isFav) return false;
       /* 仅持仓/仅清仓为唯一选择：未持有的产品不再出现 */
@@ -1897,7 +1826,6 @@
       var q = prodUi.q.trim().toLowerCase();
       if (q && (p.name || '').toLowerCase().indexOf(q) === -1 &&
         (p.short || '').toLowerCase().indexOf(q) === -1 &&
-        prodDispName(p).toLowerCase().indexOf(q) === -1 &&
         (p.regCode || '').toLowerCase().indexOf(q) === -1) return false;
       return true;
     });
@@ -1934,9 +1862,9 @@
         '<td class="c"><button class="stars" data-fav="' + p.id + '" title="' +
           (isFav ? '取消收藏' : '收藏') + '">' + (isFav ? '★' : '☆') + '</button></td>' +
         '<td><div class="pname">' + (h ?
-          '<a class="plink" href="javascript:void(0)" data-goto-trade="' + p.id + '" title="' + (p.name || '') + '">' +
-            prodDispName(p) + '</a>' :
-          '<span class="pname-t" title="' + (p.name || '') + '">' + prodDispName(p) + '</span>') +
+          '<a class="plink" href="javascript:void(0)" data-goto-trade="' + p.id + '">' +
+            (p.short || p.name) + '</a>' :
+          '<span class="pname-t">' + (p.short || p.name) + '</span>') +
           '<span class="ptags">' +
           (h ? (h.cleared ?
             '<span class="cleared-date">' +
@@ -1945,6 +1873,7 @@
           (isNew ? '<span class="tag np">新品</span>' : '') +
           (p.manual ? '<span class="tag" style="background:#f4f7f9;color:#7d939f" title="手工添加的产品">手工</span>' : '') +
           '</span>' +
+          saleSpan(p) +
           '</div></td>' +
         '<td class="c num">' + (m.latestDate ? mmdd(m.latestDate) : '<span class="muted">待披露</span>') + '</td>' +
         '<td class="r num ' + colorBy(m.todayPer) + '" data-col="p10k">' + fmtSigned(m.todayPer) + '</td>' +
@@ -2059,18 +1988,11 @@
       if (o && orgs.indexOf(o) === -1) orgs.push(o);
     });
     orgs.sort(function (a, b) { return a.localeCompare(b, 'zh-Hans-CN'); });
-    var current = selValues(sel);
+    var current = sel.value;
     sel.innerHTML = '<option value="">发行机构</option>' + orgs.map(function (o) {
       return '<option value="' + o + '">' + o + '</option>';
     }).join('');
-    var restored = current.filter(function (v) { return orgs.indexOf(v) !== -1; });
-    if (restored.length) {
-      Array.prototype.forEach.call(sel.options, function (o, j) {
-        o.selected = (j === 0) ? false : (restored.indexOf(o.value) !== -1);
-      });
-    } else {
-      Array.prototype.forEach.call(sel.options, function (o, j) { o.selected = (j === 0); });
-    }
+    sel.value = orgs.indexOf(current) !== -1 ? current : '';
     syncSelLabel(sel);
   }
 
@@ -2102,23 +2024,6 @@
     selPop.style.top = top + 'px';
   }
 
-  /* 读取多选下拉的选中值数组；「全部」项（value 为空/both）单独语义由调用方处理 */
-  function selValues(sel) {
-    var out = [];
-    if (!sel) return out;
-    Array.prototype.forEach.call(sel.options, function (o) {
-      if ((o.value === '' || o.value === 'both') && sel.options.length && o === sel.options[0]) return;
-      if (o.selected && o.value) out.push(o.value);
-    });
-    return out;
-  }
-  /* 是否处于「全部」态：第一项被选中，或无任何具体项选中 */
-  function selIsAll(sel) {
-    if (!sel || !sel.options.length) return true;
-    if (sel.options[0].selected) return true;
-    return selValues(sel).length === 0;
-  }
-
   function openSelPop(sel) {
     if (selPopSel === sel) { closeSelPop(); return; }
     closeSelPop();
@@ -2126,62 +2031,21 @@
     pop.className = 'sel-pop';
     pop.setAttribute('role', 'listbox');
     Array.prototype.forEach.call(sel.options, function (opt, i) {
-      var isAllItem = (i === 0);
-      var checked = isAllItem ? selIsAll(sel) : (opt.selected && !selIsAll(sel));
       var b = document.createElement('button');
       b.type = 'button';
-      b.className = 'sel-opt mopt' + (checked ? ' on' : '');
+      b.className = 'sel-opt' + (i === sel.selectedIndex ? ' on' : '');
+      b.textContent = opt.text;
       b.setAttribute('role', 'option');
-      b.setAttribute('aria-selected', checked ? 'true' : 'false');
-      b.innerHTML = '<span class="mchk"></span><span class="mtxt"></span>';
-      b.querySelector('.mtxt').textContent = opt.text;
+      b.setAttribute('aria-selected', i === sel.selectedIndex ? 'true' : 'false');
       b.addEventListener('click', function (e) {
         e.preventDefault();
         e.stopPropagation();
-        if (isAllItem) {
-          /* 点「全部」清空其他具体选中项 */
-          Array.prototype.forEach.call(sel.options, function (o, j) { if (j > 0) o.selected = false; });
-          sel.options[0].selected = true;
-        } else {
-          /* 点具体项：切换；同时取消「全部」 */
-          opt.selected = !opt.selected;
-          sel.options[0].selected = false;
-          if (selValues(sel).length === 0) sel.options[0].selected = true;
-        }
-        /* 同步勾选态，不关闭弹窗（支持连续多选） */
-        Array.prototype.forEach.call(pop.querySelectorAll('.sel-opt'), function (bb, j) {
-          var all = (j === 0);
-          var on = all ? selIsAll(sel) : (sel.options[j].selected && !selIsAll(sel));
-          bb.classList.toggle('on', on);
-          bb.setAttribute('aria-selected', on ? 'true' : 'false');
-        });
+        sel.selectedIndex = i;
+        closeSelPop();
         sel.dispatchEvent(new Event('change', { bubbles: true }));
       });
       pop.appendChild(b);
     });
-    /* 底部操作栏：清除 / 完成 */
-    var foot = document.createElement('div');
-    foot.className = 'sel-foot';
-    var btnClear = document.createElement('button');
-    btnClear.type = 'button'; btnClear.textContent = '清除';
-    btnClear.addEventListener('click', function (e) {
-      e.preventDefault(); e.stopPropagation();
-      sel.options[0].selected = true;
-      Array.prototype.forEach.call(sel.options, function (o, j) { if (j > 0) o.selected = false; });
-      Array.prototype.forEach.call(pop.querySelectorAll('.sel-opt'), function (bb, j) {
-        bb.classList.toggle('on', j === 0);
-        bb.setAttribute('aria-selected', j === 0 ? 'true' : 'false');
-      });
-      sel.dispatchEvent(new Event('change', { bubbles: true }));
-    });
-    var btnDone = document.createElement('button');
-    btnDone.type = 'button'; btnDone.className = 'sel-done'; btnDone.textContent = '完成';
-    btnDone.addEventListener('click', function (e) {
-      e.preventDefault(); e.stopPropagation();
-      closeSelPop();
-    });
-    foot.appendChild(btnClear); foot.appendChild(btnDone);
-    pop.appendChild(foot);
     document.body.appendChild(pop);
     selPop = pop;
     selPopSel = sel;
@@ -2190,28 +2054,19 @@
     var r = sel.getBoundingClientRect();
     pop.style.minWidth = Math.max(r.width, 132) + 'px';
     placeSelPop();
+
+    var on = pop.querySelector('.sel-opt.on');
+    if (on) pop.scrollTop = Math.max(0, on.offsetTop - 40);
   }
 
-  /* 下拉当前值：由自绘标签居中展示（原生 select 文本无法居中）；多选时显示「已选 N 项」 */
+  /* 下拉当前值：由自绘标签居中展示（原生 select 文本无法居中） */
   function syncSelLabel(sel) {
     var wrap = sel && sel.parentNode;
     if (!wrap || !wrap.classList || !wrap.classList.contains('sel-wrap')) return;
     var label = wrap.querySelector('.sel-label');
     if (!label) return;
-    var allItem = sel.options[0];
-    var firstText = allItem ? allItem.text : '';
-    if (selIsAll(sel)) {
-      label.textContent = firstText;
-    } else {
-      var vals = selValues(sel);
-      if (vals.length === 1) {
-        var hit = null;
-        Array.prototype.forEach.call(sel.options, function (o) { if (o.selected && o.value) hit = o.text; });
-        label.textContent = hit || firstText;
-      } else {
-        label.innerHTML = firstText + ' <span class="mcount">' + vals.length + '</span>';
-      }
-    }
+    var opt = sel.options[sel.selectedIndex];
+    label.textContent = opt ? opt.text : '';
     sizeSelWrap(sel);
   }
 
@@ -2236,10 +2091,6 @@
   function beautifyFilterSelects() {
     Array.prototype.forEach.call(document.querySelectorAll('.filters select'), function (sel) {
       if (sel.parentNode && sel.parentNode.classList && sel.parentNode.classList.contains('sel-wrap')) return;
-      /* 多选下拉默认选中首项（「全部」），保证初始标签与筛选态一致 */
-      if (sel.multiple && selValues(sel).length === 0 && !sel.options[0].selected) {
-        Array.prototype.forEach.call(sel.options, function (o, j) { o.selected = (j === 0); });
-      }
       var wrap = document.createElement('span');
       wrap.className = 'sel-wrap';
       sel.parentNode.insertBefore(wrap, sel);
@@ -2295,13 +2146,15 @@
   function prodSugItems(kw) {
     var q = (kw || '').trim().toLowerCase();
     if (!q) return [];
-    var hit = allUniqueProducts().filter(function (p) {
+    var hit = MODEL.concat(LIB_MODEL).filter(function (it) {
+      var p = it.product;
       return (p.name || '').toLowerCase().indexOf(q) !== -1 ||
         (p.short || '').toLowerCase().indexOf(q) !== -1 ||
-        prodDispName(p).toLowerCase().indexOf(q) !== -1 ||
         (p.regCode || '').toLowerCase().indexOf(q) !== -1;
     });
-    return sortBySearch(hit, kw).slice(0, 8);
+    return sortBySearch(hit, kw, function (it) { return it.product; }).slice(0, 8).map(function (it) {
+      return it.product;
+    });
   }
 
   /* 弹层跟随输入框定位：滚动/键盘弹出导致视口变化时重新贴靠，不关闭列表 */
@@ -2337,13 +2190,12 @@
       b.type = 'button';
       b.className = 'sel-opt' + (i === prodSugIdx ? ' on' : '');
       b.setAttribute('role', 'option');
-      /* 只展示统一名称，名称命中优先，编号仅作为命中兜底且不在列表露出 */
-      b.textContent = prodDispName(p);
-      b.setAttribute('title', p.name || '');
+      /* 只展示名称，名称命中优先，编号仅作为命中兜底且不在列表露出 */
+      b.textContent = p.short || p.name;
       b.addEventListener('click', function (e) {
         e.preventDefault();
         e.stopPropagation();
-        input.value = prodDispName(p);
+        input.value = p.short || p.name;
         closeProdSug();
         prodUi.q = input.value;
         prodUi.page = 1;
@@ -2412,35 +2264,18 @@
     syncSelLabel(sel);
   }
 
-  /* 把下拉多选状态汇总到 prodUi（各 change 统一调用，避免重复渲染） */
-  function syncFilterState() {
-    prodUi.sale = selValues(document.getElementById('sale-sel'));
-    prodUi.org = selValues(document.getElementById('org-sel'));
-    prodUi.risk = selValues(document.getElementById('risk-sel'));
-    prodUi.term = selValues(document.getElementById('term-sel'));
-    prodUi.incep = selValues(document.getElementById('incep-sel'));
-    /* 持仓状态：holding / cleared 可多选；均为空等同全部 */
-    var holdSel = document.getElementById('hold-sel');
-    var hv = selValues(holdSel);
-    prodUi.holdHolding = hv.length === 0 || hv.indexOf('holding') !== -1;
-    prodUi.holdCleared = hv.length === 0 || hv.indexOf('cleared') !== -1;
-    /* 数据展示：per10k / ann 可多选；均为空等同全部 */
-    var mSel = document.getElementById('m-sel');
-    var mv = selValues(mSel);
-    prodUi.mPer10k = mv.length === 0 || mv.indexOf('per10k') !== -1;
-    prodUi.mAnn = mv.length === 0 || mv.indexOf('ann') !== -1;
-  }
-
   function bindProductFilters() {
-    var ids = ['sale-sel', 'org-sel', 'risk-sel', 'term-sel', 'incep-sel', 'hold-sel', 'm-sel'];
+    var ids = ['sale-sel', 'org-sel', 'risk-sel', 'term-sel'];
     ids.forEach(function (id) {
       var el = document.getElementById(id);
       if (!el) return;
       el.addEventListener('change', function () {
-        syncFilterState();
+        prodUi.sale = document.getElementById('sale-sel').value;
+        prodUi.org = document.getElementById('org-sel').value;
+        prodUi.risk = document.getElementById('risk-sel').value;
+        prodUi.term = document.getElementById('term-sel').value;
         prodUi.page = 1;
-        if (id === 'm-sel') applyProductCols();
-        else renderProductTable();
+        renderProductTable();
       });
     });
 
@@ -2455,6 +2290,28 @@
       });
     });
 
+    var holdSel = document.getElementById('hold-sel');
+    if (holdSel) holdSel.addEventListener('change', function () {
+      prodUi.holdHolding = holdSel.value !== 'cleared';
+      prodUi.holdCleared = holdSel.value !== 'holding';
+      prodUi.page = 1;
+      renderProductTable();
+    });
+
+    var incepSel = document.getElementById('incep-sel');
+    if (incepSel) incepSel.addEventListener('change', function () {
+      prodUi.incep = incepSel.value;
+      prodUi.page = 1;
+      renderProductTable();
+    });
+
+    var mSel = document.getElementById('m-sel');
+    if (mSel) mSel.addEventListener('change', function () {
+      prodUi.mPer10k = mSel.value !== 'ann';
+      prodUi.mAnn = mSel.value !== 'per10k';
+      applyProductCols();
+    });
+
     var search = document.getElementById('prod-search');
     if (search) search.addEventListener('input', function () {
       prodUi.q = search.value;
@@ -2467,17 +2324,19 @@
     if (resetBtn) resetBtn.addEventListener('click', function () {
       if (search) search.value = '';
       closeProdSug();
-      ['sale-sel', 'org-sel', 'risk-sel', 'term-sel', 'incep-sel', 'hold-sel', 'm-sel'].forEach(function (id) {
+      ['sale-sel', 'org-sel', 'risk-sel', 'term-sel', 'incep-sel'].forEach(function (id) {
         var el = document.getElementById(id);
-        if (!el) return;
-        Array.prototype.forEach.call(el.options, function (o, j) { o.selected = (j === 0); });
-        syncSelLabel(el);
+        if (el) { el.value = ''; syncSelLabel(el); }
       });
+      var holdSel = document.getElementById('hold-sel');
+      if (holdSel) { holdSel.value = 'both'; syncSelLabel(holdSel); }
+      var mSel = document.getElementById('m-sel');
+      if (mSel) { mSel.value = 'both'; syncSelLabel(mSel); }
       Array.prototype.forEach.call(document.querySelectorAll('.filters .chip[data-flag]'), function (b) {
         b.classList.remove('on');
       });
-      prodUi.q = ''; prodUi.sale = []; prodUi.org = []; prodUi.risk = [];
-      prodUi.term = []; prodUi.incep = [];
+      prodUi.q = ''; prodUi.sale = ''; prodUi.org = ''; prodUi.risk = '';
+      prodUi.term = ''; prodUi.incep = '';
       prodUi.flagNew = false; prodUi.flagFav = false;
       prodUi.holdHolding = true; prodUi.holdCleared = true;
       prodUi.mPer10k = true; prodUi.mAnn = true;
@@ -2727,17 +2586,16 @@
       return;
     }
     list.hidden = false;
-    var items = sortBySearch(allUniqueProducts().filter(function (p) {
+    var items = sortBySearch(tradeProducts().filter(function (p) {
       return (p.short || '').toLowerCase().indexOf(kw) !== -1 ||
         (p.name || '').toLowerCase().indexOf(kw) !== -1 ||
-        prodDispName(p).toLowerCase().indexOf(kw) !== -1 ||
         (p.regCode || '').toLowerCase().indexOf(kw) !== -1;
     }), kw).slice(0, 6);
     var hid = document.getElementById('trade-prod');
     var cur = hid ? hid.value : '';
     list.innerHTML = items.map(function (p) {
-      return '<div class="sr-row' + (p.id === cur ? ' on' : '') + '" data-pid="' + p.id + '" title="' + (p.name || '') + '"><span>' +
-        prodDispName(p) + '</span></div>';
+      return '<div class="sr-row' + (p.id === cur ? ' on' : '') + '" data-pid="' + p.id + '"><span>' +
+        (p.short || p.name) + '</span></div>';
     }).join('') || '<div class="sr-row" style="cursor:default"><span class="muted">未找到匹配产品</span></div>';
   }
 
@@ -2772,15 +2630,13 @@
     var typeEl = document.getElementById('trade-type');
     var shEl = document.getElementById('trade-shares');
     var amtEl = document.getElementById('trade-amount');
-    var applyDate = applyEl ? applyEl.value : '';
-    var confirmDate = nextWorkday(applyDate);
-    /* 成交净值按申购日（T 日）净值；T 日净值未披露时显示「待确认」，不用最近净值预估。
-       确认日期默认 T+1 工作日。两者均自动带出，用户可在提交前手工修改。 */
-    var navOn = applyDate ? navOnDate(p, applyDate) : null;
+    var confirmDate = nextWorkday(applyEl ? applyEl.value : '');
+    /* 成交净值只取确认日当日净值；确认日净值未披露时显示「待确认」，不用最近净值预估 */
+    var navOn = confirmDate ? navOnDate(p, confirmDate) : null;
     if (dateEl) dateEl.value = confirmDate;
-    if (navEl) {
+    if (navEl && navEl.readOnly) {
       navEl.value = navOn ? Number(navOn).toFixed(6) : '';
-      navEl.placeholder = navOn ? '' : '待确认/手工填写';
+      navEl.placeholder = navOn ? '' : '待确认';
       navEl.classList.toggle('pending', !navOn);
     }
     var navVal = Number(navEl && navEl.value) || 0;
@@ -2845,7 +2701,7 @@
     if (hid) hid.value = (edit ? edit.pid : pid) || '';
     var qEl = document.getElementById('trade-prod-q');
     var curP = findProductById(hid ? hid.value : '');
-    if (qEl) qEl.value = curP ? prodDispName(curP) : '';
+    if (qEl) qEl.value = curP ? (curP.short || curP.name) : '';
     var typeEl = document.getElementById('trade-type');
     if (typeEl) typeEl.value = (edit ? edit.type : type) || '申购';
     syncTypeSeg();
@@ -2877,13 +2733,14 @@
       if (applyEl) applyEl.value = edit.applyDate || edit.confirmDate || '';
       if (dateEl) dateEl.value = edit.confirmDate || edit.applyDate || '';
       if (chEl) chEl.value = edit.saleChannel || '建设银行';
+      if (navEl) navEl.readOnly = false;
+      if (dateEl) dateEl.readOnly = false;
     } else {
+      if (navEl) navEl.readOnly = true;
+      if (dateEl) dateEl.readOnly = true;
       syncTradeForm();
       applyTypeLimits();
     }
-    /* 成交净值与确认日期均可人工修改后再提交（自动带出默认值，允许覆盖） */
-    if (navEl) navEl.readOnly = false;
-    if (dateEl) dateEl.readOnly = false;
     applyTradeMode();
     modal.hidden = false;
   }
@@ -2989,7 +2846,7 @@
       if (hid) hid.value = pid;
       /* 选中后把产品名称回填到搜索框，并收起候选列表 */
       var picked = findProductById(pid);
-      if (qEl) qEl.value = picked ? prodDispName(picked) : (row.querySelector('span') || {}).textContent || '';
+      if (qEl) qEl.value = picked ? (picked.short || picked.name) : (row.querySelector('span') || {}).textContent || '';
       list.innerHTML = '';
       list.hidden = true;
       var sh0 = document.getElementById('trade-shares');
@@ -3240,18 +3097,20 @@
     var p = findProductById(pid);
     if (!p) return;
     switchTab('prod');
-    ['sale-sel', 'org-sel', 'risk-sel', 'term-sel', 'incep-sel', 'hold-sel'].forEach(function (id) {
+    ['sale-sel', 'org-sel', 'risk-sel', 'term-sel', 'incep-sel'].forEach(function (id) {
       var sel = document.getElementById(id);
       if (!sel) return;
-      Array.prototype.forEach.call(sel.options, function (o, j) { o.selected = (j === 0); });
+      sel.value = '';
       syncSelLabel(sel);
     });
-    prodUi.sale = []; prodUi.org = []; prodUi.risk = []; prodUi.term = []; prodUi.incep = [];
+    prodUi.sale = ''; prodUi.org = ''; prodUi.risk = ''; prodUi.term = ''; prodUi.incep = '';
     prodUi.flagNew = false; prodUi.flagFav = false;
     Array.prototype.forEach.call(document.querySelectorAll('.filters .chip[data-flag]'), function (b) {
       b.classList.remove('on');
     });
     prodUi.holdHolding = true; prodUi.holdCleared = true;
+    var holdSel = document.getElementById('hold-sel');
+    if (holdSel) { holdSel.value = ''; syncSelLabel(holdSel); }
     var search = document.getElementById('prod-search');
     if (search) search.value = p.short || p.name;
     prodUi.q = p.short || p.name;
@@ -3361,8 +3220,8 @@
         ? ' title="申购待确认：确认日净值未披露，按最新净值估算计入"'
         : ' title="在途：确认日未到或确认日净值未披露，确认后自动更新"';
       return '<tr>' +
-        '<td><div class="pname"><a class="plink" href="javascript:void(0)" data-goto-prod="' + p.id + '" title="在产品库中查看「' + (p.name || '') + '」">' +
-          prodDispName(p) + '</a>' +
+        '<td><div class="pname"><a class="plink" href="javascript:void(0)" data-goto-prod="' + p.id + '" title="在产品库中查看「' + p.name + '」">' +
+          (p.short || p.name) + '</a>' +
           '<span class="ptags">' +
           (inflight ? '<span class="tag np"' + inflightTip + '>在途</span>' : '') +
           (h.cleared ? '<span class="cleared-date">' +
@@ -3581,10 +3440,11 @@
           '<td class="chk-col"><input type="checkbox" data-chk="' + t.id + '"' +
             (flowSel[t.id] ? ' checked' : '') + '></td>' +
           '<td class="num">' + t.applyDate + '</td>' +
-          '<td><div class="pname">' + (p ? prodDispName(p) : t.pid) + '</div></td>' +
+          '<td><div class="pname">' + (p ? (p.short || p.name) : t.pid) +
+            (t.saleChannel ? '<span class="salech">' + t.saleChannel + '</span>' : '') + '</div></td>' +
           '<td class="c"><span class="tag' + (t.type === '赎回' || t.type === '清仓' ? ' new' : '') + '">' + t.type + '</span></td>' +
           '<td class="r num">' + fmtMoney(txShares(t, p)) + '</td>' +
-          '<td class="r num">' + (st === '在途' ? '<span class="pending-nav">待确认</span>' : fmtNav(txConfirmNav(t, p))) + '</td>' +
+          '<td class="r num">' + (st === '在途' ? '<span class="pending-nav">待确认</span>' : fmtNav(navOnDate(p, t.confirmDate) || t.confirmNav)) + '</td>' +
           '<td class="r num">' + (txAmount(t, p) === null ? '<span class="pending-nav">待确认</span>' : fmtMoney(txAmount(t, p))) + '</td>' +
           '<td class="c num">' + t.confirmDate + '</td>' +
           '<td class="c"><span class="tag' + (st === '在途' ? ' np' : '') + '" title="' +
@@ -3774,7 +3634,7 @@
   function shortOf(id) {
     var list = pickableProducts();
     for (var i = 0; i < list.length; i++) {
-      if (list[i].id === id) return prodDispName(list[i]);
+      if (list[i].id === id) return list[i].short || list[i].name;
     }
     return '';
   }
@@ -3802,7 +3662,6 @@
     if (!q) return true;
     return (p.name || '').toLowerCase().indexOf(q) !== -1 ||
       (p.short || '').toLowerCase().indexOf(q) !== -1 ||
-      prodDispName(p).toLowerCase().indexOf(q) !== -1 ||
       (p.regCode || '').toLowerCase().indexOf(q) !== -1;
   }
 
@@ -3818,7 +3677,7 @@
       var checked = selectedIds.indexOf(p.id) !== -1 ? ' checked' : '';
       return '<label class="ms-item">' +
         '<input type="checkbox" value="' + p.id + '"' + checked + '>' +
-        '<span class="ms-name" title="' + (p.name || '') + '">' + prodDispName(p) + '</span>' +
+        '<span class="ms-name">' + (p.short || p.name) + '</span>' +
         '<em>' + p.regCode + '</em>' +
         '</label>';
     }).join('');
@@ -3867,10 +3726,21 @@
     return w >= 10000 ? (Math.round(w / 100) / 100) + '亿' : w + '万';
   }
 
-  // 统一简称规则：与全站共用 prodDispName（发行机构简称 + 产品系列 + 持有期 + 期数）
+  // 统一简称规则：发行机构简称 + 产品系列 + 持有期 + 期数，去掉「理财/固收类/最低持有/产品」等修饰词
   // 代销机构（如建设银行）不参与产品名拼接
   function npShortName(p) {
-    return prodDispName(p);
+    var base = (p.short || p.name || '—')
+      .replace(/（[^）]*最低持有[^）]*）/g, '')
+      .replace(/固定收益类|固收类/g, '')
+      .replace(/最低持有|最短持有/g, '')
+      .replace(/理财产品/g, '')
+      .replace(/产品(?=第\d+期|$)/g, '')
+      .trim();
+    var org = String(p.issuer || '')
+      .replace(/(有限责任公司|股份有限公司)$/g, '')
+      .trim();
+    if (org && base.indexOf(org) !== 0) base = org + base;
+    return base || '—';
   }
 
   function renderNewProds() {

@@ -1,18 +1,181 @@
 window.NEW_PRODUCTS = {
-  "asOf": "2026-11-18",
-  "fetchedAt": "2026-11-18 00:50",
-  "source": "六大行及股份制银行新品公告 · 销售文件要素表",
+  "asOf": "2026-11-17",
+  "fetchedAt": "2026-11-17 17:26",
+  "source": "云端登记 + 官网公告",
   "window": {
-    "start": "2026-11-18",
-    "end": "2026-11-24"
+    "start": "2026-11-16",
+    "end": "2026-11-17"
   },
-  "institutions": [],
-  "items": [],
-  "lanes": [],
+  "institutions": [
+    "未登记机构",
+    "建设银行",
+    "贝莱德建信理财有限责任公司"
+  ],
+  "items": [
+    {
+      "name": "贝莱德建信理财贝淳金元120天持有期固定收益类理财产品2期",
+      "issuer": "贝莱德建信理财有限责任公司",
+      "short": "贝淳金元120天持有期2期",
+      "regCode": "Z7005126000166",
+      "raiseStart": "2026-11-17",
+      "raiseEnd": "2026-11-17",
+      "establish": "2026-11-18",
+      "quotaWan": null,
+      "risk": "R2",
+      "riskRaw": "R2 中低风险",
+      "mode": "开放式",
+      "saleChannel": "建设银行",
+      "source": "建行官网新品公告·销售文件要素表"
+    },
+    {
+      "name": "贝莱德建信理财贝淳固定收益类理财产品22期（每日开放）",
+      "issuer": "贝莱德建信理财有限责任公司",
+      "short": "贝淳22期（每日开放）",
+      "regCode": "Z7005126000171",
+      "raiseStart": "2026-11-17",
+      "raiseEnd": "2026-11-17",
+      "establish": "2026-11-18",
+      "quotaWan": null,
+      "risk": "R2",
+      "riskRaw": "R2 中低风险",
+      "mode": "开放式",
+      "saleChannel": "建设银行",
+      "source": "建行官网新品公告·销售文件要素表"
+    },
+    {
+      "id": "Z7001026001930",
+      "mode": "开放式净值型",
+      "name": "中银理财-悦享天添29号",
+      "risk": "R2",
+      "short": "悦享天添29号",
+      "issuer": "中银理财有限责任公司",
+      "source": "建行官网新品公告·销售文件要素表",
+      "channel": "建设银行",
+      "regCode": "Z7001026001930",
+      "riskRaw": "",
+      "quotaWan": 30000000.0,
+      "raiseEnd": "2026-11-16",
+      "establish": "2026-11-17",
+      "raiseStart": "2026-11-16",
+      "saleChannel": "建设银行"
+    },
+    {
+      "at": "2026-11-17T10:56:25.111Z",
+      "id": "M1794912984169",
+      "nav": 1.003672,
+      "org": "中银理财",
+      "kind": "manualhist",
+      "name": "中银理财-悦享天添24号",
+      "risk": "R2",
+      "action": "add",
+      "navDate": "2026-11-16",
+      "regCode": "",
+      "saleChannel": "建设银行"
+    },
+    {
+      "id": "M1794912984169",
+      "nav": 1.003672,
+      "org": "中银理财有限责任公司",
+      "kind": "manual",
+      "name": "中银理财-悦享天添24号",
+      "risk": "R2",
+      "navDate": "2026-11-16",
+      "regCode": "Z7001026001506",
+      "saleChannel": "建设银行"
+    }
+  ],
+  "lanes": [
+    {
+      "channel": "未登记机构",
+      "products": [
+        {
+          "at": "2026-11-17T10:56:25.111Z",
+          "id": "M1794912984169",
+          "nav": 1.003672,
+          "org": "中银理财",
+          "kind": "manualhist",
+          "name": "中银理财-悦享天添24号",
+          "risk": "R2",
+          "action": "add",
+          "navDate": "2026-11-16",
+          "regCode": "",
+          "saleChannel": "建设银行"
+        },
+        {
+          "id": "M1794912984169",
+          "nav": 1.003672,
+          "org": "中银理财有限责任公司",
+          "kind": "manual",
+          "name": "中银理财-悦享天添24号",
+          "risk": "R2",
+          "navDate": "2026-11-16",
+          "regCode": "Z7001026001506",
+          "saleChannel": "建设银行"
+        }
+      ]
+    },
+    {
+      "channel": "建设银行",
+      "products": [
+        {
+          "id": "Z7001026001930",
+          "mode": "开放式净值型",
+          "name": "中银理财-悦享天添29号",
+          "risk": "R2",
+          "short": "悦享天添29号",
+          "issuer": "中银理财有限责任公司",
+          "source": "建行官网新品公告·销售文件要素表",
+          "channel": "建设银行",
+          "regCode": "Z7001026001930",
+          "riskRaw": "",
+          "quotaWan": 30000000.0,
+          "raiseEnd": "2026-11-16",
+          "establish": "2026-11-17",
+          "raiseStart": "2026-11-16",
+          "saleChannel": "建设银行"
+        }
+      ]
+    },
+    {
+      "channel": "贝莱德建信理财有限责任公司",
+      "products": [
+        {
+          "name": "贝莱德建信理财贝淳固定收益类理财产品22期（每日开放）",
+          "issuer": "贝莱德建信理财有限责任公司",
+          "short": "贝淳22期（每日开放）",
+          "regCode": "Z7005126000171",
+          "raiseStart": "2026-11-17",
+          "raiseEnd": "2026-11-17",
+          "establish": "2026-11-18",
+          "quotaWan": null,
+          "risk": "R2",
+          "riskRaw": "R2 中低风险",
+          "mode": "开放式",
+          "saleChannel": "建设银行",
+          "source": "建行官网新品公告·销售文件要素表"
+        },
+        {
+          "name": "贝莱德建信理财贝淳金元120天持有期固定收益类理财产品2期",
+          "issuer": "贝莱德建信理财有限责任公司",
+          "short": "贝淳金元120天持有期2期",
+          "regCode": "Z7005126000166",
+          "raiseStart": "2026-11-17",
+          "raiseEnd": "2026-11-17",
+          "establish": "2026-11-18",
+          "quotaWan": null,
+          "risk": "R2",
+          "riskRaw": "R2 中低风险",
+          "mode": "开放式",
+          "saleChannel": "建设银行",
+          "source": "建行官网新品公告·销售文件要素表"
+        }
+      ]
+    }
+  ],
   "stats": {
-    "notices": 58,
+    "notices": 65,
     "candidates": 12,
-    "kept": 0,
-    "dropped": 0
+    "kept": 2,
+    "dropped": 8
   }
 };

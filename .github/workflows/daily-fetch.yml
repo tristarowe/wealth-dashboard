@@ -33,13 +33,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y fonts-noto-cjk
 
-      - name: 持仓产品 T-1 净值攻坚（持仓优先，建行官网 NLC165 + 建信官网）
-        env:
-          PYTHONIOENCODING: utf-8
-          NAV_NO_COMMIT: "1"
-        # 先按交易记录的真实持仓清单，实时抓 T-1 净值写回；中国理财网兜底交给下方轮换步骤
-        run: python daily/nav_holdings_t1.py --gap 0.15
-
       - name: 抓取净值并更新数据
         env:
           PYTHONIOENCODING: utf-8
@@ -67,27 +60,13 @@ jobs:
           PYTHONIOENCODING: utf-8
         run: python daily/backfill_risk.py || true
 
-      - name: 抓取新品预告（建行官网公告 · 销售文件要素表）
-        env:
-          PYTHONIOENCODING: utf-8
-        # 代销机构从销售文件要素表实测（A/B/F 级证据），未取到才留"待核实"
-        run: python daily/fetch_newproducts.py --days 14 --limit 200 --gap 1.2 || true
-
-      - name: 新品成立后自动并入产品库
-        env:
-          PYTHONIOENCODING: utf-8
-        # 幂等：仅并入"成立日<=今天且登记编码未入库"的新品，并为占位产品补抓净值
-        # 提交统一交给下方「提交数据」步骤，避免双重 push 竞态
-        run: python daily/promote_newproducts.py --gap 1.2 --no-self-commit || true
-
       - name: 提交数据
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add assets/data.js assets/library.js assets/newproducts.js assets/transactions.js \
                   assets/risk_levels.js daily/risk_levels.json \
-                  daily/stats.json daily/library.json daily/newproducts.json \
-                  daily/nav_holdings_t1.py daily/nav_rotate.py
+                  daily/stats.json daily/library.json daily/newproducts.json
           if git diff --cached --quiet; then
             echo "无数据变化"
           else

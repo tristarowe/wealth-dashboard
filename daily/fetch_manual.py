@@ -67,38 +67,12 @@ def fetch_series(reg, today):
     return [{"date": d, "nav": dedup[d]} for d in sorted(dedup)][-MAX_HISTORY:]
 
 
-def resolve_reg_by_name(name):
-    """手工产品未填登记编码时，按名称在中国理财网反查（精确匹配优先）。
-    反查成功会写回 data['regCode']，以后无需再查。"""
-    try:
-        import nav_bulk
-        data = nav_bulk._call(
-            lambda: nav_bulk.client().search_products(name=name, page=1, size=20)) or {}
-        items = data.get("list") or []
-        if not items:
-            return ""
-        exact = [it for it in items if (it.get("prodName") or "").strip() == name.strip()]
-        it = exact[0] if exact else items[0]
-        return str(it.get("prodRegCode") or "").strip()
-    except Exception as exc:  # noqa: BLE001
-        print("  ! 按名称反查登记编码失败：%s" % str(exc)[:120])
-        return ""
-
-
 def update_one(url, key, np_table, row_key, data, today):
     reg = str(data.get("regCode") or "").strip()
     name = data.get("name") or reg
     if not REG_RE.match(reg):
-        # 优化：未填登记编码时按名称反查，避免手工产品永远无法自动更新
-        print("  未填登记编码，按名称反查：%s" % name)
-        found = resolve_reg_by_name(name)
-        if found:
-            print("  -> 反查到登记编码 %s（将写回云端）" % found)
-            data["regCode"] = found
-            reg = found
-        else:
-            print("  跳过（名称反查无结果）：%s" % name)
-            return False
+        print("  跳过（未填登记编码）：%s" % name)
+        return False
 
     try:
         series = fetch_series(reg, today)

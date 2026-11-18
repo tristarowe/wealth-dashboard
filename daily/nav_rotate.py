@@ -6,7 +6,6 @@
       配合 hourly 工作流，约 24 轮可覆盖产品库全部非建信产品。
 """
 import argparse
-import json
 import os
 import re
 import subprocess
@@ -41,49 +40,12 @@ def commit(files, message):
 
 
 def holding_codes():
-    """真实持仓产品的登记编码集合。
-
-    来源 = 交易记录里所有 pid（含已清仓外的全部历史持仓）对应的 regCode，
-    覆盖 assets/data.js 与 assets/library.js。旧版只读 data.js 的 4 只，
-    漏掉了产品库里的大量持仓，导致中国理财网轮换没优先补它们。
-    """
-    codes = set()
-    tx_js = os.path.join(ROOT, "assets", "transactions.js")
-    pids = set()
-    if os.path.exists(tx_js):
-        try:
-            tx = json.loads(re.search(
-                r"window\.TRANSACTIONS\s*=\s*(\{.*\})\s*;?\s*$",
-                open(tx_js, encoding="utf-8").read(), re.S).group(1))
-            pids = set(it["pid"] for it in tx.get("items", []))
-        except Exception:
-            pids = set()
-    # pid -> regCode：按 JSON 解析 data.js + library.js（比正则稳，紧凑/缩进两种都能读）
-    def js_items(path, var):
-        txt = open(path, encoding="utf-8", errors="ignore").read()
-        m = re.search(r"window\.%s\s*=\s*(\{.*\})\s*;?\s*$" % re.escape(var), txt, re.S)
-        if not m:
-            return []
-        try:
-            obj = json.loads(m.group(1))
-        except Exception:
-            return []
-        return obj.get("items") or obj.get("products") or []
-
-    reg_by_pid = {}
-    reg_by_pid.update({x.get("id"): x.get("regCode") for x in
-                       js_items(os.path.join(ROOT, "assets", "data.js"), "REPORT_DATA") if x.get("regCode")})
-    reg_by_pid.update({x.get("id"): x.get("regCode") for x in
-                       js_items(os.path.join(ROOT, "assets", "library.js"), "PRODUCT_LIBRARY") if x.get("regCode")})
-    for pid in pids:
-        if pid in reg_by_pid:
-            codes.add(reg_by_pid[pid])
-    # 兜底：至少保留 data.js 里的产品（旧行为），即使交易记录解析失败
-    data_js = os.path.join(ROOT, "assets", "data.js")
-    if os.path.exists(data_js):
-        codes.update(re.findall(r'"regCode"\s*:\s*"([^"]+)"',
-                                open(data_js, encoding="utf-8", errors="ignore").read()))
-    return codes
+    """持仓产品（assets/data.js 里的 REPORT_DATA.products）登记编码集合。"""
+    js = os.path.join(ROOT, "assets", "data.js")
+    if not os.path.exists(js):
+        return set()
+    raw = open(js, encoding="utf-8", errors="ignore").read()
+    return set(re.findall(r'"regCode"\s*:\s*"([^"]+)"', raw))
 
 
 def main():

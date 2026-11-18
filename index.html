@@ -87,7 +87,6 @@
   .r{text-align:right}
   .pname{font-weight:400;font-size:13px;line-height:1.5;letter-spacing:.005em}
   .pname .salech{display:block;font-size:10.5px;line-height:1.5;color:#8a9aa5;font-weight:400;letter-spacing:0;margin-top:1px}
-  .pname .mv-under{display:block;font-size:10.5px;line-height:1.5;color:#52646f;font-weight:400;letter-spacing:0;margin-top:1px;font-family:var(--mono)}
   .plink{color:inherit;text-decoration:none;border-bottom:1px dashed #b9ccd4;cursor:pointer}
   .plink:hover{color:var(--accent-deep);border-bottom-color:var(--accent)}
   .pname .ptags{display:inline-flex;align-items:baseline;gap:6px;margin-left:6px}
@@ -112,12 +111,10 @@
   #hold-table .st i{font-size:12px}
   /* 盈亏明细：7日~成立至今 拆成「日均万收」「年化」两行，评分纵向合并 */
   #hold-table tr.ma.dual > td:not([rowspan]){border-bottom:1px solid #f0f4f6}
-  /* 盈亏明细竖分割线：天数|数据、数据|7日 两处，贯穿表头与主/子数据行，避免「年化」子行错位断线 */
-  #hold-table th:nth-child(9),#hold-table th:nth-child(10),
-  #hold-table tbody tr:not(.mb) > td:nth-child(9),#hold-table tbody tr:not(.mb) > td:nth-child(10),
-  #hold-table tbody tr.mb > td:nth-child(1),#hold-table tbody tr.mb > td:nth-child(2){border-left:1px solid var(--rule)}
+  #hold-table th:nth-child(10),#hold-table td:nth-child(10){border-left:1px solid var(--rule)}
   /* 今日收益 / 持仓收益 之间加分割线（仅主行，避免「年化」子行错位画到 90日 列） */
   #hold-table th:nth-child(6),#hold-table tbody tr:not(.mb) > td:nth-child(6){border-left:1px solid var(--rule)}
+  #hold-table tr.mb td:first-child{border-left:1px solid var(--rule)}
   #hold-table td.mlabel{font-size:12px;color:var(--muted);white-space:nowrap;padding:6px 8px}
   #hold-table td.pwin,#hold-table td.awin{font-size:13px;font-weight:400;text-align:center}
   .lbl span{display:block;font-size:11px;color:var(--muted);white-space:nowrap}
@@ -176,11 +173,6 @@
   #hold-table td.dcell .days,#sum-table td.dcell .days,
   #hold-table td.dcell .dunit,#sum-table td.dcell .dunit{font-family:var(--mono);font-size:13px;font-weight:400;font-variant-numeric:tabular-nums}
   #hold-table td.dcell .dunit,#sum-table td.dcell .dunit{font-style:normal;color:var(--muted);margin-left:1px;vertical-align:baseline}
-  /* 盈亏汇总「天数」列：上=持仓天数、下=成立天数，中间细分割线，均不带单位 */
-  #hold-table td.daystack{line-height:1.25}
-  #hold-table td.daystack .days{display:block}
-  #hold-table td.daystack .days.sub{color:var(--muted)}
-  #hold-table td.daystack .dsep{display:block;height:1px;background:#e3e9ed;margin:2px auto;width:70%}
   /* 四张数据表：表头与数值统一居中，保证同一列上下对齐（产品名称/交易时间仍左对齐） */
   #hold-table thead th,#hold-table tbody td,
   #sum-table thead th,#sum-table tbody td,
@@ -292,18 +284,6 @@
   .sel-opt{display:block;width:100%;text-align:left;border:0;background:transparent;font-family:var(--font);font-size:12.5px;line-height:1.4;color:var(--ink);padding:6px 9px;border-radius:7px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .sel-opt:hover{background:#f6fafc}
   .sel-opt.on{background:#e4f0f5;color:var(--accent-deep);font-weight:700}
-  /* 多选筛选：复选项 + 底部操作栏 */
-  .sel-opt.mopt{display:flex;align-items:center;gap:7px;padding:6px 9px;white-space:nowrap}
-  .sel-opt.mopt .mchk{flex:none;width:14px;height:14px;border:1.5px solid #b4c6d0;border-radius:4px;background:#fff;position:relative;box-sizing:border-box}
-  .sel-opt.mopt.on .mchk{background:var(--accent-deep);border-color:var(--accent-deep)}
-  .sel-opt.mopt.on .mchk::after{content:'';position:absolute;left:3.5px;top:1px;width:4px;height:8px;border:solid #fff;border-width:0 1.8px 1.8px 0;transform:rotate(45deg)}
-  .sel-opt.mopt .mtxt{overflow:hidden;text-overflow:ellipsis}
-  .sel-foot{display:flex;gap:6px;margin-top:4px;padding-top:4px;border-top:1px solid #eaf1f4}
-  .sel-foot button{flex:1;font-family:var(--font);font-size:12px;padding:5px 0;border:1px solid var(--rule);border-radius:6px;background:#fff;color:var(--ink);cursor:pointer}
-  .sel-foot button:hover{background:#f6fafc}
-  .sel-foot button.sel-done{border-color:var(--accent-deep);background:var(--accent-deep);color:#fff}
-  .sel-foot button.sel-done:hover{opacity:.9}
-  .sel-label .mcount{color:var(--accent-deep);font-weight:700}
   /* 产品库搜索候选：只列名称，不展示登记编码 */
   .prod-sug{max-width:min(92vw,340px)}
   .chip{font-size:12.5px;padding:5px 10px;border-radius:999px;border:1px solid #dbe7ed;background:#f6fafc;cursor:pointer;color:var(--muted);width:auto;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;line-height:1.5}
@@ -645,19 +625,20 @@
     #hold-table col:nth-child(5){width:42px !important}
     #hold-table col:nth-child(6){width:48px !important}
     #hold-table col:nth-child(7){width:42px !important}
-    #hold-table col:nth-child(8){width:34px !important}
-    #hold-table col:nth-child(9){width:44px !important}
+    #hold-table col:nth-child(8){width:60px !important}
+    #hold-table col:nth-child(9){width:34px !important}
+    #hold-table col:nth-child(10){width:44px !important}
     /* 数据列的表头下拉去掉多余内边距，避免撑破单元格 */
-    #hold-table thead th:nth-child(9){padding-left:1px !important;padding-right:1px !important}
+    #hold-table thead th:nth-child(10){padding-left:1px !important;padding-right:1px !important}
     #hold-table .th-select{font-size:11px;padding:2px 1px;max-width:100%}
-    #hold-table col:nth-child(10){width:50px !important}
     #hold-table col:nth-child(11){width:50px !important}
-    #hold-table col:nth-child(12),
+    #hold-table col:nth-child(12){width:50px !important}
     #hold-table col:nth-child(13),
-    #hold-table col:nth-child(14){width:44px !important}
-    #hold-table col:nth-child(15){width:46px !important}
-    #hold-table col:nth-child(16){width:38px !important}
-    /* 盈亏汇总 16 列，仅此表再降字号并收窄横向内边距，保证一屏放下 */
+    #hold-table col:nth-child(14),
+    #hold-table col:nth-child(15){width:44px !important}
+    #hold-table col:nth-child(16){width:46px !important}
+    #hold-table col:nth-child(17){width:38px !important}
+    /* 盈亏汇总 17 列，仅此表再降字号并收窄横向内边距，保证一屏放下 */
     #hold-table,#hold-table thead th{font-size:11px}
     #hold-table thead th,#hold-table tbody td{padding:6px 2px}
     /* 区间标签（日均万收/年化）样式沿用桌面偏宽内边距，横屏下收窄 */
@@ -945,7 +926,7 @@
           <colgroup>
             <col style="width:3%"><col><col style="width:5.5%"><col style="width:5.5%">
             <col style="width:5.5%"><col style="width:5.5%"><col style="width:5.5%">
-            <col style="width:6%"><col style="width:5.8%">
+            <col style="width:6.7%"><col style="width:5.5%"><col style="width:5.3%">
             <col style="width:5.5%"><col style="width:5.5%"><col style="width:5.5%">
             <col style="width:5.5%"><col style="width:5.5%"><col style="width:5.9%">
             <col style="width:4.9%">
@@ -959,7 +940,8 @@
               <th class="r sortable" data-sort="income">今日<br>收益</th>
               <th class="r sortable" data-sort="profit">持仓<br>收益</th>
               <th class="r sortable" data-sort="holdann">持仓<br>年化</th>
-              <th class="c sortable" data-sort="holddays">天数</th>
+              <th class="r sortable" data-sort="value">持仓<br>市值</th>
+              <th class="c sortable" data-sort="holddays">持仓<br>天数</th>
               <th class="c" style="width:92px"><select class="th-select" id="hold-data-sel" title="数据" aria-label="数据"><option value="both">数据</option><option value="per10k">万收</option><option value="ann">年化</option></select></th>
               <th class="c sortable" data-sort="w7">7日</th>
               <th class="c sortable" data-sort="w14">14日</th>
@@ -1143,33 +1125,33 @@
       <div class="sec-head"><span class="idx">02</span><h2>产品库</h2><button class="btn" id="open-add" style="margin-left:auto">＋ 添加产品</button></div>
 
       <div class="filters">
-        <select id="sale-sel" aria-label="按代销机构筛选" multiple>
+        <select id="sale-sel" aria-label="按代销机构筛选">
           <option value="">代销机构</option>
           <option>建设银行</option>
         </select>
-        <select id="org-sel" aria-label="按发行机构筛选" multiple>
+        <select id="org-sel" aria-label="按发行机构筛选">
           <option value="">发行机构</option>
         </select>
-        <select id="risk-sel" aria-label="按风险等级筛选" multiple>
+        <select id="risk-sel" aria-label="按风险等级筛选">
           <option value="">风险等级</option>
           <option>R1 低风险</option><option>R2 中低风险</option><option>R3 中风险</option><option>R4 中高风险</option><option>R5 高风险</option>
         </select>
-        <select id="term-sel" aria-label="按持有期筛选" multiple>
+        <select id="term-sel" aria-label="按持有期筛选">
           <option value="">持有期</option>
           <option>1–14 天</option><option>15–30 天</option><option>31–60 天</option><option>61–90 天</option><option>91–180 天</option><option>180 天以上</option>
         </select>
-        <select id="hold-sel" aria-label="按持仓状态筛选" multiple>
+        <select id="hold-sel" aria-label="按持仓状态筛选">
           <option value="both">持仓状态</option>
           <option value="holding">持仓</option>
           <option value="cleared">清仓</option>
         </select>
         <span class="fl-sep"></span>
-        <select id="m-sel" aria-label="按数据展示筛选" multiple>
+        <select id="m-sel" aria-label="按数据展示筛选">
           <option value="both">数据</option>
           <option value="per10k">万收</option>
           <option value="ann">年化</option>
         </select>
-        <select id="incep-sel" aria-label="按成立月份筛选" multiple>
+        <select id="incep-sel" aria-label="按成立月份筛选">
           <option value="">成立月份</option>
         </select>
         <button class="chip" data-flag="new">新品</button>
@@ -1272,16 +1254,11 @@
       </label>
       <label class="field"><span id="trade-amount-label">申购金额</span><input id="trade-amount" inputmode="decimal" placeholder="填写申购金额，按成交净值折算份额"></label>
       <label class="field"><span id="trade-shares-label">份额</span><input id="trade-shares" inputmode="decimal" readonly placeholder="按金额与成交净值自动计算"></label>
-      <label class="field">成交净值（T日）<input id="trade-nav" inputmode="decimal" placeholder="自动带出T日净值，可手工修改"></label>
-      <label class="field">确认日期
-        <span class="dp-wrap">
-          <input id="trade-confirm" type="text" autocomplete="off" placeholder="默认T+1工作日，可手工修改" aria-haspopup="dialog">
-          <svg class="dp-ico" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="3" y="5.5" width="18" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3 10.5h18M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-        </span>
-      </label>
+      <label class="field">成交净值<input id="trade-nav" readonly></label>
+      <label class="field">确认日期<input id="trade-confirm" readonly="" class=""></label>
       <input type="hidden" id="trade-channel" value="建设银行">
     </div>
-    <div class="note-line">按申购日（T日）净值成交，不收手续费；确认日期默认为 T+1 工作日。成交净值与确认日期自动带出，均可手工修改。申购填金额、按成交净值折算份额；赎回/清仓填份额（清仓自动带出全部可卖份额）、按成交净值自动折算金额。所有交易均为人工录入，实际以银行 App 为准。</div>
+    <div class="note-line">按确认日净值成交，不收手续费；申购填金额、按成交净值自动折算份额；赎回/清仓填份额（清仓自动带出全部可卖份额）、按成交净值自动折算金额。所有交易均为人工录入，实际以银行 App 为准。</div>
     </div>
     <div class="modal-foot"><button type="button" class="btn" data-close="modal-trade">取消</button><button type="button" class="btn primary" id="trade-submit">提交</button></div>
   </div>
@@ -1350,7 +1327,7 @@
 <script src="./assets/newproducts.js"></script>
 <script src="./assets/library.js"></script>
 <script src="./assets/supabase-config.js?v=20261113c"></script>
-<script src="./assets/store.js?v=20261116a" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
+<script src="./assets/store.js?v=20261118b" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
 <script>
   /* 先用本地缓存/内置底稿立即渲染，云端数据在后台取回后再重绘，避免等待网络白屏 */
   /* 前序脚本缺失或命中旧缓存时（STORE_READY 不存在）也照常加载看板，避免页面停在空白骨架 */
@@ -1405,6 +1382,7 @@
     }
 
     chip.addEventListener('click', check);
+    window.addEventListener('store:synced', check);
     paint('连接中…', false);
     window.STORE_READY.then(check);
   })();

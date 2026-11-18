@@ -179,6 +179,22 @@
     }).then(function (rows) { return rows.map(rowToTx); });
   }
 
+  /* 删除墓碑单独拉取：只取 kind=tradel 的行，体积小；即使新品请求超时也能同步删除 */
+  function sbTombstones() {
+    return req(url + '/rest/v1/' + npTable + '?select=data&' + encodeURIComponent('data->>kind') + '=eq.tradel')
+      .then(function (r) {
+        if (!r.ok) throw fail('删除记录读取失败', r.status);
+        return r.json();
+      }).then(function (rows) {
+        var n = 0;
+        rows.forEach(function (row) {
+          var o = clean(row.data || {});
+          if (o.kind === 'tradel' && o.id && !delIds[o.id]) { delIds[o.id] = 1; n += 1; }
+        });
+        if (n) saveDelIds();
+      });
+  }
+
   /* ---------------- 新品 ---------------- */
   /* 云端 row 分两路：kind=manual 为手工添加的产品，其余为新品预告 */
   function sbNewProducts() {
@@ -264,6 +280,8 @@
     });
     rows.forEach(function (p) {
       var o = clean(p);
+      /* 手工入库产品、交易删除墓碑不属于「待募集新品」，混进来会重复展示 */
+      if (o.kind === 'manual' || o.kind === 'manualhist' || o.kind === 'tradel') return;
       var k = npKey(o);
       o.channel = normChannel(o.channel || o.saleChannel, o.issuer);
       o.saleChannel = o.channel === '待核实' ? '' : o.channel;
@@ -279,6 +297,19 @@
       }
     });
     var list = order.map(function (k) { return map[k]; });
+
+    /* 同一产品可能同时以「公告抓取」与「手工入库」两条记录出现：按名称去重，优先保留有登记编码的 */
+    var byName = {};
+    list.forEach(function (p) {
+      var n = String(p.name || p.short || '').trim();
+      if (!n) return;
+      var cur = byName[n];
+      if (!cur || (!cur.regCode && p.regCode)) byName[n] = p;
+    });
+    list = list.filter(function (p) {
+      var n = String(p.name || p.short || '').trim();
+      return !n || byName[n] === p;
+    });
 
     /* 只展示成立日（或募集结束日）在今天及以后的新品 */
     var now = new Date();
@@ -344,9 +375,12 @@
     var baseNp = npSignature();
     var baseManual = manualSignature();
     var baseDel = Object.keys(delIds).length;
+    /* 请求是否成功与「云端有没有数据」是两件事：trades 表为空也算连上了 */
+    var netOk = false;
 
     window.STORE_REFRESH = refreshing = Promise.all([
       sbTrades().then(function (txs) {
+        netOk = true;
         if (!txs.length) return;
         /* 云端行与页面底稿按 id 合并：底稿里未登记到云端的历史交易不能丢 */
         var byId = {};
@@ -354,17 +388,25 @@
         txs.forEach(function (t) { byId[t.id] = t; });
         var merged = Object.keys(byId).map(function (k) { return byId[k]; });
         applyTrades(merged);
-        source = 'supabase';
-        writeCache(window.TRANSACTIONS.items);
       }).catch(function (e) {
         console.warn(e.message + '，本次使用本地缓存的交易数据');
       }),
-      sbNewProducts().then(applyNewProducts).catch(function (e) {
+      sbTombstones().then(function () { netOk = true; }).catch(function (e) {
+        console.warn(e.message + '，本次未同步云端删除记录');
+      }),
+      sbNewProducts().then(function (items) {
+        netOk = true;
+        applyNewProducts(items);
+      }).catch(function (e) {
         console.warn(e.message + '，本次使用页面内置新品底稿');
       })
     ]).then(function () {
       /* 云端墓碑可能晚于本地缓存到达，重新过滤一次已删除交易 */
       applyTrades(fileItems());
+      if (netOk) {
+        source = 'supabase';
+        writeCache(window.TRANSACTIONS.items);
+      }
       return sig() !== base || npSignature() !== baseNp ||
         manualSignature() !== baseManual || Object.keys(delIds).length !== baseDel;
     });
@@ -572,4 +614,25 @@
     source: function () { return source; }
   };
   window.STORE_READY = load();
+
+  /* 回到页面时静默同步一次：别的设备删/改了交易，本机不用手动刷新 */
+  var syncing = false;
+  var lastSyncAt = Date.now();
+  function syncNow() {
+    if (!online || syncing) return;
+    if (Date.now() - lastSyncAt < 20000) return;
+    syncing = true;
+    lastSyncAt = Date.now();
+    var p = load();
+    var r = window.STORE_REFRESH;
+    (r && typeof r.then === 'function' ? r : Promise.resolve(false)).then(function (changed) {
+      if (changed && window.DASHBOARD_REFRESH) window.DASHBOARD_REFRESH();
+      window.dispatchEvent(new Event('store:synced'));
+    }).catch(function () {
+    }).then(function () { syncing = false; });
+  }
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') syncNow();
+  });
+  window.addEventListener('focus', syncNow);
 })();
