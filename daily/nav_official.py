@@ -65,9 +65,13 @@ def commit(files, message):
     subprocess.run(["git", "-c", "user.name=github-actions[bot]",
                     "-c", "user.email=41898282+github-actions[bot]@users.noreply.github.com",
                     "commit", "-m", message], check=False, timeout=120)
+    ident = ["git", "-c", "user.name=github-actions[bot]",
+             "-c", "user.email=41898282+github-actions[bot]@users.noreply.github.com"]
     for _ in range(3):
-        subprocess.run(["git", "pull", "--rebase", "--autostash"], check=False, timeout=120)
-        if subprocess.run(["git", "push"], check=False, timeout=180).returncode == 0:
+        subprocess.run(ident + ["pull", "--rebase", "--autostash", "origin", "main"],
+                       check=False, timeout=120)
+        if subprocess.run(ident + ["push", "origin", "HEAD:main"],
+                          check=False, timeout=180).returncode == 0:
             return
         time.sleep(5)
 

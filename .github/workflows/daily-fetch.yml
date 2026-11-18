@@ -89,8 +89,8 @@ jobs:
             echo "无数据变化"
           else
             git commit -m "data: update $(date -u +'%Y-%m-%d')"
-            git pull --rebase --autostash
-            git push
+            git pull --rebase --autostash origin main || true
+            git push origin HEAD:main
           fi
 
       - name: 生成看板长图
