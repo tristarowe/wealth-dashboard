@@ -210,6 +210,49 @@
   var HOLDINGS = [];
   var HOLD_BY_PID = {};
 
+  /* 双源净值对齐：同一登记编码在产品库(library)与持仓底稿(data.js)用不同 id，
+     抓取链路可能只在 library 更新到 T-1、data.js 仍停在 T-2。这里在建模前按
+     regCode 把 library 中较新的净值点补进 data.products，让指标/日历/收益都
+     基于同一份最新数据；只追加更新的点，不回退，共有日净值不一致则跳过该产品。 */
+  function alignNavFromLibrary(data) {
+    var lib = (window.PRODUCT_LIBRARY && window.PRODUCT_LIBRARY.items) || [];
+    if (!lib.length || !data || !Array.isArray(data.products)) return;
+    var byReg = Object.create(null);
+    lib.forEach(function (it) {
+      if (!it || !it.regCode) return;
+      var k = String(it.regCode);
+      if (!byReg[k] || String(it.latestDate || '') > String(byReg[k].latestDate || '')) byReg[k] = it;
+    });
+    data.products.forEach(function (p) {
+      if (!p || !p.regCode) return;
+      var src = byReg[String(p.regCode)];
+      if (!src || !src.dates || !src.nav) return;
+      var sdate = String(src.latestDate || (src.dates.length ? src.dates[src.dates.length - 1] : ''));
+      var ddate = String(p.latestDate || (p.dates && p.dates.length ? p.dates[p.dates.length - 1] : ''));
+      if (!sdate || sdate <= ddate) return;
+      if (!p.dates || !p.nav || p.dates.length !== p.nav.length) return;
+      /* 共有日期净值必须一致，否则视为两套口径，跳过避免污染 */
+      var dmap = Object.create(null);
+      p.dates.forEach(function (d, i) { dmap[d] = p.nav[i]; });
+      for (var j = 0; j < src.dates.length; j++) {
+        if (dmap[src.dates[j]] !== undefined &&
+            Math.abs(Number(dmap[src.dates[j]]) - Number(src.nav[j])) > 0.000001) return;
+      }
+      var pers = p.per10k || [];
+      var sn = src.per10k || [];
+      for (var i2 = 0; i2 < src.dates.length; i2++) {
+        var d2 = src.dates[i2];
+        if (d2 <= ddate) continue;
+        p.dates.push(d2);
+        p.nav.push(Math.round(Number(src.nav[i2]) * 1000000) / 1000000);
+        pers.push(sn[i2] !== null && sn[i2] !== undefined ? Math.round(Number(sn[i2]) * 100) / 100 : null);
+      }
+      p.per10k = pers;
+      p.latestDate = sdate;
+      p.latestNav = p.nav[p.nav.length - 1];
+    });
+  }
+
   function computeModel(data) {
     MODEL = data.products.map(function (p) {
       p.dailyAnn = p.nav.map(function (v, i) {
@@ -220,6 +263,7 @@
     });
     window.DASHBOARD_METRICS = MODEL;
   }
+  alignNavFromLibrary(DATA);
   computeModel(DATA);
 
   // 产品库扩容数据：8.1 后成立的产品（真实抓取，仅用于产品库展示）
@@ -4328,6 +4372,7 @@
     }
     DATA = data;
     window.REPORT_DATA = data;
+    alignNavFromLibrary(data);
     computeModel(data);
     computeLibrary();
     computeHoldings();

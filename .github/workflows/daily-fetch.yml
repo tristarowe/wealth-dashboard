@@ -77,6 +77,13 @@ jobs:
         # 提交统一交给下方「提交数据」步骤，避免双重 push 竞态
         run: python daily/promote_newproducts.py --gap 1.2 --no-self-commit || true
 
+      - name: 同步产品库较新净值到持仓底稿（按登记编码，防双源不同步）
+        env:
+          PYTHONIOENCODING: utf-8
+        # 抓取链路可能只更新 library.js（如 nav_rotate 轮换补抓），data.js 仍停在旧日；
+        # 此处按 regCode 把 library 较新净值回填 data.js，保证前端去重后显示 T-1。
+        run: python daily/sync_nav_data.py
+
       - name: 提交数据
         run: |
           git config user.name "github-actions[bot]"

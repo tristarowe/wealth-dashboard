@@ -469,6 +469,15 @@ def main():
               (changed, changed_data, changed_lib), flush=True)
     else:
         print("无持仓净值需要更新", flush=True)
+    # 按 regCode 把 library 较新净值同步回填 data.js，避免双源不同步
+    # （本脚本按交易 pid 写回，data.js 里同 regCode 的 p-id 可能没被直接命中）
+    try:
+        import sync_nav_data
+        sc, sd = sync_nav_data.sync_files(write=True)
+        if sc:
+            print("已按登记编码回填 data.js：%d 只 %s" % (sc, sd), flush=True)
+    except Exception as exc:
+        print("data.js 净值同步跳过：%s" % str(exc)[:120], flush=True)
     return 0
 
 

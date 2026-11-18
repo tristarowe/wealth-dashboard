@@ -871,7 +871,7 @@ window.REPORT_DATA = {
       "regCode": "Z7002626002218",
       "shareCode": "AF266423B",
       "inception": "2026-08-26",
-      "latestDate": "2026-11-16",
+      "latestDate": "2026-11-17",
       "officialAnnual": null,
       "officialAsOf": null,
       "dates": [
@@ -929,7 +929,8 @@ window.REPORT_DATA = {
         "2026-11-11",
         "2026-11-12",
         "2026-11-13",
-        "2026-11-16"
+        "2026-11-16",
+        "2026-11-17"
       ],
       "nav": [
         1.0001,
@@ -986,7 +987,8 @@ window.REPORT_DATA = {
         1.0071,
         1.0071,
         1.0072,
-        1.0074
+        1.0074,
+        1.0081
       ],
       "per10k": [
         null,
@@ -1043,9 +1045,10 @@ window.REPORT_DATA = {
         1.0,
         0.0,
         1.0,
-        2.0
+        2.0,
+        7.0
       ],
-      "sourceName": "中国理财网"
+      "sourceName": "官网回填"
     },
     {
       "id": "p1090",

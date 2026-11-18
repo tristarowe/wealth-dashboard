@@ -164,6 +164,14 @@ def main():
             time.sleep(a.gap)
 
     promo.save(items)
+    # 按 regCode 把 library 较新净值同步回填 data.js，避免持仓底稿落后于产品库
+    try:
+        import sync_nav_data
+        sc, sd = sync_nav_data.sync_files(write=True)
+        if sc:
+            print("已按登记编码回填 data.js：%d 只 %s" % (sc, sd), flush=True)
+    except Exception as exc:
+        print("data.js 净值同步跳过：%s" % str(exc)[:120], flush=True)
     asof = max((x.get("latestDate") or "") for x in items) or ""
     left = sum(1 for x in items
                if not (x.get("orgShort") or "").startswith(("建信", "中银"))
