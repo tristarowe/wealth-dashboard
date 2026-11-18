@@ -4,8 +4,7 @@ on:
   schedule:
     # 每天 07:45（北京时间）= 23:45 UTC 前一天：抓数 + 出图 + 微信推送（内容截至前一日）
     - cron: "45 23 * * *"
-    # 每天 22:00（北京时间）= 14:00 UTC：抓当日净值 + 出图 + 微信推送（内容为当日）
-    - cron: "0 14 * * *"
+    # 22:00 那轮改由 Gitee Go 准点触发 workflow_dispatch（GitHub 自带定时会排队 30～50 分钟）
   workflow_dispatch:
 
 permissions:
