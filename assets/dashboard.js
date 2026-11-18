@@ -21,7 +21,9 @@
     if (!d) return (t && t.status) || '已确认';
     if (d > isoDate(new Date())) return '在途';
     var p = findProductById(t.pid);
-    if (p && p.latestDate && d > p.latestDate) return '在途';
+    /* 成交净值按申购日（T 日）：T 日净值已披露即可确认，不要求确认日净值披露 */
+    var navDay = t.applyDate || d;
+    if (p && p.latestDate && navDay > p.latestDate) return '在途';
     return '已确认';
   }
 
@@ -29,7 +31,8 @@
     var d = t.confirmDate || t.applyDate;
     if (d > isoDate(new Date())) return '确认日期未到，净值未披露';
     var p = findProductById(t.pid);
-    if (p && p.latestDate && d > p.latestDate) return '确认日净值尚未披露';
+    var navDay = t.applyDate || d;
+    if (p && p.latestDate && navDay > p.latestDate) return '申购日净值尚未披露';
     return '';
   }
 
@@ -83,7 +86,9 @@
   function txConfirmNav(t, p) {
     var v = Number(t.confirmNav);
     if (v > 0) return v;
-    var n = navOnDate(p, t.confirmDate);
+    /* 与录入表单口径一致：成交净值取申购日（T 日）净值；T 日缺失时兼容旧数据取确认日 */
+    var n = navOnDate(p, t.applyDate || t.confirmDate);
+    if (!(typeof n === 'number' && n > 0)) n = navOnDate(p, t.confirmDate);
     return typeof n === 'number' && n > 0 ? n : 0;
   }
 
@@ -367,7 +372,7 @@
       if (txStatus(t) === '在途') {
         var cd = t.confirmDate || t.applyDate;
         var pp0 = findProductById(t.pid);
-        var knownNav = Number(t.confirmNav) || (pp0 ? navForConfirm(pp0, t.confirmDate) : 0) || 0;
+        var knownNav = Number(t.confirmNav) || (pp0 ? navForConfirm(pp0, t.applyDate || t.confirmDate) : 0) || 0;
         /* 赎回/清仓在净值披露前不落地，避免用占位净值算出错误收益；净值抓取到后自动生效 */
         if (!(t.type === '清仓' && knownNav > 0 && cd && cd <= todayStr)) return;
       }
@@ -376,7 +381,7 @@
       var rec = acc[p.id];
       if (!rec) rec = acc[p.id] = { product: p, shares: 0, cost: 0, realized: 0, startDate: null, lastTx: t };
       /* 成交净值缺失时按确认日净值兜底，净值披露后自动生效 */
-      var nav = Number(t.confirmNav) || navForConfirm(p, t.confirmDate) || 1;
+      var nav = Number(t.confirmNav) || navForConfirm(p, t.applyDate || t.confirmDate) || 1;
       var sh = Number(t.shares);
       if (!(sh > 0)) sh = Number(t.amount) / nav;
       if (t.type === '赎回' || t.type === '清仓') {
@@ -2882,12 +2887,18 @@
     if (applyEl) applyEl.value = '';
     renderTradeProductList('');
     if (edit) {
-      var edShares = edit.shares || (edit.confirmNav > 0 ? edit.amount / edit.confirmNav : 0);
+      var edNav = Number(edit.confirmNav) > 0 ? Number(edit.confirmNav) : null;
+      if (!(edNav > 0)) {
+        var edP = findProductById(edit.pid);
+        var edN = navOnDate(edP, edit.applyDate || edit.confirmDate);
+        if (typeof edN === 'number' && edN > 0) edNav = edN;
+      }
+      var edShares = edit.shares || (edNav > 0 ? edit.amount / edNav : 0);
       if (shEl) shEl.value = edShares ? String(Math.round(edShares * 100) / 100) : '';
       if (amtEl) amtEl.value = edit.amount ? String(edit.amount) : '';
       if (navEl) {
-        if (edit.confirmNav > 0) {
-          navEl.value = Number(edit.confirmNav).toFixed(6);
+        if (edNav > 0) {
+          navEl.value = edNav.toFixed(6);
           navEl.placeholder = '';
           navEl.classList.remove('pending');
         } else {
@@ -3310,7 +3321,7 @@
       var p = findProductById(t.pid);
       if (!p) return;
       var latestNav = p.nav[p.nav.length - 1];
-      var nav = Number(t.confirmNav) || navForConfirm(p, t.confirmDate) || latestNav || 1;
+      var nav = Number(t.confirmNav) || navForConfirm(p, t.applyDate || t.confirmDate) || latestNav || 1;
       var sh = Number(t.shares);
       if (!(sh > 0)) sh = (Number(t.amount) || 0) / nav;
       var rec = pend[p.id];
