@@ -768,25 +768,22 @@
     var avg = perCnt ? perSum / perCnt : null;
 
     var ym = DATA.asOf.slice(0, 7);
-    var month = 0, mCnt = 0, mPerSum = 0;
+    /* 本月日均万收必须与盈亏日历同口径：组合万收 = 当日收益 ÷ 前一日市值 × 10000，
+       逐日折算后取平均。原先用各产品 per10k 简单算术平均（等权），与按市值加权的组合
+       实际表现不符，导致看板 0.65 / 日历 0.61 对不上；现统一为市值加权口径。 */
+    var month = 0, mCnt = 0, mWanSum = 0, mWanCnt = 0;
     if (AGG) {
       AGG.dates.forEach(function (d, i) {
         if (d.indexOf(ym) !== 0) return;
         var v = AGG.raw ? AGG.raw[i] : AGG.per10k[i];
         if (v === null || v === undefined) return;
         month += v;
+        mCnt += 1;
+        var base = AGG.prevMv && AGG.prevMv[i] > 0 ? AGG.prevMv[i] : 0;
+        if (base > 0) { mWanSum += v / base * 10000; mWanCnt += 1; }
       });
     }
-    hs.forEach(function (h) {
-      var p = h.product;
-      for (var i = 0; i < p.dates.length; i++) {
-        if (p.dates[i].indexOf(ym) !== 0) continue;
-        var v = p.per10k[i];
-        if (v === null || v === undefined) continue;
-        mPerSum += v;
-        mCnt += 1;
-      }
-    });
+    var mWanAvg = mWanCnt ? mWanSum / mWanCnt : null;
 
     var cost = 0, profit = 0, mv = 0;
     hs.forEach(function (h) { cost += h.cost; profit += h.profit; mv += h.mv; });
@@ -836,8 +833,8 @@
     }
     el = document.getElementById('metric-month-avg');
     if (el) {
-      el.textContent = fmtSigned2(mCnt ? mPerSum / mCnt : null);
-      el.className = colorBy(mCnt ? mPerSum / mCnt : null) || 'ink';
+      el.textContent = fmtSigned2(mWanAvg);
+      el.className = colorBy(mWanAvg) || 'ink';
     }
 
     el = document.getElementById('metric-profit');
