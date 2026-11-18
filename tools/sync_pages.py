@@ -7,6 +7,9 @@
      必须先运行 tools/pull_from_github.py 合并。
   C. 数据时间戳守卫：数据文件允许被任一端覆盖，但 asOf / fetchedAt 不得倒退。
 
+推送前会自动执行一次安全预拉取（复用 pull_from_github.py 的三方比对），
+常规情况无需人工先跑 pull；只有两端同时改同一文件（真冲突）才会被 B 守卫拦下要求人工合并。
+
 逃生口：--force-sync --reason "原因" 会跳过全部守卫，并在 tools/guard_bypass.log 留痕。
 注意：比对一律使用二进制读取 + git blob 口径，禁止文本模式或 git hash-object（CRLF 会让结果不一致）。
 """
@@ -15,6 +18,7 @@ import hashlib
 import json
 import os
 import re
+import subprocess
 import sys
 import time
 from datetime import datetime
@@ -348,6 +352,30 @@ def commit_message(changes):
     return "chore: 更新看板 %s" % as_of()
 
 
+def pre_pull():
+    """推送前自动做一次安全预拉取，免去人工先跑 pull 的指令。
+
+    复用 tools/pull_from_github.py --apply 的三方比对：远端更新过的文件先拉齐、
+    本地缺失的按远端恢复；本地未推送的改动会被它跳过（local_dirty / conflict），不会被覆盖。
+    预拉取失败不阻断推送——后续 B 守卫会兜底拦截真正的冲突。
+    """
+    script = TOOLS / "pull_from_github.py"
+    try:
+        r = subprocess.run([sys.executable, str(script), "--apply"],
+                            capture_output=True, text=True, timeout=300)
+    except Exception as exc:
+        print("预拉取失败（忽略，B 守卫仍会兜底）：%s" % str(exc)[:120], file=sys.stderr)
+        return
+    lines = (r.stdout or "").strip().splitlines()
+    if r.returncode != 0:
+        print("预拉取异常（忽略，B 守卫仍会兜底）：", file=sys.stderr)
+        for line in lines[-5:]:
+            print("  " + line, file=sys.stderr)
+        return
+    for line in lines:
+        print("  预拉取 | " + line)
+
+
 def main():
     args = sys.argv[1:]
     force = "--force-sync" in args
@@ -366,9 +394,16 @@ def main():
     headers = dict(HEADERS, Authorization="Bearer " + token)
 
     protected, data_files, min_counts = load_marks()
+
+    # 推送前安全预拉取：远端被另一端更新过的文件先自动对齐，常规情况无需人工先跑 pull。
+    # --force-sync 时跳过：强制推送是明确要按本地版本覆盖，不做预拉取。
+    if not force:
+        pre_pull()
+
     state = load_state()
     initialized = False
     if not state:
+        # 预拉取未初始化基线（如网络失败）时在此兜底
         state = dict(remote_tree(headers))
         save_state(state)
         initialized = True
