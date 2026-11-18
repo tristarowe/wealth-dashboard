@@ -610,9 +610,13 @@
       var profit = mv - rec.cost + rec.realized;
       /* 持仓天数统一取到本次收益对应的最新净值日，而不是系统今天：
          净值/收益只披露到 T-1 时，分母再算到今天会系统性低估年化。
-         自成立持有不变的产品，其持仓年化应与成立年化一致。 */
+         自成立持有不变的产品，其持仓年化应与成立年化一致。
+         另：确认日早于产品成立日时（新发产品先确认、后成立），持仓天数从成立日起算，
+         不能把产品尚未成立的日子算进持有期，否则持仓天数会大于成立天数。 */
       var navEnd = p.latestDate || todayStr;
-      var days = alive ? Math.max(0, dayDiff(parseDate(rec.startDate), parseDate(navEnd))) : 0;
+      var daysStart = rec.startDate;
+      if (p.inception && daysStart && daysStart < p.inception) daysStart = p.inception;
+      var days = alive ? Math.max(0, dayDiff(parseDate(daysStart), parseDate(navEnd))) : 0;
       var costNav = alive ? rec.cost / rec.shares : 0;
       var lastPer = p.per10k[n - 1];
       /* 今日收益按「截至最新净值日已起息的份额」计算（而非全部持仓份额）：
@@ -4163,11 +4167,14 @@
     }
     list.innerHTML = items.map(function (p) {
       var checked = selectedIds.indexOf(p.id) !== -1 ? ' checked' : '';
-      return '<label class="ms-item">' +
+      return '<div class="ms-item">' +
+        '<label class="ms-pick">' +
         '<input type="checkbox" value="' + p.id + '"' + checked + '>' +
         '<span class="ms-name" title="' + (p.name || '') + '">' + prodDispName(p) + '</span>' +
+        '</label>' +
         '<em>' + p.regCode + '</em>' +
-        '</label>';
+        '<button type="button" class="ms-only" data-only="' + p.id + '" title="只看此产品">仅选</button>' +
+        '</div>';
     }).join('');
   }
 
@@ -4455,6 +4462,22 @@
         selectedIds.splice(idx, 1);
       }
       applySelection();
+    });
+
+    /* 搜索后点「仅选」：把覆盖范围直接收窄到这一只产品。
+       默认全选时复选框本身是勾选状态，直接点它反而会取消该产品，
+       这是用户反馈「搜索后无法选中」的根因；这里提供明确的隔离入口。 */
+    list.addEventListener('click', function (e) {
+      var btn = e.target && e.target.closest ? e.target.closest('[data-only]') : null;
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      var id = btn.getAttribute('data-only');
+      if (!id) return;
+      selectedIds = [id];
+      applySelection();
+      renderPickerList();
+      closePanel();
     });
 
     var search = document.getElementById('ms-search');

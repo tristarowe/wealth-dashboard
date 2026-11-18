@@ -543,8 +543,11 @@
   .ms-item{display:flex;align-items:center;gap:8px;padding:6px;border-radius:7px;font-size:12.5px;cursor:pointer}
   .ms-item:hover{background:#f7f9fa}
   .ms-item input{accent-color:var(--accent);flex:none;cursor:pointer}
+  .ms-pick{display:flex;align-items:center;gap:8px;flex:1;min-width:0;cursor:pointer}
   .ms-item .ms-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .ms-item em{display:none}
+  .ms-only{flex:none;border:0;background:transparent;color:var(--accent);font-family:var(--font);font-size:11px;line-height:1;padding:4px 5px;border-radius:5px;cursor:pointer}
+  .ms-only:hover{background:#eef6fa}
   /* 移动端导出：预览浮层，长按图片保存到相册 */
   .shot-modal{position:fixed;inset:0;z-index:200;background:#0d1f28;display:flex;flex-direction:column;justify-content:center;padding:14px}
   .shot-modal[hidden]{display:none}
@@ -1364,7 +1367,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261118q';
+      s.src = './assets/dashboard.js?v=20261118r';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();
