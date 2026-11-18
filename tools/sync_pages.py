@@ -84,6 +84,7 @@ FILES = [
     "tools/sync_pages.py",
     "tools/pull_from_github.py",
     "tools/code_guard_marks.json",
+    "PROJECT_NOTES.md",
 ]
 
 
