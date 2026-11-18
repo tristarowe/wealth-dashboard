@@ -507,6 +507,14 @@
     return pickableProducts().filter(function (p) { return selectedIds.indexOf(p.id) !== -1; });
   }
 
+  /* 顶部「覆盖产品」是全站筛选：选中全部代表不收窄（产品库/历史流水仍展示全量产品），
+     只勾选部分产品时，交易汇总、交易流水、产品库都必须同步收窄到这几种产品。 */
+  function inGlobalScope(pid) {
+    var total = pickableProducts().length;
+    if (selectedIds.length >= total) return true;
+    return selectedIds.indexOf(pid) !== -1;
+  }
+
   // 合计口径：按持仓份额把万收折算为当日收益（元），年化按当日前一净值日市值折算
   function buildAggregate(products) {
     if (!products.length) return null;
@@ -1941,6 +1949,7 @@
 
     var list = allModels.filter(function (item) {
       var p = item.product;
+      if (!inGlobalScope(p.id)) return false;
       var h = HOLD_BY_PID[p.id];
       var term = termOf(p);
       var isNew = isNewProduct(p, item.m);
@@ -3293,6 +3302,12 @@
     if (ms) ms.value = '';
     if (ts) ts.value = '';
     if (ss) ss.value = '';
+    /* 从产品库点进某只产品时，若它不在当前全局筛选范围内，先纳入选中，避免被全局筛选挡掉 */
+    if (pid && selectedIds.indexOf(pid) === -1 &&
+        pickableProducts().some(function (p) { return p.id === pid; })) {
+      selectedIds.push(pid);
+      applySelection();
+    }
     /* 月份默认展开，折叠仅由人工点击月份行触发 */
     flowOpenMonths = {};
     renderFlows();
@@ -3399,7 +3414,7 @@
   function renderTradeSummary() {
     var tbody = document.getElementById('sum-body');
     if (!tbody) return;
-    var rows = summaryRows();
+    var rows = summaryRows().filter(function (r) { return inGlobalScope(r.product.id); });
     if (flowState.pid) {
       rows = rows.filter(function (r) { return r.product.id === flowState.pid; });
     }
@@ -3597,6 +3612,7 @@
     });
 
     items = items.filter(function (t) {
+      if (!inGlobalScope(t.pid)) return false;
       if (flowState.pid && t.pid !== flowState.pid) return false;
       if (flowState.year && t.applyDate.slice(0, 4) !== flowState.year) return false;
       if (flowState.month !== '' && (+t.applyDate.slice(5, 7) - 1) !== +flowState.month) return false;
@@ -3669,9 +3685,13 @@
     var filterEl = document.getElementById('trade-filter');
     var nameEl = document.getElementById('trade-filter-name');
     if (filterEl) {
-      if (flowState.pid) {
+      var scopeActive = selectedIds.length < pickableProducts().length;
+      if (flowState.pid || scopeActive) {
         filterEl.hidden = false;
-        if (nameEl) nameEl.textContent = shortOf(flowState.pid);
+        var parts = [];
+        if (scopeActive) parts.push(selectedIds.length ? '已选 ' + selectedIds.length + ' 款' : '未选择产品');
+        if (flowState.pid) parts.push(shortOf(flowState.pid));
+        if (nameEl) nameEl.textContent = parts.join(' · ');
       } else {
         filterEl.hidden = true;
       }
@@ -3730,7 +3750,15 @@
     if (yn) yn.addEventListener('click', function () { stepFlowYear(1); });
 
     var clear = document.getElementById('clear-filter');
-    if (clear) clear.addEventListener('click', function () { openTradeFor(''); });
+    if (clear) clear.addEventListener('click', function () {
+      openTradeFor('');
+      /* 全局产品筛选也一并恢复全选，否则清掉产品名后流水/汇总仍被顶部筛选挡住 */
+      var ids = pickableProducts().map(function (p) { return p.id; });
+      if (selectedIds.length !== ids.length) {
+        selectedIds = ids.slice();
+        applySelection();
+      }
+    });
 
     var open = document.getElementById('open-trade');
     if (open) open.addEventListener('click', function () {
@@ -4116,6 +4144,9 @@
     resetCalendarMonth();
     renderCalendar();
     renderTrend();
+    renderTradeSummary();
+    renderFlows();
+    renderProductTable();
     if (window.__syncPickerToggle) window.__syncPickerToggle();
   }
 
