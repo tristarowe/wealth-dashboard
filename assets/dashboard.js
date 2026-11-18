@@ -608,8 +608,11 @@
       var alive = rec.shares > 0.000001;
       var mv = rec.shares * latestNav;
       var profit = mv - rec.cost + rec.realized;
-      /* 持仓天数 = 今天 − 首次确认日（按自然日算，11-11 确认、11-13 看为 2 天） */
-      var days = alive ? Math.max(0, dayDiff(parseDate(rec.startDate), parseDate(todayStr))) : 0;
+      /* 持仓天数统一取到本次收益对应的最新净值日，而不是系统今天：
+         净值/收益只披露到 T-1 时，分母再算到今天会系统性低估年化。
+         自成立持有不变的产品，其持仓年化应与成立年化一致。 */
+      var navEnd = p.latestDate || todayStr;
+      var days = alive ? Math.max(0, dayDiff(parseDate(rec.startDate), parseDate(navEnd))) : 0;
       var costNav = alive ? rec.cost / rec.shares : 0;
       var lastPer = p.per10k[n - 1];
       /* 今日收益按「截至最新净值日已起息的份额」计算（而非全部持仓份额）：
@@ -716,6 +719,12 @@
       }
     });
     var dates = Object.keys(sums).sort();
+    /* 每个披露点对应的收益区间 = 上一个披露点 → 当前披露点（首个点区间为 0 天）。
+       记录期初日期与自然日间隔，供月/年/趋势统一按自然日口径摊销收益。 */
+    var prevDates = dates.map(function (d, i) { return i ? dates[i - 1] : d; });
+    var gaps = dates.map(function (d, i) {
+      return Math.max(1, dayDiff(parseDate(prevDates[i]), parseDate(d)));
+    });
     return {
       id: 'agg',
       name: products.length + ' 款产品合计',
@@ -727,10 +736,13 @@
       /* 未取整合计：月/年合计用原始值累加，仅在展示时取整，保证与逐日累加闭合 */
       raw: dates.map(function (d) { return sums[d]; }),
       counts: dates.map(function (d) { return counts[d]; }),
-      ann: dates.map(function (d) {
-        return prevs[d] > 0 ? Math.round(sums[d] / prevs[d] * 365 * 100 * 100) / 100 : null;
+      /* 单日年化也要除以该收益实际跨越的自然日数，否则周末/节假日的合并涨幅会被高估 */
+      ann: dates.map(function (d, i) {
+        return prevs[d] > 0 ? Math.round(sums[d] / prevs[d] * 365 / gaps[i] * 100 * 100) / 100 : null;
       }),
       prevMv: dates.map(function (d) { return prevs[d]; }),
+      prevDates: prevDates,
+      gaps: gaps,
       latestDate: dates[dates.length - 1],
       inception: dates[0]
     };
@@ -900,7 +912,7 @@
     /* 本月日均万收必须与盈亏日历同口径：组合万收 = 当日收益 ÷ 前一日市值 × 10000，
        逐日折算后取平均。原先用各产品 per10k 简单算术平均（等权），与按市值加权的组合
        实际表现不符，导致看板 0.65 / 日历 0.61 对不上；现统一为市值加权口径。 */
-    var month = 0, mCnt = 0, mWanSum = 0, mWanCnt = 0;
+    var month = 0, mCnt = 0;
     if (AGG) {
       AGG.dates.forEach(function (d, i) {
         if (d.indexOf(ym) !== 0) return;
@@ -908,11 +920,12 @@
         if (v === null || v === undefined) return;
         month += v;
         mCnt += 1;
-        var base = AGG.prevMv && AGG.prevMv[i] > 0 ? AGG.prevMv[i] : 0;
-        if (base > 0) { mWanSum += v / base * 10000; mWanCnt += 1; }
       });
     }
-    var mWanAvg = mWanCnt ? mWanSum / mWanCnt : null;
+    /* 本月日均万收统一为自然日口径：本月收益 ÷ 期初市值 ÷ 区间实际自然日数。
+       不再按披露点数量平均，避免周末/节假日不披露导致日均虚高。 */
+    var mStats = AGG ? cumulativePeriodStats(AGG, ym + '-') : null;
+    var mWanAvg = mStats ? mStats.avg : null;
 
     var cost = 0, profit = 0, mv = 0;
     hs.forEach(function (h) { cost += h.cost; profit += h.profit; mv += h.mv; });
@@ -1233,26 +1246,33 @@
     return map;
   }
 
-  /* 万收（每万元市值当日收益）按日期映射，全站统一市值口径：当日收益 ÷ 前一日市值 × 10000。
-     合计视图(AGG)的 raw/per10k 存元金额、prevMv 存前一日市值，直接折算即可；
-     这样与年化严格自洽：日均万收 × 3.65 = 年化%。 */
-  function wanMapOf(p) {
-    var map = {};
-    var arr = p.raw || p.per10k;
-    var prev = p.prevMv;
+  /* 自然日口径的统一区间统计：区间收益 ÷ 期初市值 ÷ 实际自然日数。
+     AGG.raw[i] 对应 prevDates[i] → dates[i] 这一段的收益，prevMv[i] 是这段的期初市值。
+     周末/节假日虽然不披露净值，其累计涨跌仍按真实跨越的自然日摊销；
+     年化严格由日均万收换算：日均万收 × 3.65 = 年化%。 */
+  function cumulativePeriodStats(p, prefix) {
+    var idxs = [];
     for (var i = 0; i < p.dates.length; i++) {
-      if (arr[i] === null || arr[i] === undefined) continue;
-      var base = prev && prev[i] > 0 ? prev[i] : 0;
-      if (!base) continue;
-      map[p.dates[i]] = arr[i] / base * 10000;
+      if (p.dates[i].indexOf(prefix) === 0) idxs.push(i);
     }
-    return map;
+    if (!idxs.length) return { avg: null, ann: null, days: 0, sum: 0 };
+    var first = idxs[0], last = idxs[idxs.length - 1];
+    var sum = 0;
+    idxs.forEach(function (i) {
+      var v = p.raw ? p.raw[i] : p.per10k[i];
+      if (v !== null && v !== undefined) sum += v;
+    });
+    var base = p.prevMv && p.prevMv[first] > 0 ? p.prevMv[first] : 0;
+    var start = (p.prevDates && p.prevDates[first]) || p.dates[first];
+    var span = dayDiff(parseDate(start), parseDate(p.dates[last]));
+    if (!(base > 0) || !(span > 0)) return { avg: null, ann: null, days: span, sum: sum };
+    var avg = sum / base * 10000 / span;
+    return { avg: avg, ann: avg * 3.65, days: span, sum: sum };
   }
 
-  function monthStats(p, perMap, annMap, wanMap, y, m) {
+  function monthStats(p, perMap, y, m) {
     var prefix = y + '-' + String(m + 1).padStart(2, '0') + '-';
-    var sum = 0, cnt = 0, pos = 0, neg = 0, flat = 0, annSum = 0, annCnt = 0;
-    var wanSum = 0, wanCnt = 0;
+    var sum = 0, cnt = 0, pos = 0, neg = 0, flat = 0;
     p.dates.forEach(function (dt) {
       if (dt.indexOf(prefix) !== 0) return;
       var v = perMap[dt];
@@ -1262,18 +1282,16 @@
       if (v > 0.005) pos += 1;
       else if (v < -0.005) neg += 1;
       else flat += 1;
-      if (annMap[dt] !== undefined) { annSum += annMap[dt]; annCnt += 1; }
-      var wv = wanMap[dt];
-      if (wv !== undefined) { wanSum += wv; wanCnt += 1; }
     });
+    var st = cumulativePeriodStats(p, prefix);
     return {
       sum: sum,
-      avg: wanCnt ? wanSum / wanCnt : null,
+      avg: st.avg,
       cnt: cnt,
       pos: pos,
       neg: neg,
       flat: flat,
-      ann: annCnt ? annSum / annCnt : null
+      ann: st.ann
     };
   }
 
@@ -1349,7 +1367,6 @@
     var annMap = annMapOf(p);
     /* 月度合计改用未取整的原始收益累加，避免逐日四舍五入后求和产生 0.01~0.02 元偏差 */
     var sumMap = rawMapOf(p);
-    var wanMap = wanMapOf(p);
 
     // 年 / 月下拉
     var ySel = document.getElementById('cal-year-sel');
@@ -1376,7 +1393,7 @@
     var list = document.getElementById('month-list');
     if (list) {
       var monthRows = months.map(function (m) {
-        return { m: m, st: monthStats(p, sumMap, annMap, wanMap, calState.y, m) };
+        return { m: m, st: monthStats(p, sumMap, calState.y, m) };
       });
       var bestAnn = null;
       monthRows.forEach(function (r) {
@@ -1488,22 +1505,20 @@
       var y = d.slice(0, 4);
       var v = AGG.raw ? AGG.raw[i] : AGG.per10k[i];
       if (v === null || v === undefined) return;
-      if (!map[y]) map[y] = { sum: 0, cnt: 0, pos: 0, neg: 0, prev: 0, wanSum: 0, wanCnt: 0 };
+      if (!map[y]) map[y] = { sum: 0, cnt: 0, pos: 0, neg: 0 };
       map[y].sum += v;
       map[y].cnt += 1;
       if (v > 0.005) map[y].pos += 1;
       else if (v < -0.005) map[y].neg += 1;
-      var base = AGG.prevMv && AGG.prevMv[i] > 0 ? AGG.prevMv[i] : 0;
-      map[y].prev += base || 0;
-      /* 日均万收按「当日收益÷前一日市值×10000」逐日折算后取平均 */
-      if (base > 0) { map[y].wanSum += v / base * 10000; map[y].wanCnt += 1; }
     });
     var years = Object.keys(map).sort().reverse();
     var latestYear = years[0];
     tbody.innerHTML = years.map(function (y) {
       var s = map[y];
-      var ann = s.prev > 0 ? s.sum / s.prev * 365 * 100 : null;
-      var avgWan = s.wanCnt ? s.wanSum / s.wanCnt : null;
+      /* 年度日均万收/年化统一为自然日口径，与产品库「成立至今」一致 */
+      var st = cumulativePeriodStats(AGG, y + '-');
+      var ann = st.ann;
+      var avgWan = st.avg;
       return '<tr data-year="' + y + '" class="' + (y === latestYear ? 'on' : '') + '">' +
         '<td class="ym">' + y + '</td>' +
         '<td class="r num ' + colorBy(s.sum) + '">' + (s.sum > 0 ? '+' : '') + fmtMoney(s.sum) + '</td>' +
@@ -1635,9 +1650,17 @@
     var lastDate = dates[dates.length - 1];
     var lastIdx = dates.length - 1;
     var nonNull = series.filter(function (v) { return v !== null && v !== undefined; });
-    var sum = 0;
-    for (var i = 0; i < nonNull.length; i++) sum += nonNull[i];
-    var avg = nonNull.length ? sum / nonNull.length : 0;
+    /* 区间摘要统一为自然日口径：用未取整收益累加，并除以实际跨越的自然日数，
+       不再按披露点数量平均；期初市值与期初日期均取该区间首个收益点对应的区间起点。 */
+    var rawSeries = p.raw || p.per10k;
+    var sumRaw = 0;
+    for (var ri = start; ri < p.dates.length; ri++) {
+      var rv = rawSeries[ri];
+      if (rv !== null && rv !== undefined) sumRaw += rv;
+    }
+    var spanStart = (p.prevDates && p.prevDates[start]) || firstDate;
+    var spanDays = Math.max(1, dayDiff(parseDate(spanStart), parseDate(lastDate)));
+    var avg = sumRaw / spanDays;
     var minV = nonNull.length ? Math.min(0, Math.min.apply(null, nonNull)) : 0;
     var maxV = nonNull.length ? Math.max(0, Math.max.apply(null, nonNull)) : 0;
     var maxIdx = -1, minIdx = -1;
@@ -1660,9 +1683,8 @@
 
     var sub = document.getElementById('trend-sub');
     if (sub) {
-      var baseMv = (AGG.prevMv && AGG.prevMv[start]) || 0;
-      var spanDays = Math.max(1, Math.round((parseDate(lastDate) - parseDate(firstDate)) / DAY));
-      var rangeAnn = baseMv > 0 ? sum / baseMv * 365 / spanDays * 100 : null;
+      var baseMv = (p.prevMv && p.prevMv[start]) || 0;
+      var rangeAnn = baseMv > 0 ? sumRaw / baseMv * 365 / spanDays * 100 : null;
       sub.innerHTML = '区间日均收益 <b class="' + colorBy(avg) + '">' +
         (avg >= 0 ? '+' : '') + avg.toFixed(2) + ' 元</b>' +
         '<span class="sep">·</span>区间持仓年化 <b class="' + colorBy(rangeAnn) + '">' +
