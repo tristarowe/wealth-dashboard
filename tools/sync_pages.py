@@ -309,6 +309,10 @@ def collect_changes(tree, headers, state, data_files, force):
                 lsha = rsha
         stale[rel] = (lsha, rsha)
         if rsha == lsha:
+            # 本地已与远端一致（如手动覆盖后）：顺手把基线刷新到远端 sha，
+            # 否则基线停在覆盖前，下次 B 守卫会把「自己已对齐的文件」误报成远端变更
+            if state.get(rel) != rsha:
+                state[rel] = rsha
             print("已是最新：", rel)
             continue
 
