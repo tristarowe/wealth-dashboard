@@ -4,6 +4,7 @@
 
   var DAY = 86400000;
   var THUMB_UP = '👍';
+  var THUMB_DOWN = '👎';
 
   function parseDate(s) {
     var p = s.split('-');
@@ -746,8 +747,12 @@
     }
     el = document.getElementById('metric-momprofit');
     if (el) {
-      el.textContent = momProfit === null ? '—' : (momProfit > 0 ? '+' : '') + momProfit.toFixed(2);
-      el.className = colorBy(momProfit) || 'ink';
+      // 较上月：本月累计收益相对上月同期累计收益的变化率（百分比）
+      // 分母取上月同期收益的绝对值，保证涨跌方向与金额增减一致；上月同期接近 0 时不显示
+      var momProfitPct = (momProfit !== null && Math.abs(prevSum) > 1e-6)
+        ? momProfit / Math.abs(prevSum) * 100 : null;
+      el.textContent = momProfitPct === null ? '—' : (momProfitPct > 0 ? '+' : '') + momProfitPct.toFixed(2) + '%';
+      el.className = colorBy(momProfitPct) || 'ink';
     }
     el = document.getElementById('metric-value');
     if (el) el.innerHTML = hs.length ? fmtMoney(mv) + '<em>元</em>' : '—';
@@ -829,11 +834,19 @@
     }
 
     var maxV = null, minV = null;
+    var maxIncome = null, minIncome = null;
     rows.forEach(function (row) {
       var v = row.item.m.todayPer;
-      if (v === null || v === undefined) return;
-      if (maxV === null || v > maxV) maxV = v;
-      if (minV === null || v < minV) minV = v;
+      if (v !== null && v !== undefined) {
+        if (maxV === null || v > maxV) maxV = v;
+        if (minV === null || v < minV) minV = v;
+      }
+      var hh = HOLD_BY_PID[row.item.product.id];
+      var inc = hh ? hh.income : null;
+      if (inc !== null && inc !== undefined && isFinite(inc)) {
+        if (maxIncome === null || inc > maxIncome) maxIncome = inc;
+        if (minIncome === null || inc < minIncome) minIncome = inc;
+      }
     });
 
     var html = '';
@@ -847,6 +860,12 @@
       if (tv !== null && tv !== undefined && maxV !== minV) {
         if (Math.abs(tv - maxV) < 1e-9) badge = '<span class="thumb-under" title="今日万收最高">' + THUMB_UP + '</span>';
       }
+      var downBadge = '';
+      if (minIncome !== null && maxIncome !== minIncome && h && h.income !== null
+          && h.income !== undefined && isFinite(h.income)
+          && Math.abs(h.income - minIncome) < 1e-9) {
+        downBadge = '<span class="thumb-under thumb-down" title="今日收益最低">' + THUMB_DOWN + '</span>';
+      }
 
       var dual = holdMetric === 'both';
       var rs = dual ? ' rowspan="2"' : '';
@@ -855,7 +874,7 @@
       var mvUnder = (h && h.mv !== null && h.mv !== undefined && !isNaN(h.mv))
         ? '<span class="mv-under" title="持仓市值 ¥' + fmtMoney(h.mv) + '">¥' + fmtMoney(h.mv) + '</span>' : '';
       html += '<td class="c num"' + rs + '>' + (i + 1) + '</td>';
-      html += '<td' + rs + '><div class="pname"><a class="plink" href="javascript:void(0)" data-goto-trade="' + p.id + '" title="查看「' + (p.name || '') + '」的交易记录">' + prodDispName(p) + '</a>' + badge + mvUnder + '</div></td>';
+      html += '<td' + rs + '><div class="pname"><a class="plink" href="javascript:void(0)" data-goto-trade="' + p.id + '" title="查看「' + (p.name || '') + '」的交易记录">' + prodDispName(p) + '</a>' + badge + downBadge + mvUnder + '</div></td>';
       html += '<td class="c num"' + rs + '>' + mmdd(m.latestDate) + '</td>';
       html += '<td class="r num today-col ' + colorBy(tv) + '"' + rs + '>' + fmtSigned(tv) + '</td>';
       html += '<td class="r num income-col ' + colorBy(h ? h.income : null) + '"' + rs + '>' + fmtSigned(h ? h.income : null) + '</td>';
@@ -1130,6 +1149,7 @@
       if (vv !== undefined) defined.push(vv);
     }
     var maxV = defined.length ? Math.max.apply(null, defined) : null;
+    var minV = defined.length ? Math.min.apply(null, defined) : null;
 
     var cells = ['一', '二', '三', '四', '五', '六', '日'].map(function (w) {
       return '<div class="wd">' + w + '</div>';
@@ -1149,10 +1169,12 @@
       sum += v;
       if (v > 0.005) pos += 1; else if (v < -0.005) neg += 1; else flat += 1;
       var best = (maxV !== null && Math.abs(v - maxV) < 1e-9);
+      var worst = (minV !== null && maxV !== minV && Math.abs(v - minV) < 1e-9);
       // 手机端格子窄，两位小数会被截断，绝对值≥10 时收一位
       var txt = (compact && Math.abs(v) >= 10) ? (v > 0 ? '+' : '') + v.toFixed(1) : fmtSigned(v);
       cells.push('<div class="cell' + (best ? ' best' : '') + '">' +
-        '<div class="d">' + d2 + (best ? '<span class="thumb">' + THUMB_UP + '</span>' : '') + '</div>' +
+        '<div class="d">' + d2 + (best ? '<span class="thumb">' + THUMB_UP + '</span>' : '')
+          + (worst ? '<span class="thumb thumb-down" title="今日收益最低">' + THUMB_DOWN + '</span>' : '') + '</div>' +
         '<div class="vrow"><span class="v ' + colorBy(v) + '">' + txt + '</span></div>' +
         '<div class="a">' + fmtAnn(a) + '</div></div>');
     }

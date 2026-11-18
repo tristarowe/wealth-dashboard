@@ -116,8 +116,7 @@
   #hold-table th:nth-child(9),#hold-table th:nth-child(10),
   #hold-table tbody tr:not(.mb) > td:nth-child(9),#hold-table tbody tr:not(.mb) > td:nth-child(10),
   #hold-table tbody tr.mb > td:nth-child(1),#hold-table tbody tr.mb > td:nth-child(2){border-left:1px solid var(--rule)}
-  /* 今日收益 / 持仓收益 之间加分割线（仅主行，避免「年化」子行错位画到 90日 列） */
-  #hold-table th:nth-child(6),#hold-table tbody tr:not(.mb) > td:nth-child(6){border-left:1px solid var(--rule)}
+  /* 今日收益 / 持仓收益 之间不设分割线（2026-11-18 按需求取消） */
   #hold-table td.mlabel{font-size:12px;color:var(--muted);white-space:nowrap;padding:6px 8px}
   #hold-table td.pwin,#hold-table td.awin{font-size:13px;font-weight:400;text-align:center}
   .lbl span{display:block;font-size:11px;color:var(--muted);white-space:nowrap}
@@ -560,6 +559,8 @@
 
   .tabpane[hidden]{display:none}
   .thumb-under{display:inline-block;font-size:11px;line-height:1;margin-left:4px;vertical-align:middle}
+  /* 今日收益最低角标：灰色倒立大拇指 */
+  .thumb-down{filter:grayscale(1);opacity:.6}
 
   /* 横向滚动 + 冻结首列 */
   .tbl-scroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
@@ -911,7 +912,7 @@
       <div class="metric key">
         <div class="k">持仓收益</div>
         <div class="v up" id="metric-profit">—</div>
-        <div class="m-sub">较上月 <b class="ink" id="metric-momprofit">—</b> <span class="nw">元</span></div>
+        <div class="m-sub">较上月 <b class="ink" id="metric-momprofit">—</b></div>
       </div>
       <div class="metric">
         <div class="k">持仓金额</div>
@@ -943,12 +944,12 @@
       <div class="card tbl-scroll">
         <table id="hold-table">
           <colgroup>
-            <col style="width:3%"><col><col style="width:5.5%"><col style="width:5.5%">
-            <col style="width:5.5%"><col style="width:5.5%"><col style="width:5.5%">
-            <col style="width:6%"><col style="width:5.8%">
-            <col style="width:5.5%"><col style="width:5.5%"><col style="width:5.5%">
-            <col style="width:5.5%"><col style="width:5.5%"><col style="width:5.9%">
-            <col style="width:4.9%">
+            <col style="width:3%"><col style="width:14%"><col style="width:6%"><col style="width:6%">
+            <col style="width:6%"><col style="width:6%"><col style="width:6%">
+            <col style="width:6%"><col style="width:6%">
+            <col style="width:6%"><col style="width:6%"><col style="width:6%">
+            <col style="width:6%"><col style="width:6%"><col style="width:6%">
+            <col style="width:5%">
           </colgroup>
           <thead>
             <tr>
