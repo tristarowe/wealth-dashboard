@@ -932,12 +932,28 @@
   };
   var WINDOW_SORT = { w7: 0, w14: 1, w30: 2, w60: 3, w90: 4, w365: 5 };
 
+  /* 盈亏汇总表「今日万收」= 看板指标卡同口径（组合市值加权）：
+     单产品 = 今日收益(元) ÷ 前一日市值(元) × 10000 = per10k_last ÷ 昨日净值。
+     单位净值≠1 时与「每万份收益」(Δnav×10000，m.todayPer) 不同，故不能再用 m.todayPer。
+     产品库表仍用每万份收益（产品固有属性、大多无持仓，无法按市值折算），本函数只服务盈亏汇总。
+     未起息/清仓/无昨日净值时返回 null（与看板 todayBase 判空一致，显示「—」）。 */
+  function todayWanOf(p) {
+    var h = HOLD_BY_PID[p.id];
+    if (!h || h.cleared || h.incomePending) return null;
+    if (h.income === null || h.income === undefined) return null;
+    var n = p.nav ? p.nav.length : 0;
+    if (n < 2 || !(p.nav[n - 2] > 0)) return null;
+    var base = (h.incomeShares || h.shares) * p.nav[n - 2];
+    if (!(base > 0)) return null;
+    return h.income / base * 10000;
+  }
+
   function profitSortValue(row, key) {
     var m = row.item.m;
     var h = HOLD_BY_PID[row.item.product.id];
     if (key === 'name') return prodDispName(row.item.product);
     if (key === 'navdate') return m.latestDate;
-    if (key === 'today') return m.todayPer;
+    if (key === 'today') return todayWanOf(row.item.product);
     if (key === 'income') return h ? h.income : null;
     if (key === 'profit') return h ? h.profit : null;
     if (key === 'holdann') return h ? h.ann : null;
@@ -983,7 +999,7 @@
     var maxV = null, minV = null;
     var maxIncome = null, minIncome = null;
     rows.forEach(function (row) {
-      var v = row.item.m.todayPer;
+      var v = todayWanOf(row.item.product);
       if (v !== null && v !== undefined) {
         if (maxV === null || v > maxV) maxV = v;
         if (minV === null || v < minV) minV = v;
@@ -1004,7 +1020,7 @@
       var h = HOLD_BY_PID[p.id];
 
       var badge = '';
-      var tv = m.todayPer;
+      var tv = todayWanOf(p);
       if (tv !== null && tv !== undefined && maxV !== minV) {
         if (Math.abs(tv - maxV) < 1e-9) badge = '<span class="thumb-under" title="今日万收最高">' + THUMB_UP + '</span>';
       }
