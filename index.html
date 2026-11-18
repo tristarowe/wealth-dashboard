@@ -1008,7 +1008,7 @@
                   <tr>
                     <th>年份</th>
                     <th>收益</th>
-                    <th>日均万收</th>
+                    <th>日均收益</th>
                     <th>正收益</th>
                     <th>回撤</th>
                     <th></th>
@@ -1020,7 +1020,7 @@
             </div>
             <div class="cal-box-head"><span class="cal-sub" id="year-label">月度收益</span></div>
             <div class="month-list" id="month-list">
-              <div class="month-row mhead"><span>月份</span><span>收益</span><span>日均万收</span><span>正收益</span><span>回撤</span><span>挂0</span><span>年化</span></div>
+              <div class="month-row mhead"><span>月份</span><span>收益</span><span>日均收益</span><span>正收益</span><span>回撤</span><span>挂0</span><span>年化</span></div>
             </div>
           </div>
 
@@ -1360,7 +1360,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261118e';
+      s.src = './assets/dashboard.js?v=20261118f';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();

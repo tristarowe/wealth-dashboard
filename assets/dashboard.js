@@ -1220,7 +1220,7 @@
       monthRows.forEach(function (r) {
         if (r.st.ann !== null && (bestAnn === null || r.st.ann > bestAnn)) bestAnn = r.st.ann;
       });
-      var html = '<div class="month-row mhead"><span>月份</span><span>收益</span><span>日均万收</span><span>正收益</span><span>回撤</span><span>挂0</span><span>年化</span></div>';
+      var html = '<div class="month-row mhead"><span>月份</span><span>收益</span><span>日均收益</span><span>正收益</span><span>回撤</span><span>挂0</span><span>年化</span></div>';
       html += '<div class="month-rows">';
       monthRows.slice().reverse().forEach(function (r) {
         var st = r.st;
@@ -3341,9 +3341,10 @@
     window.addEventListener('scroll', function () { if (dpEl && !dpEl.hidden) placeDp(); }, true);
   }
 
-  /* 交易流水按产品过滤（仅更新状态与渲染，不切换页签） */
-  function filterFlowByProduct(pid) {
-    flowState.pid = pid ? canonicalPidById(pid) : '';
+  /* 重置交易流水的年月/类型/状态筛选（不改产品维度）。
+     顶部「覆盖产品」选择变化时必须调用：否则流水会沿用默认的“最近交易月”，
+     导致只有该月有交易的产品可见，其余产品被误判为「暂无符合条件的交易流水」。 */
+  function resetFlowFilters() {
     flowState.year = '';
     flowState.month = '';
     flowState.type = '';
@@ -3356,6 +3357,12 @@
     if (ms) ms.value = '';
     if (ts) ts.value = '';
     if (ss) ss.value = '';
+  }
+
+  /* 交易流水按产品过滤（仅更新状态与渲染，不切换页签） */
+  function filterFlowByProduct(pid) {
+    flowState.pid = pid ? canonicalPidById(pid) : '';
+    resetFlowFilters();
     /* 从产品库点进某只产品时，若它不在当前全局筛选范围内，先纳入选中，避免被全局筛选挡掉 */
     if (flowState.pid && selectedIds.indexOf(flowState.pid) === -1 &&
         pickableProducts().some(function (p) { return p.id === flowState.pid; })) {
@@ -4224,6 +4231,9 @@
     renderCalendar();
     renderTrend();
     renderTradeSummary();
+    /* 产品选择变了，交易流水必须回到「所选产品的全部记录」：
+       清空此前默认定位的最近交易月，避免多选/单选时大部分产品被年月条件挡成空列表。 */
+    resetFlowFilters();
     renderFlows();
     renderProductTable();
     if (window.__syncPickerToggle) window.__syncPickerToggle();
