@@ -755,17 +755,23 @@
     var models = activeModels();
     var hs = holdingsOf(models);
 
-    var today = 0, todayCnt = 0, perSum = 0, perCnt = 0;
+    var today = 0, todayCnt = 0, todayBase = 0;
     hs.forEach(function (h) {
       var p = h.product;
       if (h.income !== null) { today += h.income; todayCnt += 1; }
-      /* 今日平均万收只统计已起息的在持产品：已清仓、或确认日尚未到最新净值日的产品
-         均不进分子分母，否则会把买入前的产品万收算进组合当日表现 */
+      /* 今日万收与「本月日均万收」「盈亏日历日均万收」统一为组合市值加权口径：
+         组合万收 = 组合当日收益(元) ÷ 组合前一日市值(元) × 10000。
+         原口径对各产品 per10k 做等权算术平均（小市值产品与大市值产品同权），
+         既与市值加权的组合表现不符，也无法与「今日收益(元)」互相换算。
+         分子只统计已起息在持产品的收益，分母用同一批产品的昨日市值，避免
+         清仓/未起息产品进分母稀释组合万收。 */
       if (h.cleared || h.incomePending) return;
-      perSum += p.per10k[p.per10k.length - 1] || 0;
-      perCnt += 1;
+      var n = p.per10k.length;
+      if (n >= 2 && p.nav && p.nav[n - 2] > 0) {
+        todayBase += (h.incomeShares || h.shares) * p.nav[n - 2];
+      }
     });
-    var avg = perCnt ? perSum / perCnt : null;
+    var avg = todayBase > 0 ? today / todayBase * 10000 : null;
 
     var ym = DATA.asOf.slice(0, 7);
     /* 本月日均万收必须与盈亏日历同口径：组合万收 = 当日收益 ÷ 前一日市值 × 10000，
