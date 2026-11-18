@@ -26,6 +26,7 @@ import re
 import subprocess
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
 
 import requests
@@ -86,7 +87,6 @@ def line_count(text):
 def log_bypass(reason, paths, problems):
     """逃生口留痕：仅本机文件（已 gitignore），记录时间/操作人/原因/命中项。"""
     import os
-    from datetime import datetime
     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     who = os.environ.get("USERNAME") or os.environ.get("USER") or "unknown"
     with open(ROOT / "tools" / "guard_bypass.log", "a", encoding="utf-8") as fh:
