@@ -7,3 +7,6 @@ daily/.np_fetch_out/
 *.bak.*
 # 本地内部说明（不推公开仓库）
 同步操作说明.md
+# 跨端同步守卫的本地状态（仅本机，禁止进版本库；见 tools/code_guard_marks.json）
+.sync_state.json
+guard_bypass.log
