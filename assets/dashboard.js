@@ -358,6 +358,17 @@
       .map(function (x) { return x.product; });
   }
 
+  /* 截至某净值日已起息的份额：只累计起息日 <= 该净值日的批次。
+     银行规则：份额自确认日（T+1）当日净值起享有收益，此前净值涨跌不归属该批次。 */
+  function vestedShares(lots, navDate) {
+    if (!lots || !lots.length || !navDate) return 0;
+    var s = 0;
+    for (var i = 0; i < lots.length; i++) {
+      if (lots[i].date <= navDate) s += lots[i].shares;
+    }
+    return s;
+  }
+
   // 交易底稿 → 持仓：申购累加份额，赎回/清仓按确认净值扣减，起息日 = 首次确认日
   function computeHoldings() {
     var tx = ((window.TRANSACTIONS && window.TRANSACTIONS.items) || []).slice();
@@ -379,7 +390,7 @@
       var p = findProductById(t.pid);
       if (!p) return;
       var rec = acc[p.id];
-      if (!rec) rec = acc[p.id] = { product: p, shares: 0, cost: 0, realized: 0, startDate: null, lastTx: t };
+      if (!rec) rec = acc[p.id] = { product: p, shares: 0, cost: 0, realized: 0, startDate: null, lots: [], lastTx: t };
       /* 成交净值缺失时按确认日净值兜底，净值披露后自动生效 */
       var nav = Number(t.confirmNav) || navForConfirm(p, t.applyDate || t.confirmDate) || 1;
       var sh = Number(t.shares);
@@ -392,9 +403,21 @@
         rec.realized += sell * (nav - avg);
         rec.cost -= sell * avg;
         rec.shares -= sell;
+        /* 赎回/清仓按先进先出扣减份额批次，保证剩余批次的起息日归属正确 */
+        var remain = sell;
+        for (var li = 0; li < rec.lots.length && remain > 1e-9; li++) {
+          var take = Math.min(rec.lots[li].shares, remain);
+          rec.lots[li].shares -= take;
+          remain -= take;
+        }
+        rec.lots = rec.lots.filter(function (l) { return l.shares > 1e-9; });
       } else {
         /* 清仓后重新申购：起息日按本次确认日重新计算 */
         if (!(rec.shares > 0.000001)) rec.startDate = t.confirmDate;
+        /* 每笔买入记为独立份额批次，起息日 = 该笔确认日（T+1）。
+           银行规则：T 日按 T 日净值成交、T+1 确认起息；一批份额的收益从
+           「确认日当日净值」开始归属，确认日之前的净值涨跌与其无关。 */
+        rec.lots.push({ date: t.confirmDate || t.applyDate, shares: sh });
         rec.shares += sh;
         rec.cost += Number(t.amount) || sh * nav;
       }
@@ -415,10 +438,10 @@
       var days = alive ? Math.max(0, dayDiff(parseDate(rec.startDate), parseDate(todayStr))) : 0;
       var costNav = alive ? rec.cost / rec.shares : 0;
       var lastPer = p.per10k[n - 1];
-      /* 银行理财规则：T 日申购按 T 日净值成交、T+1 确认份额并起息。
-         起息日之前（含申购日）披露的净值涨跌属于买入前的产品历史表现，不属于本笔持仓；
-         只有最新净值日 >= 起息日，最近一天的万收才归属本持仓。 */
-      var incomePending = !alive || !p.latestDate || !rec.startDate || p.latestDate < rec.startDate;
+      /* 今日收益按「截至最新净值日已起息的份额」计算（而非全部持仓份额）：
+         追加申购的新份额在自身确认日之前不产生收益，避免把未起息份额算进当日收益。 */
+      var incomeShares = alive ? vestedShares(rec.lots, p.latestDate) : 0;
+      var incomePending = !(incomeShares > 1e-9) || lastPer === null || lastPer === undefined;
       var h = {
         tx: rec.lastTx,
         product: p,
@@ -433,8 +456,10 @@
         profitRate: rec.cost > 0 ? profit / rec.cost * 100 : null,
         ann: (days > 0 && rec.cost > 0) ? profit / rec.cost * 365 / days * 100 : null,
         days: days,
-        income: (lastPer === null || lastPer === undefined || incomePending) ? 0 : lastPer * rec.shares / 10000,
+        income: incomePending ? 0 : lastPer * incomeShares / 10000,
+        incomeShares: incomeShares,
         incomePending: incomePending,
+        lots: rec.lots,
         cleared: !alive,
         realized: rec.realized
       };
@@ -492,8 +517,11 @@
       var lastCum = 0;
       for (var i = 0; i < p.dates.length; i++) {
         var dt = p.dates[i];
-        if (dt < h.startDate) continue;
-        var cum = (p.nav[i] - h.costNav) * h.shares;
+        /* 历史每日收益按「当日已起息份额」计算：多笔买入时，各批次从自身确认日起
+           才参与收益，避免用当前总份额回溯计算导致历史收益虚高。 */
+        var shOnDay = h.lots ? vestedShares(h.lots, dt) : (dt < h.startDate ? 0 : h.shares);
+        if (!(shOnDay > 1e-9)) continue;
+        var cum = (p.nav[i] - h.costNav) * shOnDay;
         var income = cum - lastCum;
         var prevMv = h.cost + lastCum;
         lastCum = cum;
