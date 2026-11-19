@@ -2648,8 +2648,8 @@
     return selValues(sel).length === 0;
   }
 
-  /* 产品库表头筛选：多选复选 —— 每项前置勾选框，可连续勾选多项（弹层保持打开），
-     底部「清除 / 完成」，点空白或按 Esc 收起；首项（列名，如「风险等级」）＝全部。 */
+  /* 产品库表头筛选：参考看板产品筛选 —— 点名称＝仅选该项并收起；点前置复选框＝多选增减（弹层保持打开）。
+     首项（列名，如「风险等级」）＝全部；点空白处或按 Esc 收起，无「清除 / 完成」按钮。 */
   function openSelPop(sel, anchor, opts) {
     opts = opts || {};
     var anchorEl = anchor || sel;
@@ -2658,68 +2658,69 @@
     var pop = document.createElement('div');
     pop.className = 'sel-pop';
     pop.setAttribute('role', 'listbox');
-    pop.setAttribute('aria-multiselectable', 'true');
 
+    function selectAll() {
+      Array.prototype.forEach.call(sel.options, function (o, j) { o.selected = (j === 0); });
+    }
     /* 勾选态回写：首项＝全部，其余按 select 选中情况 */
     function paint() {
-      Array.prototype.forEach.call(pop.querySelectorAll('.sel-opt'), function (bb, j) {
+      Array.prototype.forEach.call(pop.querySelectorAll('.sel-opt'), function (row, j) {
         var all = (j === 0);
         var on = all ? selIsAll(sel) : (!!sel.options[j] && sel.options[j].selected && !selIsAll(sel));
-        bb.classList.toggle('on', on);
-        bb.setAttribute('aria-selected', on ? 'true' : 'false');
+        row.classList.toggle('on', on);
+        row.setAttribute('aria-selected', on ? 'true' : 'false');
+        var cb = row.querySelector('.mchk');
+        if (cb) cb.checked = on;
       });
+    }
+    function commit() {
+      paint();
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
     }
 
     Array.prototype.forEach.call(sel.options, function (opt, i) {
       var isAllItem = (i === 0);
-      var b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'sel-opt mopt';
-      b.setAttribute('role', 'option');
-      b.innerHTML = '<span class="mchk"></span><span class="mtxt"></span>';
-      b.querySelector('.mtxt').textContent = opt.text;
-      b.addEventListener('click', function (e) {
+      var row = document.createElement('label');
+      row.className = 'sel-opt mopt';
+      row.setAttribute('role', 'option');
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.className = 'mchk';
+      var txt = document.createElement('span');
+      txt.className = 'mtxt';
+      txt.textContent = opt.text;
+      row.appendChild(cb);
+      row.appendChild(txt);
+
+      /* 点名称：仅选这一项（首项＝全部），并立即收起 —— 保留「单击仅选」 */
+      txt.addEventListener('click', function (e) {
         e.preventDefault();
         e.stopPropagation();
-        if (isAllItem) {
-          /* 点「全部」：清空其他具体选中项 */
-          Array.prototype.forEach.call(sel.options, function (o, j) { if (j > 0) o.selected = false; });
-          sel.options[0].selected = true;
-        } else {
-          /* 点具体项：切换勾选，同时取消「全部」；全取消时回到「全部」 */
-          opt.selected = !opt.selected;
+        if (isAllItem) selectAll();
+        else {
+          Array.prototype.forEach.call(sel.options, function (o) { o.selected = false; });
+          opt.selected = true;
+        }
+        commit();
+        closeSelPop();
+      });
+
+      /* 点复选框：多选增减，弹层保持打开，与看板产品筛选一致 */
+      cb.addEventListener('change', function (e) {
+        e.stopPropagation();
+        if (isAllItem) selectAll();
+        else {
+          opt.selected = cb.checked;
           sel.options[0].selected = false;
           if (selValues(sel).length === 0) sel.options[0].selected = true;
         }
-        paint();
-        sel.dispatchEvent(new Event('change', { bubbles: true }));
-        if (!opts.keepOpen) closeSelPop();
-        else placeSelPop();
+        commit();
+        placeSelPop();
       });
-      pop.appendChild(b);
+
+      pop.appendChild(row);
     });
     paint();
-
-    /* 底部操作栏：清除（回到全部）/ 完成（收起） */
-    var foot = document.createElement('div');
-    foot.className = 'sel-foot';
-    var btnClear = document.createElement('button');
-    btnClear.type = 'button'; btnClear.textContent = '清除';
-    btnClear.addEventListener('click', function (e) {
-      e.preventDefault(); e.stopPropagation();
-      Array.prototype.forEach.call(sel.options, function (o, j) { o.selected = (j === 0); });
-      paint();
-      sel.dispatchEvent(new Event('change', { bubbles: true }));
-      if (!opts.keepOpen) closeSelPop();
-    });
-    var btnDone = document.createElement('button');
-    btnDone.type = 'button'; btnDone.className = 'sel-done'; btnDone.textContent = '完成';
-    btnDone.addEventListener('click', function (e) {
-      e.preventDefault(); e.stopPropagation();
-      closeSelPop();
-    });
-    foot.appendChild(btnClear); foot.appendChild(btnDone);
-    pop.appendChild(foot);
 
     document.body.appendChild(pop);
     selPop = pop;
@@ -2795,8 +2796,7 @@
       hit.addEventListener('click', function (e) {
         e.preventDefault();
         e.stopPropagation();
-        /* 多选：勾选时弹层保持打开，点「完成」或空白处收起 */
-        openSelPop(sel, null, { keepOpen: true });
+        openSelPop(sel);
       });
       wrap.appendChild(hit);
       sizeSelWrap(sel);
@@ -4412,8 +4412,11 @@
     var panel = document.getElementById('ms-panel');
     if (!trigger || !panel) return;
     panel.hidden = false;
+    /* 每次打开先回到完整产品列表：清掉上次的搜索词与搜索结果态 */
+    pickerQuery = '';
     var search = document.getElementById('ms-search');
-    if (search) search.focus();
+    if (search) { search.value = ''; search.focus(); }
+    renderPickerList();
     var r = trigger.getBoundingClientRect();
     var pw = panel.offsetWidth;
     var ph = panel.offsetHeight;
