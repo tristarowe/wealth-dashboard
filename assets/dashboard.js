@@ -1091,17 +1091,14 @@
       return null;
     }).filter(function (x) { return !!x && selectedIds.indexOf(x.product.id) !== -1; });
 
-    /* 净值日期多选筛选：选项来自当前所选产品的真实披露日，选中的日期才显示 */
+    /* 净值日期筛选：选项来自当前所选产品的真实披露日，单选，选一个就只看该日披露的产品 */
     var dateOpts = [];
-    var dateCount = {};
     models.forEach(function (x) {
       var dd0 = (x.m && x.m.latestDate) || '';
-      if (!dd0) return;
-      if (dateOpts.indexOf(dd0) === -1) dateOpts.push(dd0);
-      dateCount[dd0] = (dateCount[dd0] || 0) + 1;
+      if (dd0 && dateOpts.indexOf(dd0) === -1) dateOpts.push(dd0);
     });
     dateOpts.sort().reverse();
-    populateDateFilter(dateOpts, dateCount);
+    populateDateFilter(dateOpts);
     if (profitDateSel.length) {
       models = models.filter(function (x) {
         return profitDateSel.indexOf((x.m && x.m.latestDate) || '') !== -1;
@@ -1257,76 +1254,46 @@
     apply();
   }
 
-  /* ---------------- 盈亏汇总「净值日期」多选筛选 ---------------- */
-  var profitDateSel = [];   /* 允许的披露日集合；空 = 全部 */
+  /* ---------------- 盈亏汇总「净值日期」筛选 ---------------- */
+  /* 表头就是与「数据」列同款的原生下拉：首项「净值日期」＝全部，其余为各披露日。
+     单选，点选即收起（原生 select 行为），选一个日期就只看该日披露的产品。 */
+  var profitDateSel = [];   /* 至多一个日期；空 = 全部 */
   var dateSelEl = null;
 
-  function ensureDateSel() {
-    if (dateSelEl) return dateSelEl;
-    var s = document.createElement('select');
-    s.multiple = true;
-    s.id = 'hold-date-sel';
-    s.hidden = true;
-    document.body.appendChild(s);
-    dateSelEl = s;
-    s.addEventListener('change', function () {
-      profitDateSel = selValues(s);
-      syncDateFilterUI();
-      renderProfitTable();
-    });
-    return s;
+  function dateSelRef() {
+    if (!dateSelEl || !dateSelEl.isConnected) dateSelEl = document.getElementById('hold-date-sel');
+    return dateSelEl;
   }
 
-  function syncDateFilterUI() {
-    var btn = document.getElementById('hold-date-filter');
-    var n = document.getElementById('hold-date-n');
-    var on = profitDateSel.length > 0;
-    if (btn) {
-      btn.classList.toggle('on', on);
-      btn.classList.toggle('has-v', on);
-      btn.title = on
-        ? '已筛选 ' + profitDateSel.length + ' 个净值日期（点击修改）'
-        : '按净值日期筛选（可多选）';
+  function populateDateFilter(dates) {
+    var s = dateSelRef();
+    if (!s) return;
+    var keep = profitDateSel[0] || '';
+    if (keep && dates.indexOf(keep) === -1) { keep = ''; profitDateSel = []; }
+    /* 选项集合没变就不重建 DOM，避免移动端下拉被反复重绘 */
+    var sig = dates.join('|');
+    if (s.getAttribute('data-sig') !== sig) {
+      var html = '<option value="">净值日期</option>';
+      dates.forEach(function (d) {
+        html += '<option value="' + d + '">' + mmdd(d) + '</option>';
+      });
+      s.innerHTML = html;
+      s.setAttribute('data-sig', sig);
     }
-    /* 表头按钮即下拉当前值：未筛选显示列名，选一天显示该日期，多选显示「N个」 */
-    if (n) {
-      if (!on) n.textContent = '';
-      else if (profitDateSel.length === 1) n.textContent = mmdd(profitDateSel[0]);
-      else n.textContent = profitDateSel.length + '个';
-    }
-  }
-
-  function populateDateFilter(dates, counts) {
-    var s = ensureDateSel();
-    var keep = profitDateSel.filter(function (d) { return dates.indexOf(d) !== -1; });
-    profitDateSel = keep;
-    s.innerHTML = '';
-    var o0 = document.createElement('option');
-    o0.value = ''; o0.text = '全部日期'; o0.selected = keep.length === 0;
-    s.appendChild(o0);
-    dates.forEach(function (d) {
-      var o = document.createElement('option');
-      o.value = d;
-      o.text = mmdd(d) + (counts && counts[d] ? ' · ' + counts[d] + ' 只' : '');
-      o.selected = keep.indexOf(d) !== -1;
-      s.appendChild(o);
-    });
-    syncDateFilterUI();
+    s.value = keep;
+    s.classList.toggle('on', !!keep);
   }
 
   function bindDateFilter() {
-    var btn = document.getElementById('hold-date-filter');
-    if (!btn) return;
-    function open(e) {
-      if (e) { e.preventDefault(); e.stopPropagation(); }
-      openSelPop(ensureDateSel(), btn, { keepOpen: true });
-    }
-    btn.addEventListener('click', open);
-    btn.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' || e.key === ' ') open(e);
+    var s = dateSelRef();
+    if (!s) return;
+    s.addEventListener('change', function () {
+      profitDateSel = s.value ? [s.value] : [];
+      renderProfitTable();
     });
-    /* 点漏斗只筛选，不触发整列排序 */
-    btn.addEventListener('mousedown', function (e) { e.stopPropagation(); });
+    /* 点下拉只筛选，不触发整列排序 */
+    s.addEventListener('mousedown', function (e) { e.stopPropagation(); });
+    s.addEventListener('click', function (e) { e.stopPropagation(); });
   }
 
   /* ---------------- 模块 02：盈亏日历 ---------------- */
@@ -2579,9 +2546,9 @@
     return selValues(sel).length === 0;
   }
 
-  /* opts.keepOpen：多选且需要连续勾选时保留弹窗（默认点选后自动收起） */
-  function openSelPop(sel, anchor, opts) {
-    opts = opts || {};
+  /* 产品库筛选下拉：单选 —— 无复选框，点一项即排他选中并收起，
+     首项（列名，如「风险等级」）等于「全部」并默认高亮。与表头原生下拉同观感。 */
+  function openSelPop(sel, anchor) {
     var anchorEl = anchor || sel;
     if (selPopSel === sel && selPopAnchor === anchorEl) { closeSelPop(); return; }
     closeSelPop();
@@ -2593,60 +2560,21 @@
       var checked = isAllItem ? selIsAll(sel) : (opt.selected && !selIsAll(sel));
       var b = document.createElement('button');
       b.type = 'button';
-      b.className = 'sel-opt mopt' + (checked ? ' on' : '');
+      b.className = 'sel-opt' + (checked ? ' on' : '');
       b.setAttribute('role', 'option');
       b.setAttribute('aria-selected', checked ? 'true' : 'false');
-      b.innerHTML = '<span class="mchk"></span><span class="mtxt"></span>';
-      b.querySelector('.mtxt').textContent = opt.text;
+      b.textContent = opt.text;
       b.addEventListener('click', function (e) {
         e.preventDefault();
         e.stopPropagation();
-        if (isAllItem) {
-          /* 点「全部」清空其他具体选中项 */
-          Array.prototype.forEach.call(sel.options, function (o, j) { if (j > 0) o.selected = false; });
-          sel.options[0].selected = true;
-        } else {
-          /* 点具体项：切换；同时取消「全部」 */
-          opt.selected = !opt.selected;
-          sel.options[0].selected = false;
-          if (selValues(sel).length === 0) sel.options[0].selected = true;
-        }
-        /* 同步勾选态；默认点选后自动收起下拉框（多选连续勾选时由调用方 keepOpen） */
-        Array.prototype.forEach.call(pop.querySelectorAll('.sel-opt'), function (bb, j) {
-          var all = (j === 0);
-          var on = all ? selIsAll(sel) : (sel.options[j].selected && !selIsAll(sel));
-          bb.classList.toggle('on', on);
-          bb.setAttribute('aria-selected', on ? 'true' : 'false');
-        });
+        /* 单选：先清空全部，再只选中被点的这一项（首项＝全部，也是唯一选中项） */
+        Array.prototype.forEach.call(sel.options, function (o) { o.selected = false; });
+        opt.selected = true;
         sel.dispatchEvent(new Event('change', { bubbles: true }));
-        if (!opts.keepOpen) closeSelPop();
+        closeSelPop();
       });
       pop.appendChild(b);
     });
-    /* 底部操作栏：清除 / 完成 */
-    var foot = document.createElement('div');
-    foot.className = 'sel-foot';
-    var btnClear = document.createElement('button');
-    btnClear.type = 'button'; btnClear.textContent = '清除';
-    btnClear.addEventListener('click', function (e) {
-      e.preventDefault(); e.stopPropagation();
-      sel.options[0].selected = true;
-      Array.prototype.forEach.call(sel.options, function (o, j) { if (j > 0) o.selected = false; });
-      Array.prototype.forEach.call(pop.querySelectorAll('.sel-opt'), function (bb, j) {
-        bb.classList.toggle('on', j === 0);
-        bb.setAttribute('aria-selected', j === 0 ? 'true' : 'false');
-      });
-      sel.dispatchEvent(new Event('change', { bubbles: true }));
-      if (!opts.keepOpen) closeSelPop();
-    });
-    var btnDone = document.createElement('button');
-    btnDone.type = 'button'; btnDone.className = 'sel-done'; btnDone.textContent = '完成';
-    btnDone.addEventListener('click', function (e) {
-      e.preventDefault(); e.stopPropagation();
-      closeSelPop();
-    });
-    foot.appendChild(btnClear); foot.appendChild(btnDone);
-    pop.appendChild(foot);
     document.body.appendChild(pop);
     selPop = pop;
     selPopSel = sel;

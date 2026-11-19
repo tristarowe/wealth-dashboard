@@ -290,20 +290,10 @@
   .filters .sel-wrap::after{content:'';position:absolute;right:9px;top:50%;width:5px;height:5px;margin-top:-3.5px;border-right:1.4px solid #8fa5b1;border-bottom:1.4px solid #8fa5b1;transform:rotate(45deg);pointer-events:none}
   .filters .sel-hit{position:absolute;inset:0;z-index:2;display:block;width:100%;height:100%;padding:0;border:0;background:transparent;cursor:pointer;font-size:0;color:transparent}
   .sel-pop{position:fixed;z-index:250;min-width:132px;max-width:min(80vw,240px);max-height:264px;overflow:auto;background:#fff;border:1px solid #dbe7ed;border-radius:10px;box-shadow:0 12px 28px rgba(28,58,80,.16);padding:4px;-webkit-overflow-scrolling:touch}
-  .sel-opt{display:block;width:100%;text-align:left;border:0;background:transparent;font-family:var(--font);font-size:12.5px;line-height:1.4;color:var(--ink);padding:6px 9px;border-radius:7px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .sel-opt:hover{background:#f6fafc}
-  .sel-opt.on{background:#e4f0f5;color:var(--accent-deep);font-weight:700}
-  /* 多选筛选：复选项 + 底部操作栏 */
-  .sel-opt.mopt{display:flex;align-items:center;gap:7px;padding:6px 9px;white-space:nowrap}
-  .sel-opt.mopt .mchk{flex:none;width:14px;height:14px;border:1.5px solid #b4c6d0;border-radius:4px;background:#fff;position:relative;box-sizing:border-box}
-  .sel-opt.mopt.on .mchk{background:var(--accent-deep);border-color:var(--accent-deep)}
-  .sel-opt.mopt.on .mchk::after{content:'';position:absolute;left:3.5px;top:1px;width:4px;height:8px;border:solid #fff;border-width:0 1.8px 1.8px 0;transform:rotate(45deg)}
-  .sel-opt.mopt .mtxt{overflow:hidden;text-overflow:ellipsis}
-  .sel-foot{display:flex;gap:6px;margin-top:4px;padding-top:4px;border-top:1px solid #eaf1f4}
-  .sel-foot button{flex:1;font-family:var(--font);font-size:12px;padding:5px 0;border:1px solid var(--rule);border-radius:6px;background:#fff;color:var(--ink);cursor:pointer}
-  .sel-foot button:hover{background:#f6fafc}
-  .sel-foot button.sel-done{border-color:var(--accent-deep);background:var(--accent-deep);color:#fff}
-  .sel-foot button.sel-done:hover{opacity:.9}
+  .sel-opt{display:block;width:100%;text-align:center;border:0;background:transparent;font-family:var(--font);font-size:12.5px;line-height:1.4;color:var(--ink);padding:6px 9px;border-radius:6px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sel-opt:hover{background:#f2f7fa}
+  .sel-opt.on{background:var(--accent-deep);color:#fff;font-weight:700}
+  .sel-opt.on:hover{filter:brightness(1.1)}
   .sel-label .mcount{color:var(--accent-deep);font-weight:700}
   /* 产品库搜索候选：只列名称，不展示登记编码 */
   .prod-sug{max-width:min(92vw,340px)}
@@ -574,18 +564,10 @@
   .tbl-scroll{overflow:auto;max-height:min(72vh,620px);-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;overscroll-behavior-y:auto}
   .tbl-scroll>table thead th{position:sticky;top:0;z-index:3;background:#f7f9fa;box-shadow:inset 0 -1px 0 var(--rule)}
   #hold-table thead th[data-sort="score"]{background:#e6f2f6}
-  /* 净值日期表头：表头本身就是「数据」列那样的下拉按钮，点开多选筛选（不触发排序）。
-     未筛选显示列名，筛选后显示所选日期，与 select 的当前值展示方式一致。 */
-  .th-date{padding:4px 2px !important}
-  .th-dbtn{display:flex;align-items:center;justify-content:center;gap:2px;width:100%;max-width:100%;height:20px;margin:0 auto;padding:0 3px;font-family:var(--font);font-size:10.5px;font-weight:600;line-height:1;color:var(--muted);background:#fff;border:1px solid var(--rule);border-radius:5px;cursor:pointer;white-space:nowrap;overflow:hidden}
-  .th-dbtn:hover{border-color:#c9dbe3;color:var(--accent-deep)}
-  .th-dbtn:focus-visible{outline:none;border-color:var(--accent);color:var(--accent-deep)}
-  .th-dbtn .ft-caret{width:0;height:0;border-left:3px solid transparent;border-right:3px solid transparent;border-top:4px solid currentColor;flex:none}
-  .th-dbtn .ft-n{font-family:var(--mono);font-size:10.5px;font-weight:700;font-style:normal;line-height:1;overflow:hidden;text-overflow:ellipsis}
-  .th-dbtn .ft-lbl{overflow:hidden;text-overflow:ellipsis}
-  .th-dbtn .ft-short{display:none}
-  .th-dbtn.has-v .ft-lbl{display:none}
-  .th-dbtn.on{color:var(--accent-deep);border-color:var(--accent);background:#e4f0f5}
+  /* 净值日期表头：与「数据」列完全同款的原生下拉（.th-select），
+     首项为列名「净值日期」＝全部，其余为各披露日；单选，点选即收起 */
+  #hold-table .th-select#hold-date-sel{width:100%;max-width:100%;text-align:center;text-align-last:center}
+  #hold-table .th-select#hold-date-sel.on{color:var(--accent-deep);border-color:var(--accent);font-weight:700}
   .swipe-tip{display:none;text-align:center;font-size:11px;color:#93a3ae;margin-top:6px}
   /* 交易流水按月折叠：表头行显示整月汇总，点击展开明细 */
   tr.flow-month td{background:#f1f7f9;font-weight:700;font-size:12.5px;color:var(--accent-deep);padding:9px 10px;cursor:pointer;border-bottom:1px solid var(--rule);white-space:nowrap;user-select:none}
@@ -666,8 +648,9 @@
     #hold-table colgroup col,#sum-table colgroup col,#flow-table colgroup col{width:auto !important}
     #hold-table col:nth-child(1){width:26px !important}
     /* 横屏产品名加宽（原 92px 会把长名称压成两三行、甚至单字换行） */
-    #hold-table col:nth-child(2){width:118px !important}
-    #hold-table col:nth-child(3){width:44px !important}
+    #hold-table col:nth-child(2){width:102px !important}
+    /* 净值日期列放原生下拉：留出「净值日期」四字＋箭头，从产品名列让位 */
+    #hold-table col:nth-child(3){width:72px !important}
     #hold-table col:nth-child(4){width:44px !important}
     #hold-table col:nth-child(5){width:44px !important}
     #hold-table col:nth-child(6){width:50px !important}
@@ -677,10 +660,6 @@
     /* 数据列的表头下拉去掉多余内边距，避免撑破单元格 */
     #hold-table thead th:nth-child(9){padding-left:1px !important;padding-right:1px !important}
     #hold-table .th-select{font-size:11px;padding:2px 1px;max-width:100%}
-    /* 横屏列窄（约 46px），净值日期表头按钮改用短标签「日期」 */
-    #hold-table .th-dbtn{font-size:9.5px;height:19px;padding:0 2px;gap:1px}
-    #hold-table .th-dbtn .ft-full{display:none}
-    #hold-table .th-dbtn .ft-short{display:inline}
     #hold-table col:nth-child(10){width:52px !important}
     #hold-table col:nth-child(11){width:52px !important}
     #hold-table col:nth-child(12),
@@ -761,8 +740,8 @@
     #hold-table{table-layout:fixed;width:900px;min-width:900px}
     #hold-table colgroup col{width:auto !important}
     #hold-table col:nth-child(1){width:28px !important}
-    #hold-table col:nth-child(2){width:146px !important}
-    #hold-table col:nth-child(3){width:58px !important}
+    #hold-table col:nth-child(2){width:132px !important}
+    #hold-table col:nth-child(3){width:72px !important}
     #hold-table col:nth-child(4){width:56px !important}
     #hold-table col:nth-child(5){width:62px !important}
     #hold-table col:nth-child(6){width:62px !important}
@@ -780,8 +759,6 @@
     #hold-table thead th:nth-child(2),#hold-table tbody tr:not(.mb) > td:nth-child(2){padding-left:8px;padding-right:6px}
     #hold-table thead th:nth-child(3){padding-left:2px;padding-right:2px}
     #hold-table .th-select{width:100%;max-width:100%;font-size:11px;padding:1px 0}
-    /* 竖屏 58px 列：净值日期表头按钮降一档字号，四字＋箭头留出余量不贴边 */
-    #hold-table .th-dbtn{font-size:9.5px;padding:0 2px;gap:1px}
     #hold-table tbody td:nth-child(2){min-width:0;max-width:none}
     /* 自适应列宽下产品名会把表头筛选下拉挤扁：按钮按文字宽度显示，列保留最小可读宽度 */
     #flow-table .th-select{width:auto;min-width:0;font-size:11px}
@@ -1001,7 +978,7 @@
       <div class="card tbl-scroll">
         <table id="hold-table">
           <colgroup>
-            <col style="width:3%"><col style="width:18%"><col style="width:5.5%">
+            <col style="width:3%"><col style="width:15.9%"><col style="width:7.6%">
             <col style="width:6%"><col style="width:6%"><col style="width:6%"><col style="width:6%">
             <col style="width:5%"><col style="width:5.5%">
             <col style="width:5.8%"><col style="width:5.8%"><col style="width:5.8%">
@@ -1012,7 +989,7 @@
             <tr>
               <th class="c" style="width:44px">序号</th>
               <th class="sortable" data-sort="name">产品名称</th>
-              <th class="c sortable th-date" data-sort="navdate"><button type="button" class="th-dbtn" id="hold-date-filter" aria-haspopup="listbox" title="按净值日期筛选（可多选）"><span class="ft-n" id="hold-date-n"></span><span class="ft-lbl"><span class="ft-full">净值日期</span><span class="ft-short">日期</span></span><i class="ft-caret"></i></button></th>
+              <th class="c sortable" data-sort="navdate"><select class="th-select" id="hold-date-sel" title="按净值日期筛选" aria-label="按净值日期筛选"><option value="">净值日期</option></select></th>
               <th class="r sortable" data-sort="today">今日<br>万收</th>
               <th class="r sortable" data-sort="income">今日<br>收益</th>
               <th class="r sortable" data-sort="profit">持仓<br>收益</th>
@@ -1418,7 +1395,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261119c';
+      s.src = './assets/dashboard.js?v=20261119d';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();
