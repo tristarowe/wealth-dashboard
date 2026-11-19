@@ -563,6 +563,26 @@
     return s;
   }
 
+  /* 期间有赎回时的年化分母：按「占用资金 × 天数」加权平均。
+     例：嘉鑫7天63期 08-18 投入 22000，09-29 赎回一半（本金占用降到 11000），
+     到 11-18 平均占用 = (22000×42 + 11000×50) ÷ 92 = 16021.7 元。
+     若仍用剩余成本 11000 做分母，年化会被放大到 2.9%（实际约 2.0%）。 */
+  function avgCapital(events, endDate) {
+    if (!events || !events.length) return 0;
+    var ev = events.slice().sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+    var cap = 0, prev = ev[0].date, sum = 0;
+    ev.forEach(function (e) {
+      var d = dayDiff(parseDate(prev), parseDate(e.date));
+      if (d > 0) sum += cap * d;
+      cap += e.delta;
+      prev = e.date;
+    });
+    var tail = dayDiff(parseDate(prev), parseDate(endDate));
+    if (tail > 0) sum += cap * tail;
+    var span = dayDiff(parseDate(ev[0].date), parseDate(endDate));
+    return span > 0 ? sum / span : cap;
+  }
+
   // 交易底稿 → 持仓：申购累加份额，赎回/清仓按确认净值扣减，起息日 = 首次确认日
   function computeHoldings() {
     var tx = ((window.TRANSACTIONS && window.TRANSACTIONS.items) || []).slice();
@@ -584,7 +604,7 @@
       var p = findProductById(t.pid);
       if (!p) return;
       var rec = acc[p.id];
-      if (!rec) rec = acc[p.id] = { product: p, shares: 0, cost: 0, realized: 0, startDate: null, lots: [], lastTx: t };
+      if (!rec) rec = acc[p.id] = { product: p, shares: 0, cost: 0, invested: 0, recovered: 0, realized: 0, startDate: null, lots: [], capEvents: [], lastTx: t };
       /* 成交净值缺失时按确认日净值兜底，净值披露后自动生效 */
       var nav = Number(t.confirmNav) || navForConfirm(p, t.applyDate || t.confirmDate) || 1;
       var sh = Number(t.shares);
@@ -597,6 +617,10 @@
         rec.realized += sell * (nav - avg);
         rec.cost -= sell * avg;
         rec.shares -= sell;
+        /* 累计赎回金额与「占用资金」变动事件：份额卖出后这部分本金不再占用，
+           年化要按资金实际占用天数加权，而不是拿剩余成本或原始投入硬除 */
+        rec.recovered += sell * nav;
+        rec.capEvents.push({ date: t.confirmDate || t.applyDate, delta: -sell * avg });
         /* 赎回/清仓按先进先出扣减份额批次，保证剩余批次的起息日归属正确 */
         var remain = sell;
         for (var li = 0; li < rec.lots.length && remain > 1e-9; li++) {
@@ -613,7 +637,11 @@
            「确认日当日净值」开始归属，确认日之前的净值涨跌与其无关。 */
         rec.lots.push({ date: t.confirmDate || t.applyDate, shares: sh });
         rec.shares += sh;
-        rec.cost += Number(t.amount) || sh * nav;
+        var paid = Number(t.amount) || sh * nav;
+        rec.cost += paid;
+        /* 累计投入：收益率分母用它，部分赎回后才不会被剩余成本放大 */
+        rec.invested += paid;
+        rec.capEvents.push({ date: t.confirmDate || t.applyDate, delta: paid });
       }
       rec.lastTx = t;
     });
@@ -638,12 +666,23 @@
          若拿今天当分母，会把尚未披露收益的那一天也算进持有期、系统性低估年化。 */
       var accrualEnd = p.latestDate || todayStr;
       var daysStart = rec.startDate;
-      var navFirst = p.dates && p.dates.length ? p.dates[0] : '';
-      if (navFirst && daysStart && daysStart < navFirst) daysStart = navFirst;
+      /* 起息日下限取「产品成立日」，不再用「首个净值日」截断：
+         募集期认购的份额自成立日当天起息，首净值日常常晚 1 天
+         （信银安盈象14天165号 08-25 成立并确认、08-26 才披露首净值），
+         用首净值日截断会系统性少算 1 天。成立日仍晚于确认日的脏数据以成立日为准，
+         避免把募集期算进持有期。 */
+      var incep = inceptionDateOf(p);
+      if (incep && daysStart && daysStart < incep) daysStart = incep;
       var days = alive ? Math.max(0, dayDiff(parseDate(daysStart), parseDate(todayStr))) : 0;
       var accrualDays = alive ? Math.max(0, dayDiff(parseDate(daysStart), parseDate(accrualEnd))) : 0;
       var costNav = alive ? rec.cost / rec.shares : 0;
       var lastPer = p.per10k[n - 1];
+      /* 累计投入（含已赎回部分的本金）与加权平均占用资金：
+         收益率分母用累计投入；有赎回时年化分母用平均占用资金，两者都不受剩余成本缩水影响 */
+      var invested = rec.invested > 0 ? rec.invested : rec.cost;
+      var avgCap = rec.recovered > 0 ? avgCapital(rec.capEvents, accrualEnd) : 0;
+      var annBase = (rec.recovered > 0 && avgCap > 0) ? avgCap : invested;
+      var unrealized = mv - rec.cost;
       /* 今日收益按「截至最新净值日已起息的份额」计算（而非全部持仓份额）：
          追加申购的新份额在自身确认日之前不产生收益，避免把未起息份额算进当日收益。 */
       var incomeShares = alive ? vestedShares(rec.lots, p.latestDate) : 0;
@@ -661,16 +700,19 @@
         effStartDate: daysStart,
         mv: mv,
         profit: profit,
-        profitRate: rec.cost > 0 ? profit / rec.cost * 100 : null,
-        ann: (accrualDays > 0 && rec.cost > 0) ? profit / rec.cost * 365 / accrualDays * 100 : null,
+        realized: rec.realized,
+        unrealized: unrealized,
+        invested: invested,
+        avgCapital: avgCap,
+        profitRate: invested > 0 ? profit / invested * 100 : null,
+        ann: (accrualDays > 0 && annBase > 0) ? profit / annBase * 365 / accrualDays * 100 : null,
         days: days,
         accrualDays: accrualDays,
         income: incomePending ? 0 : lastPer * incomeShares / 10000,
         incomeShares: incomeShares,
         incomePending: incomePending,
         lots: rec.lots,
-        cleared: !alive,
-        realized: rec.realized
+        cleared: !alive
       };
       HOLDINGS.push(h);
       HOLD_BY_PID[p.id] = h;
@@ -959,11 +1001,18 @@
     var mStats = AGG ? cumulativePeriodStats(AGG, ym + '-') : null;
     var mWanAvg = mStats ? mStats.avg : null;
 
-    var cost = 0, profit = 0, mv = 0;
-    hs.forEach(function (h) { cost += h.cost; profit += h.profit; mv += h.mv; });
+    var cost = 0, invested = 0, profit = 0, mv = 0;
+    hs.forEach(function (h) {
+      cost += h.cost;
+      invested += (h.invested > 0 ? h.invested : h.cost);
+      profit += h.profit;
+      mv += h.mv;
+    });
 
-    /* 持仓收益率 = 累计收益 ÷ 累计投入成本（与「持仓收益」金额同口径，非「较上月」） */
-    var profitRate = cost > 0 ? profit / cost * 100 : null;
+    /* 持仓收益率 = 累计收益 ÷ 累计投入成本。
+       分母必须是累计投入（含已赎回部分的本金）：部分赎回后剩余成本变小，
+       用它会把收益率成倍放大（嘉鑫7天63期 0.37% 会被算成 0.73%）。 */
+    var profitRate = invested > 0 ? profit / invested * 100 : null;
 
     /* 持仓年化 = 各产品年化按持仓市值加权（单产品年化仍按计息天数折算，
        组合层面即「这些钱当前的平均年化」，不被小市值产品等权拉偏） */
@@ -1009,7 +1058,7 @@
         : (profitRate > 0 ? '+' : '') + profitRate.toFixed(2) + '%';
       el.className = colorBy(profitRate) || 'ink';
       el.title = profitRate === null ? ''
-        : '持仓收益率 = 累计收益 ' + fmtSigned(profit) + ' 元 ÷ 累计投入成本 ' + fmtMoney(cost) + ' 元';
+        : '持仓收益率 = 累计收益 ' + fmtSigned(profit) + ' 元 ÷ 累计投入成本 ' + fmtMoney(invested) + ' 元';
     }
     el = document.getElementById('metric-value');
     if (el) el.innerHTML = hs.length ? fmtMoney(mv) + '<em>元</em>' : '—';
@@ -1171,8 +1220,14 @@
       html += '<td class="r num income-col ' + colorBy(h && !h.incomePending ? h.income : null) + '"' + rs +
         ' title="' + (h && h.incomePending ? '确认日 ' + (h.startDate || '') + ' 起息，首笔收益待下一净值日披露' : '') + '">' +
         (h && h.incomePending ? '<span class="muted">—</span>' : fmtSigned(h ? h.income : null)) + '</td>';
-      html += '<td class="r num ' + colorBy(h ? h.profit : null) + '"' + rs + ' title="' +
-        (h ? '市值 ' + fmtMoney(h.mv) + ' − 成本 ' + fmtMoney(h.cost) : '暂无持仓') + '">' + fmtSigned(h ? h.profit : null) + '</td>';
+      var hasRealized = !!(h && Math.abs(h.realized || 0) >= 0.005);
+      var profitTip = h
+        ? '市值 ' + fmtMoney(h.mv) + ' − 剩余成本 ' + fmtMoney(h.cost) + ' = 未实现 ' + fmtSigned(h.unrealized) +
+          (hasRealized ? '；已赎回部分已实现 ' + fmtSigned(h.realized) + '；累计 ' + fmtSigned(h.profit) : '')
+        : '暂无持仓';
+      html += '<td class="r num ' + colorBy(h ? h.profit : null) + '"' + rs + ' title="' + profitTip + '">' +
+        fmtSigned(h ? h.profit : null) +
+        (hasRealized ? '<span class="realized-under">已实现 ' + fmtSigned(h.realized) + '</span>' : '') + '</td>';
       html += '<td class="r num ' + colorBy(h ? h.ann : null) + '"' + rs + '>' + fmtAnn(h ? h.ann : null) + '</td>';
       var listDays = listingDaysOf(p);
       var daysTip = (h ? '持仓天数 ' + h.days + ' 天 = 今天 − 起息日 ' + (h.effStartDate || '') +

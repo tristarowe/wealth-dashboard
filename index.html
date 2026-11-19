@@ -88,6 +88,8 @@
   .pname{font-weight:400;font-size:13px;line-height:1.5;letter-spacing:.005em}
   .pname .salech{display:block;font-size:10.5px;line-height:1.5;color:#8a9aa5;font-weight:400;letter-spacing:0;margin-top:1px}
   .pname .mv-under{display:block;font-size:10.5px;line-height:1.5;color:#52646f;font-weight:400;letter-spacing:0;margin-top:1px;font-family:var(--mono)}
+  /* 持仓收益下方的「已实现」小字：仅部分赎回的产品出现，用于和累计收益对账 */
+  .realized-under{display:block;font-family:var(--mono);font-size:10.5px;font-weight:400;line-height:1.3;color:var(--muted);margin-top:1px;white-space:nowrap}
   .plink{color:inherit;text-decoration:none;border-bottom:1px dashed #b9ccd4;cursor:pointer}
   .plink:hover{color:var(--accent-deep);border-bottom-color:var(--accent)}
   .pname .ptags{display:inline-flex;align-items:baseline;gap:6px;margin-left:6px}
@@ -562,6 +564,11 @@
   /* 纵向超长时表头吸顶；滚动到顶/底要能把手势交还给页面（不能设 overscroll-behavior:contain，
      否则内部滚到尽头后页面卡住划不动） */
   .tbl-scroll{overflow:auto;max-height:min(72vh,620px);-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;overscroll-behavior-y:auto}
+  /* 手机横屏：可视高度只有 320–390px，72vh 只剩 4 行；贴近满屏高度可多显示 1–2 行，
+     首列与表头仍固定，纵向滚到尽头照旧把手势交还页面 */
+  @media (orientation:landscape) and (max-height:520px){
+    .tbl-scroll{max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px)}
+  }
   .tbl-scroll>table thead th{position:sticky;top:0;z-index:3;background:#f7f9fa;box-shadow:inset 0 -1px 0 var(--rule)}
   #hold-table thead th[data-sort="score"]{background:#e6f2f6}
   /* 净值日期表头：与「数据」列完全同款的原生下拉（.th-select），
@@ -660,6 +667,7 @@
     /* 数据列的表头下拉去掉多余内边距，避免撑破单元格 */
     #hold-table thead th:nth-child(9){padding-left:1px !important;padding-right:1px !important}
     #hold-table .th-select{font-size:11px;padding:2px 1px;max-width:100%}
+    #hold-table .realized-under{font-size:9.5px}
     #hold-table col:nth-child(10){width:52px !important}
     #hold-table col:nth-child(11){width:52px !important}
     #hold-table col:nth-child(12),
@@ -1395,7 +1403,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261119d';
+      s.src = './assets/dashboard.js?v=20261119e';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();
