@@ -567,21 +567,21 @@
   /* 组合现金流（只记与持仓同口径的已生效交易）：申购为负、赎回/清仓为正。
      供「累计收益年化（XIRR）」使用，口径与持仓计算保持完全一致。 */
   var PORTFOLIO_FLOWS = [];
+  /* 累计年化（XIRR）缓存：renderMetrics 算出后存这里，盈亏日历年度表最新行直接复用，
+     保证「累计年化卡」与「年度年化」两个数字严格同源同值。 */
+  var CUM_ANN_CACHE = null;
   /* 每笔赎回/清仓落袋的已实现收益，按产品 + 确认日记录。
      供盈亏日历使用：把这些已实现收益补记进赎回日的每日收益，
      使「日历收益合计 = 累计收益指标卡」（持仓收益 + 已实现收益）。 */
   var HOLD_REALIZED = [];
 
-  /* 累计收益年化 = XIRR：把组合全部已生效现金流按实际发生日折现，
-     求净现值为 0 的内部收益率。与「持仓年化」的区别是它把已落袋收益、
-     分批投入的时点、中途赎回都计入，是真正意义上的「这笔钱从入场到现在的年化」。 */
-  function portfolioXirr(endValue, endDate, keepPid) {
-    var flows = PORTFOLIO_FLOWS.filter(function (f) {
-      return !keepPid || keepPid[f.pid];
-    });
-    if (!flows.length || !endDate) return null;
-    if (endValue > 0) flows.push({ d: endDate, v: endValue });
-    flows.sort(function (a, b) { return a.d < b.d ? -1 : a.d > b.d ? 1 : 0; });
+  /* XIRR 求解核心：把一组现金流按实际发生日折现，求净现值为 0 的年化内部收益率。
+     现金流约定：申购/投入为负，赎回/回收为正；最后一笔通常是期末市值。
+     公式：Σ Ci / (1+r)^((di - d0)/365) = 0，求 r。二分法（NPV 随 r 单调递减）。
+     —— 全站「年化」统一走这个求解器，保证累计卡与盈亏日历口径、数值完全一致。 */
+  function xirrSolve(flows) {
+    if (!flows || flows.length < 2) return null;
+    flows = flows.slice().sort(function (a, b) { return a.d < b.d ? -1 : a.d > b.d ? 1 : 0; });
     var t0 = flows[0].d;
     var pos = 0, neg = 0;
     flows.forEach(function (f) { if (f.v > 0) pos += f.v; else neg -= f.v; });
@@ -602,6 +602,65 @@
       if (hi - lo < 1e-10) break;
     }
     return isFinite(mid) ? mid * 100 : null;
+  }
+
+  /* 累计收益年化 = XIRR：把组合全部已生效现金流按实际发生日折现，
+     求净现值为 0 的内部收益率。与「持仓年化」的区别是它把已落袋收益、
+     分批投入的时点、中途赎回都计入，是真正意义上的「这笔钱从入场到现在的年化」。 */
+  function portfolioXirr(endValue, endDate, keepPid) {
+    var flows = PORTFOLIO_FLOWS.filter(function (f) {
+      return !keepPid || keepPid[f.pid];
+    });
+    if (!flows.length || !endDate) return null;
+    if (endValue > 0) flows.push({ d: endDate, v: endValue });
+    return xirrSolve(flows);
+  }
+
+  /* 截至某日的「累计资金加权年化（XIRR）」——盈亏日历年度/月度年化的统一口径。
+     与累计卡完全同源：现金流取「起始日之后、截止日（含）之前」的全部申赎，
+     末值取组合在该截止日的持仓市值。这样每个月的年化都是「从第一笔投入到当月底」的
+     真实资金加权年化，最后一个月自然收敛到累计卡的 2.49%，不会再出现
+     「单月现金流稀疏 → XIRR 失真（±99%/1000%）」的问题。
+     —— 起点用组合首笔现金流日（而不是 1 月 1 日），避免把建仓前的空档算进折现期。 */
+  function xirrRangeAnn(endDate, keepPid, startDate) {
+    if (!endDate) return null;
+    var all = PORTFOLIO_FLOWS.filter(function (f) { return !keepPid || keepPid[f.pid]; });
+    if (!all.length) return null;
+    var start = startDate || all.reduce(function (a, f) { return f.d < a ? f.d : a; }, all[0].d);
+    var flows = all.filter(function (f) { return f.d > start && f.d <= endDate; });
+    /* 期初市值：start 当天组合的持仓市值，作为期初投入（负），
+       使「截至当月底」的收益率起算点与该日真实在场资金对齐。 */
+    var startMv = portfolioMvOn(start, keepPid);
+    if (startMv > 0) flows.push({ d: start, v: -startMv });
+    var endMv = portfolioMvOn(endDate, keepPid);
+    if (endMv > 0) flows.push({ d: endDate, v: endMv });
+    /* 稳健性保护：XIRR 对短期集中现金流极敏感。建仓初期跨度不足 45 天，
+       净值与投入规模接近、折现期又短，会解出 ±90% 这类失真值（无经济意义）。
+       这种情况显示「—」，并在悬浮说明里注明，避免误导判断。 */
+    if (dayDiff(parseDate(start), parseDate(endDate)) < 45) return null;
+    var ann = xirrSolve(flows);
+    if (ann === null || !isFinite(ann) || Math.abs(ann) > 50) return null;
+    return ann;
+  }
+
+  /* 组合在指定日期的持仓市值（按当日已起息份额 × 当日或之前最近披露净值）。
+     用于区间 XIRR 的期初/期末市值锚点；只统计当前仍持有（未清仓）的产品，
+     已落袋部分通过赎回现金流体现，避免重复计入。 */
+  function portfolioMvOn(date, keepPid) {
+    var total = 0;
+    HOLDINGS.forEach(function (h) {
+      if (keepPid && !keepPid[h.product.id]) return;
+      if (!(h.shares > 0.000001)) return;
+      var p = h.product;
+      var nav = null, navDate = null;
+      for (var i = 0; i < p.dates.length; i++) {
+        if (p.dates[i] <= date) { nav = p.nav[i]; navDate = p.dates[i]; } else break;
+      }
+      if (!(nav > 0) || !navDate) return;
+      var sh = h.lots ? vestedShares(h.lots, navDate) : (navDate < h.startDate ? 0 : h.shares);
+      total += sh * nav;
+    });
+    return total;
   }
 
   // 交易底稿 → 持仓：申购累加份额，赎回/清仓按确认净值扣减，起息日 = 首次确认日
@@ -1157,6 +1216,7 @@
       if (h.latestDate && h.latestDate > cumEnd) cumEnd = h.latestDate;
     });
     var cumAnn = hs.length ? portfolioXirr(mv, cumEnd, cumPids) : null;
+    CUM_ANN_CACHE = cumAnn;  // 供盈亏日历年度表复用，保证两处年化严格同值
     el = document.getElementById('metric-cum');
     if (el) {
       el.innerHTML = hs.length ? fmtSigned(totalProfit) + '<em>元</em>' : '—';
@@ -1175,8 +1235,10 @@
         : (cumAnn > 0 ? '+' : '') + cumAnn.toFixed(2) + '%';
       el.className = colorBy(cumAnn) || 'ink';
       el.title = cumAnn === null ? ''
-        : '累计年化（XIRR）= 每笔申购记负、赎回与当前市值记正，按实际发生日折现求出的资金加权内部收益率；' +
-          '已落袋收益与资金进出时点都已计入，与只算当前持仓的「持仓年化」不同';
+        : '累计年化（XIRR）：Σ Ci/(1+r)^((di−d0)/365)=0 解 r。' +
+          '每笔申购记负、赎回与当前市值记正，按实际发生日折现求净现值为 0 的资金加权内部收益率；' +
+          '已赎回落袋收益与分批投入时点全部计入。与盈亏日历「年度/月度年化」同口径同数值，' +
+          '与只算当前持仓、假设满仓的「持仓年化」不同。';
     }
     el = document.getElementById('metric-value');
     if (el) el.innerHTML = hs.length ? fmtMoney(mv) + '<em>元</em>' : '—';
@@ -1540,7 +1602,7 @@
     return { avg: avg, ann: avg * 3.65, days: days, sum: sum };
   }
 
-  function monthStats(p, perMap, y, m) {
+  function monthStats(p, perMap, y, m, keepPid) {
     var prefix = y + '-' + String(m + 1).padStart(2, '0') + '-';
     var sum = 0, cnt = 0, pos = 0, neg = 0, flat = 0;
     p.dates.forEach(function (dt) {
@@ -1554,6 +1616,11 @@
       else flat += 1;
     });
     var st = cumulativePeriodStats(p, prefix);
+    /* 「年化」统一为截至当月底的累计资金加权 XIRR（与累计卡同源），
+       不再用「日均万收×365」的时间加权折算，避免与累计年化卡对不上。 */
+    var lastDay = new Date(y, m + 1, 0).getDate();
+    var monthEnd = y + '-' + String(m + 1).padStart(2, '0') + '-' + String(lastDay).padStart(2, '0');
+    var ann = xirrRangeAnn(monthEnd, keepPid);
     return {
       sum: sum,
       avg: st.avg,
@@ -1561,7 +1628,7 @@
       pos: pos,
       neg: neg,
       flat: flat,
-      ann: st.ann
+      ann: ann
     };
   }
 
@@ -1662,13 +1729,28 @@
     // 左侧月度收益表
     var list = document.getElementById('month-list');
     if (list) {
+      var monthPids = {};
+      selectedProducts().forEach(function (sp) { monthPids[sp.id] = 1; });
+      var lastNavDate = p.dates[p.dates.length - 1];
+      var latestMonth = +lastNavDate.slice(5, 7) - 1;
+      var latestMonthYear = +lastNavDate.slice(0, 4);
       var monthRows = months.map(function (m) {
-        return { m: m, st: monthStats(p, sumMap, calState.y, m) };
+        var st = monthStats(p, sumMap, calState.y, m, monthPids);
+        /* 最新月份（含最新净值日）直接复用累计年化卡的值，严格同值；
+           其余月份用截至当月底的区间 XIRR。 */
+        if (calState.y === latestMonthYear && m === latestMonth && CUM_ANN_CACHE !== null) {
+          st.ann = CUM_ANN_CACHE;
+        }
+        return { m: m, st: st };
       });
       var bestAnn = null;
       monthRows.forEach(function (r) {
         if (r.st.ann !== null && (bestAnn === null || r.st.ann > bestAnn)) bestAnn = r.st.ann;
       });
+      var monthAnnFormula = '年化 = 资金加权内部收益率（XIRR）：Σ Ci/(1+r)^((di−d0)/365)=0 解 r。' +
+        '申购记为负、赎回与期末市值记为正，按每笔实际发生日折现；' +
+        '截至当月底，从首笔投入到当时的真实资金加权年化，与顶部「累计年化」同口径。' +
+        '建仓初期现金流集中、跨度不足 45 天时 XIRR 无经济意义，显示「—」。';
       var html = '<div class="month-row mhead"><span>月份</span><span>收益</span><span>日均万收</span><span>正收益</span><span>回撤</span><span>挂0</span><span>年化</span></div>';
       html += '<div class="month-rows">';
       monthRows.slice().reverse().forEach(function (r) {
@@ -1678,11 +1760,11 @@
         html += '<div class="month-item' + (r.m === calState.m ? ' on' : '') + '" data-month="' + r.m + '">' +
           '<span class="m">' + (r.m + 1) + '月</span>' +
           '<span class="v ' + colorBy(st.sum) + '">' + fmtSigned(st.sum) + '</span>' +
-          '<span class="d">' + fmtSigned(st.avg) + '</span>' +
+          '<span class="d" title="日均万收 = 当月收益 ÷ 期初市值 ÷ 自然日数 × 10000；每日赚钱速度，时间加权">' + fmtSigned(st.avg) + '</span>' +
           '<span class="d">' + st.pos + '</span>' +
           '<span class="d">' + st.neg + '</span>' +
           '<span class="d">' + st.flat + '</span>' +
-          '<span class="rate-cell ' + rateLevel(st.ann) + '" style="--w:' + barW(st.ann) + '">' + fmtAnn(st.ann) + thumb + '</span>' +
+          '<span class="rate-cell ' + rateLevel(st.ann) + '" style="--w:' + barW(st.ann) + '" title="' + monthAnnFormula + '">' + fmtAnn(st.ann) + thumb + '</span>' +
           '</div>';
       });
       html += '</div>';
@@ -1783,20 +1865,37 @@
     });
     var years = Object.keys(map).sort().reverse();
     var latestYear = years[0];
+    /* 年度「年化」统一为资金加权 XIRR（与顶部累计年化卡同源同值）。
+       —— 旧口径是「日均万收 × 365」的时间加权折算，假设资金全年满仓，
+          在分期投入时系统性偏高，导致与累计年化卡对不上。
+       —— 最新年度直接复用累计年化卡算出的 CUM_ANN_CACHE，两个数严格相等；
+          历史年度用截至该年末的区间 XIRR，口径一致。 */
+    var aggPids = {};
+    selectedProducts().forEach(function (p) { aggPids[p.id] = 1; });
+    var annFormula = '年化 = 资金加权内部收益率（XIRR）：Σ Ci/(1+r)^((di−d0)/365)=0 解 r。' +
+      '申购记为负、赎回与期末市值记为正，按每笔实际发生日折现；' +
+      '已赎回落袋收益与分批投入时点全部计入，与顶部「累计年化」同口径。' +
+      '历史年度现金流跨度不足或结果失真时显示「—」。';
     tbody.innerHTML = years.map(function (y) {
       var s = map[y];
-      /* 年度日均万收/年化统一为自然日口径，与产品库「成立至今」一致 */
+      /* 日均万收保持自然日口径（时间加权的赚钱速度指标，与年化不再互为折算） */
       var st = cumulativePeriodStats(AGG, y + '-');
-      var ann = st.ann;
       var avgWan = st.avg;
+      var yearEnd = y + '-12-31';
+      /* 最新年度：直接复用累计年化卡的值，确保与指标卡严格相等 */
+      var ann = (y === latestYear) ? CUM_ANN_CACHE : xirrRangeAnn(yearEnd, aggPids);
+      var annTitle = annFormula + '｜' + y + ' 年度，计 ' + s.cnt + ' 个披露点，收益 ' + fmtSigned(s.sum) + ' 元' +
+        (ann === null ? '（现金流不足，无法求解）' : '');
+
       return '<tr data-year="' + y + '" class="' + (y === latestYear ? 'on' : '') + '">' +
         '<td class="ym">' + y + '</td>' +
         '<td class="r num ' + colorBy(s.sum) + '">' + (s.sum > 0 ? '+' : '') + fmtMoney(s.sum) + '</td>' +
-        '<td class="r num cnt">' + (avgWan === null ? '—' : (avgWan > 0 ? '+' : '') + avgWan.toFixed(2)) + '</td>' +
+        '<td class="r num cnt" title="日均万收 = 区间收益 ÷ 期初市值 ÷ 自然日数 × 10000；每日赚钱速度，时间加权">'
+          + (avgWan === null ? '—' : (avgWan > 0 ? '+' : '') + avgWan.toFixed(2)) + '</td>' +
         '<td class="num cnt">' + s.pos + '</td>' +
         '<td class="num cnt">' + s.neg + '</td>' +
         '<td></td>' +
-        '<td><div class="rate-cell ' + rateLv(ann) + '" style="--w:' + barW(ann) + '">' + (ann === null ? '—' : ann.toFixed(2) + '%') + '</div></td>' +
+        '<td><div class="rate-cell ' + rateLv(ann) + '" style="--w:' + barW(ann) + '" title="' + annTitle + '">' + (ann === null ? '—' : ann.toFixed(2) + '%') + '</div></td>' +
         '</tr>';
     }).join('');
   }
