@@ -33,11 +33,24 @@ window.TRANSACTIONS = {
       "source": "人工录入"
     },
     {
+      "id": "TX20260818629",
+      "pid": "LZ7000726001312",
+      "type": "申购",
+      "applyDate": "2026-08-14",
+      "confirmDate": "2026-08-18",
+      "amount": 22000.0,
+      "shares": 22000.0,
+      "confirmNav": 1.0,
+      "status": "已确认",
+      "saleChannel": "建设银行",
+      "source": "人工录入"
+    },
+    {
       "id": "TX20260825640",
-      "pid": "LZ7002626002218",
+      "pid": "p2218",
       "type": "申购",
       "applyDate": "2026-08-20",
-      "confirmDate": "2026-08-26",
+      "confirmDate": "2026-08-25",
       "amount": 23503.52,
       "shares": 23503.52,
       "confirmNav": 1.0,
@@ -80,6 +93,19 @@ window.TRANSACTIONS = {
       "amount": 20000.0,
       "shares": 20000.0,
       "confirmNav": 1.0,
+      "status": "已确认",
+      "saleChannel": "建设银行",
+      "source": "人工录入"
+    },
+    {
+      "id": "TX20260929288",
+      "pid": "LZ7000726001312",
+      "type": "赎回",
+      "applyDate": "2026-09-28",
+      "confirmDate": "2026-09-29",
+      "amount": 11024.64,
+      "shares": 11000.0,
+      "confirmNav": 1.00224,
       "status": "已确认",
       "saleChannel": "建设银行",
       "source": "人工录入"
