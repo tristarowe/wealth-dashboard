@@ -54,11 +54,11 @@
   .tab{border:0;background:transparent;font-family:var(--font);font-size:14px;font-weight:700;color:var(--muted);padding:8px 30px;border-radius:999px;cursor:pointer}
   .tab.on{background:#e6f2f6;color:var(--accent-deep)}
 
-  .metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-top:18px}
+  .metrics{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-top:18px}
   .metric{background:#fff;border:1px solid var(--rule);border-radius:12px;padding:14px 18px}
   .metric .k{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.04em}
-  .metric .v{font-family:var(--mono);font-size:30px;font-weight:700;line-height:1.25;margin-top:2px;font-variant-numeric:tabular-nums}
-  .metric .v em{font-style:normal;font-size:11.5px;font-weight:400;color:var(--muted);margin-left:4px}
+  .metric .v{font-family:var(--mono);font-size:26px;font-weight:700;line-height:1.25;margin-top:2px;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .metric .v em{font-style:normal;font-size:11.5px;font-weight:400;color:var(--muted);margin-left:4px;white-space:nowrap}
   .metric.key .v{color:var(--up)}
   .metric .v.up{color:var(--up)}
   .metric .v.down{color:var(--down)}
@@ -614,10 +614,9 @@
       white-space:normal;word-break:break-word;overflow-wrap:anywhere;line-height:1.45}
     /* 手机端三张宽表统一收窄列宽，提升一屏可读列数 */
     #hold-table,#sum-table,#prod-table{font-size:12.5px}
-    /* 761–968（平板竖屏 / 窄横屏）：5 张卡按 3 列排，末张占 2 列补齐第二行，
-       否则每张仅 128px，「221,240.69 元」会被挤成两行 */
+    /* 761–968（平板竖屏 / 窄横屏）：6 张卡按 3 列 × 2 行排，正好排满，无需末张通栏 */
     .metrics{grid-template-columns:repeat(3,minmax(0,1fr))}
-    .metrics .metric:last-child{grid-column:span 2}
+    .metrics .metric:last-child{grid-column:auto}
     .metric{padding:11px 11px}
     .metric .v{font-size:19px}
     .metric .v em{font-size:11px}
@@ -753,10 +752,10 @@
     .rate-cell{font-size:12px}
     .seg button{font-size:11.5px}
   }
-  /* 手机横屏矮屏（高 ≤520）：指标卡仍压成一行 5 列，把纵向空间让给表格；
+  /* 手机横屏矮屏（高 ≤520）：指标卡仍压成一行 6 列，把纵向空间让给表格；
      放在 761–968 规则之后，故能覆盖其 3 列布局 */
   @media (orientation:landscape) and (max-height:520px){
-    .metrics{grid-template-columns:repeat(5,minmax(0,1fr))}
+    .metrics{grid-template-columns:repeat(6,minmax(0,1fr))}
     .metrics .metric:last-child{grid-column:auto}
     .metric{padding:9px 10px}
     .metric .v{font-size:17px}
@@ -809,8 +808,8 @@
     .sub b{white-space:nowrap}
     .coverage{margin-left:0}
     .metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:14px}
-    /* 5 张指标卡在 2 列布局下会剩半格：末张（持仓金额）通栏补齐 */
-    .metrics .metric:last-child{grid-column:1/-1}
+    /* 6 张指标卡在 2 列布局下正好 3 行，无需末张通栏 */
+    .metrics .metric:last-child{grid-column:auto}
     .metric{padding:11px 12px}
     .metric .v{font-size:19px}
     .metric .v em{font-size:11px}
@@ -973,6 +972,11 @@
         <div class="k">今日收益</div>
         <div class="v up" id="metric-today">—</div>
         <div class="m-sub">今日万收 <b class="ink" id="metric-avg">—</b></div>
+      </div>
+      <div class="metric key" title="前一净值日的当日收益与组合万收（净值非每日披露时，昨日指上一披露日）">
+        <div class="k">昨日收益</div>
+        <div class="v up" id="metric-yest">—</div>
+        <div class="m-sub">昨日万收 <b class="ink" id="metric-yavg">—</b></div>
       </div>
       <div class="metric key">
         <div class="k">本月收益</div>
@@ -1438,7 +1442,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261119l';
+      s.src = './assets/dashboard.js?v=20261119m';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();

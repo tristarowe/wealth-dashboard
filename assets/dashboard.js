@@ -998,6 +998,29 @@
     });
     var avg = todayBase > 0 ? today / todayBase * 10000 : null;
 
+    /* 昨日收益 = 前一净值日的当日收益：每万份收益 per10k[n-2] × 当日已起息份额 ÷ 10000。
+       昨日万收与今日同口径（市值加权）= 昨日收益 ÷ 前一日市值(nav[n-3]) × 10000。
+       份额用昨日净值日的已起息份额（vestedShares），避免把当日追加/未起息份额算进昨日；
+       清仓产品不计入。净值非每日披露时「昨日」即上一披露日。 */
+    var yest = 0, yestCnt = 0, yestBase = 0;
+    hs.forEach(function (h) {
+      if (h.cleared) return;
+      var p = h.product;
+      var nn = p.nav.length;
+      if (nn < 2) return;
+      var prevPer = p.per10k ? p.per10k[nn - 2] : null;
+      if (prevPer === null || prevPer === undefined) return;
+      var prevDate = p.dates[nn - 2];
+      var prevShares = h.lots ? vestedShares(h.lots, prevDate) : (prevDate < h.startDate ? 0 : h.shares);
+      if (!(prevShares > 1e-9)) return;
+      yest += prevPer * prevShares / 10000;
+      yestCnt += 1;
+      if (nn >= 3 && p.nav && p.nav[nn - 3] > 0) {
+        yestBase += prevShares * p.nav[nn - 3];
+      }
+    });
+    var yavg = yestBase > 0 ? yest / yestBase * 10000 : null;
+
     var ym = DATA.asOf.slice(0, 7);
     /* 本月日均万收必须与盈亏日历同口径：组合万收 = 当日收益 ÷ 前一日市值 × 10000，
        逐日折算后取平均。原先用各产品 per10k 简单算术平均（等权），与按市值加权的组合
@@ -1050,6 +1073,17 @@
     if (el) {
       el.textContent = fmtSigned2(avg);
       el.className = colorBy(avg) || 'ink';
+    }
+
+    el = document.getElementById('metric-yest');
+    if (el) {
+      el.innerHTML = yestCnt ? fmtSigned(yest) + '<em>元</em>' : '—';
+      el.className = 'v ' + colorBy(yestCnt ? yest : null);
+    }
+    el = document.getElementById('metric-yavg');
+    if (el) {
+      el.textContent = fmtSigned2(yavg);
+      el.className = colorBy(yavg) || 'ink';
     }
 
     el = document.getElementById('metric-month');
