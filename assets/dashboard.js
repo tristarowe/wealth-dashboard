@@ -962,32 +962,19 @@
     var cost = 0, profit = 0, mv = 0;
     hs.forEach(function (h) { cost += h.cost; profit += h.profit; mv += h.mv; });
 
-    // 较上月：以上月最后一个净值日的持仓市值对比
-    var d = parseDate(DATA.asOf);
-    var pm = new Date(d.getFullYear(), d.getMonth(), 0);
-    var prevPrefix = pm.getFullYear() + '-' + String(pm.getMonth() + 1).padStart(2, '0') + '-';
-    var prevMv = 0, prevHas = false;
-    hs.forEach(function (h) {
-      var p = h.product, idx = -1;
-      for (var i = 0; i < p.dates.length; i++) if (p.dates[i].indexOf(prevPrefix) === 0) idx = i;
-      if (idx >= 0) { prevMv += p.nav[idx] * h.shares; prevHas = true; }
-    });
-    var mom = prevHas && prevMv > 0 ? (mv - prevMv) / prevMv * 100 : null;
+    /* 持仓收益率 = 累计收益 ÷ 累计投入成本（与「持仓收益」金额同口径，非「较上月」） */
+    var profitRate = cost > 0 ? profit / cost * 100 : null;
 
-    // 较上月收益：本月累计收益 − 上月同期（1 日至今月同日）累计收益
-    var todayDay = Number(DATA.asOf.slice(8, 10));
-    var prevYmPrefix = prevPrefix.slice(0, 7);
-    var prevSum = 0, prevCnt = 0;
-    if (AGG) {
-      AGG.dates.forEach(function (dd, i) {
-        if (dd.indexOf(prevYmPrefix) !== 0 || Number(dd.slice(8, 10)) > todayDay) return;
-        var v = AGG.raw ? AGG.raw[i] : AGG.per10k[i];
-        if (v === null || v === undefined) return;
-        prevSum += v;
-        prevCnt += 1;
-      });
-    }
-    var momProfit = prevCnt ? month - prevSum : null;
+    /* 持仓年化 = 各产品年化按持仓市值加权（单产品年化仍按计息天数折算，
+       组合层面即「这些钱当前的平均年化」，不被小市值产品等权拉偏） */
+    var annW = 0, annMv = 0;
+    hs.forEach(function (h) {
+      if (h.ann === null || h.ann === undefined || !isFinite(h.ann)) return;
+      if (!(h.mv > 0)) return;
+      annW += h.ann * h.mv;
+      annMv += h.mv;
+    });
+    var portAnn = annMv > 0 ? annW / annMv : null;
 
     var el = document.getElementById('metric-today');
     if (el) {
@@ -1018,19 +1005,21 @@
     }
     el = document.getElementById('metric-momprofit');
     if (el) {
-      // 较上月：本月累计收益相对上月同期累计收益的变化率（百分比）
-      // 分母取上月同期收益的绝对值，保证涨跌方向与金额增减一致；上月同期接近 0 时不显示
-      var momProfitPct = (momProfit !== null && Math.abs(prevSum) > 1e-6)
-        ? momProfit / Math.abs(prevSum) * 100 : null;
-      el.textContent = momProfitPct === null ? '—' : (momProfitPct > 0 ? '+' : '') + momProfitPct.toFixed(2) + '%';
-      el.className = colorBy(momProfitPct) || 'ink';
+      el.textContent = profitRate === null ? '—'
+        : (profitRate > 0 ? '+' : '') + profitRate.toFixed(2) + '%';
+      el.className = colorBy(profitRate) || 'ink';
+      el.title = profitRate === null ? ''
+        : '持仓收益率 = 累计收益 ' + fmtSigned(profit) + ' 元 ÷ 累计投入成本 ' + fmtMoney(cost) + ' 元';
     }
     el = document.getElementById('metric-value');
     if (el) el.innerHTML = hs.length ? fmtMoney(mv) + '<em>元</em>' : '—';
     el = document.getElementById('metric-mom');
     if (el) {
-      el.textContent = mom === null ? '—' : (mom > 0 ? '+' : '') + mom.toFixed(2) + '%';
-      el.className = colorBy(mom) || 'ink';
+      el.textContent = portAnn === null ? '—'
+        : (portAnn > 0 ? '+' : '') + portAnn.toFixed(2) + '%';
+      el.className = colorBy(portAnn) || 'ink';
+      el.title = portAnn === null ? ''
+        : '持仓年化 = 各持仓产品年化按持仓市值加权（组合口径，非单产品等权平均）';
     }
 
     var heroAsOf = document.getElementById('hero-asof');
@@ -1101,6 +1090,23 @@
       }
       return null;
     }).filter(function (x) { return !!x && selectedIds.indexOf(x.product.id) !== -1; });
+
+    /* 净值日期多选筛选：选项来自当前所选产品的真实披露日，选中的日期才显示 */
+    var dateOpts = [];
+    var dateCount = {};
+    models.forEach(function (x) {
+      var dd0 = (x.m && x.m.latestDate) || '';
+      if (!dd0) return;
+      if (dateOpts.indexOf(dd0) === -1) dateOpts.push(dd0);
+      dateCount[dd0] = (dateCount[dd0] || 0) + 1;
+    });
+    dateOpts.sort().reverse();
+    populateDateFilter(dateOpts, dateCount);
+    if (profitDateSel.length) {
+      models = models.filter(function (x) {
+        return profitDateSel.indexOf((x.m && x.m.latestDate) || '') !== -1;
+      });
+    }
     var peerAvg30 = peerAvg30Of(models);
     var rows = models.map(function (item) {
       return { item: item, score: scoreFor(item.m, item.product, peerAvg30) };
@@ -1249,6 +1255,72 @@
       renderProfitTable();
     });
     apply();
+  }
+
+  /* ---------------- 盈亏汇总「净值日期」多选筛选 ---------------- */
+  var profitDateSel = [];   /* 允许的披露日集合；空 = 全部 */
+  var dateSelEl = null;
+
+  function ensureDateSel() {
+    if (dateSelEl) return dateSelEl;
+    var s = document.createElement('select');
+    s.multiple = true;
+    s.id = 'hold-date-sel';
+    s.hidden = true;
+    document.body.appendChild(s);
+    dateSelEl = s;
+    s.addEventListener('change', function () {
+      profitDateSel = selValues(s);
+      syncDateFilterUI();
+      renderProfitTable();
+    });
+    return s;
+  }
+
+  function syncDateFilterUI() {
+    var btn = document.getElementById('hold-date-filter');
+    var n = document.getElementById('hold-date-n');
+    var on = profitDateSel.length > 0;
+    if (btn) {
+      btn.classList.toggle('on', on);
+      btn.title = on
+        ? '已筛选 ' + profitDateSel.length + ' 个净值日期（点击修改）'
+        : '按净值日期筛选（可多选）';
+    }
+    if (n) n.textContent = on ? String(profitDateSel.length) : '';
+  }
+
+  function populateDateFilter(dates, counts) {
+    var s = ensureDateSel();
+    var keep = profitDateSel.filter(function (d) { return dates.indexOf(d) !== -1; });
+    profitDateSel = keep;
+    s.innerHTML = '';
+    var o0 = document.createElement('option');
+    o0.value = ''; o0.text = '全部日期'; o0.selected = keep.length === 0;
+    s.appendChild(o0);
+    dates.forEach(function (d) {
+      var o = document.createElement('option');
+      o.value = d;
+      o.text = mmdd(d) + (counts && counts[d] ? ' · ' + counts[d] + ' 只' : '');
+      o.selected = keep.indexOf(d) !== -1;
+      s.appendChild(o);
+    });
+    syncDateFilterUI();
+  }
+
+  function bindDateFilter() {
+    var btn = document.getElementById('hold-date-filter');
+    if (!btn) return;
+    function open(e) {
+      if (e) { e.preventDefault(); e.stopPropagation(); }
+      openSelPop(ensureDateSel(), btn, { keepOpen: true });
+    }
+    btn.addEventListener('click', open);
+    btn.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') open(e);
+    });
+    /* 点漏斗只筛选，不触发整列排序 */
+    btn.addEventListener('mousedown', function (e) { e.stopPropagation(); });
   }
 
   /* ---------------- 模块 02：盈亏日历 ---------------- */
@@ -2456,18 +2528,21 @@
   /* ---------------- 筛选下拉：自绘列表（原生 select 展开层字号不可控） ---------------- */
   var selPop = null;
   var selPopSel = null;
+  var selPopAnchor = null;
   var selPopAt = 0;
 
   function closeSelPop() {
     if (selPop && selPop.parentNode) selPop.parentNode.removeChild(selPop);
     selPop = null;
     selPopSel = null;
+    selPopAnchor = null;
   }
 
   /* 跟随锚点重新定位；锚点滚出视口时关闭 */
   function placeSelPop() {
     if (!selPop || !selPopSel) return;
-    var r = selPopSel.getBoundingClientRect();
+    var anchor = selPopAnchor || selPopSel;
+    var r = anchor.getBoundingClientRect();
     var vh = window.innerHeight;
     if (r.bottom < 0 || r.top > vh) { closeSelPop(); return; }
     var vw = window.innerWidth;
@@ -2498,8 +2573,11 @@
     return selValues(sel).length === 0;
   }
 
-  function openSelPop(sel) {
-    if (selPopSel === sel) { closeSelPop(); return; }
+  /* opts.keepOpen：多选且需要连续勾选时保留弹窗（默认点选后自动收起） */
+  function openSelPop(sel, anchor, opts) {
+    opts = opts || {};
+    var anchorEl = anchor || sel;
+    if (selPopSel === sel && selPopAnchor === anchorEl) { closeSelPop(); return; }
     closeSelPop();
     var pop = document.createElement('div');
     pop.className = 'sel-pop';
@@ -2527,7 +2605,7 @@
           sel.options[0].selected = false;
           if (selValues(sel).length === 0) sel.options[0].selected = true;
         }
-        /* 同步勾选态，不关闭弹窗（支持连续多选） */
+        /* 同步勾选态；默认点选后自动收起下拉框（多选连续勾选时由调用方 keepOpen） */
         Array.prototype.forEach.call(pop.querySelectorAll('.sel-opt'), function (bb, j) {
           var all = (j === 0);
           var on = all ? selIsAll(sel) : (sel.options[j].selected && !selIsAll(sel));
@@ -2535,6 +2613,7 @@
           bb.setAttribute('aria-selected', on ? 'true' : 'false');
         });
         sel.dispatchEvent(new Event('change', { bubbles: true }));
+        if (!opts.keepOpen) closeSelPop();
       });
       pop.appendChild(b);
     });
@@ -2552,6 +2631,7 @@
         bb.setAttribute('aria-selected', j === 0 ? 'true' : 'false');
       });
       sel.dispatchEvent(new Event('change', { bubbles: true }));
+      if (!opts.keepOpen) closeSelPop();
     });
     var btnDone = document.createElement('button');
     btnDone.type = 'button'; btnDone.className = 'sel-done'; btnDone.textContent = '完成';
@@ -2564,9 +2644,10 @@
     document.body.appendChild(pop);
     selPop = pop;
     selPopSel = sel;
+    selPopAnchor = anchorEl;
     selPopAt = Date.now();
 
-    var r = sel.getBoundingClientRect();
+    var r = anchorEl.getBoundingClientRect();
     pop.style.minWidth = Math.max(r.width, 132) + 'px';
     placeSelPop();
   }
@@ -4237,7 +4318,6 @@
         '<span class="ms-name" title="' + (p.name || '') + '">' + prodDispName(p) + '</span>' +
         '</label>' +
         '<em>' + p.regCode + '</em>' +
-        '<button type="button" class="ms-only" data-only="' + p.id + '" title="只看此产品">仅选</button>' +
         '</div>';
     }).join('');
   }
@@ -4528,19 +4608,21 @@
       applySelection();
     });
 
-    /* 搜索后点「仅选」：把覆盖范围直接收窄到这一只产品。
-       默认全选时复选框本身是勾选状态，直接点它反而会取消该产品，
-       这是用户反馈「搜索后无法选中」的根因；这里提供明确的隔离入口。 */
+    /* 搜索状态下点产品名 = 只看这一只（原「仅选」按钮的工作，按钮本身已取消）。
+       默认全选时复选框是勾选状态，直接点它反而会取消该产品；
+       故在「有搜索词」时把点名称的动作定义为隔离选中，一步到位且不用额外按钮。 */
     list.addEventListener('click', function (e) {
-      var btn = e.target && e.target.closest ? e.target.closest('[data-only]') : null;
-      if (!btn) return;
+      var nameEl = e.target && e.target.closest ? e.target.closest('.ms-name') : null;
+      if (!nameEl || !pickerQuery.trim()) return;
+      var item = nameEl.closest('.ms-item');
+      var cb = item ? item.querySelector('input[type="checkbox"]') : null;
+      if (!cb) return;
       e.preventDefault();
       e.stopPropagation();
-      var id = btn.getAttribute('data-only');
-      if (!id) return;
-      selectedIds = [id];
+      selectedIds = [cb.value];
       applySelection();
       renderPickerList();
+      updatePickerLabel();
       closePanel();
     });
 
@@ -4747,6 +4829,7 @@
     bindProfitSort();
     bindSumSort();
     bindDataFilter();
+    bindDateFilter();
     bindRefresh();
     bindCalendar();
     bindTrend();
