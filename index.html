@@ -33,7 +33,7 @@
   .hero-top .coverage{margin:10px 0 0}
   .hero-subline{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;margin-top:10px}
   .hero-subline .coverage{margin:0}
-  .hero-subline #refresh-data{margin-right:-7px}
+  .hero-subline #refresh-data{margin-right:0}
   .hero-asof{font-size:12px;color:var(--muted)}
   .hero-asof b{font-weight:600;color:var(--ink);white-space:nowrap}
   .boot-tip{margin-top:8px;font-size:12px;color:var(--up);text-align:center}
@@ -90,6 +90,9 @@
   .pname .mv-under{display:block;font-size:10.5px;line-height:1.5;color:#52646f;font-weight:400;letter-spacing:0;margin-top:1px;font-family:var(--mono)}
   .plink{color:inherit;text-decoration:none;border-bottom:1px dashed #b9ccd4;cursor:pointer}
   .plink:hover{color:var(--accent-deep);border-bottom-color:var(--accent)}
+  .prod-link{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;margin-left:5px;vertical-align:-2px;border-radius:4px;background:#edf6f9;color:var(--accent-deep);text-decoration:none}
+  .prod-link svg{width:11px;height:11px}
+  .prod-link:hover{background:#dceef4}
   .pname .ptags{display:inline-flex;align-items:baseline;gap:6px;margin-left:6px}
   .cdate span{display:block;font-family:var(--mono);font-size:12px;color:var(--ink);white-space:nowrap}
   .cdate i{display:block;font-style:normal;font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-top:1px}
@@ -362,6 +365,24 @@
   .add-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
   .add-grid .wide{grid-column:1/-1}
   @media (max-width:760px){.add-grid{grid-template-columns:1fr;gap:10px}}
+  /* 图片识别工具条 */
+  .ai-strip{display:flex;align-items:center;gap:8px;margin-top:2px}
+  .ai-upload,.ai-run,.ai-cfg-toggle{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:34px;border:1px solid var(--rule);border-radius:7px;background:#fff;font-family:var(--font);font-size:12.5px;font-weight:600;color:var(--accent-deep);cursor:pointer;padding:0 12px;white-space:nowrap}
+  .ai-upload:hover,.ai-cfg-toggle:hover{border-color:var(--accent);background:#f7fbfc}
+  .ai-strip svg{width:16px;height:16px;flex:none}
+  .ai-upload.has-img{border-color:var(--accent);background:#edf6f9}
+  .ai-run{border-color:var(--accent-deep);background:var(--accent-deep);color:#fff}
+  .ai-run:hover{opacity:.9}
+  .ai-run:disabled{opacity:.5;cursor:not-allowed}
+  .ai-cfg-toggle{margin-left:auto;padding:0;width:34px}
+  .ai-msg{margin-top:8px;font-size:12px;padding:6px 10px;border-radius:7px;line-height:1.5}
+  .ai-msg.ok{background:#eef8f2;color:#1c7a5e}
+  .ai-msg.err{background:#fdf0ef;color:#b4453b}
+  .ai-msg.busy{background:#eef4f7;color:var(--accent-deep)}
+  .ai-cfg{margin-top:10px;padding:10px 12px;border:1px solid var(--rule);border-radius:8px;background:#f9fbfc}
+  .ai-cfg .field{margin-top:8px}
+  .ai-cfg .field:first-child{margin-top:0}
+  .ai-cfg-tip{font-size:11px;color:var(--muted);line-height:1.6;margin-top:8px}
   .dp-wrap{position:relative;display:block}
   .dp-wrap input{margin-top:4px;padding-right:34px;cursor:pointer;background:#fff!important;color:var(--ink)!important}
   .dp-wrap input:focus{outline:none;border-color:#cbe0e8;box-shadow:0 0 0 3px rgba(14,90,115,.08)}
@@ -907,6 +928,18 @@
     .note-line{font-size:11.5px;padding-bottom:6px}
     .modal-foot{flex:none;margin:0;padding:12px 18px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--rule);gap:10px}
     .modal-foot .btn{flex:1;justify-content:center;min-height:44px;font-size:14px}
+    /* 添加产品弹窗：手机端尽量压缩为一屏（保留16px字号避免iOS聚焦放大，改压高度/间距） */
+    #modal-add .modal-head{padding:10px 16px 7px}
+    #modal-add .modal-body{padding:0 16px}
+    #modal-add .add-grid{gap:5px 10px}
+    #modal-add .field{font-size:11.5px;margin-top:5px}
+    #modal-add .field input,#modal-add .field select{min-height:34px;padding:5px 10px;margin-top:2px}
+    /* 手机端隐藏纯说明文字，把纵向空间让给表单，实现一屏录入 */
+    #modal-add .note-line{display:none}
+    #modal-add .ai-strip{gap:6px}
+    #modal-add .ai-upload,#modal-add .ai-run,#modal-add .ai-cfg-toggle{height:32px;font-size:12px}
+    #modal-add .ai-msg{margin-top:5px;padding:4px 8px}
+    #modal-add .add-hist .add-hist-list{max-height:72px;overflow:auto}
     /* iOS 输入控件保持16px，避免聚焦时页面被强制放大 */
     html.is-ios .field input,html.is-ios .field select,html.is-ios .seg-group .seg,html.is-ios .filters input{font-size:16px}
     .sr-list{max-height:190px}
@@ -921,6 +954,16 @@
     .pg-pop button{height:30px;font-size:12px}
     tr.flow-month td{white-space:normal;font-size:12px;line-height:1.7;padding:9px 8px}
     tr.flow-month .fm-meta{display:block;margin-left:14px;font-size:11px}
+    /* 矮屏手机（高≤720）：添加产品表单改两列，尽量一屏录入 */
+    @media (max-height:720px){
+      #modal-add .add-grid{grid-template-columns:1fr 1fr;gap:4px 8px}
+      #modal-add .modal-head{padding:7px 16px 5px}
+      #modal-add .field{font-size:10.5px;margin-top:3px}
+      #modal-add .field input,#modal-add .field select{font-size:13px;min-height:32px;padding:4px 8px;margin-top:2px}
+      html.is-ios #modal-add .field input,html.is-ios #modal-add .field select{font-size:13px}
+      #modal-add .modal-foot{padding:8px 16px calc(8px + env(safe-area-inset-bottom))}
+      #modal-add .modal-foot .btn{min-height:38px}
+    }
   }
   @media (max-width:360px){
     .metrics{grid-template-columns:1fr}
@@ -947,7 +990,11 @@
               <path d="M13.9 2.6v3.4h-3.4"></path>
             </svg>
           </button>
-          <span class="hero-asof"><span hidden>数据截至 <span id="hero-asof">—</span> · </span>数据抓取 <b id="hero-report">—</b></span>
+          <button class="coverage cloud-chip" id="cloud-chip" title="云端登记：点击输入口令后即可在任意设备录入交易">
+            <svg class="cloud-ico" viewBox="0 0 20 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M5.2 13.2h9.6a3.4 3.4 0 0 0 .3-6.8 5.2 5.2 0 0 0-9.9 1A3 3 0 0 0 5.2 13.2z"></path>
+            </svg><span id="cloud-label">未连接</span>
+          </button>
           <button class="coverage" id="ms-trigger" aria-haspopup="listbox" aria-expanded="false" title="选择产品">
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M2 3.2h12l-4.6 5.3v5.1l-2.8-1.6V8.5z"></path>
@@ -956,11 +1003,6 @@
             <svg class="cv-caret" viewBox="0 0 10 8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M2 3l3 3 3-3"></path>
             </svg>
-          </button>
-          <button class="coverage cloud-chip" id="cloud-chip" title="云端登记：点击输入口令后即可在任意设备录入交易">
-            <svg class="cloud-ico" viewBox="0 0 20 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M5.2 13.2h9.6a3.4 3.4 0 0 0 .3-6.8 5.2 5.2 0 0 0-9.9 1A3 3 0 0 0 5.2 13.2z"></path>
-            </svg><span id="cloud-label">未连接</span>
           </button>
         </div>
         <p class="boot-tip" id="boot-tip" hidden></p>
@@ -1374,9 +1416,36 @@
   <div class="modal-card">
     <div class="modal-head"><b>添加产品</b><button type="button" class="x" data-close="modal-add">×</button></div>
     <div class="modal-body">
+      <div class="ai-strip" id="ai-strip">
+        <label class="ai-upload" id="add-image-label" title="上传银行 App 产品详情页截图，自动识别并填入下方表单">
+          <input type="file" id="add-image" accept="image/*" hidden>
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="4.5" width="15" height="12" rx="2.5"/><circle cx="7.5" cy="9" r="1.4"/><path d="M3 15l4.2-4.2 3.2 3.2 2.6-2.6 4 4"/></svg>
+          <span id="add-image-text">上传截图识别</span>
+        </label>
+        <button type="button" class="ai-run" id="add-ocr-run" title="把截图发给已配置的 AI 视觉接口，识别结果填入下方表单">一键识别填入</button>
+        <button type="button" class="ai-cfg-toggle" id="add-ai-cfg-toggle" title="识别接口设置（密钥仅存本机浏览器）" aria-label="识别接口设置">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="10" r="2.6"/><path d="M10 2v2.2M10 15.8V18M2 10h2.2M15.8 10H18M4.3 4.3l1.6 1.6M14.1 14.1l1.6 1.6M15.7 4.3l-1.6 1.6M5.9 14.1l-1.6 1.6"/></svg>
+        </button>
+      </div>
+      <div class="ai-msg" id="add-ai-msg" hidden></div>
+      <div class="ai-cfg" id="add-ai-cfg" hidden>
+        <label class="field">接口地址（OpenAI 兼容 chat/completions）
+          <input id="ai-url" autocomplete="off" placeholder="https://api.xxx.com/v1/chat/completions">
+        </label>
+        <label class="field">模型名
+          <input id="ai-model" autocomplete="off" placeholder="如 gpt-4o-mini / qwen-vl-max">
+        </label>
+        <label class="field">API Key（仅存本机浏览器，不上传、不写入代码）
+          <input id="ai-key" type="password" autocomplete="off" placeholder="sk-...">
+        </label>
+        <div class="ai-cfg-tip">密钥只保存在当前浏览器本地存储；识别时由浏览器直连接口，不经过看板服务器。支持任何 OpenAI 兼容的视觉模型接口（需允许浏览器跨域）。</div>
+      </div>
       <div class="add-grid">
         <label class="field wide">产品名称
           <input id="add-name" autocomplete="off" placeholder="如 合盛多元·鸿锦30天1号">
+        </label>
+        <label class="field wide">产品链接（选填）
+          <input id="add-link" autocomplete="off" inputmode="url" placeholder="粘贴产品详情页链接，保存后可在产品库点击打开">
         </label>
         <label class="field">登记编码（填了才能自动抓净值）
           <input id="add-code" autocomplete="off" placeholder="如 Z7001026001785">
@@ -1442,7 +1511,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261119m';
+      s.src = './assets/dashboard.js?v=20261119n';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();

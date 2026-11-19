@@ -475,6 +475,7 @@
       regCode: m.regCode || '',
       risk: m.risk || '',
       saleChannel: m.saleChannel || '',
+      link: m.link || '',
       inception: '',
       raiseStart: '', raiseEnd: '',
       dates: dates,
@@ -2385,6 +2386,18 @@
      去掉括号修饰、系列子名前缀（优盛·/合盛多元·等）、冗余词（最短持有/持有期/固收类/理财产品）。
      已符合风格的短名（如「中邮鸿锦7天45号」）会保留机构前缀不重复添加。
      机构来源兼容三类数据：持仓 org、产品库 orgShort、新品 issuer。 */
+  /* 产品库产品名称旁的可点击链接图标：仅 http/https 且来自手工产品 link 字段，
+     用 encodeURI 做安全转义，新窗口打开并加 noopener/noreferrer。 */
+  function prodLinkIcon(p) {
+    var link = p && p.link;
+    if (!link || !/^https?:\/\/\S+$/i.test(String(link))) return '';
+    var url = String(link).replace(/"/g, '%22').replace(/</g, '%3C').replace(/>/g, '%3E');
+    return '<a class="prod-link" href="' + url + '" target="_blank" rel="noopener noreferrer" title="打开产品详情页">' +
+      '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M6.5 3.5H3.2a1.2 1.2 0 0 0-1.2 1.2v8.1a1.2 1.2 0 0 0 1.2 1.2h8.1a1.2 1.2 0 0 0 1.2-1.2V9.5"></path>' +
+      '<path d="M9 2.5h4.5V7M13 3L7 9"></path></svg></a>';
+  }
+
   function prodDispName(p) {
     if (!p) return '—';
     var base = String(p.short || p.name || '—')
@@ -2497,6 +2510,7 @@
           '<a class="plink" href="javascript:void(0)" data-goto-trade="' + p.id + '" title="' + (p.name || '') + '">' +
             prodDispName(p) + '</a>' :
           '<span class="pname-t" title="' + (p.name || '') + '">' + prodDispName(p) + '</span>') +
+          prodLinkIcon(p) +
           '<span class="ptags">' +
           (h ? (h.cleared ?
             '<span class="cleared-date">' +
@@ -3143,13 +3157,101 @@
   /* ---------------- 添加产品 ---------------- */
   var addState = { image: '', filename: '' };
 
+  /* 图片识别的 AI 接口配置：仅存本机浏览器 localStorage，不进代码库/不上传云端。
+     使用 OpenAI 兼容的 /chat/completions 视觉接口，由浏览器直连（需接口允许跨域）。 */
+  var AI_CFG_KEY = 'wealth3.aiVisionCfg';
+  function loadAiCfg() {
+    try {
+      var c = JSON.parse(localStorage.getItem(AI_CFG_KEY) || '{}');
+      return { url: c.url || '', model: c.model || '', key: c.key || '' };
+    } catch (e) { return { url: '', model: '', key: '' }; }
+  }
+  function saveAiCfg(c) {
+    try { localStorage.setItem(AI_CFG_KEY, JSON.stringify(c)); } catch (e) { /* 忽略 */ }
+  }
+  function aiMsg(text, kind) {
+    var el = document.getElementById('add-ai-msg');
+    if (!el) return;
+    if (!text) { el.hidden = true; el.textContent = ''; return; }
+    el.hidden = false;
+    el.className = 'ai-msg ' + (kind || 'busy');
+    el.textContent = text;
+  }
+  function fillAddForm(f) {
+    var map = {
+      'add-name': f.name, 'add-code': f.regCode, 'add-org': f.org,
+      'add-risk': f.risk, 'add-nav': f.nav, 'add-navdate': f.navDate, 'add-link': f.link
+    };
+    Object.keys(map).forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el && map[id] !== null && map[id] !== undefined && map[id] !== '') el.value = String(map[id]);
+    });
+  }
+
   function resetAddModal() {
-    ['add-name', 'add-code', 'add-org', 'add-nav', 'add-navdate'].forEach(function (id) {
+    ['add-name', 'add-code', 'add-org', 'add-nav', 'add-navdate', 'add-link'].forEach(function (id) {
       var el = document.getElementById(id);
       if (el) el.value = '';
     });
     var risk = document.getElementById('add-risk');
     if (risk) risk.value = '';
+    addState.image = ''; addState.filename = '';
+    var imgText = document.getElementById('add-image-text');
+    if (imgText) imgText.textContent = '上传截图识别';
+    var lbl = document.getElementById('add-image-label');
+    if (lbl) lbl.classList.remove('has-img');
+    var file = document.getElementById('add-image');
+    if (file) file.value = '';
+    aiMsg('');
+  }
+
+  /* 调用 OpenAI 兼容视觉接口识别截图，返回结构化字段 */
+  function runOcr() {
+    var run = document.getElementById('add-ocr-run');
+    if (!addState.image) { aiMsg('请先上传一张产品详情页截图', 'err'); return; }
+    var cfg = loadAiCfg();
+    if (!cfg.url || !cfg.key || !cfg.model) {
+      aiMsg('请先点右侧 ⚙ 配置接口地址、模型名和 API Key', 'err');
+      var p = document.getElementById('add-ai-cfg');
+      if (p) p.hidden = false;
+      return;
+    }
+    if (run) run.disabled = true;
+    aiMsg('正在识别，请稍候…', 'busy');
+    var body = {
+      model: cfg.model,
+      temperature: 0,
+      messages: [
+        { role: 'system', content: '你是银行理财产品信息提取助手。从用户给的产品详情页截图中提取字段，只输出一个 JSON 对象，不要任何解释文字。字段：name(产品全称字符串)、regCode(登记编码，Z开头14位字符串，找不到填空字符串)、risk(风险等级，如R1/R2/R3，找不到填空字符串)、org(发行机构字符串，找不到填空字符串)、nav(最新净值数字，找不到填null)、navDate(净值日期YYYY-MM-DD，找不到填空字符串)。若截图不是产品详情页，所有字段填空值。' },
+        { role: 'user', content: [
+          { type: 'text', text: '提取这张理财产品截图中的产品信息，按系统要求输出 JSON。' },
+          { type: 'image_url', image_url: { url: addState.image } }
+        ] }
+      ]
+    };
+    fetch(cfg.url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + cfg.key },
+      body: JSON.stringify(body)
+    }).then(function (r) {
+      if (!r.ok) return r.text().then(function (t) { throw new Error('接口返回 ' + r.status + '：' + t.slice(0, 120)); });
+      return r.json();
+    }).then(function (j) {
+      var txt = j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content;
+      if (typeof txt !== 'string') throw new Error('接口返回格式无法识别');
+      txt = txt.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+      var m = txt.match(/\{[\s\S]*\}/);
+      if (!m) throw new Error('未识别到 JSON 结果');
+      var f = JSON.parse(m[0]);
+      var filled = [f.name, f.regCode, f.nav, f.navDate].filter(function (v) { return v !== null && v !== undefined && v !== ''; }).length;
+      if (!filled) { aiMsg('没有从截图识别出有效字段，请换一张更清晰的截图', 'err'); return; }
+      fillAddForm(f);
+      aiMsg('识别完成，已填入表单，请核对后保存', 'ok');
+    }).catch(function (e) {
+      aiMsg('识别失败：' + ((e && e.message) || '网络错误，请检查接口地址/密钥/跨域设置'), 'err');
+    }).finally(function () {
+      if (run) run.disabled = false;
+    });
   }
 
   /* 添加产品历史记录：云端 MANUAL_HISTORY（添加 / 删除） */
@@ -3188,6 +3290,54 @@
     if (!submit || submit.dataset.bound) return;
     submit.dataset.bound = '1';
     var busy = false;
+
+    /* 图片识别：上传截图转 dataURL，一键识别填表，配置面板开关 */
+    var fileEl = document.getElementById('add-image');
+    if (fileEl) fileEl.addEventListener('change', function () {
+      var f = fileEl.files && fileEl.files[0];
+      if (!f) return;
+      if (!/^image\//.test(f.type)) { aiMsg('请选择图片文件', 'err'); return; }
+      if (f.size > 8 * 1024 * 1024) { aiMsg('图片请小于 8MB', 'err'); return; }
+      var reader = new FileReader();
+      reader.onload = function () {
+        addState.image = String(reader.result || '');
+        addState.filename = f.name;
+        var txt = document.getElementById('add-image-text');
+        if (txt) txt.textContent = '已选：' + (f.name.length > 12 ? f.name.slice(0, 12) + '…' : f.name);
+        var lbl = document.getElementById('add-image-label');
+        if (lbl) lbl.classList.add('has-img');
+        aiMsg('截图已就绪，点「一键识别填入」提取信息', 'ok');
+      };
+      reader.onerror = function () { aiMsg('图片读取失败', 'err'); };
+      reader.readAsDataURL(f);
+    });
+    var ocrBtn = document.getElementById('add-ocr-run');
+    if (ocrBtn) ocrBtn.addEventListener('click', runOcr);
+    var cfgToggle = document.getElementById('add-ai-cfg-toggle');
+    if (cfgToggle) cfgToggle.addEventListener('click', function () {
+      var p = document.getElementById('add-ai-cfg');
+      if (!p) return;
+      p.hidden = !p.hidden;
+      if (!p.hidden) {
+        var c = loadAiCfg();
+        var u = document.getElementById('ai-url'), mo = document.getElementById('ai-model'), k = document.getElementById('ai-key');
+        if (u) u.value = c.url;
+        if (mo) mo.value = c.model;
+        if (k) k.value = c.key;
+      }
+    });
+    ['ai-url', 'ai-model', 'ai-key'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('change', function () {
+        var u = document.getElementById('ai-url'), mo = document.getElementById('ai-model'), k = document.getElementById('ai-key');
+        saveAiCfg({
+          url: (u && u.value || '').trim(),
+          model: (mo && mo.value || '').trim(),
+          key: (k && k.value || '').trim()
+        });
+      });
+    });
     submit.addEventListener('click', function () {
       if (busy) return;
       var name = (document.getElementById('add-name').value || '').trim();
@@ -3197,6 +3347,8 @@
       var channel = document.getElementById('add-channel').value || '';
       var nav = Number((document.getElementById('add-nav').value || '').trim());
       var navDate = (document.getElementById('add-navdate').value || '').trim();
+      var link = (document.getElementById('add-link').value || '').trim();
+      if (link && !/^https?:\/\//i.test(link)) { toast('产品链接需以 http:// 或 https:// 开头'); return; }
       if (!name) { toast('请填写产品名称'); return; }
       if (!(nav > 0)) { toast('请填写最新净值'); return; }
       if (!/^\d{4}-\d{2}-\d{2}$/.test(navDate)) { toast('请选择净值日期'); return; }
@@ -3212,7 +3364,8 @@
         risk: risk,
         saleChannel: channel,
         nav: nav,
-        navDate: navDate
+        navDate: navDate,
+        link: link
       };
       submit.disabled = true;
       busy = true;
