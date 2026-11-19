@@ -2692,8 +2692,11 @@
       row.appendChild(cb);
       row.appendChild(txt);
 
-      /* 点名称：仅选这一项（首项＝全部），并立即收起 —— 保留「单击仅选」 */
-      txt.addEventListener('click', function (e) {
+      /* 点名称或行内任意空白：仅选这一项（首项＝全部），并立即收起。
+         必须绑在整行上——只绑 span 时点到文字旁边的空白处会落进 label 默认行为，
+         变成切换复选框（看起来就像「点名称还在多选」）。 */
+      row.addEventListener('click', function (e) {
+        if (e.target === cb) return;   /* 复选框自己处理多选 */
         e.preventDefault();
         e.stopPropagation();
         if (isAllItem) selectAll();
@@ -2706,6 +2709,9 @@
       });
 
       /* 点复选框：多选增减，弹层保持打开，与看板产品筛选一致 */
+      cb.addEventListener('click', function (e) {
+        e.stopPropagation();           /* 不触发整行的「仅选」 */
+      });
       cb.addEventListener('change', function (e) {
         e.stopPropagation();
         if (isAllItem) selectAll();
