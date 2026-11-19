@@ -540,6 +540,7 @@
   .ms-actions{display:flex;gap:4px;margin-left:0;flex:none}
   .ms-actions button{font-family:var(--font);font-size:11px;padding:3px 7px;border:1px solid #dbe7ed;border-radius:6px;background:#f6fafc;cursor:pointer;color:var(--accent-deep);white-space:nowrap}
   .ms-list{max-height:264px;overflow:auto;padding-top:6px}
+  .ms-tip{font-size:10.5px;line-height:1.5;color:#93a3ae;padding:5px 2px 0}
   .ms-item{display:flex;align-items:center;gap:8px;padding:6px;border-radius:7px;font-size:12.5px;cursor:pointer}
   .ms-item:hover{background:#f7f9fa}
   .ms-item input{accent-color:var(--accent);flex:none;cursor:pointer}
@@ -568,17 +569,20 @@
   sup.nav-lag{position:absolute;top:-.55em;right:-.95em;font-family:var(--mono);font-size:9px;font-weight:700;line-height:1;color:#d13b32;padding:0;white-space:nowrap;cursor:help}
 
   /* 横向滚动 + 冻结首列；纵向超长时表头吸顶（滚动容器即卡片，表头 sticky 才生效） */
-  .tbl-scroll{overflow:auto;max-height:min(72vh,620px);-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+  /* 纵向超长时表头吸顶；滚动到顶/底要能把手势交还给页面（不能设 overscroll-behavior:contain，
+     否则内部滚到尽头后页面卡住划不动） */
+  .tbl-scroll{overflow:auto;max-height:min(72vh,620px);-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;overscroll-behavior-y:auto}
   .tbl-scroll>table thead th{position:sticky;top:0;z-index:3;background:#f7f9fa;box-shadow:inset 0 -1px 0 var(--rule)}
   #hold-table thead th[data-sort="score"]{background:#e6f2f6}
-  /* 净值日期表头：右侧小漏斗按钮，点开多选筛选（不触发排序） */
-  .th-date{position:relative;padding-right:15px !important}
+  /* 净值日期表头：标签下方一个与「数据」列同款的小下拉按钮，点开多选筛选（不触发排序） */
+  .th-date{padding:3px 2px 4px !important}
   .th-date br{display:inline !important}
-  .th-filter{position:absolute;top:0;right:0;bottom:0;width:14px;display:flex;align-items:center;justify-content:center;padding:0;margin:0;border-radius:0 5px 5px 0;cursor:pointer;color:#9db0bb}
-  .th-filter:hover{background:#e6f2f6;color:var(--accent-deep)}
-  .th-filter .ft-caret{width:0;height:0;border-left:3.5px solid transparent;border-right:3.5px solid transparent;border-top:4.5px solid currentColor;flex:none}
-  .th-filter .ft-n{display:none}
-  .th-filter.on{color:var(--accent-deep);background:#e4f0f5;box-shadow:inset 2px 0 0 var(--accent)}
+  .th-dbtn{display:flex;align-items:center;justify-content:center;gap:2px;width:100%;max-width:46px;height:16px;margin:2px auto 0;padding:0 3px;font-family:var(--font);font-size:10px;font-weight:600;line-height:1;color:var(--muted);background:#fff;border:1px solid var(--rule);border-radius:4px;cursor:pointer;white-space:nowrap}
+  .th-dbtn:hover{border-color:#c9dbe3;color:var(--accent-deep)}
+  .th-dbtn:focus-visible{outline:none;border-color:var(--accent);color:var(--accent-deep)}
+  .th-dbtn .ft-caret{width:0;height:0;border-left:3px solid transparent;border-right:3px solid transparent;border-top:4px solid currentColor;flex:none}
+  .th-dbtn .ft-n{font-family:var(--mono);font-size:10px;font-weight:700;font-style:normal;line-height:1}
+  .th-dbtn.on{color:var(--accent-deep);border-color:var(--accent);background:#e4f0f5}
   .swipe-tip{display:none;text-align:center;font-size:11px;color:#93a3ae;margin-top:6px}
   /* 交易流水按月折叠：表头行显示整月汇总，点击展开明细 */
   tr.flow-month td{background:#f1f7f9;font-weight:700;font-size:12.5px;color:var(--accent-deep);padding:9px 10px;cursor:pointer;border-bottom:1px solid var(--rule);white-space:nowrap;user-select:none}
@@ -653,11 +657,14 @@
     /* 产品库含完整日期，保持自适应才不会被日期撑列 */
     #prod-table{table-layout:auto}
     #prod-table colgroup col{width:auto !important}
+    /* 自适应列宽下隐藏的「今日万收」单元格仍会占位，净值日期与 7 日之间就多出一列空白；
+       自适应布局整列 display:none 才会真正收掉（固定列宽下仍用 visibility 保持列对齐） */
+    #prod-table.no-p10k [data-col="p10k"]{display:none}
     #hold-table colgroup col,#sum-table colgroup col,#flow-table colgroup col{width:auto !important}
     #hold-table col:nth-child(1){width:26px !important}
     /* 横屏产品名加宽（原 92px 会把长名称压成两三行、甚至单字换行） */
     #hold-table col:nth-child(2){width:118px !important}
-    #hold-table col:nth-child(3){width:38px !important}
+    #hold-table col:nth-child(3){width:44px !important}
     #hold-table col:nth-child(4){width:44px !important}
     #hold-table col:nth-child(5){width:44px !important}
     #hold-table col:nth-child(6){width:50px !important}
@@ -764,7 +771,7 @@
     #hold-table col:nth-child(16){width:42px !important}
     #hold-table thead th,#hold-table tbody td{padding:8px 3px}
     #hold-table thead th:nth-child(2),#hold-table tbody tr:not(.mb) > td:nth-child(2){padding-left:8px;padding-right:6px}
-    #hold-table thead th:nth-child(3){padding-left:2px;padding-right:15px}
+    #hold-table thead th:nth-child(3){padding-left:2px;padding-right:2px}
     #hold-table .th-select{width:100%;max-width:100%;font-size:11px;padding:1px 0}
     #hold-table tbody td:nth-child(2){min-width:0;max-width:none}
     /* 自适应列宽下产品名会把表头筛选下拉挤扁：按钮按文字宽度显示，列保留最小可读宽度 */
@@ -996,7 +1003,7 @@
             <tr>
               <th class="c" style="width:44px">序号</th>
               <th class="sortable" data-sort="name">产品名称</th>
-              <th class="c sortable th-date" data-sort="navdate">净值<br>日期<span class="th-filter" id="hold-date-filter" role="button" tabindex="0" aria-haspopup="listbox" title="按净值日期筛选（可多选）"><i class="ft-caret"></i><i class="ft-n" id="hold-date-n"></i></span></th>
+              <th class="c sortable th-date" data-sort="navdate">净值<br>日期<button type="button" class="th-dbtn" id="hold-date-filter" aria-haspopup="listbox" title="按净值日期筛选（可多选）"><span class="ft-n" id="hold-date-n">全部</span><i class="ft-caret"></i></button></th>
               <th class="r sortable" data-sort="today">今日<br>万收</th>
               <th class="r sortable" data-sort="income">今日<br>收益</th>
               <th class="r sortable" data-sort="profit">持仓<br>收益</th>
@@ -1279,6 +1286,7 @@
       <button type="button" data-act="toggle">全选</button>
     </div>
   </div>
+  <div class="ms-tip">点名称＝只看这一只 · 勾选框＝多选</div>
   <div class="ms-list" id="ms-list"></div>
 </div>
 
@@ -1401,7 +1409,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261119a';
+      s.src = './assets/dashboard.js?v=20261119b';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();

@@ -1287,7 +1287,12 @@
         ? '已筛选 ' + profitDateSel.length + ' 个净值日期（点击修改）'
         : '按净值日期筛选（可多选）';
     }
-    if (n) n.textContent = on ? String(profitDateSel.length) : '';
+    /* 按钮文案与「数据」列下拉一致：未筛选显示「全部」，选一天显示该日期，多选显示「N个」 */
+    if (n) {
+      if (!on) n.textContent = '全部';
+      else if (profitDateSel.length === 1) n.textContent = mmdd(profitDateSel[0]);
+      else n.textContent = profitDateSel.length + '个';
+    }
   }
 
   function populateDateFilter(dates, counts) {
@@ -4608,12 +4613,12 @@
       applySelection();
     });
 
-    /* 搜索状态下点产品名 = 只看这一只（原「仅选」按钮的工作，按钮本身已取消）。
+    /* 点产品名 = 只看这一只（原「仅选」按钮的职责，按钮已取消）。
        默认全选时复选框是勾选状态，直接点它反而会取消该产品；
-       故在「有搜索词」时把点名称的动作定义为隔离选中，一步到位且不用额外按钮。 */
+       故把「点名称」统一定义为隔离选中并收起面板，勾选框仍负责多选增减。 */
     list.addEventListener('click', function (e) {
       var nameEl = e.target && e.target.closest ? e.target.closest('.ms-name') : null;
-      if (!nameEl || !pickerQuery.trim()) return;
+      if (!nameEl) return;
       var item = nameEl.closest('.ms-item');
       var cb = item ? item.querySelector('input[type="checkbox"]') : null;
       if (!cb) return;
