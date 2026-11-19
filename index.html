@@ -367,21 +367,30 @@
   @media (max-width:760px){.add-grid{grid-template-columns:1fr;gap:10px}}
   /* 图片识别工具条 */
   .ai-strip{display:flex;align-items:center;gap:8px;margin-top:2px}
-  .ai-upload,.ai-run,.ai-cfg-toggle{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:34px;border:1px solid var(--rule);border-radius:7px;background:#fff;font-family:var(--font);font-size:12.5px;font-weight:600;color:var(--accent-deep);cursor:pointer;padding:0 12px;white-space:nowrap}
-  .ai-upload:hover,.ai-cfg-toggle:hover{border-color:var(--accent);background:#f7fbfc}
+  .ai-upload,.ai-run{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:34px;border:1px solid var(--rule);border-radius:7px;background:#fff;font-family:var(--font);font-size:12.5px;font-weight:600;color:var(--accent-deep);cursor:pointer;padding:0 12px;white-space:nowrap}
+  .ai-upload:hover{border-color:var(--accent);background:#f7fbfc}
   .ai-strip svg{width:16px;height:16px;flex:none}
   .ai-upload.has-img{border-color:var(--accent);background:#edf6f9}
   .ai-run{border-color:var(--accent-deep);background:var(--accent-deep);color:#fff}
   .ai-run:hover{opacity:.9}
   .ai-run:disabled{opacity:.5;cursor:not-allowed}
-  .ai-cfg-toggle{margin-left:auto;padding:0;width:34px}
   .ai-msg{margin-top:8px;font-size:12px;padding:6px 10px;border-radius:7px;line-height:1.5}
   .ai-msg.ok{background:#eef8f2;color:#1c7a5e}
   .ai-msg.err{background:#fdf0ef;color:#b4453b}
   .ai-msg.busy{background:#eef4f7;color:var(--accent-deep)}
-  .ai-cfg{margin-top:10px;padding:10px 12px;border:1px solid var(--rule);border-radius:8px;background:#f9fbfc}
-  .ai-cfg .field{margin-top:8px}
-  .ai-cfg .field:first-child{margin-top:0}
+  .ai-cfg{margin-top:8px;border:1px solid var(--rule);border-radius:8px;background:#f9fbfc;overflow:hidden}
+  .ai-cfg summary{cursor:pointer;padding:7px 11px;font-size:11.5px;font-weight:600;color:var(--muted);list-style:none;user-select:none}
+  .ai-cfg summary::-webkit-details-marker{display:none}
+  .ai-cfg summary::before{content:'▸ ';color:var(--accent)}
+  .ai-cfg[open] summary::before{content:'▾ '}
+  .ai-cfg[open] summary{border-bottom:1px solid var(--rule)}
+  .ai-cfg-body{padding:10px 11px}
+  .ai-cfg-body .field{margin-top:8px}
+  .ai-cfg-body .field:first-of-type{margin-top:0}
+  .ai-cfg-body input{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px}
+  .ai-cfg-guide{font-size:11px;line-height:1.75;color:var(--ink);background:#fff;border:1px solid var(--rule);border-radius:7px;padding:8px 10px;margin-bottom:10px}
+  .ai-cfg-guide a{color:var(--accent-deep);text-decoration:underline}
+  .ai-cfg-guide code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;background:#eef4f7;border-radius:3px;padding:0 3px;font-size:10.5px;word-break:break-all}
   .ai-cfg-tip{font-size:11px;color:var(--muted);line-height:1.6;margin-top:8px}
   .dp-wrap{position:relative;display:block}
   .dp-wrap input{margin-top:4px;padding-right:34px;cursor:pointer;background:#fff!important;color:var(--ink)!important}
@@ -937,7 +946,7 @@
     /* 手机端隐藏纯说明文字，把纵向空间让给表单，实现一屏录入 */
     #modal-add .note-line{display:none}
     #modal-add .ai-strip{gap:6px}
-    #modal-add .ai-upload,#modal-add .ai-run,#modal-add .ai-cfg-toggle{height:32px;font-size:12px}
+    #modal-add .ai-upload,#modal-add .ai-run{height:32px;font-size:12px}
     #modal-add .ai-msg{margin-top:5px;padding:4px 8px}
     #modal-add .add-hist .add-hist-list{max-height:72px;overflow:auto}
     /* iOS 输入控件保持16px，避免聚焦时页面被强制放大 */
@@ -1423,23 +1432,29 @@
           <span id="add-image-text">上传截图识别</span>
         </label>
         <button type="button" class="ai-run" id="add-ocr-run" title="把截图发给已配置的 AI 视觉接口，识别结果填入下方表单">一键识别填入</button>
-        <button type="button" class="ai-cfg-toggle" id="add-ai-cfg-toggle" title="识别接口设置（密钥仅存本机浏览器）" aria-label="识别接口设置">
-          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="10" r="2.6"/><path d="M10 2v2.2M10 15.8V18M2 10h2.2M15.8 10H18M4.3 4.3l1.6 1.6M14.1 14.1l1.6 1.6M15.7 4.3l-1.6 1.6M5.9 14.1l-1.6 1.6"/></svg>
-        </button>
       </div>
       <div class="ai-msg" id="add-ai-msg" hidden></div>
-      <div class="ai-cfg" id="add-ai-cfg" hidden>
-        <label class="field">接口地址（OpenAI 兼容 chat/completions）
-          <input id="ai-url" autocomplete="off" placeholder="https://api.xxx.com/v1/chat/completions">
-        </label>
-        <label class="field">模型名
-          <input id="ai-model" autocomplete="off" placeholder="如 gpt-4o-mini / qwen-vl-max">
-        </label>
-        <label class="field">API Key（仅存本机浏览器，不上传、不写入代码）
-          <input id="ai-key" type="password" autocomplete="off" placeholder="sk-...">
-        </label>
-        <div class="ai-cfg-tip">密钥只保存在当前浏览器本地存储；识别时由浏览器直连接口，不经过看板服务器。支持任何 OpenAI 兼容的视觉模型接口（需允许浏览器跨域）。</div>
-      </div>
+      <details class="ai-cfg" id="add-ai-cfg">
+        <summary>高级设置：识别接口（一般不用填，仅图片识别需要）</summary>
+        <div class="ai-cfg-body">
+          <div class="ai-cfg-guide">
+            想用「一键识别」？按这 3 步填一次即可，以后都记住：<br>
+            ① 打开 <a href="https://cloud.siliconflow.cn/" target="_blank" rel="noopener noreferrer">cloud.siliconflow.cn</a> 注册（国内站，新用户有免费额度）→ 左侧「API 密钥」→ 新建密钥，复制 <b>sk-</b> 开头的那串；<br>
+            ② 下面三栏照抄：<b>接口地址</b> = <code>https://api.siliconflow.cn/v1/chat/completions</code>，<b>模型名</b> = <code>Qwen/Qwen3-VL-8B-Instruct</code>，<b>API Key</b> = 刚复制的密钥；<br>
+            ③ 上传截图 → 点「一键识别填入」。密钥只存本机浏览器，不会上传，也可随时清空。
+          </div>
+          <label class="field">接口地址
+            <input id="ai-url" autocomplete="off" placeholder="https://api.siliconflow.cn/v1/chat/completions">
+          </label>
+          <label class="field">模型名
+            <input id="ai-model" autocomplete="off" placeholder="Qwen/Qwen3-VL-8B-Instruct">
+          </label>
+          <label class="field">API Key（仅存本机浏览器）
+            <input id="ai-key" type="password" autocomplete="off" placeholder="sk-...">
+          </label>
+          <div class="ai-cfg-tip">密钥只保存在当前浏览器本地存储；识别时由浏览器直连接口，不经过看板服务器。不配置也能正常手工添加产品。</div>
+        </div>
+      </details>
       <div class="add-grid">
         <label class="field wide">产品名称
           <input id="add-name" autocomplete="off" placeholder="如 合盛多元·鸿锦30天1号">
@@ -1447,8 +1462,8 @@
         <label class="field wide">产品链接（选填）
           <input id="add-link" autocomplete="off" inputmode="url" placeholder="粘贴产品详情页链接，保存后可在产品库点击打开">
         </label>
-        <label class="field">登记编码（填了才能自动抓净值）
-          <input id="add-code" autocomplete="off" placeholder="如 Z7001026001785">
+        <label class="field">登记编码（选填，留空按名称自动匹配）
+          <input id="add-code" autocomplete="off" placeholder="选填，如 Z7001026001785">
         </label>
         <label class="field">风险等级
           <select id="add-risk"><option value="">未填</option><option>R1</option><option>R2</option><option>R3</option><option>R4</option><option>R5</option></select>
@@ -1464,17 +1479,17 @@
             <option>渤海银行</option><option>浙商银行</option><option>恒丰银行</option>
           </select>
         </label>
-        <label class="field">最新净值
-          <input id="add-nav" inputmode="decimal" autocomplete="off" placeholder="如 1.0045">
+        <label class="field">最新净值（选填）
+          <input id="add-nav" inputmode="decimal" autocomplete="off" placeholder="留空自动抓取，或填如 1.0045">
         </label>
-        <label class="field">净值日期
+        <label class="field">净值日期（选填）
           <span class="dp-wrap">
-            <input id="add-navdate" type="text" readonly placeholder="请选择净值日期" autocomplete="off" aria-haspopup="dialog">
+            <input id="add-navdate" type="text" readonly placeholder="留空自动抓取" autocomplete="off" aria-haspopup="dialog">
             <svg class="dp-ico" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="3" y="5.5" width="18" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3 10.5h18M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
           </span>
         </label>
       </div>
-      <div class="note-line">手工添加的产品保存在云端，所有设备共用；填写登记编码的产品会随每日数据抓取自动更新净值，未填写登记编码的需手动维护净值与净值日期。</div>
+      <div class="note-line">手工添加的产品保存在云端，所有设备共用。只填产品名称即可添加：系统每天会按名称自动匹配登记编码并抓取最新净值；识别不准时可再手工补填编码、净值与净值日期。</div>
       <div class="add-hist" id="add-hist" hidden>
         <div class="add-hist-title">最近添加记录</div>
         <ul class="add-hist-list" id="add-hist-list"></ul>
@@ -1511,7 +1526,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261119n';
+      s.src = './assets/dashboard.js?v=20261119o';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();

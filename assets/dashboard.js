@@ -3211,9 +3211,9 @@
     if (!addState.image) { aiMsg('请先上传一张产品详情页截图', 'err'); return; }
     var cfg = loadAiCfg();
     if (!cfg.url || !cfg.key || !cfg.model) {
-      aiMsg('请先点右侧 ⚙ 配置接口地址、模型名和 API Key', 'err');
+      aiMsg('图片识别需先设置接口：展开下方「高级设置：识别接口」，按里面 3 步填一次即可（或手工填写表单）', 'err');
       var p = document.getElementById('add-ai-cfg');
-      if (p) p.hidden = false;
+      if (p) p.open = true;
       return;
     }
     if (run) run.disabled = true;
@@ -3313,18 +3313,15 @@
     });
     var ocrBtn = document.getElementById('add-ocr-run');
     if (ocrBtn) ocrBtn.addEventListener('click', runOcr);
-    var cfgToggle = document.getElementById('add-ai-cfg-toggle');
-    if (cfgToggle) cfgToggle.addEventListener('click', function () {
-      var p = document.getElementById('add-ai-cfg');
-      if (!p) return;
-      p.hidden = !p.hidden;
-      if (!p.hidden) {
-        var c = loadAiCfg();
-        var u = document.getElementById('ai-url'), mo = document.getElementById('ai-model'), k = document.getElementById('ai-key');
-        if (u) u.value = c.url;
-        if (mo) mo.value = c.model;
-        if (k) k.value = c.key;
-      }
+    /* 高级设置用 details 原生折叠：展开时把本机已存配置回填进三个输入框 */
+    var cfgBox = document.getElementById('add-ai-cfg');
+    if (cfgBox) cfgBox.addEventListener('toggle', function () {
+      if (!cfgBox.open) return;
+      var c = loadAiCfg();
+      var u = document.getElementById('ai-url'), mo = document.getElementById('ai-model'), k = document.getElementById('ai-key');
+      if (u) u.value = c.url;
+      if (mo) mo.value = c.model;
+      if (k) k.value = c.key;
     });
     ['ai-url', 'ai-model', 'ai-key'].forEach(function (id) {
       var el = document.getElementById(id);
@@ -3350,8 +3347,9 @@
       var link = (document.getElementById('add-link').value || '').trim();
       if (link && !/^https?:\/\//i.test(link)) { toast('产品链接需以 http:// 或 https:// 开头'); return; }
       if (!name) { toast('请填写产品名称'); return; }
-      if (!(nav > 0)) { toast('请填写最新净值'); return; }
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(navDate)) { toast('请选择净值日期'); return; }
+      /* 登记编码、净值、净值日期均选填：只填名称即可添加，系统每天按名称反查编码并抓净值。
+         但若填了净值就必须同时给日期，否则前端无法定位净值点、会显示为空。 */
+      if (nav > 0 && !/^\d{4}-\d{2}-\d{2}$/.test(navDate)) { toast('填了最新净值，请同时选择净值日期'); return; }
       if (code && tradeProducts().some(function (p) { return p.regCode === code; })) {
         toast('该登记编码已在产品库，无需重复添加');
         return;
