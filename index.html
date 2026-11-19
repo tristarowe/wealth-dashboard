@@ -88,8 +88,6 @@
   .pname{font-weight:400;font-size:13px;line-height:1.5;letter-spacing:.005em}
   .pname .salech{display:block;font-size:10.5px;line-height:1.5;color:#8a9aa5;font-weight:400;letter-spacing:0;margin-top:1px}
   .pname .mv-under{display:block;font-size:10.5px;line-height:1.5;color:#52646f;font-weight:400;letter-spacing:0;margin-top:1px;font-family:var(--mono)}
-  /* 持仓收益下方的「已实现」小字：仅部分赎回的产品出现，用于和累计收益对账 */
-  .realized-under{display:block;font-family:var(--mono);font-size:10.5px;font-weight:400;line-height:1.3;color:var(--muted);margin-top:1px;white-space:nowrap}
   .plink{color:inherit;text-decoration:none;border-bottom:1px dashed #b9ccd4;cursor:pointer}
   .plink:hover{color:var(--accent-deep);border-bottom-color:var(--accent)}
   .pname .ptags{display:inline-flex;align-items:baseline;gap:6px;margin-left:6px}
@@ -115,8 +113,8 @@
   /* 盈亏明细：7日~成立至今 拆成「日均万收」「年化」两行，评分纵向合并 */
   #hold-table tr.ma.dual > td:not([rowspan]){border-bottom:1px solid #f0f4f6}
   /* 盈亏明细竖分割线：天数|数据、数据|7日 两处，贯穿表头与主/子数据行，避免「年化」子行错位断线 */
-  #hold-table th:nth-child(9),#hold-table th:nth-child(10),
-  #hold-table tbody tr:not(.mb) > td:nth-child(9),#hold-table tbody tr:not(.mb) > td:nth-child(10),
+  #hold-table th:nth-child(10),#hold-table th:nth-child(11),
+  #hold-table tbody tr:not(.mb) > td:nth-child(10),#hold-table tbody tr:not(.mb) > td:nth-child(11),
   #hold-table tbody tr.mb > td:nth-child(1),#hold-table tbody tr.mb > td:nth-child(2){border-left:1px solid var(--rule)}
   /* 今日收益 / 持仓收益 之间不设分割线（2026-11-18 按需求取消） */
   #hold-table td.mlabel{font-size:12px;color:var(--muted);white-space:nowrap;padding:6px 8px}
@@ -165,7 +163,7 @@
   /* 四张数据表：固定列宽，相同内容同列宽，收紧列距 */
   #hold-table,#sum-table,#prod-table,#flow-table{table-layout:fixed}
   #hold-table thead th,#hold-table tbody td{padding:9px 7px}
-  #hold-table tbody td:nth-child(2),#hold-table thead th:nth-child(2){padding-left:10px}
+  #hold-table tbody tr:not(.mb) > td:nth-child(2),#hold-table thead th:nth-child(2){padding-left:10px}
   #sum-table thead th,#sum-table tbody td{padding:10px 8px}
   #sum-table tbody td:first-child,#sum-table thead th:first-child{padding-left:12px}
   #prod-table thead th,#flow-table thead th{padding:9px 8px}
@@ -434,7 +432,7 @@
   .active-filter{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);background:#eef6f8;border:1px solid #d5e5ea;border-radius:8px;padding:6px 10px;margin-bottom:10px}
   .active-filter[hidden]{display:none}
   .active-filter b{color:var(--accent-deep)}
-  #sum-table{min-width:1032px}
+  #sum-table{min-width:1108px}
   /* 交易汇总操作列：加购/赎回/清仓三个按钮同排显示，不允许换行折叠 */
   #sum-table thead th:last-child,#sum-table tbody td:last-child{white-space:nowrap}
   #sum-table tbody td:last-child .mini{white-space:nowrap}
@@ -614,8 +612,8 @@
     #flow-table thead th,#flow-table tbody td{padding:8px 6px}
     #hold-table thead th,#prod-table thead th{font-size:12px}
     #prod-table thead th{min-width:0 !important}
-    #hold-table{min-width:1000px}
-    #sum-table{min-width:872px}
+    #hold-table{min-width:1048px}
+    #sum-table{min-width:942px}
     #prod-table{min-width:880px}
     #hold-table .pname,#sum-table .pname,#prod-table .pname{font-size:12.5px}
     /* 产品名称右侧标签不换行，固定显示在名称右侧 */
@@ -655,27 +653,28 @@
     #hold-table colgroup col,#sum-table colgroup col,#flow-table colgroup col{width:auto !important}
     #hold-table col:nth-child(1){width:26px !important}
     /* 横屏产品名加宽（原 92px 会把长名称压成两三行、甚至单字换行） */
-    #hold-table col:nth-child(2){width:102px !important}
+    #hold-table col:nth-child(2){width:94px !important}
     /* 净值日期列放原生下拉：留出「净值日期」四字＋箭头，从产品名列让位 */
     #hold-table col:nth-child(3){width:72px !important}
-    #hold-table col:nth-child(4){width:44px !important}
-    #hold-table col:nth-child(5){width:44px !important}
-    #hold-table col:nth-child(6){width:50px !important}
-    #hold-table col:nth-child(7){width:44px !important}
-    #hold-table col:nth-child(8){width:36px !important}
-    #hold-table col:nth-child(9){width:46px !important}
+    #hold-table col:nth-child(4){width:42px !important}
+    #hold-table col:nth-child(5){width:42px !important}
+    #hold-table col:nth-child(6){width:48px !important}
+    #hold-table col:nth-child(7){width:42px !important}
+    /* 累计收益（新增）：与持仓收益同宽，两列金额可纵向对照 */
+    #hold-table col:nth-child(8){width:48px !important}
+    #hold-table col:nth-child(9){width:34px !important}
+    #hold-table col:nth-child(10){width:46px !important}
     /* 数据列的表头下拉去掉多余内边距，避免撑破单元格 */
-    #hold-table thead th:nth-child(9){padding-left:1px !important;padding-right:1px !important}
+    #hold-table thead th:nth-child(10){padding-left:1px !important;padding-right:1px !important}
     #hold-table .th-select{font-size:11px;padding:2px 1px;max-width:100%}
-    #hold-table .realized-under{font-size:9.5px}
-    #hold-table col:nth-child(10){width:52px !important}
-    #hold-table col:nth-child(11){width:52px !important}
-    #hold-table col:nth-child(12),
+    #hold-table col:nth-child(11){width:46px !important}
+    #hold-table col:nth-child(12){width:46px !important}
     #hold-table col:nth-child(13),
-    #hold-table col:nth-child(14){width:46px !important}
-    #hold-table col:nth-child(15){width:48px !important}
-    #hold-table col:nth-child(16){width:40px !important}
-    /* 盈亏汇总 16 列，仅此表再降字号并收窄横向内边距，保证一屏放下 */
+    #hold-table col:nth-child(14),
+    #hold-table col:nth-child(15){width:46px !important}
+    #hold-table col:nth-child(16){width:48px !important}
+    #hold-table col:nth-child(17){width:40px !important}
+    /* 盈亏汇总 17 列，仅此表再降字号并收窄横向内边距，保证一屏放下 */
     #hold-table,#hold-table thead th{font-size:11px}
     #hold-table thead th,#hold-table tbody td{padding:6px 2px}
     /* 区间标签（日均万收/年化）样式沿用桌面偏宽内边距，横屏下收窄 */
@@ -685,16 +684,17 @@
     #hold-table td.dcell .days,#hold-table td.dcell .dunit{font-size:11px}
     /* 产品名与评分说明也统一到 11px，全表只保留 † 上标略小 */
     #hold-table .pname,#hold-table .plink,#hold-table .st i{font-size:11px}
-    #sum-table col:nth-child(1){width:136px !important}
+    #sum-table col:nth-child(1){width:116px !important}
     #sum-table col:nth-child(2){width:56px !important}
-    #sum-table col:nth-child(3){width:70px !important}
-    #sum-table col:nth-child(4){width:66px !important}
+    #sum-table col:nth-child(3){width:66px !important}
+    #sum-table col:nth-child(4){width:62px !important}
     #sum-table col:nth-child(5){width:62px !important}
-    #sum-table col:nth-child(6){width:62px !important}
-    #sum-table col:nth-child(7){width:62px !important}
-    #sum-table col:nth-child(8){width:52px !important}
-    #sum-table col:nth-child(9){width:52px !important}
-    #sum-table col:nth-child(10){width:128px !important}
+    #sum-table col:nth-child(6){width:60px !important}
+    #sum-table col:nth-child(7){width:56px !important}
+    #sum-table col:nth-child(8){width:56px !important}
+    #sum-table col:nth-child(9){width:46px !important}
+    #sum-table col:nth-child(10){width:46px !important}
+    #sum-table col:nth-child(11){width:160px !important}
     #flow-table col:nth-child(1){width:26px !important}
     #flow-table col:nth-child(2){width:78px !important}
     #flow-table col:nth-child(3){width:150px !important}
@@ -743,9 +743,9 @@
     /* 竖屏窄屏才恢复自适应列宽；横屏沿用桌面百分比列宽，列间距才均匀 */
     #sum-table,#prod-table,#flow-table{table-layout:auto}
     #sum-table colgroup col,#prod-table colgroup col,#flow-table colgroup col{width:auto !important}
-    /* 盈亏汇总 16 列在竖屏下按固定像素列宽排布：列距统一、不因内容长短忽宽忽窄，
-       整表 900px 横向滚动（表头吸顶 + 首屏可见产品名） */
-    #hold-table{table-layout:fixed;width:900px;min-width:900px}
+    /* 盈亏汇总 17 列在竖屏下按固定像素列宽排布：列距统一、不因内容长短忽宽忽窄，
+       整表 1004px 横向滚动（表头吸顶 + 首屏可见产品名） */
+    #hold-table{table-layout:fixed;width:1004px;min-width:1004px}
     #hold-table colgroup col{width:auto !important}
     #hold-table col:nth-child(1){width:28px !important}
     #hold-table col:nth-child(2){width:132px !important}
@@ -754,15 +754,16 @@
     #hold-table col:nth-child(5){width:62px !important}
     #hold-table col:nth-child(6){width:62px !important}
     #hold-table col:nth-child(7){width:58px !important}
-    #hold-table col:nth-child(8){width:44px !important}
-    #hold-table col:nth-child(9){width:56px !important}
-    #hold-table col:nth-child(10),
+    #hold-table col:nth-child(8){width:62px !important}
+    #hold-table col:nth-child(9){width:44px !important}
+    #hold-table col:nth-child(10){width:56px !important}
     #hold-table col:nth-child(11),
     #hold-table col:nth-child(12),
     #hold-table col:nth-child(13),
     #hold-table col:nth-child(14),
-    #hold-table col:nth-child(15){width:48px !important}
-    #hold-table col:nth-child(16){width:42px !important}
+    #hold-table col:nth-child(15),
+    #hold-table col:nth-child(16){width:54px !important}
+    #hold-table col:nth-child(17){width:48px !important}
     #hold-table thead th,#hold-table tbody td{padding:8px 3px}
     #hold-table thead th:nth-child(2),#hold-table tbody tr:not(.mb) > td:nth-child(2){padding-left:8px;padding-right:6px}
     #hold-table thead th:nth-child(3){padding-left:2px;padding-right:2px}
@@ -986,12 +987,13 @@
       <div class="card tbl-scroll">
         <table id="hold-table">
           <colgroup>
-            <col style="width:3%"><col style="width:15.9%"><col style="width:7.6%">
-            <col style="width:6%"><col style="width:6%"><col style="width:6%"><col style="width:6%">
-            <col style="width:5%"><col style="width:5.5%">
-            <col style="width:5.8%"><col style="width:5.8%"><col style="width:5.8%">
-            <col style="width:5.8%"><col style="width:5.8%"><col style="width:5.8%">
-            <col style="width:4.2%">
+            <col style="width:3%"><col style="width:15.8%"><col style="width:7%">
+            <col style="width:5.6%"><col style="width:5.6%"><col style="width:5.6%"><col style="width:5.4%">
+            <col style="width:5.4%">
+            <col style="width:4.6%"><col style="width:5.2%">
+            <col style="width:5.4%"><col style="width:5.4%"><col style="width:5.4%">
+            <col style="width:5.4%"><col style="width:5.4%"><col style="width:5.4%">
+            <col style="width:4.4%">
           </colgroup>
           <thead>
             <tr>
@@ -1002,6 +1004,7 @@
               <th class="r sortable" data-sort="income">今日<br>收益</th>
               <th class="r sortable" data-sort="profit">持仓<br>收益</th>
               <th class="r sortable" data-sort="holdann">持仓<br>年化</th>
+              <th class="r sortable" data-sort="total">累计<br>收益</th>
               <th class="c sortable" data-sort="holddays">天数</th>
               <th class="c" style="width:92px"><select class="th-select" id="hold-data-sel" title="数据" aria-label="数据"><option value="both">数据</option><option value="per10k">万收</option><option value="ann">年化</option></select></th>
               <th class="c sortable" data-sort="w7">7日</th>
@@ -1102,9 +1105,10 @@
       <div class="card tbl-scroll">
         <table id="sum-table">
           <colgroup>
-            <col><col style="width:8.5%"><col style="width:8.5%"><col style="width:8.5%">
-            <col style="width:8.5%"><col style="width:8.5%"><col style="width:8.5%">
-            <col style="width:8.5%"><col style="width:8.5%"><col style="width:11.5%">
+            <col><col style="width:8.5%"><col style="width:8.5%"><col style="width:8%">
+            <col style="width:8.5%"><col style="width:8%"><col style="width:6.5%">
+            <col style="width:7.5%"><col style="width:7.5%"><col style="width:7.5%">
+            <col style="width:11.5%">
           </colgroup>
           <thead>
             <tr>
@@ -1112,6 +1116,7 @@
               <th class="c sortable" data-sort="navdate">净值<br>日期</th>
               <th class="r sortable" data-sort="profit">持仓<br>收益</th>
               <th class="r sortable" data-sort="ann">持仓<br>年化</th>
+              <th class="r sortable" data-sort="total">累计<br>收益</th>
               <th class="r sortable" data-sort="mv">持仓<br>市值</th>
               <th class="c sortable" data-sort="nav">净值</th><th class="r sortable" data-sort="shares">持仓<br>份额</th>
               <th class="c sortable" data-sort="days">持仓<br>天数</th>
@@ -1403,7 +1408,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261119e';
+      s.src = './assets/dashboard.js?v=20261119f';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();

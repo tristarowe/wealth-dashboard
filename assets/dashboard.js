@@ -563,26 +563,6 @@
     return s;
   }
 
-  /* 期间有赎回时的年化分母：按「占用资金 × 天数」加权平均。
-     例：嘉鑫7天63期 08-18 投入 22000，09-29 赎回一半（本金占用降到 11000），
-     到 11-18 平均占用 = (22000×42 + 11000×50) ÷ 92 = 16021.7 元。
-     若仍用剩余成本 11000 做分母，年化会被放大到 2.9%（实际约 2.0%）。 */
-  function avgCapital(events, endDate) {
-    if (!events || !events.length) return 0;
-    var ev = events.slice().sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
-    var cap = 0, prev = ev[0].date, sum = 0;
-    ev.forEach(function (e) {
-      var d = dayDiff(parseDate(prev), parseDate(e.date));
-      if (d > 0) sum += cap * d;
-      cap += e.delta;
-      prev = e.date;
-    });
-    var tail = dayDiff(parseDate(prev), parseDate(endDate));
-    if (tail > 0) sum += cap * tail;
-    var span = dayDiff(parseDate(ev[0].date), parseDate(endDate));
-    return span > 0 ? sum / span : cap;
-  }
-
   // 交易底稿 → 持仓：申购累加份额，赎回/清仓按确认净值扣减，起息日 = 首次确认日
   function computeHoldings() {
     var tx = ((window.TRANSACTIONS && window.TRANSACTIONS.items) || []).slice();
@@ -604,7 +584,7 @@
       var p = findProductById(t.pid);
       if (!p) return;
       var rec = acc[p.id];
-      if (!rec) rec = acc[p.id] = { product: p, shares: 0, cost: 0, invested: 0, recovered: 0, realized: 0, startDate: null, lots: [], capEvents: [], lastTx: t };
+      if (!rec) rec = acc[p.id] = { product: p, shares: 0, cost: 0, invested: 0, realized: 0, startDate: null, lots: [], lastTx: t };
       /* 成交净值缺失时按确认日净值兜底，净值披露后自动生效 */
       var nav = Number(t.confirmNav) || navForConfirm(p, t.applyDate || t.confirmDate) || 1;
       var sh = Number(t.shares);
@@ -617,10 +597,6 @@
         rec.realized += sell * (nav - avg);
         rec.cost -= sell * avg;
         rec.shares -= sell;
-        /* 累计赎回金额与「占用资金」变动事件：份额卖出后这部分本金不再占用，
-           年化要按资金实际占用天数加权，而不是拿剩余成本或原始投入硬除 */
-        rec.recovered += sell * nav;
-        rec.capEvents.push({ date: t.confirmDate || t.applyDate, delta: -sell * avg });
         /* 赎回/清仓按先进先出扣减份额批次，保证剩余批次的起息日归属正确 */
         var remain = sell;
         for (var li = 0; li < rec.lots.length && remain > 1e-9; li++) {
@@ -639,9 +615,8 @@
         rec.shares += sh;
         var paid = Number(t.amount) || sh * nav;
         rec.cost += paid;
-        /* 累计投入：收益率分母用它，部分赎回后才不会被剩余成本放大 */
+        /* 累计投入：仅作「累计收益」说明里的辅助信息，不参与收益率计算 */
         rec.invested += paid;
-        rec.capEvents.push({ date: t.confirmDate || t.applyDate, delta: paid });
       }
       rec.lastTx = t;
     });
@@ -677,11 +652,10 @@
       var accrualDays = alive ? Math.max(0, dayDiff(parseDate(daysStart), parseDate(accrualEnd))) : 0;
       var costNav = alive ? rec.cost / rec.shares : 0;
       var lastPer = p.per10k[n - 1];
-      /* 累计投入（含已赎回部分的本金）与加权平均占用资金：
-         收益率分母用累计投入；有赎回时年化分母用平均占用资金，两者都不受剩余成本缩水影响 */
+      /* 「持仓收益」只算当前仍持有份额的盈亏（市值 − 剩余成本），与建行 App 口径一致；
+         已赎回部分落袋的收益归入「累计收益」，两列并列展示。
+         因此收益率、年化的分子都用持仓收益、分母都用当前持仓成本，三者自洽。 */
       var invested = rec.invested > 0 ? rec.invested : rec.cost;
-      var avgCap = rec.recovered > 0 ? avgCapital(rec.capEvents, accrualEnd) : 0;
-      var annBase = (rec.recovered > 0 && avgCap > 0) ? avgCap : invested;
       var unrealized = mv - rec.cost;
       /* 今日收益按「截至最新净值日已起息的份额」计算（而非全部持仓份额）：
          追加申购的新份额在自身确认日之前不产生收益，避免把未起息份额算进当日收益。 */
@@ -699,13 +673,13 @@
         /* 实际起息日：首次确认日，但不早于产品成立日 */
         effStartDate: daysStart,
         mv: mv,
+        /* profit = 累计收益（持仓收益 + 已赎回已实现）；unrealized = 持仓收益 */
         profit: profit,
         realized: rec.realized,
         unrealized: unrealized,
         invested: invested,
-        avgCapital: avgCap,
-        profitRate: invested > 0 ? profit / invested * 100 : null,
-        ann: (accrualDays > 0 && annBase > 0) ? profit / annBase * 365 / accrualDays * 100 : null,
+        profitRate: rec.cost > 0 ? unrealized / rec.cost * 100 : null,
+        ann: (accrualDays > 0 && rec.cost > 0) ? unrealized / rec.cost * 365 / accrualDays * 100 : null,
         days: days,
         accrualDays: accrualDays,
         income: incomePending ? 0 : lastPer * incomeShares / 10000,
@@ -1001,18 +975,17 @@
     var mStats = AGG ? cumulativePeriodStats(AGG, ym + '-') : null;
     var mWanAvg = mStats ? mStats.avg : null;
 
-    var cost = 0, invested = 0, profit = 0, mv = 0;
+    var cost = 0, holdProfit = 0, totalProfit = 0, mv = 0;
     hs.forEach(function (h) {
       cost += h.cost;
-      invested += (h.invested > 0 ? h.invested : h.cost);
-      profit += h.profit;
+      holdProfit += (h.unrealized || 0);
+      totalProfit += h.profit;
       mv += h.mv;
     });
 
-    /* 持仓收益率 = 累计收益 ÷ 累计投入成本。
-       分母必须是累计投入（含已赎回部分的本金）：部分赎回后剩余成本变小，
-       用它会把收益率成倍放大（嘉鑫7天63期 0.37% 会被算成 0.73%）。 */
-    var profitRate = invested > 0 ? profit / invested * 100 : null;
+    /* 持仓收益率 = 持仓收益 ÷ 当前持仓成本，与「持仓收益」同口径（不含已赎回部分）。
+       累计收益只在指标卡提示里补充，不参与主数值。 */
+    var profitRate = cost > 0 ? holdProfit / cost * 100 : null;
 
     /* 持仓年化 = 各产品年化按持仓市值加权（单产品年化仍按计息天数折算，
        组合层面即「这些钱当前的平均年化」，不被小市值产品等权拉偏） */
@@ -1049,8 +1022,12 @@
 
     el = document.getElementById('metric-profit');
     if (el) {
-      el.innerHTML = hs.length ? fmtSigned(profit) + '<em>元</em>' : '—';
-      el.className = 'v ' + colorBy(hs.length ? profit : null);
+      el.innerHTML = hs.length ? fmtSigned(holdProfit) + '<em>元</em>' : '—';
+      el.className = 'v ' + colorBy(hs.length ? holdProfit : null);
+      el.title = hs.length
+        ? '持仓收益（仅当前持仓份额）= 市值 ' + fmtMoney(mv) + ' − 持仓成本 ' + fmtMoney(cost) +
+          (Math.abs(totalProfit - holdProfit) >= 0.005 ? '；累计收益 ' + fmtSigned(totalProfit) + ' 元（含已赎回部分）' : '')
+        : '';
     }
     el = document.getElementById('metric-momprofit');
     if (el) {
@@ -1058,7 +1035,8 @@
         : (profitRate > 0 ? '+' : '') + profitRate.toFixed(2) + '%';
       el.className = colorBy(profitRate) || 'ink';
       el.title = profitRate === null ? ''
-        : '持仓收益率 = 累计收益 ' + fmtSigned(profit) + ' 元 ÷ 累计投入成本 ' + fmtMoney(invested) + ' 元';
+        : '持仓收益率 = 持仓收益 ' + fmtSigned(holdProfit) + ' 元 ÷ 当前持仓成本 ' + fmtMoney(cost) + ' 元' +
+          (Math.abs(totalProfit - holdProfit) >= 0.005 ? '（累计收益 ' + fmtSigned(totalProfit) + ' 元，含已赎回部分）' : '');
     }
     el = document.getElementById('metric-value');
     if (el) el.innerHTML = hs.length ? fmtMoney(mv) + '<em>元</em>' : '—';
@@ -1087,7 +1065,8 @@
     nav: function (h) { return h.latestNav; },
     shares: function (h) { return h.shares; },
     mv: function (h) { return h.mv; },
-    profit: function (h) { return h.profit; },
+    profit: function (h) { return h.holdProfit; },
+    total: function (h) { return h.profit; },
     ann: function (h) { return h.ann; },
     days: function (h) { return h.days; },
     listdays: function (h) { return listingDaysOf(h.product); }
@@ -1117,7 +1096,8 @@
     if (key === 'navdate') return m.latestDate;
     if (key === 'today') return todayWanOf(row.item.product);
     if (key === 'income') return h ? h.income : null;
-    if (key === 'profit') return h ? h.profit : null;
+    if (key === 'profit') return h ? h.unrealized : null;
+    if (key === 'total') return h ? h.profit : null;
     if (key === 'holdann') return h ? h.ann : null;
     if (key === 'value') return h ? h.mv : null;
     if (key === 'holddays') return h ? h.days : null;
@@ -1220,15 +1200,18 @@
       html += '<td class="r num income-col ' + colorBy(h && !h.incomePending ? h.income : null) + '"' + rs +
         ' title="' + (h && h.incomePending ? '确认日 ' + (h.startDate || '') + ' 起息，首笔收益待下一净值日披露' : '') + '">' +
         (h && h.incomePending ? '<span class="muted">—</span>' : fmtSigned(h ? h.income : null)) + '</td>';
-      var hasRealized = !!(h && Math.abs(h.realized || 0) >= 0.005);
-      var profitTip = h
-        ? '市值 ' + fmtMoney(h.mv) + ' − 剩余成本 ' + fmtMoney(h.cost) + ' = 未实现 ' + fmtSigned(h.unrealized) +
-          (hasRealized ? '；已赎回部分已实现 ' + fmtSigned(h.realized) + '；累计 ' + fmtSigned(h.profit) : '')
+      var holdTip = h
+        ? '持仓收益（仅当前持仓份额）= 市值 ' + fmtMoney(h.mv) + ' − 剩余成本 ' + fmtMoney(h.cost)
         : '暂无持仓';
-      html += '<td class="r num ' + colorBy(h ? h.profit : null) + '"' + rs + ' title="' + profitTip + '">' +
-        fmtSigned(h ? h.profit : null) +
-        (hasRealized ? '<span class="realized-under">已实现 ' + fmtSigned(h.realized) + '</span>' : '') + '</td>';
+      html += '<td class="r num ' + colorBy(h ? h.unrealized : null) + '"' + rs + ' title="' + holdTip + '">' +
+        fmtSigned(h ? h.unrealized : null) + '</td>';
       html += '<td class="r num ' + colorBy(h ? h.ann : null) + '"' + rs + '>' + fmtAnn(h ? h.ann : null) + '</td>';
+      var cumTip = h
+        ? '累计收益 = 持仓收益 ' + fmtSigned(h.unrealized) + ' + 已赎回部分已实现 ' + fmtSigned(h.realized) +
+          '（累计投入 ' + fmtMoney(h.invested) + '）'
+        : '暂无持仓';
+      html += '<td class="r num ' + colorBy(h ? h.profit : null) + '"' + rs + ' title="' + cumTip + '">' +
+        fmtSigned(h ? h.profit : null) + '</td>';
       var listDays = listingDaysOf(p);
       var daysTip = (h ? '持仓天数 ' + h.days + ' 天 = 今天 − 起息日 ' + (h.effStartDate || '') +
           '；年化按计息 ' + h.accrualDays + ' 天（至最新净值日 ' + (h.latestDate || '') + '）折算' : '') +
@@ -1260,7 +1243,7 @@
       if (dual) html += '<tr class="mb"><td class="c mlabel">年化</td>' + annCells + '</tr>';
     });
 
-    tbody.innerHTML = html || '<tr><td colspan="16" class="c muted" style="padding:28px">未选择产品，请在顶部「覆盖产品」中选择</td></tr>';
+    tbody.innerHTML = html || '<tr><td colspan="17" class="c muted" style="padding:28px">未选择产品，请在顶部「覆盖产品」中选择</td></tr>';
 
     var ths = document.querySelectorAll('#hold-table thead th[data-sort]');
     Array.prototype.forEach.call(ths, function (th) {
@@ -3747,7 +3730,8 @@
       }
       rows.push({
         product: h.product, latestDate: h.latestDate, latestNav: h.latestNav,
-        shares: h.shares, cost: h.cost, mv: h.mv, profit: h.profit, ann: h.ann,
+        shares: h.shares, cost: h.cost, mv: h.mv, profit: h.profit, holdProfit: h.unrealized,
+        realized: h.realized, ann: h.ann,
         days: h.days, accrualDays: h.accrualDays, cleared: h.cleared, tx: h.tx, pending: false
       });
     });
@@ -3780,15 +3764,17 @@
         row.shares += q.shares;
         row.cost += q.cost;
         row.mv = row.shares * row.latestNav;
-        row.profit = row.mv - row.cost;
+        row.holdProfit = row.mv - row.cost;
+        row.profit = row.holdProfit + (row.realized || 0);
         var accDays = row.accrualDays || row.days;
-        row.ann = (accDays > 0 && row.cost > 0) ? row.profit / row.cost * 365 / accDays * 100 : row.ann;
+        row.ann = (accDays > 0 && row.cost > 0) ? row.holdProfit / row.cost * 365 / accDays * 100 : row.ann;
         row.pending = true;
       } else {
         rows.push({
           product: q.product, latestDate: q.latestDate, latestNav: q.latestNav,
           shares: q.shares, cost: q.cost, mv: q.shares * q.latestNav,
           profit: q.shares * q.latestNav - q.cost,
+          holdProfit: q.shares * q.latestNav - q.cost, realized: 0,
           ann: null, days: 0, cleared: false, tx: q.tx, pending: true
         });
       }
@@ -3840,8 +3826,9 @@
           '</span>' +
           '</div></td>' +
         '<td class="c num">' + (h.latestDate ? withBadge(mmdd(h.latestDate), navLagBadge(h.product)) : '—') + '</td>' +
-        '<td class="r num ' + colorBy(h.profit) + '" title="持仓收益 = 市值 − 成本">' + fmtSigned(h.profit) + '</td>' +
+        '<td class="r num ' + colorBy(h.holdProfit) + '" title="持仓收益（仅当前持仓份额）= 市值 − 剩余成本">' + fmtSigned(h.holdProfit) + '</td>' +
         '<td class="r num ' + colorBy(h.ann) + '">' + fmtAnn(h.ann) + '</td>' +
+        '<td class="r num ' + colorBy(h.profit) + '" title="累计收益 = 持仓收益 + 已赎回部分已实现">' + fmtSigned(h.profit) + '</td>' +
         '<td class="r num">' + fmtMoney(h.mv) + '</td>' +
         '<td class="c num">' + fmtNav(h.latestNav) + '</td>' +
         '<td class="r num">' + fmtMoney(h.shares) + '</td>' +
@@ -3854,7 +3841,7 @@
           '<button class="mini sell" data-act="redeem" data-pid="' + p.id + '"' + (canSell ? '' : noShareTip) + '>赎回</button> ' +
           '<button class="mini warn" data-act="close" data-pid="' + p.id + '"' + (canClose ? '' : (canSell ? pendingTip : noShareTip)) + '>清仓</button></td>' +
         '</tr>';
-    }).join('') || '<tr><td colspan="10" class="c muted" style="padding:28px">' + (flowState.pid ? '该产品暂无持仓' : '暂无持仓') + '</td></tr>';
+    }).join('') || '<tr><td colspan="11" class="c muted" style="padding:28px">' + (flowState.pid ? '该产品暂无持仓' : '暂无持仓') + '</td></tr>';
 
     Array.prototype.forEach.call(document.querySelectorAll('#sum-table thead th[data-sort]'), function (th) {
       th.classList.remove('sorted-asc', 'sorted-desc');
