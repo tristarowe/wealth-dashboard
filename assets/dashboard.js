@@ -567,6 +567,10 @@
   /* 组合现金流（只记与持仓同口径的已生效交易）：申购为负、赎回/清仓为正。
      供「累计收益年化（XIRR）」使用，口径与持仓计算保持完全一致。 */
   var PORTFOLIO_FLOWS = [];
+  /* 每笔赎回/清仓落袋的已实现收益，按产品 + 确认日记录。
+     供盈亏日历使用：把这些已实现收益补记进赎回日的每日收益，
+     使「日历收益合计 = 累计收益指标卡」（持仓收益 + 已实现收益）。 */
+  var HOLD_REALIZED = [];
 
   /* 累计收益年化 = XIRR：把组合全部已生效现金流按实际发生日折现，
      求净现值为 0 的内部收益率。与「持仓年化」的区别是它把已落袋收益、
@@ -604,6 +608,7 @@
   function computeHoldings() {
     var tx = ((window.TRANSACTIONS && window.TRANSACTIONS.items) || []).slice();
     var cashFlows = [];
+    HOLD_REALIZED = [];
     tx.sort(function (a, b) {
       return a.confirmDate < b.confirmDate ? -1 : a.confirmDate > b.confirmDate ? 1 : 0;
     });
@@ -632,7 +637,14 @@
         /* 已无份额可卖（重复录入的清仓/赎回）直接忽略，避免覆盖真实清仓日 */
         if (!(sell > 0)) return;
         var avg = rec.shares > 0 ? rec.cost / rec.shares : nav;
-        rec.realized += sell * (nav - avg);
+        var realizedGain = sell * (nav - avg);
+        rec.realized += realizedGain;
+        /* 记录已实现收益事件：盈亏日历将在该确认日把它补记进每日收益，
+           使日历收益合计与累计收益指标卡闭合（分母 base = 卖出份额的成本）。 */
+        var rdate = t.confirmDate || t.applyDate;
+        if (rdate && Math.abs(realizedGain) > 1e-9) {
+          HOLD_REALIZED.push({ pid: p.id, date: rdate, gain: realizedGain, base: sell * avg });
+        }
         rec.cost -= sell * avg;
         rec.shares -= sell;
         /* 赎回款：整笔赎回优先用底稿金额（银行实际到账），部分赎回按成交净值折算 */
@@ -785,6 +797,16 @@
     return selectedIds.indexOf(canon) !== -1 || selectedIds.indexOf(pid) !== -1;
   }
 
+  /* 已实现收益的日期对齐：取产品净值日中 >= 确认日的最近一天；确认日晚于所有净值日
+     则归到最后一天；产品无净值日返回空。 */
+  function alignRealizedDate(dates, confirmDate) {
+    if (!dates || !dates.length || !confirmDate) return null;
+    for (var i = 0; i < dates.length; i++) {
+      if (dates[i] >= confirmDate) return dates[i];
+    }
+    return dates[dates.length - 1];
+  }
+
   // 合计口径：按持仓份额把万收折算为当日收益（元），年化按当日前一净值日市值折算
   function buildAggregate(products) {
     if (!products.length) return null;
@@ -808,6 +830,18 @@
         prevs[dt] += prevMv;
         counts[dt] += 1;
       }
+      /* 累计收益口径：把该产品的已赎回已实现收益补记进赎回确认日。
+         否则日历只反映「当前持仓的浮动盈亏」（持仓收益），累计收益指标卡还含已落袋部分，
+         两者对不上。gain 计入当日收益、base（卖出本金）计入当日期初市值，分子分母同口径，
+         收益列 / 日均万收 / 年化会一起变成累计口径并自动闭合。 */
+      HOLD_REALIZED.forEach(function (ev) {
+        if (ev.pid !== p.id) return;
+        var rdt = alignRealizedDate(p.dates, ev.date);
+        if (!rdt) return;
+        if (!(rdt in sums)) { sums[rdt] = 0; prevs[rdt] = 0; counts[rdt] = 0; }
+        sums[rdt] += ev.gain;
+        prevs[rdt] += ev.base;
+      });
     });
     var dates = Object.keys(sums).sort();
     /* 每个披露点对应的收益区间 = 上一个披露点 → 当前披露点（首个点区间为 0 天）。

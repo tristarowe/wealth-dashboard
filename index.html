@@ -1095,7 +1095,7 @@
     </section>
 
     <section>
-      <div class="sec-head"><span class="idx">02</span><h2>盈亏日历</h2></div>
+      <div class="sec-head"><span class="idx">02</span><h2>盈亏日历</h2><span class="note" title="收益为累计口径：含当前持仓浮动盈亏 + 已赎回落袋收益，年度/月度收益合计与顶部「累计收益」一致；日均万收与年化同口径">收益含已赎回落袋收益 · 与累计收益一致</span></div>
       <div class="card" style="padding:16px 18px">
         <div class="cal-head">
           <div class="cal-ctrl" id="cal-filters">
@@ -1493,7 +1493,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261119q';
+      s.src = './assets/dashboard.js?v=20261119r';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();
