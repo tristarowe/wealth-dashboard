@@ -2648,35 +2648,79 @@
     return selValues(sel).length === 0;
   }
 
-  /* 产品库筛选下拉：单选 —— 无复选框，点一项即排他选中并收起，
-     首项（列名，如「风险等级」）等于「全部」并默认高亮。与表头原生下拉同观感。 */
-  function openSelPop(sel, anchor) {
+  /* 产品库表头筛选：多选复选 —— 每项前置勾选框，可连续勾选多项（弹层保持打开），
+     底部「清除 / 完成」，点空白或按 Esc 收起；首项（列名，如「风险等级」）＝全部。 */
+  function openSelPop(sel, anchor, opts) {
+    opts = opts || {};
     var anchorEl = anchor || sel;
     if (selPopSel === sel && selPopAnchor === anchorEl) { closeSelPop(); return; }
     closeSelPop();
     var pop = document.createElement('div');
     pop.className = 'sel-pop';
     pop.setAttribute('role', 'listbox');
+    pop.setAttribute('aria-multiselectable', 'true');
+
+    /* 勾选态回写：首项＝全部，其余按 select 选中情况 */
+    function paint() {
+      Array.prototype.forEach.call(pop.querySelectorAll('.sel-opt'), function (bb, j) {
+        var all = (j === 0);
+        var on = all ? selIsAll(sel) : (!!sel.options[j] && sel.options[j].selected && !selIsAll(sel));
+        bb.classList.toggle('on', on);
+        bb.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+    }
+
     Array.prototype.forEach.call(sel.options, function (opt, i) {
       var isAllItem = (i === 0);
-      var checked = isAllItem ? selIsAll(sel) : (opt.selected && !selIsAll(sel));
       var b = document.createElement('button');
       b.type = 'button';
-      b.className = 'sel-opt' + (checked ? ' on' : '');
+      b.className = 'sel-opt mopt';
       b.setAttribute('role', 'option');
-      b.setAttribute('aria-selected', checked ? 'true' : 'false');
-      b.textContent = opt.text;
+      b.innerHTML = '<span class="mchk"></span><span class="mtxt"></span>';
+      b.querySelector('.mtxt').textContent = opt.text;
       b.addEventListener('click', function (e) {
         e.preventDefault();
         e.stopPropagation();
-        /* 单选：先清空全部，再只选中被点的这一项（首项＝全部，也是唯一选中项） */
-        Array.prototype.forEach.call(sel.options, function (o) { o.selected = false; });
-        opt.selected = true;
+        if (isAllItem) {
+          /* 点「全部」：清空其他具体选中项 */
+          Array.prototype.forEach.call(sel.options, function (o, j) { if (j > 0) o.selected = false; });
+          sel.options[0].selected = true;
+        } else {
+          /* 点具体项：切换勾选，同时取消「全部」；全取消时回到「全部」 */
+          opt.selected = !opt.selected;
+          sel.options[0].selected = false;
+          if (selValues(sel).length === 0) sel.options[0].selected = true;
+        }
+        paint();
         sel.dispatchEvent(new Event('change', { bubbles: true }));
-        closeSelPop();
+        if (!opts.keepOpen) closeSelPop();
+        else placeSelPop();
       });
       pop.appendChild(b);
     });
+    paint();
+
+    /* 底部操作栏：清除（回到全部）/ 完成（收起） */
+    var foot = document.createElement('div');
+    foot.className = 'sel-foot';
+    var btnClear = document.createElement('button');
+    btnClear.type = 'button'; btnClear.textContent = '清除';
+    btnClear.addEventListener('click', function (e) {
+      e.preventDefault(); e.stopPropagation();
+      Array.prototype.forEach.call(sel.options, function (o, j) { o.selected = (j === 0); });
+      paint();
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+      if (!opts.keepOpen) closeSelPop();
+    });
+    var btnDone = document.createElement('button');
+    btnDone.type = 'button'; btnDone.className = 'sel-done'; btnDone.textContent = '完成';
+    btnDone.addEventListener('click', function (e) {
+      e.preventDefault(); e.stopPropagation();
+      closeSelPop();
+    });
+    foot.appendChild(btnClear); foot.appendChild(btnDone);
+    pop.appendChild(foot);
+
     document.body.appendChild(pop);
     selPop = pop;
     selPopSel = sel;
@@ -2751,7 +2795,8 @@
       hit.addEventListener('click', function (e) {
         e.preventDefault();
         e.stopPropagation();
-        openSelPop(sel);
+        /* 多选：勾选时弹层保持打开，点「完成」或空白处收起 */
+        openSelPop(sel, null, { keepOpen: true });
       });
       wrap.appendChild(hit);
       sizeSelWrap(sel);
