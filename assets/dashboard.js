@@ -563,9 +563,46 @@
     return s;
   }
 
+  /* 组合现金流（只记与持仓同口径的已生效交易）：申购为负、赎回/清仓为正。
+     供「累计收益年化（XIRR）」使用，口径与持仓计算保持完全一致。 */
+  var PORTFOLIO_FLOWS = [];
+
+  /* 累计收益年化 = XIRR：把组合全部已生效现金流按实际发生日折现，
+     求净现值为 0 的内部收益率。与「持仓年化」的区别是它把已落袋收益、
+     分批投入的时点、中途赎回都计入，是真正意义上的「这笔钱从入场到现在的年化」。 */
+  function portfolioXirr(endValue, endDate, keepPid) {
+    var flows = PORTFOLIO_FLOWS.filter(function (f) {
+      return !keepPid || keepPid[f.pid];
+    });
+    if (!flows.length || !endDate) return null;
+    if (endValue > 0) flows.push({ d: endDate, v: endValue });
+    flows.sort(function (a, b) { return a.d < b.d ? -1 : a.d > b.d ? 1 : 0; });
+    var t0 = flows[0].d;
+    var pos = 0, neg = 0;
+    flows.forEach(function (f) { if (f.v > 0) pos += f.v; else neg -= f.v; });
+    /* 只有投入没有回收（或反之）时无解，直接返回空 */
+    if (!(pos > 0) || !(neg > 0)) return null;
+    function npv(r) {
+      var s = 0;
+      for (var i = 0; i < flows.length; i++) {
+        s += flows[i].v / Math.pow(1 + r, dayDiff(parseDate(t0), parseDate(flows[i].d)) / 365);
+      }
+      return s;
+    }
+    /* NPV 随 r 单调递减，二分即可；区间下界贴近 -100%，上界 1000% 足够覆盖 */
+    var lo = -0.9999, hi = 10, mid = 0;
+    for (var k = 0; k < 200; k++) {
+      mid = (lo + hi) / 2;
+      if (npv(mid) > 0) lo = mid; else hi = mid;
+      if (hi - lo < 1e-10) break;
+    }
+    return isFinite(mid) ? mid * 100 : null;
+  }
+
   // 交易底稿 → 持仓：申购累加份额，赎回/清仓按确认净值扣减，起息日 = 首次确认日
   function computeHoldings() {
     var tx = ((window.TRANSACTIONS && window.TRANSACTIONS.items) || []).slice();
+    var cashFlows = [];
     tx.sort(function (a, b) {
       return a.confirmDate < b.confirmDate ? -1 : a.confirmDate > b.confirmDate ? 1 : 0;
     });
@@ -597,6 +634,9 @@
         rec.realized += sell * (nav - avg);
         rec.cost -= sell * avg;
         rec.shares -= sell;
+        /* 赎回款：整笔赎回优先用底稿金额（银行实际到账），部分赎回按成交净值折算 */
+        var proceeds = (sell >= sh - 1e-6 && Number(t.amount) > 0) ? Number(t.amount) : sell * nav;
+        cashFlows.push({ d: t.confirmDate || t.applyDate, v: proceeds, pid: p.id });
         /* 赎回/清仓按先进先出扣减份额批次，保证剩余批次的起息日归属正确 */
         var remain = sell;
         for (var li = 0; li < rec.lots.length && remain > 1e-9; li++) {
@@ -615,8 +655,9 @@
         rec.shares += sh;
         var paid = Number(t.amount) || sh * nav;
         rec.cost += paid;
-        /* 累计投入：仅作「累计收益」说明里的辅助信息，不参与收益率计算 */
+        /* 累计投入：累计收益率的分母（含已赎回部分本金） */
         rec.invested += paid;
+        cashFlows.push({ d: t.confirmDate || t.applyDate, v: -paid, pid: p.id });
       }
       rec.lastTx = t;
     });
@@ -693,6 +734,7 @@
     });
     /* 同步对外暴露的引用：computeHoldings 会整体重建数组，旧引用会一直指向过期数据 */
     window.DASHBOARD_HOLDINGS = HOLDINGS;
+    PORTFOLIO_FLOWS = cashFlows;
   }
   computeHoldings();
 
@@ -975,12 +1017,13 @@
     var mStats = AGG ? cumulativePeriodStats(AGG, ym + '-') : null;
     var mWanAvg = mStats ? mStats.avg : null;
 
-    var cost = 0, holdProfit = 0, totalProfit = 0, mv = 0;
+    var cost = 0, holdProfit = 0, totalProfit = 0, mv = 0, invested = 0;
     hs.forEach(function (h) {
       cost += h.cost;
       holdProfit += (h.unrealized || 0);
       totalProfit += h.profit;
       mv += h.mv;
+      invested += (h.invested > 0 ? h.invested : h.cost);
     });
 
     /* 持仓收益率 = 持仓收益 ÷ 当前持仓成本，与「持仓收益」同口径（不含已赎回部分）。
@@ -1037,6 +1080,34 @@
       el.title = profitRate === null ? ''
         : '持仓收益率 = 持仓收益 ' + fmtSigned(holdProfit) + ' 元 ÷ 当前持仓成本 ' + fmtMoney(cost) + ' 元' +
           (Math.abs(totalProfit - holdProfit) >= 0.005 ? '（累计收益 ' + fmtSigned(totalProfit) + ' 元，含已赎回部分）' : '');
+    }
+    /* 累计收益卡：主值 = 累计收益（含已赎回部分已实现），副标 = 累计年化（XIRR） */
+    var cumEnd = '', cumPids = {};
+    hs.forEach(function (h) {
+      cumPids[h.product.id] = 1;
+      if (h.latestDate && h.latestDate > cumEnd) cumEnd = h.latestDate;
+    });
+    var cumAnn = hs.length ? portfolioXirr(mv, cumEnd, cumPids) : null;
+    el = document.getElementById('metric-cum');
+    if (el) {
+      el.innerHTML = hs.length ? fmtSigned(totalProfit) + '<em>元</em>' : '—';
+      el.className = 'v ' + colorBy(hs.length ? totalProfit : null);
+      el.title = hs.length
+        ? '累计收益 = 持仓收益 ' + fmtSigned(holdProfit) +
+          (Math.abs(totalProfit - holdProfit) >= 0.005
+            ? ' + 已赎回部分已实现 ' + fmtSigned(totalProfit - holdProfit) : '') +
+          '；累计投入 ' + fmtMoney(invested) + ' 元' +
+          (invested > 0 ? '，累计收益率 ' + (totalProfit >= 0 ? '+' : '') + (totalProfit / invested * 100).toFixed(2) + '%' : '')
+        : '';
+    }
+    el = document.getElementById('metric-cumann');
+    if (el) {
+      el.textContent = cumAnn === null ? '—'
+        : (cumAnn > 0 ? '+' : '') + cumAnn.toFixed(2) + '%';
+      el.className = colorBy(cumAnn) || 'ink';
+      el.title = cumAnn === null ? ''
+        : '累计年化（XIRR）= 每笔申购记负、赎回与当前市值记正，按实际发生日折现求出的资金加权内部收益率；' +
+          '已落袋收益与资金进出时点都已计入，与只算当前持仓的「持仓年化」不同';
     }
     el = document.getElementById('metric-value');
     if (el) el.innerHTML = hs.length ? fmtMoney(mv) + '<em>元</em>' : '—';
@@ -1097,7 +1168,6 @@
     if (key === 'today') return todayWanOf(row.item.product);
     if (key === 'income') return h ? h.income : null;
     if (key === 'profit') return h ? h.unrealized : null;
-    if (key === 'total') return h ? h.profit : null;
     if (key === 'holdann') return h ? h.ann : null;
     if (key === 'value') return h ? h.mv : null;
     if (key === 'holddays') return h ? h.days : null;
@@ -1206,12 +1276,6 @@
       html += '<td class="r num ' + colorBy(h ? h.unrealized : null) + '"' + rs + ' title="' + holdTip + '">' +
         fmtSigned(h ? h.unrealized : null) + '</td>';
       html += '<td class="r num ' + colorBy(h ? h.ann : null) + '"' + rs + '>' + fmtAnn(h ? h.ann : null) + '</td>';
-      var cumTip = h
-        ? '累计收益 = 持仓收益 ' + fmtSigned(h.unrealized) + ' + 已赎回部分已实现 ' + fmtSigned(h.realized) +
-          '（累计投入 ' + fmtMoney(h.invested) + '）'
-        : '暂无持仓';
-      html += '<td class="r num ' + colorBy(h ? h.profit : null) + '"' + rs + ' title="' + cumTip + '">' +
-        fmtSigned(h ? h.profit : null) + '</td>';
       var listDays = listingDaysOf(p);
       var daysTip = (h ? '持仓天数 ' + h.days + ' 天 = 今天 − 起息日 ' + (h.effStartDate || '') +
           '；年化按计息 ' + h.accrualDays + ' 天（至最新净值日 ' + (h.latestDate || '') + '）折算' : '') +
@@ -1243,7 +1307,7 @@
       if (dual) html += '<tr class="mb"><td class="c mlabel">年化</td>' + annCells + '</tr>';
     });
 
-    tbody.innerHTML = html || '<tr><td colspan="17" class="c muted" style="padding:28px">未选择产品，请在顶部「覆盖产品」中选择</td></tr>';
+    tbody.innerHTML = html || '<tr><td colspan="16" class="c muted" style="padding:28px">未选择产品，请在顶部「覆盖产品」中选择</td></tr>';
 
     var ths = document.querySelectorAll('#hold-table thead th[data-sort]');
     Array.prototype.forEach.call(ths, function (th) {
