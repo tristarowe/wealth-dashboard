@@ -276,6 +276,12 @@
   /* product page */
   .filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:#fff;border:1px solid var(--rule);border-radius:12px;padding:12px 14px;margin-bottom:14px}
   .filters select{font-family:var(--font);font-size:12px;padding:6px 8px;border:1px solid var(--rule);border-radius:7px;background:#fff;color:var(--ink);width:112px}
+  /* 产品库 7 个筛选是原生 <select multiple>：浏览器默认渲染成「展开列表框」。
+     JS 的 beautifyFilterSelects() 在加载后才把它们包进 .sel-wrap 并隐藏，
+     刷新瞬间脚本未执行完就会闪出全部选项。用子选择器只隐藏「尚未被包装」的
+     原生多选框；包装后它不再是 .filters 直接子元素，规则自动失效，
+     由下面的 .sel-wrap select 透明覆盖层接管点击。 */
+  .filters > select[multiple]{display:none}
   .filters input[type="search"]{font-family:var(--font);font-size:12.5px;padding:6px 10px;border:1px solid var(--rule);border-radius:7px;background:#fff;color:var(--ink);width:260px;min-width:200px}
   .filters input[type="search"]:focus{outline:none;border-color:var(--accent)}
   .filters #open-add{margin-left:auto;flex:none}
@@ -524,10 +530,10 @@
   .coverage:hover{border-color:var(--accent)}
   .coverage svg{width:12px;height:12px;flex:none}
   .coverage svg.cv-caret{width:9px;height:8px;opacity:.65;margin-left:1px}
-  .cloud-chip{gap:6px}
-  .cloud-chip .cloud-dot{width:6px;height:6px;border-radius:50%;background:#c9d6dd;flex:none}
+  .cloud-chip{gap:4px}
+  .cloud-chip .cloud-ico{width:14px;height:14px;flex:none;color:#a9bac3}
   .cloud-chip.on{color:#1c7a5e;border-color:#bfe3d8;background:#f2fbf7}
-  .cloud-chip.on .cloud-dot{background:#2f9e7a}
+  .cloud-chip.on .cloud-ico{color:#2f9e7a;fill:#d8f0e6}
   .ms-panel{position:fixed;z-index:130;width:248px;max-width:calc(100vw - 32px);background:#fff;border:1px solid var(--rule);border-radius:12px;box-shadow:0 18px 40px rgba(9,46,60,.18);padding:10px 10px 10px 12px;color:var(--ink)}
   .ms-panel[hidden]{display:none}
   .ms-head{display:flex;align-items:center;gap:8px;padding-bottom:8px;border-bottom:1px solid var(--rule)}
@@ -953,7 +959,9 @@
             </svg>
           </button>
           <button class="coverage cloud-chip" id="cloud-chip" title="云端登记：点击输入口令后即可在任意设备录入交易">
-            <span class="cloud-dot"></span><span id="cloud-label">云端未连接</span>
+            <svg class="cloud-ico" viewBox="0 0 20 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M5.2 13.2h9.6a3.4 3.4 0 0 0 .3-6.8 5.2 5.2 0 0 0-9.9 1A3 3 0 0 0 5.2 13.2z"></path>
+            </svg><span id="cloud-label">未连接</span>
           </button>
         </div>
         <p class="boot-tip" id="boot-tip" hidden></p>
@@ -1421,7 +1429,7 @@
 <script src="./assets/newproducts.js"></script>
 <script src="./assets/library.js"></script>
 <script src="./assets/supabase-config.js?v=20261113c"></script>
-<script src="./assets/store.js?v=20261118b" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
+<script src="./assets/store.js?v=20261119" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
 <script>
   /* 先用本地缓存/内置底稿立即渲染，云端数据在后台取回后再重绘，避免等待网络白屏 */
   /* 前序脚本缺失或命中旧缓存时（STORE_READY 不存在）也照常加载看板，避免页面停在空白骨架 */
@@ -1430,7 +1438,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261119k';
+      s.src = './assets/dashboard.js?v=20261119l';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();
@@ -1467,11 +1475,11 @@
     }
 
     function check() {
-      paint('连接中…', false);
+      paint('连接中', false);
       window.STORE.status().then(function (res) {
         paint(res.message, res.ok);
       }).catch(function () {
-        paint('云端不可用', false);
+        paint('未连接', false);
       });
     }
 

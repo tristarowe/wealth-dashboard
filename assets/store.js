@@ -604,7 +604,7 @@
   function status() {
     if (!online) return Promise.resolve({ ok: false, source: 'file', message: '仅本地底稿' });
     return (refreshing || Promise.resolve()).then(function () {
-      if (source === 'supabase') return { ok: true, source: 'supabase', message: 'Supabase 已连接' };
+      if (source === 'supabase') return { ok: true, source: 'supabase', message: '已连接' };
       if (source === 'cache') return { ok: false, source: 'cache', message: '云端超时，已用本地缓存' };
       return { ok: false, source: 'file', message: '云端不可用，使用内置底稿' };
     }).catch(function () {
