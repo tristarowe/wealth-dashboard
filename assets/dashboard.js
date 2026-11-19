@@ -3162,6 +3162,51 @@
   var OCR_BASE = './_shared/js/ocr/';
   var ocrWorkerPromise = null;
   var ocrLibPromise = null;
+  /* 把图片 dataURL 缩放到长边不超过 maxSide，返回压缩后的 jpeg dataURL。
+     失败时回传 null，调用方回退用原图。手机大截图靠这一步避免内存溢出。 */
+  function shrinkImage(dataUrl, maxSide, done) {
+    try {
+      var img = new Image();
+      img.onload = function () {
+        try {
+          var w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+          if (!w || !h) { done(null); return; }
+          if (w <= maxSide && h <= maxSide) {
+            /* 已经够小，无需缩放，直接用原图 */
+            done(dataUrl); return;
+          }
+          var scale = maxSide / Math.max(w, h);
+          var nw = Math.max(1, Math.round(w * scale)), nh = Math.max(1, Math.round(h * scale));
+          var c = document.createElement('canvas');
+          c.width = nw; c.height = nh;
+          var ctx = c.getContext('2d');
+          if (!ctx) { done(null); return; }
+          ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, nw, nh);
+          ctx.drawImage(img, 0, 0, nw, nh);
+          done(c.toDataURL('image/jpeg', 0.92));
+        } catch (e) { done(null); }
+      };
+      img.onerror = function () { done(null); };
+      img.src = dataUrl;
+    } catch (e) { done(null); }
+  }
+  /* 把任意异常对象转成可读的错误描述（Tesseract worker 错误常没有 message） */
+  function describeErr(e) {
+    if (!e) return '未知错误';
+    if (typeof e === 'string') return e;
+    var parts = [];
+    if (e.message) parts.push(e.message);
+    else if (e.status && typeof e.status === 'string') parts.push(e.status);
+    if (e.name && e.name !== 'Error' && parts.indexOf(e.name) < 0) parts.push(e.name);
+    if (!parts.length) {
+      try {
+        var s = JSON.stringify(e);
+        if (s && s !== '{}') parts.push(s);
+      } catch (_) {}
+    }
+    if (!parts.length) parts.push(String(e));
+    return parts.join(' / ').slice(0, 240);
+  }
   /* 首次点识别时才加载 66KB 的主库，不拖慢看板首屏；之后复用同一个已加载的脚本 */
   function loadOcrLib() {
     if (typeof Tesseract !== 'undefined') return Promise.resolve();
@@ -3227,17 +3272,37 @@
     var flat = t.replace(/\s+/g, '');
     var out = { name: '', regCode: '', org: '', risk: '', nav: '', navDate: '' };
 
-    /* 登记编码：Z 开头 + 13 位数字（容忍中间被 OCR 认成空格/字母 O） */
-    var mReg = flat.match(/[Zz]\d{10,14}/);
+    /* 登记编码：优先 Z 开头 + 13 位数字（理财网登记编码，容忍 O/0、I/1 混淆）。
+       OCR 常把 Z 认成 2、把 0 认成 O，做字符归一后再匹配。 */
+    var codeFlat = flat.replace(/O/g, '0').replace(/I/g, '1').replace(/l/g, '1');
+    var mReg = codeFlat.match(/[Z2]\d{12,14}/);
     if (mReg) out.regCode = mReg[0].toUpperCase();
+    if (!out.regCode) {
+      /* 代销内部代码：形如 260INB045A00000000（数字+字母混合，长度 14~20）。
+         必须是「同时含字母和数字」的串，避免把市值/日期/份额等纯数字误当编码。
+         优先取靠近"代销/编码/代码"字样的行。 */
+      var candidates = [];
+      lines.forEach(function (ln) {
+        var s = ln.replace(/\s+/g, '');
+        var re = /(?=[0-9A-Za-z]{14,22}\b)(?=[0-9A-Za-z]*[A-Za-z])(?=[0-9A-Za-z]*[0-9])[0-9A-Za-z]{14,22}/g, mm;
+        while ((mm = re.exec(s)) !== null) {
+          candidates.push({ v: mm[0].toUpperCase(), near: /代销|编码|代码|产品代码/.test(ln) });
+        }
+      });
+      if (candidates.length) {
+        candidates.sort(function (a, b) { return (b.near ? 1 : 0) - (a.near ? 1 : 0); });
+        out.regCode = candidates[0].v;
+      }
+    }
 
     /* 风险等级：R1~R5（去空格后直接找 Rn） */
     var mRisk = flat.match(/R([1-5])(?!\d)/i);
     if (mRisk) out.risk = 'R' + mRisk[1];
 
-    /* 日期：优先 YYYY-MM-DD，其次 YYYY.MM.DD / YYYY年M月D日。
-       月份/日要把两位数分支放前面，否则 "11" 会被截成 "1"。 */
-    var mDate = flat.match(/(20\d{2})[-./年](1[0-2]|0[1-9]|[1-9])[-./月](3[01]|[12]\d|0[1-9]|[1-9])/) ;
+    /* 日期：OCR 常把分隔符 "/" "-" "." 认成 V、空格、字母等（如 2026/11V17、2026 11 17），
+       故分隔符放宽为「1~3 个非数字字符」；两种数字分支把两位数放前面，避免 "11" 被截成 "1"。 */
+    var mDate = flat.match(/(20\d{2})\D{1,3}(1[0-2]|0[1-9]|[1-9])\D{1,3}(3[01]|[12]\d|0[1-9]|[1-9])(?!\d)/) ||
+                flat.match(/(20\d{2})(1[0-2])(0[1-9]|[12]\d|3[01])(?!\d)/);
     if (mDate) {
       function p2(n) { return n.length < 2 ? '0' + n : n; }
       out.navDate = mDate[1] + '-' + p2(mDate[2]) + '-' + p2(mDate[3]);
@@ -3250,9 +3315,13 @@
       /* OCR 会在字间插空格（"单 位 净 值"），先整体去空格再判断是否净值行 */
       var flat = ln.replace(/\s+/g, '');
       var near = /净值|万份|收益/.test(flat);
-      var cleaned = flat.replace(/[。，,]/g, '.');
-      /* 情形 A：小数点还在，形如 1.0045 */
-      var re = /1[.]\d{3,8}/g, mm;
+      /* 关键：净值常与净值日期同一行（如 "1.002300 2026/11/17"），去空格后会粘成
+         "1.0023002026/11/17"，若不先把日期剔除，净值正则会把年份数字吞进去。 */
+      var noDate = flat.replace(/20\d{2}\D{1,3}\d{1,2}\D{1,3}\d{1,2}\D?/g, '');
+      var cleaned = noDate.replace(/[。，,]/g, '.');
+      /* 情形 A：小数点还在，形如 1.0045。净值小数位通常是 4 或 6 位，
+         用 (?!\d) 防止贪婪吞掉后面粘连的数字。 */
+      var re = /1[.]\d{4}(?:\d{2})?(?!\d)/g, mm;
       while ((mm = re.exec(cleaned)) !== null) navCandidates.push({ v: mm[0], near: near, strong: true });
       /* 情形 B：小数点被 OCR 吞掉，净值为 1xxxx 的 5 位数字（如 10045 -> 1.0045）。
          只在"净值"行里做这种补全，避免把编码/日期误判成净值。 */
@@ -3276,11 +3345,28 @@
        例："中邮理财有限责任公司"、"招银理财"、"建信理财" */
     var orgNoise = /净值|日期|风险|编码|代码|名称|基准|收益|类型|期限|天|号|期/;
     var orgIdx = -1;
+    var orgRe = /[\u4e00-\u9fa5]{2,10}(理财|银行|理财有限责任公司|理财股份有限公司|银行股份有限公司|银行有限责任公司)(有限责任公司|有限公司|股份有限公司)?/;
     for (var i = 0; i < lines.length; i++) {
       var ln = lines[i].replace(/^(发行机构|管理人|产品发行|发行人)[:：]?\s*/, '');
-      if (/^[\u4e00-\u9fa5]{2,8}(理财|银行)(有限责任公司|有限公司|股份有限公司)?$/.test(ln) &&
+      /* 优先整行就是机构名（最干净） */
+      if (/^[\u4e00-\u9fa5]{2,10}(理财|银行)(有限责任公司|有限公司|股份有限公司)?$/.test(ln) &&
           !orgNoise.test(ln)) {
         out.org = ln.trim(); orgIdx = i; break;
+      }
+    }
+    /* 退而求其次：机构名与编码/代销等混在同一行时，从行内抠出机构名。
+       例："260INB045A00000000 代销 | 中邮理财有限责任公司"。
+       注意此时不要把该行标记为 orgIdx，否则若这行恰好也是产品名行
+       （如"中邮理财优盛.鸿锦...7天45号"含"中邮理财"），会把真正的产品名行排除掉。 */
+    if (!out.org) {
+      for (var k = 0; k < lines.length; k++) {
+        var mm = lines[k].match(orgRe);
+        /* 只在机构名后面跟着"代销/有限公司/有限责任公司"等明确机构标识时采信，
+           避免从纯产品名中抠出前缀 */
+        if (mm && /代销|理财有限责任公司|理财股份有限公司|银行股份有限公司|银行有限责任公司/.test(lines[k])) {
+          out.org = mm[0];
+          break;
+        }
       }
     }
 
@@ -3299,6 +3385,9 @@
       var scored = lines.map(function (ln, idx) {
         var s = 0;
         if (idx === orgIdx) return { ln: ln, s: -99 };
+        /* 排除手机状态栏时间（"17:59 HS"）、不含任何中文/字母的纯数字符号行。
+           注意不能用 /^[\W\d]+$/：非 unicode 模式下中文也落入 \W，会误杀产品名。 */
+        if (/^\d{1,2}:\d{2}/.test(ln) || !/[\u4e00-\u9fa5A-Za-z]/.test(ln)) return { ln: ln, s: -99 };
         if (/\d+\s*(天|号|期)/.test(ln)) s += 5;
         if (/添利|嘉鑫|安盈|悦享|鸿锦|金鼎|睿|固收|现金管理/.test(ln)) s += 3;
         if (/理财|产品/.test(ln)) s += 1;
@@ -3345,11 +3434,22 @@
     if (!addState.image) { aiMsg('请先上传一张产品详情页截图', 'err'); return; }
     if (run) run.disabled = true;
     aiMsg('正在加载本地识别引擎（首次约需几秒）…', 'busy');
+    /* 识别超时保护：手机上 wasm/内存问题可能让 worker 卡住不返回，60 秒后主动失败 */
+    var timedOut = false;
+    var timer = setTimeout(function () {
+      timedOut = true;
+      aiMsg('识别超时，可能是当前设备性能或内存不足。请关闭其它应用后重试，或直接手工填写', 'err');
+      if (run) run.disabled = false;
+    }, 60000);
     getOcrWorker(function (p) {
-      aiMsg('本地识别中 ' + p, 'busy');
+      if (!timedOut) aiMsg('本地识别中 ' + p, 'busy');
     }).then(function (worker) {
+      if (timedOut) return;
       return worker.recognize(addState.image).then(function (res) {
+        if (timedOut) return;
+        clearTimeout(timer);
         var text = res && res.data && res.data.text ? res.data.text : '';
+        window.__lastOcrText = text;
         var f = parseOcrFields(text);
         var filled = [f.name, f.regCode, f.nav, f.navDate].filter(Boolean).length;
         if (!filled) {
@@ -3363,8 +3463,18 @@
         aiMsg('已识别并填入：' + got.join('、') + '。OCR 可能有个别错字，请核对后再保存', 'ok');
       });
     }).catch(function (e) {
-      aiMsg('本地识别失败：' + ((e && e.message) || '未知错误') + '。可直接手工填写', 'err');
+      if (timedOut) return;
+      clearTimeout(timer);
+      /* 诊断信息尽量暴露真实原因，避免只显示"未知错误"无从排查 */
+      var detail = describeErr(e);
+      var hint = /memory|allocate|out of memory|buffer/i.test(detail)
+        ? '设备内存不足，请关闭其它应用或换小图重试'
+        : /simd|wasm|webassembly|compile/i.test(detail)
+          ? '当前浏览器不支持所需特性，请换用较新的浏览器（如最新版 Chrome/Edge/Safari）'
+          : '可换一张更清晰的截图重试';
+      aiMsg('本地识别失败：' + detail + '。' + hint + '；也可直接手工填写', 'err');
     }).finally(function () {
+      clearTimeout(timer);
       if (run) run.disabled = false;
     });
   }
@@ -3415,13 +3525,18 @@
       if (f.size > 8 * 1024 * 1024) { aiMsg('图片请小于 8MB', 'err'); return; }
       var reader = new FileReader();
       reader.onload = function () {
-        addState.image = String(reader.result || '');
-        addState.filename = f.name;
-        var txt = document.getElementById('add-image-text');
-        if (txt) txt.textContent = '已选：' + (f.name.length > 12 ? f.name.slice(0, 12) + '…' : f.name);
-        var lbl = document.getElementById('add-image-label');
-        if (lbl) lbl.classList.add('has-img');
-        aiMsg('截图已就绪，点「一键识别填入」提取信息（本地识别，无需联网）', 'ok');
+        var raw = String(reader.result || '');
+        /* 大图（手机截图常 1200×2600）直接喂给本地 OCR 极易在手机上内存溢出/超时，
+           这里先把长边压到 1600px 再识别，速度与稳定性都大幅提升，文字清晰度足够。 */
+        shrinkImage(raw, 1600, function (small) {
+          addState.image = small || raw;
+          addState.filename = f.name;
+          var txt = document.getElementById('add-image-text');
+          if (txt) txt.textContent = '已选：' + (f.name.length > 12 ? f.name.slice(0, 12) + '…' : f.name);
+          var lbl = document.getElementById('add-image-label');
+          if (lbl) lbl.classList.add('has-img');
+          aiMsg('截图已就绪，点「一键识别填入」提取信息（本地识别，无需联网）', 'ok');
+        });
       };
       reader.onerror = function () { aiMsg('图片读取失败', 'err'); };
       reader.readAsDataURL(f);
