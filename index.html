@@ -863,11 +863,12 @@
     .year-table .yc4{width:13%}
     .year-table .yc5{width:12%}
     .year-table .yc6{width:10.5%}
-    .year-table th,.year-table td{padding:12px 0;white-space:nowrap}
-    .year-table thead th,.year-table thead th:first-child,.year-table thead th:last-child{padding:9px 0}
-    .year-table th.r,.year-table td.r,.year-table td.ym{padding:12px 0;text-align:center}
+    /* 手机竖屏：压缩年表行高（上下 padding 12→7），一屏多容纳约 2 行 */
+    .year-table th,.year-table td{padding:7px 0;white-space:nowrap}
+    .year-table thead th,.year-table thead th:first-child,.year-table thead th:last-child{padding:6px 0}
+    .year-table th.r,.year-table td.r,.year-table td.ym{padding:7px 0;text-align:center}
     .year-table thead th.r{text-align:center}
-    .year-table td:last-child{padding:12px 0}
+    .year-table td:last-child{padding:7px 0}
     .cal{grid-template-columns:repeat(7,minmax(0,1fr));gap:2px}
     .cal .wd{font-size:11px;padding:4px 0}
     .cell{min-height:54px;padding:3px}
@@ -914,8 +915,9 @@
     .ts-lane .nchip .nm{white-space:normal}
     .n-legend{margin-top:4px}
     /* 手机端月度收益表：与年度表同一套百分比列宽，去掉左侧 2px 边框避免整体偏移 */
-    .month-row,.month-item{grid-template-columns:11% 20% 18.5% 13% 12% 10.5% 15%;gap:0;padding:12px 0;font-size:11px;line-height:1.6}
-    .month-row.mhead{padding:9px 0;font-size:11px;border-left:0}
+    /* 手机竖屏：月表行高同步压缩（上下 12→7、行高 1.6→1.5），与年表协调 */
+    .month-row,.month-item{grid-template-columns:11% 20% 18.5% 13% 12% 10.5% 15%;gap:0;padding:7px 0;font-size:11px;line-height:1.5}
+    .month-row.mhead{padding:6px 0;font-size:11px;border-left:0}
     .month-item{border-left:0}
     .month-item.on{box-shadow:inset 2px 0 0 var(--accent)}
     .rate-cell{height:20px;font-size:13px}
@@ -1511,7 +1513,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261119s';
+      s.src = './assets/dashboard.js?v=20261119t';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();

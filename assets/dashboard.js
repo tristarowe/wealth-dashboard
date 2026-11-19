@@ -2128,7 +2128,10 @@
 
     trendChart.setOption({
       animation: false,
-      grid: { left: 14, right: 38, top: 42, bottom: 26, containLabel: true },
+      /* 左右边距收窄让曲线铺满：手机窄屏原先 left14+right38 吃掉约 81px（占 328px 宽的 1/4）。
+         现左收到 6、右收到 30——右侧保留 30px 给末端标注（boxW/2=29）避免被裁，
+         标注 placeTrendMarks 另有水平收边兜底。 */
+      grid: { left: 6, right: 30, top: 42, bottom: 26, containLabel: true },
       tooltip: {
         trigger: 'axis',
         appendToBody: true,

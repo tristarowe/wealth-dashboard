@@ -23,4 +23,4 @@
 - 辅助/说明文字统一用 `var(--muted)`（#5d6b76，5.48:1，达 WCAG AA），不再新增更浅的灰。
 - 中文一律 `var(--font)`，数字/代码一律 `var(--mono)`；移除 Arial 与混排声明（★ 符号按钮除外）。
 
-> 注：PROJECT_NOTES.md 由 Trae 端维护，如需同步本规范请在该端更新。
+> 注：本规范已同步进 `PROJECT_NOTES.md`（第 8 节）并登记到守卫清单 protected，两端改动样式时都须遵守。
