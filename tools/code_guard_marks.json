@@ -1,7 +1,7 @@
 {
   "_doc": "跨端代码守卫共用标记清单 —— 唯一权威来源。WorkBuddy 的 .githooks/pre-push 与 Trae 的 tools/sync_pages.py 都必须读取本文件，禁止在脚本里硬编码标记列表。新增功能后在此登记，两端自动生效。",
   "_maintainer": "任何一端修改本文件后，需在提交信息中说明原因；改动会同时影响两端的推送守卫。",
-  "version": "2026-11-19q",
+  "version": "2026-11-19r",
   "protected": {
     "_doc": "受『整批中止』保护的文件：远端内容被他人改过时，整批拒绝推送，必须先 pull 合并。markers 为该文件必须包含的字符串，缺失即判定为旧版/被回退，整批拒推。",
     "index.html": [
@@ -20,7 +20,7 @@
       "tbl-scroll>table thead th",
       "overflow-x:clip",
       "cloud-ico",
-      "v=20261119o",
+      "v=20261119p",
       "calc(100dvh - 24px)",
       "data-sort=\"total\"",
       "累计收益",
@@ -34,8 +34,8 @@
       "add-ocr-run",
       "add-link",
       "ai-strip",
-      "ai-cfg-guide",
-      "识别接口（一般不用填",
+      "ai-strip-tip",
+      "本地识别，不联网",
       "只填产品名称即可添加",
       "prod-link"
     ],
@@ -104,8 +104,10 @@
       "metric-yest",
       "runOcr",
       "prodLinkIcon",
-      "AI_CFG_KEY",
-      "cfgBox.addEventListener('toggle'",
+      "loadOcrLib",
+      "getOcrWorker",
+      "parseOcrFields",
+      "OCR_BASE",
       "登记编码、净值、净值日期均选填",
       "link: m.link"
     ],
@@ -117,6 +119,13 @@
       "DRAFT",
       "message: '已连接'"
     ],
+    "_shared/js/ocr/tesseract.min.js": [],
+    "_shared/js/ocr/worker.min.js": [],
+    "_shared/js/ocr/tesseract-core-lstm.wasm.js": [],
+    "_shared/js/ocr/tesseract-core-simd-lstm.wasm.js": [],
+    "_shared/js/ocr/tesseract-core-simd.wasm.js": [],
+    "_shared/js/ocr/tesseract-core.wasm.js": [],
+    "_shared/js/ocr/chi_sim.traineddata.gz": [],
     "daily/reg_alias.json": [],
     "daily/risk_levels.json": [],
     "daily/ccb_map.json": [],

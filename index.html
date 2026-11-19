@@ -378,20 +378,7 @@
   .ai-msg.ok{background:#eef8f2;color:#1c7a5e}
   .ai-msg.err{background:#fdf0ef;color:#b4453b}
   .ai-msg.busy{background:#eef4f7;color:var(--accent-deep)}
-  .ai-cfg{margin-top:8px;border:1px solid var(--rule);border-radius:8px;background:#f9fbfc;overflow:hidden}
-  .ai-cfg summary{cursor:pointer;padding:7px 11px;font-size:11.5px;font-weight:600;color:var(--muted);list-style:none;user-select:none}
-  .ai-cfg summary::-webkit-details-marker{display:none}
-  .ai-cfg summary::before{content:'▸ ';color:var(--accent)}
-  .ai-cfg[open] summary::before{content:'▾ '}
-  .ai-cfg[open] summary{border-bottom:1px solid var(--rule)}
-  .ai-cfg-body{padding:10px 11px}
-  .ai-cfg-body .field{margin-top:8px}
-  .ai-cfg-body .field:first-of-type{margin-top:0}
-  .ai-cfg-body input{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px}
-  .ai-cfg-guide{font-size:11px;line-height:1.75;color:var(--ink);background:#fff;border:1px solid var(--rule);border-radius:7px;padding:8px 10px;margin-bottom:10px}
-  .ai-cfg-guide a{color:var(--accent-deep);text-decoration:underline}
-  .ai-cfg-guide code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;background:#eef4f7;border-radius:3px;padding:0 3px;font-size:10.5px;word-break:break-all}
-  .ai-cfg-tip{font-size:11px;color:var(--muted);line-height:1.6;margin-top:8px}
+  .ai-strip-tip{font-size:11px;color:var(--muted);line-height:1.5;margin-top:6px}
   .dp-wrap{position:relative;display:block}
   .dp-wrap input{margin-top:4px;padding-right:34px;cursor:pointer;background:#fff!important;color:var(--ink)!important}
   .dp-wrap input:focus{outline:none;border-color:#cbe0e8;box-shadow:0 0 0 3px rgba(14,90,115,.08)}
@@ -1431,30 +1418,10 @@
           <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="4.5" width="15" height="12" rx="2.5"/><circle cx="7.5" cy="9" r="1.4"/><path d="M3 15l4.2-4.2 3.2 3.2 2.6-2.6 4 4"/></svg>
           <span id="add-image-text">上传截图识别</span>
         </label>
-        <button type="button" class="ai-run" id="add-ocr-run" title="把截图发给已配置的 AI 视觉接口，识别结果填入下方表单">一键识别填入</button>
+        <button type="button" class="ai-run" id="add-ocr-run" title="在本机识别截图文字并自动填入下方表单，无需联网和密钥">一键识别填入</button>
       </div>
+      <div class="ai-strip-tip">本地识别，不联网、不用密钥、永久免费；识别后请核对。也可直接手工填写。</div>
       <div class="ai-msg" id="add-ai-msg" hidden></div>
-      <details class="ai-cfg" id="add-ai-cfg">
-        <summary>高级设置：识别接口（一般不用填，仅图片识别需要）</summary>
-        <div class="ai-cfg-body">
-          <div class="ai-cfg-guide">
-            想用「一键识别」？按这 3 步填一次即可，以后都记住：<br>
-            ① 打开 <a href="https://cloud.siliconflow.cn/" target="_blank" rel="noopener noreferrer">cloud.siliconflow.cn</a> 注册（国内站，新用户有免费额度）→ 左侧「API 密钥」→ 新建密钥，复制 <b>sk-</b> 开头的那串；<br>
-            ② 下面三栏照抄：<b>接口地址</b> = <code>https://api.siliconflow.cn/v1/chat/completions</code>，<b>模型名</b> = <code>Qwen/Qwen3-VL-8B-Instruct</code>，<b>API Key</b> = 刚复制的密钥；<br>
-            ③ 上传截图 → 点「一键识别填入」。密钥只存本机浏览器，不会上传，也可随时清空。
-          </div>
-          <label class="field">接口地址
-            <input id="ai-url" autocomplete="off" placeholder="https://api.siliconflow.cn/v1/chat/completions">
-          </label>
-          <label class="field">模型名
-            <input id="ai-model" autocomplete="off" placeholder="Qwen/Qwen3-VL-8B-Instruct">
-          </label>
-          <label class="field">API Key（仅存本机浏览器）
-            <input id="ai-key" type="password" autocomplete="off" placeholder="sk-...">
-          </label>
-          <div class="ai-cfg-tip">密钥只保存在当前浏览器本地存储；识别时由浏览器直连接口，不经过看板服务器。不配置也能正常手工添加产品。</div>
-        </div>
-      </details>
       <div class="add-grid">
         <label class="field wide">产品名称
           <input id="add-name" autocomplete="off" placeholder="如 合盛多元·鸿锦30天1号">
@@ -1526,7 +1493,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261119o';
+      s.src = './assets/dashboard.js?v=20261119p';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();

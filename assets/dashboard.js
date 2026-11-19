@@ -3157,17 +3157,46 @@
   /* ---------------- 添加产品 ---------------- */
   var addState = { image: '', filename: '' };
 
-  /* 图片识别的 AI 接口配置：仅存本机浏览器 localStorage，不进代码库/不上传云端。
-     使用 OpenAI 兼容的 /chat/completions 视觉接口，由浏览器直连（需接口允许跨域）。 */
-  var AI_CFG_KEY = 'wealth3.aiVisionCfg';
-  function loadAiCfg() {
-    try {
-      var c = JSON.parse(localStorage.getItem(AI_CFG_KEY) || '{}');
-      return { url: c.url || '', model: c.model || '', key: c.key || '' };
-    } catch (e) { return { url: '', model: '', key: '' }; }
+  /* 本地 OCR：Tesseract.js 引擎与中文语言包随站点一起发布，识别全程在本机浏览器完成，
+     不联网、不注册、不需要任何密钥，永久免费。worker/core/lang 均走站点内的相对路径。 */
+  var OCR_BASE = './_shared/js/ocr/';
+  var ocrWorkerPromise = null;
+  var ocrLibPromise = null;
+  /* 首次点识别时才加载 66KB 的主库，不拖慢看板首屏；之后复用同一个已加载的脚本 */
+  function loadOcrLib() {
+    if (typeof Tesseract !== 'undefined') return Promise.resolve();
+    if (ocrLibPromise) return ocrLibPromise;
+    ocrLibPromise = new Promise(function (resolve, reject) {
+      var s = document.createElement('script');
+      s.src = OCR_BASE + 'tesseract.min.js?v=20261119';
+      s.onload = function () {
+        if (typeof Tesseract !== 'undefined') resolve();
+        else { ocrLibPromise = null; reject(new Error('OCR 引擎加载异常')); }
+      };
+      s.onerror = function () { ocrLibPromise = null; reject(new Error('OCR 引擎文件缺失，请刷新重试')); };
+      document.head.appendChild(s);
+    });
+    return ocrLibPromise;
   }
-  function saveAiCfg(c) {
-    try { localStorage.setItem(AI_CFG_KEY, JSON.stringify(c)); } catch (e) { /* 忽略 */ }
+  function getOcrWorker(onProgress) {
+    if (ocrWorkerPromise) return ocrWorkerPromise;
+    ocrWorkerPromise = loadOcrLib().then(function () {
+      return Tesseract.createWorker('chi_sim', 1, {
+        workerPath: OCR_BASE + 'worker.min.js',
+        corePath: OCR_BASE,
+        langPath: OCR_BASE,
+        gzip: true,
+        logger: function (m) {
+          if (onProgress && m && m.status && /load|recogniz|initializ/i.test(m.status)) {
+            onProgress(m.status + (typeof m.progress === 'number' ? ' ' + Math.round(m.progress * 100) + '%' : ''));
+          }
+        }
+      });
+    }).catch(function (e) {
+      ocrWorkerPromise = null;
+      throw e;
+    });
+    return ocrWorkerPromise;
   }
   function aiMsg(text, kind) {
     var el = document.getElementById('add-ai-msg');
@@ -3188,6 +3217,111 @@
     });
   }
 
+  /* 从本地 OCR 出来的杂乱文字里抽取结构化字段。OCR 对中文小字可能有个别错字，
+     因此尽量用「格式特征」而不是语义：登记编码=Z+13位数字、风险=R1~R5、
+     日期=YYYY-MM-DD/YYYY.MM.DD/YYYY年M月D日、净值=1.xxxx 形式的数字。 */
+  function parseOcrFields(text) {
+    var t = String(text || '').replace(/[，,]/g, ',').replace(/：/g, ':').replace(/[（）]/g, '()');
+    var lines = t.split(/[\r\n]+/).map(function (s) { return s.trim(); }).filter(Boolean);
+    /* OCR 会在每个汉字间插空格，另做一份"去空格全文"供编码/风险/日期匹配 */
+    var flat = t.replace(/\s+/g, '');
+    var out = { name: '', regCode: '', org: '', risk: '', nav: '', navDate: '' };
+
+    /* 登记编码：Z 开头 + 13 位数字（容忍中间被 OCR 认成空格/字母 O） */
+    var mReg = flat.match(/[Zz]\d{10,14}/);
+    if (mReg) out.regCode = mReg[0].toUpperCase();
+
+    /* 风险等级：R1~R5（去空格后直接找 Rn） */
+    var mRisk = flat.match(/R([1-5])(?!\d)/i);
+    if (mRisk) out.risk = 'R' + mRisk[1];
+
+    /* 日期：优先 YYYY-MM-DD，其次 YYYY.MM.DD / YYYY年M月D日。
+       月份/日要把两位数分支放前面，否则 "11" 会被截成 "1"。 */
+    var mDate = flat.match(/(20\d{2})[-./年](1[0-2]|0[1-9]|[1-9])[-./月](3[01]|[12]\d|0[1-9]|[1-9])/) ;
+    if (mDate) {
+      function p2(n) { return n.length < 2 ? '0' + n : n; }
+      out.navDate = mDate[1] + '-' + p2(mDate[2]) + '-' + p2(mDate[3]);
+    }
+
+    /* 净值：1.xxxx ~ 1.xxxxxxxx 形式，优先出现在"净值"字样附近的行。
+       OCR 常把小数点认成空格/逗号/句号，或数字间夹空格，这里统一容错后再匹配。 */
+    var navCandidates = [];
+    lines.forEach(function (ln) {
+      /* OCR 会在字间插空格（"单 位 净 值"），先整体去空格再判断是否净值行 */
+      var flat = ln.replace(/\s+/g, '');
+      var near = /净值|万份|收益/.test(flat);
+      var cleaned = flat.replace(/[。，,]/g, '.');
+      /* 情形 A：小数点还在，形如 1.0045 */
+      var re = /1[.]\d{3,8}/g, mm;
+      while ((mm = re.exec(cleaned)) !== null) navCandidates.push({ v: mm[0], near: near, strong: true });
+      /* 情形 B：小数点被 OCR 吞掉，净值为 1xxxx 的 5 位数字（如 10045 -> 1.0045）。
+         只在"净值"行里做这种补全，避免把编码/日期误判成净值。 */
+      if (near) {
+        var re2 = /\b1\d{4,7}\b/g, m2;
+        while ((m2 = re2.exec(cleaned)) !== null) {
+          navCandidates.push({ v: m2[0].slice(0, 1) + '.' + m2[0].slice(1), near: near, strong: false });
+        }
+      }
+    });
+    if (navCandidates.length) {
+      navCandidates.sort(function (a, b) {
+        if (a.near !== b.near) return (b.near ? 1 : 0) - (a.near ? 1 : 0);
+        return (b.strong ? 1 : 0) - (a.strong ? 1 : 0);
+      });
+      out.nav = navCandidates[0].v;
+    }
+
+    /* 先识别发行机构：形如"XX理财 / XX银行 / XX理财有限责任公司"的短行，
+       只认以理财/银行结尾的短行，排除带其它字段标签的行。
+       例："中邮理财有限责任公司"、"招银理财"、"建信理财" */
+    var orgNoise = /净值|日期|风险|编码|代码|名称|基准|收益|类型|期限|天|号|期/;
+    var orgIdx = -1;
+    for (var i = 0; i < lines.length; i++) {
+      var ln = lines[i].replace(/^(发行机构|管理人|产品发行|发行人)[:：]?\s*/, '');
+      if (/^[\u4e00-\u9fa5]{2,8}(理财|银行)(有限责任公司|有限公司|股份有限公司)?$/.test(ln) &&
+          !orgNoise.test(ln)) {
+        out.org = ln.trim(); orgIdx = i; break;
+      }
+    }
+
+    /* 产品名称：
+       1) 优先带"产品名称:"标签的行（最可靠）；
+       2) 否则取含"数字+天/号/期"或产品关键词、且不是机构行的最长行；
+       3) 排除纯机构名、字段标签行、含净值/日期的行。 */
+    var labeled = -1;
+    for (var j = 0; j < lines.length; j++) {
+      if (/^(产品名称|名称)\s*[:：]/.test(lines[j])) { labeled = j; break; }
+    }
+    if (labeled >= 0) {
+      out.name = lines[labeled].replace(/^(产品名称|名称)\s*[:：]?\s*/, '').trim();
+    } else {
+      var noise = /^(净值|单位净值|累计净值|日期|净值日期|风险等级|产品代码|登记编码|产品名称|发行机构|产品类型|七日年化|业绩比较基准)/;
+      var scored = lines.map(function (ln, idx) {
+        var s = 0;
+        if (idx === orgIdx) return { ln: ln, s: -99 };
+        if (/\d+\s*(天|号|期)/.test(ln)) s += 5;
+        if (/添利|嘉鑫|安盈|悦享|鸿锦|金鼎|睿|固收|现金管理/.test(ln)) s += 3;
+        if (/理财|产品/.test(ln)) s += 1;
+        if (noise.test(ln)) s -= 6;
+        if (/\d{4}[-./年]/.test(ln) || /1[.。]\d{3}/.test(ln) || /[Zz]\d{10}/.test(ln)) s -= 4;
+        if (ln.length >= 6 && ln.length <= 60) s += 1;
+        return { ln: ln, s: s };
+      }).sort(function (a, b) { return b.s - a.s; });
+      if (scored.length && scored[0].s > 0) {
+        out.name = scored[0].ln.replace(/^(产品名称|名称)[:：]?\s*/, '').trim();
+      }
+    }
+    /* OCR 常在中英文/数字间插入空格（"合 盛 多 元 30 天"），
+       去掉中文之间、中文与数字之间的空格，保留必要的英文词组空格 */
+    if (out.name) {
+      out.name = out.name.replace(/([\u4e00-\u9fa5])\s+([\u4e00-\u9fa5])/g, '$1$2')
+                         .replace(/([\u4e00-\u9fa5])\s+(\d)/g, '$1$2')
+                         .replace(/(\d)\s+([\u4e00-\u9fa5])/g, '$1$2')
+                         .replace(/\s{2,}/g, ' ').trim();
+    }
+    return out;
+  }
+
   function resetAddModal() {
     ['add-name', 'add-code', 'add-org', 'add-nav', 'add-navdate', 'add-link'].forEach(function (id) {
       var el = document.getElementById(id);
@@ -3205,50 +3339,31 @@
     aiMsg('');
   }
 
-  /* 调用 OpenAI 兼容视觉接口识别截图，返回结构化字段 */
+  /* 本地 OCR 识别截图：全程在本机浏览器完成，不联网、不用密钥、永久免费。 */
   function runOcr() {
     var run = document.getElementById('add-ocr-run');
     if (!addState.image) { aiMsg('请先上传一张产品详情页截图', 'err'); return; }
-    var cfg = loadAiCfg();
-    if (!cfg.url || !cfg.key || !cfg.model) {
-      aiMsg('图片识别需先设置接口：展开下方「高级设置：识别接口」，按里面 3 步填一次即可（或手工填写表单）', 'err');
-      var p = document.getElementById('add-ai-cfg');
-      if (p) p.open = true;
-      return;
-    }
     if (run) run.disabled = true;
-    aiMsg('正在识别，请稍候…', 'busy');
-    var body = {
-      model: cfg.model,
-      temperature: 0,
-      messages: [
-        { role: 'system', content: '你是银行理财产品信息提取助手。从用户给的产品详情页截图中提取字段，只输出一个 JSON 对象，不要任何解释文字。字段：name(产品全称字符串)、regCode(登记编码，Z开头14位字符串，找不到填空字符串)、risk(风险等级，如R1/R2/R3，找不到填空字符串)、org(发行机构字符串，找不到填空字符串)、nav(最新净值数字，找不到填null)、navDate(净值日期YYYY-MM-DD，找不到填空字符串)。若截图不是产品详情页，所有字段填空值。' },
-        { role: 'user', content: [
-          { type: 'text', text: '提取这张理财产品截图中的产品信息，按系统要求输出 JSON。' },
-          { type: 'image_url', image_url: { url: addState.image } }
-        ] }
-      ]
-    };
-    fetch(cfg.url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + cfg.key },
-      body: JSON.stringify(body)
-    }).then(function (r) {
-      if (!r.ok) return r.text().then(function (t) { throw new Error('接口返回 ' + r.status + '：' + t.slice(0, 120)); });
-      return r.json();
-    }).then(function (j) {
-      var txt = j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content;
-      if (typeof txt !== 'string') throw new Error('接口返回格式无法识别');
-      txt = txt.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
-      var m = txt.match(/\{[\s\S]*\}/);
-      if (!m) throw new Error('未识别到 JSON 结果');
-      var f = JSON.parse(m[0]);
-      var filled = [f.name, f.regCode, f.nav, f.navDate].filter(function (v) { return v !== null && v !== undefined && v !== ''; }).length;
-      if (!filled) { aiMsg('没有从截图识别出有效字段，请换一张更清晰的截图', 'err'); return; }
-      fillAddForm(f);
-      aiMsg('识别完成，已填入表单，请核对后保存', 'ok');
+    aiMsg('正在加载本地识别引擎（首次约需几秒）…', 'busy');
+    getOcrWorker(function (p) {
+      aiMsg('本地识别中 ' + p, 'busy');
+    }).then(function (worker) {
+      return worker.recognize(addState.image).then(function (res) {
+        var text = res && res.data && res.data.text ? res.data.text : '';
+        var f = parseOcrFields(text);
+        var filled = [f.name, f.regCode, f.nav, f.navDate].filter(Boolean).length;
+        if (!filled) {
+          aiMsg('没识别出有效字段。请换一张更清晰的截图（正对屏幕、文字完整），或直接手工填写', 'err');
+          return;
+        }
+        fillAddForm(f);
+        var got = [];
+        if (f.name) got.push('名称'); if (f.regCode) got.push('编码');
+        if (f.risk) got.push('风险'); if (f.nav) got.push('净值'); if (f.navDate) got.push('日期');
+        aiMsg('已识别并填入：' + got.join('、') + '。OCR 可能有个别错字，请核对后再保存', 'ok');
+      });
     }).catch(function (e) {
-      aiMsg('识别失败：' + ((e && e.message) || '网络错误，请检查接口地址/密钥/跨域设置'), 'err');
+      aiMsg('本地识别失败：' + ((e && e.message) || '未知错误') + '。可直接手工填写', 'err');
     }).finally(function () {
       if (run) run.disabled = false;
     });
@@ -3306,35 +3421,13 @@
         if (txt) txt.textContent = '已选：' + (f.name.length > 12 ? f.name.slice(0, 12) + '…' : f.name);
         var lbl = document.getElementById('add-image-label');
         if (lbl) lbl.classList.add('has-img');
-        aiMsg('截图已就绪，点「一键识别填入」提取信息', 'ok');
+        aiMsg('截图已就绪，点「一键识别填入」提取信息（本地识别，无需联网）', 'ok');
       };
       reader.onerror = function () { aiMsg('图片读取失败', 'err'); };
       reader.readAsDataURL(f);
     });
     var ocrBtn = document.getElementById('add-ocr-run');
     if (ocrBtn) ocrBtn.addEventListener('click', runOcr);
-    /* 高级设置用 details 原生折叠：展开时把本机已存配置回填进三个输入框 */
-    var cfgBox = document.getElementById('add-ai-cfg');
-    if (cfgBox) cfgBox.addEventListener('toggle', function () {
-      if (!cfgBox.open) return;
-      var c = loadAiCfg();
-      var u = document.getElementById('ai-url'), mo = document.getElementById('ai-model'), k = document.getElementById('ai-key');
-      if (u) u.value = c.url;
-      if (mo) mo.value = c.model;
-      if (k) k.value = c.key;
-    });
-    ['ai-url', 'ai-model', 'ai-key'].forEach(function (id) {
-      var el = document.getElementById(id);
-      if (!el) return;
-      el.addEventListener('change', function () {
-        var u = document.getElementById('ai-url'), mo = document.getElementById('ai-model'), k = document.getElementById('ai-key');
-        saveAiCfg({
-          url: (u && u.value || '').trim(),
-          model: (mo && mo.value || '').trim(),
-          key: (k && k.value || '').trim()
-        });
-      });
-    });
     submit.addEventListener('click', function () {
       if (busy) return;
       var name = (document.getElementById('add-name').value || '').trim();
