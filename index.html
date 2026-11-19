@@ -84,13 +84,13 @@
 
   .card{background:#fff;border:1px solid var(--rule);border-radius:12px}
   table{width:100%;border-collapse:collapse;font-size:13px}
-  thead th{background:#f7f9fa;color:#50606b;font-size:12.5px;font-weight:600;text-align:left;padding:10px;border-bottom:1px solid var(--rule);white-space:nowrap;letter-spacing:.01em}
+  thead th{background:#f7f9fa;color:#50606b;font-size:12px;font-weight:600;text-align:left;padding:10px;border-bottom:1px solid var(--rule);white-space:nowrap;letter-spacing:.01em}
   tbody td{padding:10px;border-bottom:1px solid #edf1f4;vertical-align:middle}
   tbody tr:last-child td{border-bottom:0}
   .c{text-align:center}
   .r{text-align:right}
   .pname{font-weight:400;font-size:13px;line-height:1.5;letter-spacing:.005em}
-  .pname .salech{display:block;font-size:10.5px;line-height:1.5;color:#8a9aa5;font-weight:400;letter-spacing:0;margin-top:1px}
+  .pname .salech{display:block;font-size:10.5px;line-height:1.5;color:#52646f;font-weight:400;letter-spacing:0;margin-top:1px}
   .pname .mv-under{display:block;font-size:10.5px;line-height:1.5;color:#52646f;font-weight:400;letter-spacing:0;margin-top:1px;font-family:var(--mono)}
   .plink{color:inherit;text-decoration:none;border-bottom:1px dashed #b9ccd4;cursor:pointer}
   .plink:hover{color:var(--accent-deep);border-bottom-color:var(--accent)}
@@ -166,7 +166,7 @@
   .prod-tbl .st b.m-p10k{font-weight:400}
   .prod-tbl tbody td.num:not([data-col="p10k"]):not([data-col="ann"]){color:var(--ink)}
   /* 产品库：风险等级 / 持有期两列与今日万收等数值列同字号同字体观感 */
-  .prod-tbl tbody td.pmeta{font-family:Consolas,'Microsoft YaHei',monospace;font-size:12.5px;color:#41545f}
+  .prod-tbl tbody td.pmeta{font-family:var(--mono);font-size:13px;color:#41545f}
   /* 四张数据表：固定列宽，相同内容同列宽，收紧列距 */
   #hold-table,#sum-table,#prod-table,#flow-table{table-layout:fixed}
   #hold-table thead th,#hold-table tbody td{padding:9px 7px}
@@ -208,7 +208,7 @@
   /* calendar */
   .cal-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
   .cal-ctrl{display:flex;align-items:center;gap:8px}
-  .cal-hint{font-size:12px;color:var(--muted)}
+  .cal-hint{font-size:11.5px;color:var(--muted)}
   .month-switch{display:inline-flex;align-items:center;border:1px solid var(--rule);border-radius:7px;background:#fff;overflow:hidden}
   .ms-arrow{border:0;background:transparent;width:26px;height:30px;cursor:pointer;color:var(--accent-deep);font-size:15px;line-height:1;font-family:var(--font)}
   .ms-arrow:hover{background:#f2f8fa}
@@ -316,7 +316,7 @@
   .sel-label .mcount{color:var(--accent-deep);font-weight:700}
   /* 产品库搜索候选：只列名称，不展示登记编码 */
   .prod-sug{max-width:min(92vw,340px)}
-  .chip{font-size:12.5px;padding:5px 10px;border-radius:999px;border:1px solid #dbe7ed;background:#f6fafc;cursor:pointer;color:var(--muted);width:auto;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;line-height:1.5}
+  .chip{font-family:var(--font);font-size:12.5px;padding:5px 10px;border-radius:999px;border:1px solid #dbe7ed;background:#f6fafc;cursor:pointer;color:var(--muted);width:auto;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;line-height:1.5}
   .chip.on{background:#e4f0f5;border-color:#cbe0e8;color:var(--accent-deep);font-weight:700}
   /* 产品库筛选按钮统一为 4 个汉字的宽度 */
   .filters select{width:80px}
@@ -395,7 +395,7 @@
   .dp-title{padding:4px 9px;border:0;border-radius:8px;background:transparent;font-family:var(--mono);font-size:13px;font-weight:700;color:var(--accent-deep);letter-spacing:.02em;cursor:pointer}
   .dp-title:hover{background:#eef6f8}
   .dp-week,.dp-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
-  .dp-week span{padding:3px 0 6px;text-align:center;font-size:11px;color:#93a3ae}
+  .dp-week span{padding:3px 0 6px;text-align:center;font-size:11.5px;color:var(--muted)}
   .dp-grid button{position:relative;height:31px;border:0;border-radius:8px;background:transparent;font-family:var(--mono);font-size:12.5px;color:var(--ink);cursor:pointer}
   .dp-grid button:hover{background:#eef6f8}
   .dp-grid button.out{color:#c3cfd6}
@@ -406,7 +406,7 @@
   .dp-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;padding-top:8px;border-top:1px solid var(--rule)}
   .dp-foot button{padding:5px 9px;border:0;border-radius:7px;background:transparent;font-family:var(--font);font-size:12px;color:var(--accent);cursor:pointer}
   .dp-foot button:hover{background:#eef6f8}
-  .dp-foot .dp-hint{font-size:11px;color:#93a3ae}
+  .dp-foot .dp-hint{font-size:11.5px;color:var(--muted)}
   .dp-ybar{display:flex;align-items:center;justify-content:center;gap:10px;padding:2px 0 10px}
   .dp-ybar .dp-y{min-width:52px;text-align:center;font-family:var(--mono);font-size:13px;font-weight:700;color:var(--ink)}
   .dp-mgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
@@ -537,7 +537,7 @@
   .pdf-ico::after{content:"";position:absolute;right:-1px;top:-1px;border-width:0 13px 13px 0;border-style:solid;border-color:transparent #fff transparent transparent}
   .att-meta{flex:1;min-width:180px}
   .att-title{font-size:14px;font-weight:700;color:var(--ink)}
-  .att-sub{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.6}
+  .att-sub{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.6}
   .doc-attach .btn{flex:none}
   .rule-card{padding:16px 18px;margin-top:12px}
   .rule-card h3{font-size:13.5px;margin-bottom:6px}
@@ -563,7 +563,7 @@
   .ms-actions{display:flex;gap:4px;margin-left:0;flex:none}
   .ms-actions button{font-family:var(--font);font-size:11px;padding:3px 7px;border:1px solid #dbe7ed;border-radius:6px;background:#f6fafc;cursor:pointer;color:var(--accent-deep);white-space:nowrap}
   .ms-list{max-height:264px;overflow:auto;padding-top:6px}
-  .ms-tip{font-size:10.5px;line-height:1.5;color:#93a3ae;padding:5px 2px 0}
+  .ms-tip{font-size:11.5px;line-height:1.5;color:var(--muted);padding:5px 2px 0}
   .ms-item{display:flex;align-items:center;gap:8px;padding:6px;border-radius:7px;font-size:12.5px;cursor:pointer}
   .ms-item:hover{background:#f7f9fa}
   .ms-item input{accent-color:var(--accent);flex:none;cursor:pointer}
@@ -606,7 +606,7 @@
      首项为列名「净值日期」＝全部，其余为各披露日；单选，点选即收起 */
   #hold-table .th-select#hold-date-sel{width:100%;max-width:100%;text-align:center;text-align-last:center}
   #hold-table .th-select#hold-date-sel.on{color:var(--accent-deep);border-color:var(--accent);font-weight:700}
-  .swipe-tip{display:none;text-align:center;font-size:11px;color:#93a3ae;margin-top:6px}
+  .swipe-tip{display:none;text-align:center;font-size:11.5px;color:var(--muted);margin-top:6px}
   /* 交易流水按月折叠：表头行显示整月汇总，点击展开明细 */
   tr.flow-month td{background:#f1f7f9;font-weight:700;font-size:12.5px;color:var(--accent-deep);padding:9px 10px;cursor:pointer;border-bottom:1px solid var(--rule);white-space:nowrap;user-select:none}
   tr.flow-month:hover td{background:#e8f2f6}
@@ -647,12 +647,14 @@
     #sum-table thead th,#sum-table tbody td,
     #prod-table thead th,#prod-table tbody td,
     #flow-table thead th,#flow-table tbody td{padding:8px 6px}
-    #hold-table thead th,#prod-table thead th{font-size:12px}
+    /* B1：四表表头统一 12px（flow/sum 原为 12.5，纳入同一档） */
+    #hold-table thead th,#prod-table thead th,#flow-table thead th,#sum-table thead th{font-size:12px}
     #prod-table thead th{min-width:0 !important}
     #hold-table{min-width:1000px}
     #sum-table{min-width:942px}
     #prod-table{min-width:880px}
-    #hold-table .pname,#sum-table .pname,#prod-table .pname{font-size:12.5px}
+    /* B1：四表产品名称统一 12.5px（flow 原 13px 纳入同档） */
+    #hold-table .pname,#sum-table .pname,#prod-table .pname,#flow-table .pname{font-size:12.5px}
     /* 产品名称右侧标签不换行，固定显示在名称右侧 */
     #prod-table tbody td:nth-child(2) .pname,#sum-table tbody td:nth-child(1) .pname{
       display:flex;flex-wrap:wrap;align-items:flex-start;column-gap:4px}
@@ -701,7 +703,7 @@
     #hold-table col:nth-child(9){width:46px !important}
     /* 数据列的表头下拉去掉多余内边距，避免撑破单元格 */
     #hold-table thead th:nth-child(9){padding-left:1px !important;padding-right:1px !important}
-    #hold-table .th-select{font-size:11px;padding:2px 1px;max-width:100%}
+    #hold-table .th-select{font-size:11.5px;padding:2px 1px;max-width:100%}
     #hold-table col:nth-child(10){width:52px !important}
     #hold-table col:nth-child(11){width:52px !important}
     #hold-table col:nth-child(12),
@@ -709,16 +711,16 @@
     #hold-table col:nth-child(14){width:46px !important}
     #hold-table col:nth-child(15){width:48px !important}
     #hold-table col:nth-child(16){width:50px !important}
-    /* 盈亏汇总 16 列，仅此表再降字号并收窄横向内边距，保证一屏放下 */
-    #hold-table,#hold-table thead th{font-size:11px}
+    /* B2/Q2：横屏全表由 11px 提到 11.5px，可读性优先； tbl-scroll 支持横向滑动 */
+    #hold-table,#hold-table thead th{font-size:11.5px}
     #hold-table thead th,#hold-table tbody td{padding:6px 2px}
     /* 区间标签（日均万收/年化）样式沿用桌面偏宽内边距，横屏下收窄 */
-    #hold-table td.mlabel{padding:6px 2px;font-size:11px}
-    /* 区间数值（日均万收/年化）与持仓天数原本 13px，横屏统一到全表 11px */
-    #hold-table td.pwin,#hold-table td.awin{font-size:11px}
-    #hold-table td.dcell .days,#hold-table td.dcell .dunit{font-size:11px}
-    /* 产品名与评分说明也统一到 11px，全表只保留 † 上标略小 */
-    #hold-table .pname,#hold-table .plink,#hold-table .st i{font-size:11px}
+    #hold-table td.mlabel{padding:6px 2px;font-size:11.5px}
+    /* 区间数值（日均万收/年化）与持仓天数横屏统一到全表 11.5px */
+    #hold-table td.pwin,#hold-table td.awin{font-size:11.5px}
+    #hold-table td.dcell .days,#hold-table td.dcell .dunit{font-size:11.5px}
+    /* 产品名与评分说明也统一到 11.5px，全表只保留 † 上标略小 */
+    #hold-table .pname,#hold-table .plink,#hold-table .st i{font-size:11.5px}
     #sum-table col:nth-child(1){width:116px !important}
     #sum-table col:nth-child(2){width:56px !important}
     #sum-table col:nth-child(3){width:66px !important}
@@ -740,16 +742,16 @@
     #flow-table col:nth-child(8){width:58px !important}
     #flow-table col:nth-child(9){width:46px !important}
     #flow-table col:nth-child(10){width:76px !important}
-    /* 其余三张表与盈亏明细同一字号（11px），字重随内容层级 */
-    #sum-table,#flow-table,#prod-table{font-size:11px}
-    #sum-table thead th,#flow-table thead th,#prod-table thead th{font-size:11px}
+    /* B2：其余三张表与盈亏明细同一字号（11.5px），字重随内容层级 */
+    #sum-table,#flow-table,#prod-table{font-size:11.5px}
+    #sum-table thead th,#flow-table thead th,#prod-table thead th{font-size:11.5px}
     #sum-table .pname,#sum-table .plink,
     #prod-table .pname,#prod-table .plink,
-    #flow-table .pname,#flow-table .plink{font-size:11px}
+    #flow-table .pname,#flow-table .plink{font-size:11.5px}
     #sum-table .st b,#sum-table .st i,
     #prod-table .st b,#prod-table .st i,
-    #flow-table .st b,#flow-table .st i{font-size:11px}
-    #sum-table td.dcell .days,#sum-table td.dcell .dunit{font-size:11px}
+    #flow-table .st b,#flow-table .st i{font-size:11.5px}
+    #sum-table td.dcell .days,#sum-table td.dcell .dunit{font-size:11.5px}
     /* 日期/净值/元数据单元格原本 12~13px，统一到全表 11px */
     #hold-table .cdate span,#hold-table .cdate i,#hold-table .unit-u,
     #sum-table .cdate span,#sum-table .cdate i,#sum-table .unit-u,
@@ -757,9 +759,9 @@
     #prod-table .cdate span,#prod-table .cdate i,#prod-table .unit-u,
     #prod-table tbody td.num,#prod-table tbody td.pmeta,
     #flow-table tr.flow-month td,
-    #flow-table tr.flow-month .fm-meta{font-size:11px}
+    #flow-table tr.flow-month .fm-meta{font-size:11.5px}
     /* 盈亏日历：辅助文字 11px，主数值 12px，日期不再加粗 */
-    .cal-hint,.cal-sum,.cal-sum i,.trend-sub{font-size:11px}
+    .cal-hint,.cal-sum,.cal-sum i,.trend-sub{font-size:11.5px}
     .cal .wd{font-size:11px}
     .cal-sub{font-size:12px;font-weight:600}
     .cell .d{font-size:11px;font-weight:400}
@@ -768,7 +770,7 @@
     .cal-sum b{font-size:12px}
     .cal-sum .lead b{font-size:13px}
     .year-table{font-size:11.5px}
-    .year-table thead th{font-size:11px}
+    .year-table thead th{font-size:11.5px}
     .year-table td{font-size:12px}
     .rate-cell{font-size:12px}
     .seg button{font-size:11.5px}
@@ -808,6 +810,10 @@
     #hold-table col:nth-child(15){width:54px !important}
     #hold-table col:nth-child(16){width:48px !important}
     #hold-table thead th,#hold-table tbody td{padding:8px 3px}
+    /* B1/Q1：手机四表正文统一 12.5px（flow 原 12px 纳入同档） */
+    #sum-table tbody td,#flow-table tbody td,#prod-table tbody td{font-size:12.5px}
+    /* B4：手机端名称副行从 10.5 提到 11，与说明类同档 */
+    .pname .salech,.pname .mv-under{font-size:11px}
     #hold-table thead th:nth-child(2),#hold-table tbody tr:not(.mb) > td:nth-child(2){padding-left:8px;padding-right:6px}
     #hold-table thead th:nth-child(3){padding-left:2px;padding-right:2px}
     #hold-table .th-select{width:100%;max-width:100%;font-size:11px;padding:1px 0}
@@ -845,11 +851,12 @@
     .cal-split{grid-template-columns:1fr}
     #year-view{overflow-x:auto}
     /* 手机端年度收益表：与月度表共用百分比列宽，列边界逐列重合、间距均匀 */
-    .year-table{min-width:0;font-size:10.5px}
-    .year-table thead th{font-size:10px;white-space:nowrap;line-height:1.35}
+    /* Q1：手机年表/月表由 10~10.5 提到 11 档 */
+    .year-table{min-width:0;font-size:11px}
+    .year-table thead th{font-size:11px;white-space:nowrap;line-height:1.35}
     .year-table thead th:nth-child(3){white-space:normal}
-    .year-table td{font-size:10.5px}
-    .year-table td.cnt{font-size:10.5px}
+    .year-table td{font-size:11px}
+    .year-table td.cnt{font-size:11px}
     .year-table .yc1{width:11%}
     .year-table .yc2{width:20%}
     .year-table .yc3{width:18.5%}
@@ -907,8 +914,8 @@
     .ts-lane .nchip .nm{white-space:normal}
     .n-legend{margin-top:4px}
     /* 手机端月度收益表：与年度表同一套百分比列宽，去掉左侧 2px 边框避免整体偏移 */
-    .month-row,.month-item{grid-template-columns:11% 20% 18.5% 13% 12% 10.5% 15%;gap:0;padding:12px 0;font-size:10.5px;line-height:1.6}
-    .month-row.mhead{padding:9px 0;font-size:10.5px;border-left:0}
+    .month-row,.month-item{grid-template-columns:11% 20% 18.5% 13% 12% 10.5% 15%;gap:0;padding:12px 0;font-size:11px;line-height:1.6}
+    .month-row.mhead{padding:9px 0;font-size:11px;border-left:0}
     .month-item{border-left:0}
     .month-item.on{box-shadow:inset 2px 0 0 var(--accent)}
     .rate-cell{height:20px;font-size:13px}
