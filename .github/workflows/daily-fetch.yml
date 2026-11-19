@@ -38,6 +38,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y fonts-noto-cjk
 
+      - name: 拉取云端交易
+        env:
+          PYTHONIOENCODING: utf-8
+        # 必须排在 T-1 攻坚之前：新买入的持仓要当天就进入攻坚清单，
+        # 否则当天新增的品会漏抓 T-1（2026-11-19 建信嘉鑫7天第63期即因此停在 T-2）
+        run: python daily/pull_cloud.py || true
+
       - name: 持仓产品 T-1 净值攻坚（持仓优先，建行官网 NLC165 + 建信官网）
         env:
           PYTHONIOENCODING: utf-8
@@ -51,14 +58,11 @@ jobs:
           PW_CHANNEL: ""
         run: python daily/fetch_data.py
 
-      - name: 拉取云端交易
+      - name: 刷新产品库建信系净值（建信 chart + 建行官网 NLC165 双源取较新）
         env:
           PYTHONIOENCODING: utf-8
-        run: python daily/pull_cloud.py || true
-
-      - name: 刷新产品库建信官网净值
-        env:
-          PYTHONIOENCODING: utf-8
+        # 建信官网 chart 自身滞后约一个交易日（T 日上午只到 T-2），
+        # 建行官网 NLC165 通常已有 T-1，故按「日期更晚者」补尾部点，见脚本头部口径说明
         run: python daily/nav_official.py
 
       - name: 轮换补抓其他产品净值（持仓产品优先）
