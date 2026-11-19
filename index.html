@@ -567,7 +567,7 @@
   /* 横向滚动 + 冻结首列；纵向超长时表头吸顶（滚动容器即卡片，表头 sticky 才生效） */
   /* 纵向超长时表头吸顶；滚动到顶/底要能把手势交还给页面（不能设 overscroll-behavior:contain，
      否则内部滚到尽头后页面卡住划不动） */
-  .tbl-scroll{overflow:auto;max-height:min(72vh,620px);-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;overscroll-behavior-y:auto}
+  .tbl-scroll{overflow:auto;max-height:min(72vh,620px);overscroll-behavior-x:contain;overscroll-behavior-y:auto}
   /* 手机横屏：可视高度只有 320–390px，72vh 只剩 4 行；贴近满屏高度可多显示 1–2 行，
      首列与表头仍固定，纵向滚到尽头照旧把手势交还页面 */
   @media (orientation:landscape) and (max-height:520px){
@@ -593,7 +593,9 @@
     /* 横屏/平板宽度下日历并排会把「每日收益」压成窄条，统一改为上下堆叠 */
     .cal-split{grid-template-columns:minmax(0,1fr)}
     /* 禁止页面级横向溢出，避免横竖屏切换后整页被缩放、右侧留白 */
-    html,body{width:100%;max-width:100%;overflow-x:hidden}
+    /* overflow-x:clip 只裁剪不产生滚动容器：若用 hidden，body 的 overflow-y 会被计算成 auto，
+       形成 html+body 双层滚动容器，表内滑到顶/底后滚动链在两层间卡住、衔接不丝滑 */
+    html,body{width:100%;max-width:100%;overflow-x:hidden;overflow-x:clip}
     .page{width:100%}
     .swipe-tip{display:block}
     #prod-table tbody td:nth-child(2) .pname{white-space:normal}
@@ -1428,7 +1430,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261119j';
+      s.src = './assets/dashboard.js?v=20261119k';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();

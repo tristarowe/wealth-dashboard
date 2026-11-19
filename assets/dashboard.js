@@ -4916,6 +4916,60 @@
   }
 
   /* ---------------- init ---------------- */
+  /* 表格滚动链桥接：表格内部滚到顶/底后，同一次手势/滚轮继续滑动时，
+     把滚动交给整页，避免「卡住、要松手再划一次」。CSS 的 overscroll-behavior 只能在
+     下一次手势传递滚动链，这里补齐「同一次滚动越界即接续页面」的能力。
+     - wheel：桌面滚轮在边界时 preventDefault 并手动滚动 window
+     - touch：手指在边界继续滑动时 preventDefault 并手动滚动 window
+     仅当表格真的可纵向滚动（scrollHeight>clientHeight）时才介入，短表不干扰。 */
+  function bindTableScrollChain() {
+    var els = document.querySelectorAll('.tbl-scroll');
+    Array.prototype.forEach.call(els, function (el) {
+      /* 桌面滚轮 */
+      el.addEventListener('wheel', function (e) {
+        if (e.ctrlKey) return;                       /* 缩放手势放行 */
+        var d = e.deltaY;
+        if (!d) return;                              /* 纯横向滚动放行 */
+        var max = el.scrollHeight - el.clientHeight;
+        if (max <= 1) return;
+        var atBottom = el.scrollTop >= max - 1;
+        var atTop = el.scrollTop <= 1;
+        var deltaMode = e.deltaMode;
+        if (deltaMode === 1) d = d * 16;             /* 行 -> 近似像素 */
+        else if (deltaMode === 2) d = d * el.clientHeight;
+        if ((d > 0 && atBottom) || (d < 0 && atTop)) {
+          if (e.cancelable) e.preventDefault();
+          window.scrollBy(0, d);
+        }
+      }, { passive: false });
+
+      /* 手机触摸：touchmove 需非 passive 才能 preventDefault */
+      var lastY = 0, lastX = 0;
+      el.addEventListener('touchstart', function (e) {
+        lastY = e.touches.length ? e.touches[0].clientY : 0;
+        lastX = e.touches.length ? e.touches[0].clientX : 0;
+      }, { passive: true });
+      el.addEventListener('touchmove', function (e) {
+        if (!e.touches.length) return;
+        var y = e.touches[0].clientY;
+        var x = e.touches[0].clientX;
+        var dy = lastY - y;                          /* 手指向上 => dy>0 => 页面向下 */
+        var dx = lastX - x;
+        lastY = y; lastX = x;
+        if (!dy) return;
+        if (Math.abs(dx) > Math.abs(dy) * 1.2) return; /* 以横滑为主时放行，交给表格横向滚动 */
+        var max = el.scrollHeight - el.clientHeight;
+        if (max <= 1) return;
+        var atBottom = el.scrollTop >= max - 1;
+        var atTop = el.scrollTop <= 1;
+        if ((dy > 0 && atBottom) || (dy < 0 && atTop)) {
+          if (e.cancelable) e.preventDefault();
+          window.scrollBy(0, dy);
+        }
+      }, { passive: false });
+    });
+  }
+
   function init() {
     populateOrgSelect();
     populateIncepSelect();
@@ -4936,6 +4990,7 @@
     bindTradeModal();
     initDatePicker();
     bindAddModal();
+    bindTableScrollChain();
     renderAll();
     var identityAudit = auditProductIdentity();
     if (!identityAudit.ok) console.warn('[产品身份自检]', identityAudit.issues);
