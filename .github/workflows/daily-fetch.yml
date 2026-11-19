@@ -1,8 +1,16 @@
 name: daily-fetch
 
 on:
-  # 定时改由 Gitee Go 准点触发：每天 07:30（前一日汇总）与 22:00（当日净值），
-  # GitHub 自带定时在高峰期会排队 30～50 分钟，所以这里不再挂 cron。
+  # 三层触发，互为兜底（同一 concurrency group，不会并发；重复跑会因「无数据变化」快速结束）
+  #   ① Gitee Go 准点触发（workflow_dispatch）——北京 07:30 / 22:00，准点不排队，优先；
+  #   ② GitHub 原生 cron 兜底——Gitee Go 失效时仍能跑。高峰期会排队 30～50 分钟，
+  #      故提前挂号到北京 07:20 / 21:50，实际落点大致对齐 07:30 / 22:00；
+  #   ③ 手动 workflow_dispatch。
+  # 2026-11-19 事故：移除 cron 后完全依赖 Gitee Go，Gitee Go 停摆导致 11-18 22:00、
+  # 11-19 07:30 两轮全部漏跑，数据停在 11-18 15:58。故恢复 cron 兜底。
+  schedule:
+    - cron: "20 23 * * *"   # UTC 23:20 = 北京次日 07:20（前一日汇总）
+    - cron: "50 13 * * *"   # UTC 13:50 = 北京 21:50（当日净值）
   workflow_dispatch:
 
 permissions:
