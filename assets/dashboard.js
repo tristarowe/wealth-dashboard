@@ -1283,13 +1283,14 @@
     var on = profitDateSel.length > 0;
     if (btn) {
       btn.classList.toggle('on', on);
+      btn.classList.toggle('has-v', on);
       btn.title = on
         ? '已筛选 ' + profitDateSel.length + ' 个净值日期（点击修改）'
         : '按净值日期筛选（可多选）';
     }
-    /* 按钮文案与「数据」列下拉一致：未筛选显示「全部」，选一天显示该日期，多选显示「N个」 */
+    /* 表头按钮即下拉当前值：未筛选显示列名，选一天显示该日期，多选显示「N个」 */
     if (n) {
-      if (!on) n.textContent = '全部';
+      if (!on) n.textContent = '';
       else if (profitDateSel.length === 1) n.textContent = mmdd(profitDateSel[0]);
       else n.textContent = profitDateSel.length + '个';
     }
