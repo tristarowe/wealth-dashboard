@@ -785,7 +785,9 @@
     .metric .m-sub{font-size:10px;margin-top:5px;padding-top:5px}
   }
   @media (max-width:760px){
-    body{padding:14px 12px calc(40px + env(safe-area-inset-bottom))}
+    body{padding:14px 12px calc(28px + env(safe-area-inset-bottom))}
+    /* A档手机压缩 2026-11-19：模块间距/指标卡/日历/留白收紧，字号与触控尺寸不变 */
+    section{margin-top:16px}
     /* 竖屏窄屏才恢复自适应列宽；横屏沿用桌面百分比列宽，列间距才均匀 */
     #sum-table,#prod-table,#flow-table{table-layout:auto}
     #sum-table colgroup col,#prod-table colgroup col,#flow-table colgroup col{width:auto !important}
@@ -829,23 +831,23 @@
     .hero-actions .btn{justify-content:center;padding:9px 8px}
     .hero-actions .btn.icon-only{width:34px;height:34px;padding:0}
     .hero-subline{gap:8px;margin-top:8px;padding-right:44px}
-    .hero-asof{font-size:11.5px;line-height:1.9}
+    .hero-asof{font-size:11.5px;line-height:1.55}
     .data-stamp{position:static;display:flex;justify-content:center;margin-top:8px;font-size:11px;line-height:1.6}
     h1{font-size:21px}
-    .sub{font-size:11.5px;line-height:1.9}
+    .sub{font-size:11.5px;line-height:1.55}
     .sub b{white-space:nowrap}
     .coverage{margin-left:0}
     .metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:14px}
     /* 6 张指标卡在 2 列布局下正好 3 行，无需末张通栏 */
     .metrics .metric:last-child{grid-column:auto}
-    .metric{padding:11px 12px}
+    .metric{padding:9px 12px}
     .metric .v{font-size:19px}
     .metric .v em{font-size:11px}
-    .metric .m-sub{font-size:10.5px}
+    .metric .m-sub{font-size:10.5px;margin-top:5px;padding-top:4px}
     .metric .m-sub b{font-size:12px}
     .tabs{width:100%;overflow-x:auto;justify-content:flex-start;border-radius:12px}
     .tab{flex:1 0 auto;padding:8px 14px;font-size:12.5px}
-    .sec-head{gap:8px;margin-bottom:10px}
+    .sec-head{gap:8px;padding-bottom:7px;margin-bottom:8px}
     .sec-head h2{font-size:17px}
     .sec-head .idx{font-size:17px}
     .cal-split{grid-template-columns:1fr}
@@ -871,13 +873,14 @@
     .year-table td:last-child{padding:7px 0}
     .cal{grid-template-columns:repeat(7,minmax(0,1fr));gap:2px}
     .cal .wd{font-size:11px;padding:4px 0}
-    .cell{min-height:54px;padding:3px}
-    .cell .d{font-size:10px}
-    .cell .v{font-size:11.5px}
-    .cell .a{font-size:9.5px;color:#46565f}
+    .cell{min-height:46px;padding:2px 3px}
+    .cell .d{font-size:10px;line-height:1.25}
+    .cell .v{font-size:11.5px;line-height:1.25;margin-top:1px}
+    .cell .a{font-size:9.5px;color:#46565f;line-height:1.25;margin-top:0}
     .cell .thumb{display:none}
     .month-item .thumb{display:none}
-    .cal-sum{flex-wrap:wrap;gap:6px 18px}
+    .cal-head{margin-bottom:8px}
+    .cal-sum{margin-top:7px;padding-top:6px;flex-wrap:wrap;gap:6px 18px}
     .cal-sum .lead,.cal-sum .st{padding:0;border-right:0}
     .seg button{white-space:nowrap;padding:6px 10px}
     .filters{padding:8px;gap:5px}
@@ -924,6 +927,8 @@
     .pager{flex-wrap:wrap;justify-content:center}
     #chart{height:300px}
     .banner{flex-wrap:wrap;font-size:12px;padding:9px 12px}
+    .trend-sub{margin:7px 0 0;padding-top:6px}
+    .doc-attach{padding:12px 14px}
     .card{overflow-x:auto}
     /* 手机端表单：底部弹层，放大字号与点击区，聚焦不再被系统放大 */
     .modal{align-items:flex-end;padding:0}
