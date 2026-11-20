@@ -5452,50 +5452,16 @@
      - touch：手指在边界继续滑动时 preventDefault 并手动滚动 window
      仅当表格真的可纵向滚动（scrollHeight>clientHeight）时才介入，短表不干扰。 */
   function bindTableScrollChain() {
+    /* 手机滚动丝滑化（2026-11-20）：
+       不再用 touchmove/wheel 里 preventDefault + window.scrollBy 手动交接——那种逐帧手动滚动
+       没有惯性、松手即停，正是「滑到表格顶/底卡住」的根因。
+       改为完全依赖浏览器原生滚动链：.tbl-scroll 的 overscroll-behavior-y:auto 让表格内部
+       滚到顶/底后由原生交还给页面（带惯性、丝滑），表头 sticky 仍保持冻结吸顶。
+       这里只兜底设置滚动链属性，不拦截任何手势。 */
     var els = document.querySelectorAll('.tbl-scroll');
     Array.prototype.forEach.call(els, function (el) {
-      /* 桌面滚轮 */
-      el.addEventListener('wheel', function (e) {
-        if (e.ctrlKey) return;                       /* 缩放手势放行 */
-        var d = e.deltaY;
-        if (!d) return;                              /* 纯横向滚动放行 */
-        var max = el.scrollHeight - el.clientHeight;
-        if (max <= 1) return;
-        var atBottom = el.scrollTop >= max - 1;
-        var atTop = el.scrollTop <= 1;
-        var deltaMode = e.deltaMode;
-        if (deltaMode === 1) d = d * 16;             /* 行 -> 近似像素 */
-        else if (deltaMode === 2) d = d * el.clientHeight;
-        if ((d > 0 && atBottom) || (d < 0 && atTop)) {
-          if (e.cancelable) e.preventDefault();
-          window.scrollBy(0, d);
-        }
-      }, { passive: false });
-
-      /* 手机触摸：touchmove 需非 passive 才能 preventDefault */
-      var lastY = 0, lastX = 0;
-      el.addEventListener('touchstart', function (e) {
-        lastY = e.touches.length ? e.touches[0].clientY : 0;
-        lastX = e.touches.length ? e.touches[0].clientX : 0;
-      }, { passive: true });
-      el.addEventListener('touchmove', function (e) {
-        if (!e.touches.length) return;
-        var y = e.touches[0].clientY;
-        var x = e.touches[0].clientX;
-        var dy = lastY - y;                          /* 手指向上 => dy>0 => 页面向下 */
-        var dx = lastX - x;
-        lastY = y; lastX = x;
-        if (!dy) return;
-        if (Math.abs(dx) > Math.abs(dy) * 1.2) return; /* 以横滑为主时放行，交给表格横向滚动 */
-        var max = el.scrollHeight - el.clientHeight;
-        if (max <= 1) return;
-        var atBottom = el.scrollTop >= max - 1;
-        var atTop = el.scrollTop <= 1;
-        if ((dy > 0 && atBottom) || (dy < 0 && atTop)) {
-          if (e.cancelable) e.preventDefault();
-          window.scrollBy(0, dy);
-        }
-      }, { passive: false });
+      el.style.overscrollBehaviorX = 'contain';
+      el.style.overscrollBehaviorY = 'auto';
     });
   }
 
@@ -5531,22 +5497,31 @@
       if (nowCompact !== wasCompact) { wasCompact = nowCompact; renderCalendar(); }
     });
 
-    /* 横竖屏切换：浏览器可能沿用旧布局宽度或缩放，强制重置视口并重排 */
+    /* 横竖屏切换（2026-11-20 加固）：部分手机旋转后沿用旧布局宽度，只渲染半屏、右侧留白，
+       必须刷新才恢复。用多点重排 + 强制 reflow + 图表 resize，确保拿到最新的视口宽度。 */
     var vpMeta = document.querySelector('meta[name="viewport"]');
     var VP_CONTENT = 'width=device-width, initial-scale=1.0, viewport-fit=cover';
     var rotTimer = null;
+    function reflowOnRotate() {
+      var scrollers = document.querySelectorAll('.tbl-scroll');
+      for (var i = 0; i < scrollers.length; i++) scrollers[i].scrollLeft = 0;
+      /* 读一次 offsetWidth 强制浏览器按新视口重算布局，避免沿用旋转前的宽度 */
+      void document.documentElement.offsetWidth;
+      if (trendChart) trendChart.resize();
+      renderCalendar();
+    }
     window.addEventListener('orientationchange', function () {
       clearTimeout(rotTimer);
-      rotTimer = setTimeout(function () {
-        if (vpMeta) {
-          vpMeta.setAttribute('content', 'width=device-width, initial-scale=1, minimum-scale=1, viewport-fit=cover');
-          setTimeout(function () { vpMeta.setAttribute('content', VP_CONTENT); }, 200);
-        }
-        var scrollers = document.querySelectorAll('.tbl-scroll');
-        for (var i = 0; i < scrollers.length; i++) scrollers[i].scrollLeft = 0;
-        if (trendChart) trendChart.resize();
-        renderCalendar();
-      }, 260);
+      /* 旋转事件触发时视口尺寸可能尚未稳定，分多个时间点重排兜底 */
+      [0, 120, 350, 700].forEach(function (delay) {
+        rotTimer = setTimeout(reflowOnRotate, delay);
+      });
+      if (vpMeta) {
+        vpMeta.setAttribute('content', 'width=device-width, initial-scale=1, minimum-scale=1, viewport-fit=cover');
+        setTimeout(function () { vpMeta.setAttribute('content', VP_CONTENT); }, 300);
+      }
+      /* resize 事件也触发一次重排（有些机型只发 resize 不发 orientationchange） */
+      setTimeout(reflowOnRotate, 500);
     });
   }
 

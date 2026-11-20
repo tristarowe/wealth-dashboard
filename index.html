@@ -124,7 +124,9 @@
   #hold-table tbody tr:not(.mb) > td:nth-child(9),#hold-table tbody tr:not(.mb) > td:nth-child(10),
   #hold-table tbody tr.mb > td:nth-child(1),#hold-table tbody tr.mb > td:nth-child(2){border-left:1px solid var(--rule)}
   /* 今日收益 / 持仓收益 之间不设分割线（2026-11-18 按需求取消） */
-  #hold-table td.mlabel{font-size:12px;color:var(--muted);white-space:nowrap;padding:6px 8px}
+  /* 「数据」列：区间标签与表头下拉、数值列统一居中，避免表头居中而内容左对齐的错位 */
+  #hold-table td.mlabel{font-size:12px;color:var(--muted);white-space:nowrap;padding:6px 8px;text-align:center}
+  #hold-table .th-select#hold-data-sel{text-align:center;text-align-last:center}
   #hold-table td.pwin,#hold-table td.awin{font-size:13px;font-weight:400;text-align:center}
   .lbl span{display:block;font-size:11px;color:var(--muted);white-space:nowrap}
   .th-lbl{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:3px;white-space:nowrap}
@@ -456,6 +458,11 @@
   .toast.on{opacity:1}
 
   /* 交易 */
+  /* 交易流水滚动容器：去掉自身 padding，让 sticky 表头能真正贴顶（原来内联 padding:14px 16px
+     会在表头上方留出空白、滚动时透出内容行）；留白改由工具条承担 */
+  .flow-scroll{padding:0}
+  .flow-scroll .trade-tool{padding:14px 16px 0}
+  .flow-scroll .active-filter{margin-left:16px;margin-right:16px}
   .trade-tool{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
   .trade-tool .sp{flex:1}
   .trade-tool .month-switch{height:32px}
@@ -594,7 +601,13 @@
   /* 横向滚动 + 冻结首列；纵向超长时表头吸顶（滚动容器即卡片，表头 sticky 才生效） */
   /* 纵向超长时表头吸顶；滚动到顶/底要能把手势交还给页面（不能设 overscroll-behavior:contain，
      否则内部滚到尽头后页面卡住划不动） */
-  .tbl-scroll{overflow:auto;max-height:min(72vh,620px);overscroll-behavior-x:contain;overscroll-behavior-y:auto}
+  .tbl-scroll{overflow:auto;max-height:min(72vh,620px);overscroll-behavior-x:contain;overscroll-behavior-y:auto;scrollbar-gutter:stable}
+  /* 细滚动条：避免系统粗滚动条浮在表格内容上、遮挡列文字（2026-11-20） */
+  .tbl-scroll{scrollbar-width:thin;scrollbar-color:#c7d2d9 transparent}
+  .tbl-scroll::-webkit-scrollbar{width:6px;height:6px}
+  .tbl-scroll::-webkit-scrollbar-track{background:transparent}
+  .tbl-scroll::-webkit-scrollbar-thumb{background:#c7d2d9;border-radius:6px}
+  .tbl-scroll::-webkit-scrollbar-thumb:hover{background:#a9b8c1}
   /* 手机横屏：可视高度只有 320–390px，72vh 只剩 4 行；贴近满屏高度可多显示 1–2 行，
      首列与表头仍固定，纵向滚到尽头照旧把手势交还页面 */
   @media (orientation:landscape) and (max-height:520px){
@@ -780,8 +793,11 @@
   @media (orientation:landscape) and (max-height:520px){
     .metrics{grid-template-columns:repeat(6,minmax(0,1fr))}
     .metrics .metric:last-child{grid-column:auto}
-    .metric{padding:9px 10px}
-    .metric .v{font-size:17px}
+    .metric{padding:9px 8px}
+    .metric .v{font-size:15px;overflow:hidden;text-overflow:ellipsis}
+    /* 横屏 6 列很窄：持仓金额长数字单独缩小，单位「元」不允许换行溢出 */
+    .metric .v em{font-size:9.5px;margin-left:1px}
+    #metric-value{font-size:12px}
     .metric .m-sub{font-size:10px;margin-top:5px;padding-top:5px}
   }
   @media (max-width:760px){
@@ -837,12 +853,13 @@
     .sub{font-size:11.5px;line-height:1.55}
     .sub b{white-space:nowrap}
     .coverage{margin-left:0}
-    .metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:14px}
-    /* 6 张指标卡在 2 列布局下正好 3 行，无需末张通栏 */
+    /* 6 张指标卡在手机竖屏按 3 列 × 2 行排（用户 2026-11-20 要求），缩小数值字号防止长金额溢出 */
+    .metrics{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:14px}
     .metrics .metric:last-child{grid-column:auto}
-    .metric{padding:9px 12px}
-    .metric .v{font-size:19px}
-    .metric .v em{font-size:11px}
+    .metric{padding:9px 8px}
+    .metric .v{font-size:15px}
+    .metric .v em{font-size:9.5px;margin-left:2px}
+    #metric-value{font-size:14px}
     .metric .m-sub{font-size:10.5px;margin-top:5px;padding-top:4px}
     .metric .m-sub b{font-size:12px}
     .tabs{width:100%;overflow-x:auto;justify-content:flex-start;border-radius:12px}
@@ -880,8 +897,13 @@
     .cell .thumb{display:none}
     .month-item .thumb{display:none}
     .cal-head{margin-bottom:8px}
-    .cal-sum{margin-top:7px;padding-top:6px;flex-wrap:wrap;gap:6px 18px}
-    .cal-sum .lead,.cal-sum .st{padding:0;border-right:0}
+    /* 日历汇总四项一行呈现：不换行、收紧间距与字号，保证 342px 内容宽内完整显示（2026-11-20） */
+    .cal-sum{margin-top:7px;padding-top:6px;flex-wrap:nowrap;gap:1px 4px;white-space:nowrap;font-size:10.5px;justify-content:space-between}
+    .cal-sum .lead,.cal-sum .st{padding:0 2px;border-right:0;gap:2px}
+    .cal-sum .lead{padding-left:0}
+    .cal-sum i{font-size:10px}
+    .cal-sum b{font-size:11px}
+    .cal-sum .lead b{font-size:12px}
     .seg button{white-space:nowrap;padding:6px 10px}
     .filters{padding:8px;gap:5px}
     .filters select{flex:1 1 calc(33.333% - 5px);width:auto;min-width:0;font-size:12px}
@@ -981,7 +1003,17 @@
     }
   }
   @media (max-width:360px){
-    .metrics{grid-template-columns:1fr}
+    /* 极窄屏仍保持 3 列 2 行，仅再收窄字号与内边距，避免长金额溢出 */
+    .metrics{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+    .metric{padding:8px 5px}
+    .metric .v{font-size:13px}
+    #metric-value{font-size:12px}
+    /* 极窄屏日历汇总再收一档，避免「挂0」被裁切 */
+    .cal-sum{font-size:10px;gap:1px 2px}
+    .cal-sum .lead,.cal-sum .st{padding:0 1px;gap:1px}
+    .cal-sum i{font-size:9.5px}
+    .cal-sum b{font-size:10px}
+    .cal-sum .lead b{font-size:11px}
     .hero-actions{grid-template-columns:1fr}
   }
 
@@ -1229,7 +1261,7 @@
 
     <section>
       <div class="sec-head"><span class="idx">02</span><h2>交易流水</h2></div>
-      <div class="card tbl-scroll" style="padding:14px 16px">
+      <div class="card tbl-scroll flow-scroll">
         <div class="trade-tool">
           <div class="month-switch">
             <button class="ms-arrow" id="flow-year-prev" aria-label="上一年" title="上一年">‹</button>
