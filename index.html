@@ -1248,12 +1248,12 @@
     #sum-table tbody td{padding-top:6px;padding-bottom:6px}
   }
 
-  /* ===== 数值单元格「居中向右」2026-11-20（最终口径；表头保持原样：居中/名称左对齐） =====
-     用户要求：表头不动，数值水平居中显示。
-     注：曾试过在居中基础上再向右偏 2~5px（text-indent），但竖屏窄列只剩 1~5px 余量，
-     长数值（-11.94%）与年化的 † 标记会被顶出右边框，故取纯水平居中。
+  /* ===== 数值单元格右对齐 2026-11-20（恢复 21:00 那版口径；表头保持原样：居中/名称左对齐） =====
+     用户要求：表头不动，只让数据单元格里的数字/数值/百分比右对齐，使同列小数点落在同一竖线上。
+     **天数列（#hold-table 第8列）不参与**，保持原有居中；第3列净值日期、第9列「数据」标签、
+     第16列评分也不是数值，同样保持原样。
      涉及：盈亏日历年度/月度「收益」列、交易流水「份额/金额」列、产品库「今日万收~成立至今」区间列、
-     盈亏汇总「今日万收/今日收益/持仓收益/持仓年化/天数 + 7日~成立至今」列、
+     盈亏汇总「今日万收/今日收益/持仓收益/持仓年化 + 7日~成立至今」列、
      持仓汇总「持仓收益/持仓年化/累计收益/持仓金额/净值/持仓份额/持仓天数/成立天数」列。
      字号/千分位/列宽/行高一律不动。 */
   .year-table tbody td:nth-child(2),
@@ -1263,16 +1263,15 @@
   #prod-table tbody td:nth-child(8),
   #hold-table tbody td:nth-child(4),#hold-table tbody td:nth-child(5),
   #hold-table tbody td:nth-child(6),#hold-table tbody td:nth-child(7),
-  #hold-table tbody td:nth-child(8),
   #hold-table tbody td:nth-child(n+10):nth-child(-n+15),
   #hold-table tbody td.pwin,#hold-table tbody td.awin,
   #sum-table tbody td:nth-child(3),#sum-table tbody td:nth-child(4),
   #sum-table tbody td:nth-child(5),#sum-table tbody td:nth-child(6),
   #sum-table tbody td:nth-child(7),#sum-table tbody td:nth-child(8),
   #sum-table tbody td:nth-child(9),#sum-table tbody td:nth-child(10)
-  {text-align:center;text-indent:0}
-  /* 月度表「收益」格（grid 子项）恢复原有居中 */
-  .month-item > span:nth-child(2){text-align:center}
+  {text-align:right;text-indent:0}
+  /* 月度表「收益」格（grid 子项）跟随右对齐 */
+  .month-item > span:nth-child(2){text-align:right}
 
   /* 导出时撑满基准宽度，避免窄窗口裁切 */
   .page.is-exporting{width:1320px}
