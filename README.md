@@ -78,6 +78,8 @@
 - 全站 `.mini` 操作按钮边框贴合文字：基础 padding 4px 9px→2px 6px、`line-height:1.2`；各表专属覆盖（sum/flow/prod，桌面与手机）与「最近添加记录」按钮统一收到 1px 5px / 1.2。实测记录区按钮 36×19→34×17px。表格行高由 CSS 固定，不受按钮 padding 影响。
 - 「最近添加记录」删除态：删除记录不再单独成行——`renderAddHistory()` 只渲染 `action==='add'` 且按 id 去重（取最新一条）；每个 id 按 `lastAction`（`MANUAL_HISTORY` 已按 `at` 倒序，首条即最新）判断是否已删除，已删除项在名称右侧追加灰字 `.ah-deleted`「已删除」，`data-hist-del` 按钮加 `disabled` 呈灰且不可再删（点「修改」保存可用同 id 重新加入产品库）。
 
+**文案与横屏操作列收窄（2026-11-20）**：持仓汇总（交易页 `#sum-table`）第 6 列表头由「持仓市值」改为「持仓金额」（`data-sort="mv"` 排序口径不变；盈亏汇总产品名称下的 `mv-under` tooltip 仍显示持仓市值，非同一处）；添加产品弹窗底部提交按钮由「保存」改为「提交」（`id="submit-add"` 逻辑不变，修改产品场景同样显示「提交」）。手机横屏（761–968px）`#sum-table` 操作列由定义 160px→126px（实测渲染 185→146px，三个 38px 按钮合计 114px、两侧各留约 16px 已贴合），收窄的 34px 按 +3~4px/列匀给其余 10 列（`col:nth-child(1~10)`，总宽 786px 保持不变），竖屏/桌面不受影响。
+
 **弹窗背景锁定（2026-11-20）**：添加产品/新增交易/确认框打开时锁住背景页滚动——`bindModalScrollLock()` 用 MutationObserver 监听三个 modal 的 hidden 变化，任一打开即记 scrollY 并给 body 加 `.modal-lock`（fixed+负 top，防 iOS Safari 滚动穿透），全部关闭再恢复原位；覆盖关闭按钮、点遮罩、提交成功、取消所有路径。
 
 ### 列宽与间距（A0 / A2 / A3）
