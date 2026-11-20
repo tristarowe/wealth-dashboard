@@ -193,10 +193,17 @@
     }
     /* 审核稿 A2：盈亏汇总产品名称列 209.6→约 220px，差额由日期/收益/天数列均摊 */
     #hold-table col:nth-child(2){width:16.7% !important}
-    #hold-table col:nth-child(3){width:7.4% !important}
+    /* 评分列 2026-11-20：4.2%→5.8%（约 55.5→76px），与周期列齐平；差额由其余列按比例均摊，产品名列不动 */
+    #hold-table col:nth-child(16){width:5.8% !important}
+    #hold-table col:nth-child(1){width:2.94% !important}
+    #hold-table col:nth-child(3){width:7.25% !important}
     #hold-table col:nth-child(4),#hold-table col:nth-child(5),
-    #hold-table col:nth-child(6),#hold-table col:nth-child(7){width:5.9% !important}
-    #hold-table col:nth-child(8){width:4.8% !important}
+    #hold-table col:nth-child(6),#hold-table col:nth-child(7){width:5.78% !important}
+    #hold-table col:nth-child(8){width:4.7% !important}
+    #hold-table col:nth-child(9){width:5.39% !important}
+    #hold-table col:nth-child(10),#hold-table col:nth-child(11),
+    #hold-table col:nth-child(12),#hold-table col:nth-child(13),
+    #hold-table col:nth-child(14),#hold-table col:nth-child(15){width:5.68% !important}
     #hold-table tbody td{padding:4px 7px;line-height:1.3}
     #hold-table tbody td.mlabel{padding:3px 8px;line-height:1.3}
     #sum-table tbody td{padding:7.25px 8px;line-height:1.3}
