@@ -3666,21 +3666,39 @@
     var box = document.getElementById('add-hist');
     var list = document.getElementById('add-hist-list');
     if (!box || !list) return;
-    /* 2026-11-20：保存后新记录本地已 unshift 到首行；这里再按 at 倒序兜底，
-       保证刷新（云端按 at 排序）与刚保存时的顺序一致。只展示名称+日期时间+右侧操作，
-       不再显示登记编号（AF…）与代销机构（建设银行），避免把名称挤成两字。 */
-    var hist = (window.MANUAL_HISTORY || []).slice().sort(function (a, b) {
+    /* 2026-11-20：删除记录不单独成行，只在「添加」记录的名称右侧用小字标「已删除」，
+       且已删除项的「删除」按钮默认灰色禁用。按 at 倒序保证保存后与刷新后顺序一致。 */
+    var all = (window.MANUAL_HISTORY || []).slice().sort(function (a, b) {
       return String(b.at || '').localeCompare(String(a.at || ''));
-    }).slice(0, 15);
-    box.hidden = !hist.length;
-    list.innerHTML = hist.map(function (r) {
+    });
+    /* 每个产品 id 的最新动作（all 已按 at 倒序，首条即最新）：del=已删除，add=在产品库 */
+    var lastAction = {};
+    all.forEach(function (r) {
+      var k = r.id || '';
+      if (k && lastAction[k] === undefined) lastAction[k] = r.action;
+    });
+    /* 只展示添加记录、同一产品(id)只留最新一条，避免重复行 */
+    var shown = [], seen = {};
+    all.forEach(function (r) {
+      if (r.action === 'del') return;
+      var k = r.id || ('anon-' + (r.at || '') + '-' + (r.name || ''));
+      if (seen[k]) return;
+      seen[k] = 1;
+      shown.push(r);
+    });
+    shown = shown.slice(0, 15);
+    box.hidden = !shown.length;
+    list.innerHTML = shown.map(function (r) {
       var id = histEsc(r.id || '');
+      var deleted = lastAction[r.id || ''] === 'del';
       return '<li>' +
-        '<span class="ah-name" title="' + histEsc(r.name || '') + '">' + histEsc(r.name || '—') + '</span>' +
+        '<span class="ah-name" title="' + histEsc(r.name || '') + '">' + histEsc(r.name || '—') +
+          (deleted ? '<em class="ah-deleted">已删除</em>' : '') + '</span>' +
         '<i class="ah-time">' + fmtHistTime(r.at) + '</i>' +
         '<span class="ah-ops">' +
-        '<button type="button" class="mini" data-hist-edit="' + id + '" title="带入原记录，保存即更新产品">修改</button>' +
-        '<button type="button" class="mini warn" data-hist-del="' + id + '" title="删除该产品">删除</button>' +
+        '<button type="button" class="mini" data-hist-edit="' + id + '" title="带入原记录，保存即重新添加">修改</button>' +
+        '<button type="button" class="mini warn" data-hist-del="' + id + '"' +
+          (deleted ? ' disabled title="该产品已删除"' : ' title="删除该产品"') + '>删除</button>' +
         '</span></li>';
     }).join('');
   }

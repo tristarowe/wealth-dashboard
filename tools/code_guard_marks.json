@@ -1,7 +1,7 @@
 {
   "_doc": "跨端代码守卫共用标记清单 —— 唯一权威来源。WorkBuddy 的 .githooks/pre-push 与 Trae 的 tools/sync_pages.py 都必须读取本文件，禁止在脚本里硬编码标记列表。新增功能后在此登记，两端自动生效。",
   "_maintainer": "任何一端修改本文件后，需在提交信息中说明原因；改动会同时影响两端的推送守卫。",
-  "version": "2026-11-20z",
+  "version": "2026-11-20za",
   "protected": {
     "_doc": "受『整批中止』保护的文件：远端内容被他人改过时，整批拒绝推送，必须先 pull 合并。markers 为该文件必须包含的字符串，缺失即判定为旧版/被回退，整批拒推。",
     "index.html": [
@@ -23,7 +23,7 @@
       "data-stamp",
       "B2/Q2：横屏全表由 11px 提到 11.5px",
       "Q1：手机年表/月表",
-      "v=20261120l",
+      "v=20261120m",
       "手机端彻底隐藏滚动条",
       "data-sort=\"total\"",
       "累计收益",
@@ -67,13 +67,12 @@
       "#hold-table tbody td.mlabel{padding:3px 8px;line-height:1.3}",
       "#sum-table tbody td{padding:6.8px 8px;line-height:1.3}",
       "持仓汇总（交易页 sum-table）数据行 2026-11-20：数据行 35px",
-      "持仓汇总操作按钮调高 2026-11-20：16.4→20.4px",
-      "#sum-table tbody td:last-child .mini{padding:2px 7px;line-height:1.2}",
+      "操作按钮贴合文字 2026-11-20：桌面端收紧到 1px 5px",
+      "#sum-table tbody td:last-child .mini{padding:1px 5px;line-height:1.2}",
       "交易流水（flow-table）数据行 2026-11-20",
       "#flow-table tbody tr.flow-detail td{padding:4.5px 8px}",
-      "交易流水/产品库按钮压缩 2026-11-20：贴合12px字体",
-      "#flow-table tbody .mini,#prod-table tbody .mini{padding:2px 7px;line-height:1.2}",
-      "#flow-table tbody .mini,#prod-table tbody .mini{padding:2px 6px;line-height:1.2}",
+      "交易流水/产品库按钮贴合文字 2026-11-20：padding 收到 1px 5px",
+      "#flow-table tbody .mini,#prod-table tbody .mini{padding:1px 5px;line-height:1.2}",
       "产品库（prod-table）数据行压缩 2026-11-20",
       "#prod-table .st b,#prod-table .st i",
       "极窄屏指标副行再收一档字号",
@@ -139,13 +138,19 @@
       "盈亏汇总（hold-table）数据行 38→35px",
       "#hold-table tbody tr{height:35px}",
       "持仓汇总操作按钮贴合文字 2026-11-20",
-      "#sum-table tbody td:last-child .mini{padding:2px 6px;line-height:1.2}",
+      "操作按钮边框贴合文字 2026-11-20：全局收紧 padding/行高",
       "全站防聚焦放大（不限弹窗）",
       "input:not([type=\"hidden\"]):not([type=\"file\"]):not([type=\"checkbox\"])",
       "#modal-trade .form-grid{grid-template-columns:repeat(2,minmax(0,1fr))",
       "field-wide",
       "ah-ops",
-      "返回顶部全站应用"
+      "返回顶部全站应用",
+      "横屏产品名加宽（原 92px 会把长名称压成两三行、甚至单字换行）",
+      "#hold-table col:nth-child(2){width:118px !important}",
+      "「数据」列横屏调窄 76→56px",
+      "#hold-table col:nth-child(9){width:56px !important}",
+      "已删除小字标识：删除记录不单独成行",
+      ".add-hist-list .ah-deleted"
     ],
     "assets/dashboard.js": [
       "PID_ALIAS",
@@ -272,7 +277,10 @@
       "data-hist-edit",
       "ah-name",
       "最近添加记录右侧「修改 / 删除」小按钮",
-      "按 at 倒序兜底"
+      "删除记录不单独成行，只在「添加」记录的名称右侧用小字标「已删除」",
+      "var lastAction = {}",
+      "var deleted = lastAction[r.id || ''] === 'del';",
+      "ah-deleted"
     ],
     "assets/store.js": [
       "sbTombstones",

@@ -73,6 +73,11 @@
 
 **OCR 识别提速（2026-11-20）**：打开「添加产品」弹窗即后台预热 Tesseract worker（`warmupOcr()`），把 3.8MB wasm + 1.7MB 中文语言包的下载/编译耗时（手机可达数十秒）藏进用户选图/填表时间，点识别只剩 recognize（本机实测约 1 秒）；进度回调 `ocrProgressCb` 与 worker 创建解耦，预热后仍能显示识别进度。上传图长边压缩 1600→1280px（面积少 36%，产品详情页字号大、识别率不受影响）。预热失败静默，不影响正式识别重试。
 
+**横屏数据列调窄 + 操作按钮贴合文字 + 删除态改造（2026-11-20）**：
+- 手机横屏「数据」列（第 9 列）76→56px（表头 col 与 th 同步 `!important`，`.mlabel` padding 收到 6px 3px）：实测由 83px 收到 61px，「日均万收」四字 11.5px 紧贴不碰分割线；腾出的 20px 匀给产品名称列 98→118px（实测 107→128px，长名称少换行）。竖屏/桌面数据列仍 76px 不变。
+- 全站 `.mini` 操作按钮边框贴合文字：基础 padding 4px 9px→2px 6px、`line-height:1.2`；各表专属覆盖（sum/flow/prod，桌面与手机）与「最近添加记录」按钮统一收到 1px 5px / 1.2。实测记录区按钮 36×19→34×17px。表格行高由 CSS 固定，不受按钮 padding 影响。
+- 「最近添加记录」删除态：删除记录不再单独成行——`renderAddHistory()` 只渲染 `action==='add'` 且按 id 去重（取最新一条）；每个 id 按 `lastAction`（`MANUAL_HISTORY` 已按 `at` 倒序，首条即最新）判断是否已删除，已删除项在名称右侧追加灰字 `.ah-deleted`「已删除」，`data-hist-del` 按钮加 `disabled` 呈灰且不可再删（点「修改」保存可用同 id 重新加入产品库）。
+
 **弹窗背景锁定（2026-11-20）**：添加产品/新增交易/确认框打开时锁住背景页滚动——`bindModalScrollLock()` 用 MutationObserver 监听三个 modal 的 hidden 变化，任一打开即记 scrollY 并给 body 加 `.modal-lock`（fixed+负 top，防 iOS Safari 滚动穿透），全部关闭再恢复原位；覆盖关闭按钮、点遮罩、提交成功、取消所有路径。
 
 ### 列宽与间距（A0 / A2 / A3）
