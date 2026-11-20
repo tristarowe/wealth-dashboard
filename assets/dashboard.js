@@ -4325,7 +4325,7 @@
       selectedIds.push(flowState.pid);
       applySelection();
     }
-    /* 月份默认展开，折叠仅由人工点击月份行触发 */
+    /* 2026-11-20：清空人工展开状态，回到「最新月展开、其余折叠」的默认规则 */
     flowOpenMonths = {};
     renderFlows();
     renderTradeSummary();
@@ -4555,15 +4555,8 @@
 
   function populateFlowSelects() {
     var items = (window.TRANSACTIONS && window.TRANSACTIONS.items) || [];
-    /* 默认定位到最近一笔交易日所在年月 */
-    if (!flowState.pid && flowState.year === '' && flowState.month === '') {
-      var latest = '';
-      items.forEach(function (t) { if (t.applyDate > latest) latest = t.applyDate; });
-      if (latest) {
-        flowState.year = latest.slice(0, 4);
-        flowState.month = String(+latest.slice(5, 7) - 1);
-      }
-    }
+    /* 2026-11-20：交易流水默认展示全部月份（年月筛选留空），不再自动定位到最近交易月。
+       最近月由渲染层默认展开、其余月份默认折叠，用户可点月份行自行展开。 */
     var ys = document.getElementById('flow-year');
     var ms = document.getElementById('flow-month');
     if (ys) {
@@ -4703,7 +4696,9 @@
 
     tbody.innerHTML = months.map(function (mk) {
       var list = groups[mk];
-      var open = flowOpenMonths[mk] !== false;
+      /* 2026-11-20：默认只展开最新月份（months 已按降序，首项即最新），其余月份默认折叠。
+         用户人工点击过的月份在 flowOpenMonths 留有显式状态，优先尊重该状态。 */
+      var open = flowOpenMonths[mk] !== undefined ? flowOpenMonths[mk] : (mk === months[0]);
       var sum = {};
       list.forEach(function (t) {
         var k = t.type || '申购';
@@ -4865,7 +4860,9 @@
       var mh = e.target.closest('tr.flow-month');
       if (mh) {
         var mk = mh.getAttribute('data-mk');
-        flowOpenMonths[mk] = (flowOpenMonths[mk] === false);
+        /* 2026-11-20：按当前实际展开状态取反（折叠月 flowOpenMonths[mk] 可能为 undefined，
+           直接用旧写法会永远折叠），写入显式状态后重绘。 */
+        flowOpenMonths[mk] = !mh.classList.contains('open');
         renderFlows();
         return;
       }
