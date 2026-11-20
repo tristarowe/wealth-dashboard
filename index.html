@@ -1157,12 +1157,19 @@
     #hold-table thead th,#sum-table thead th,#flow-table thead th,#prod-table thead th{
       height:38px;padding-top:6px;padding-bottom:6px;line-height:1.3;box-sizing:border-box
     }
-    #hold-table tbody tr,#sum-table tbody tr,#flow-table tbody tr:not(.flow-month){height:38px}
+    /* 盈亏汇总（hold-table）数据行 38→35px：表头 38px 不动，只收 tbody 行高与上下 padding；
+       持仓汇总/流水仍 38px，避免带按钮与双行名称的行被挤 */
+    #hold-table tbody tr{height:35px}
+    #sum-table tbody tr,#flow-table tbody tr:not(.flow-month){height:38px}
     #flow-table tbody tr.flow-month{height:48px}
     #flow-table tbody tr.flow-month td{padding:5px 8px;line-height:1.5}
     #prod-table tbody tr{height:48px}
     /* 只压 tbody 上下 padding：表头高度/左右 padding 保持原样，长名称换行行由内容自然撑高不被裁切 */
-    #hold-table tbody td,#sum-table tbody td,#flow-table tbody td{padding-top:5px;padding-bottom:5px}
+    #hold-table tbody td{padding-top:4px;padding-bottom:4px}
+    #sum-table tbody td,#flow-table tbody td{padding-top:5px;padding-bottom:5px}
+    /* 持仓汇总操作按钮贴合文字 2026-11-20：与流水/产品库同款 2px 6px + line-height 1.2
+       （原 4px 9px / normal 实测 44×26px，过宽过高；改后约 36×18px） */
+    #sum-table tbody td:last-child .mini{padding:2px 6px;line-height:1.2}
     #prod-table tbody td{padding:5px 6px}
     #prod-table .st b,#prod-table .st i,
     #prod-table .cdate span,#prod-table .cdate i{line-height:1.35}

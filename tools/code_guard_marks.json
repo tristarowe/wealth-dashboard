@@ -1,7 +1,7 @@
 {
   "_doc": "跨端代码守卫共用标记清单 —— 唯一权威来源。WorkBuddy 的 .githooks/pre-push 与 Trae 的 tools/sync_pages.py 都必须读取本文件，禁止在脚本里硬编码标记列表。新增功能后在此登记，两端自动生效。",
   "_maintainer": "任何一端修改本文件后，需在提交信息中说明原因；改动会同时影响两端的推送守卫。",
-  "version": "2026-11-20x",
+  "version": "2026-11-20y",
   "protected": {
     "_doc": "受『整批中止』保护的文件：远端内容被他人改过时，整批拒绝推送，必须先 pull 合并。markers 为该文件必须包含的字符串，缺失即判定为旧版/被回退，整批拒推。",
     "index.html": [
@@ -96,7 +96,7 @@
       "font-weight:400;letter-spacing:0;color:#a3b1bb",
       "审核稿 A4：手机表头统一 38px",
       "方案C 2026-11-20：不缩字号/千分位/列宽，仅收紧行高与纵向 padding",
-      "#hold-table tbody tr,#sum-table tbody tr,#flow-table tbody tr:not(.flow-month){height:38px}",
+      "#sum-table tbody tr,#flow-table tbody tr:not(.flow-month){height:38px}",
       "#flow-table tbody tr.flow-month{height:48px}",
       "#prod-table tbody tr{height:48px}",
       "方案E 2026-11-20：页内快速跳转 + 返回顶部",
@@ -135,7 +135,11 @@
       "grid-template-columns:repeat(2,minmax(0,1fr))",
       "确认日期与底部按钮之间留呼吸区",
       "手机弹窗防自动放大（关键修复）",
-      "font-size:16px !important;-webkit-text-size-adjust:100%"
+      "font-size:16px !important;-webkit-text-size-adjust:100%",
+      "盈亏汇总（hold-table）数据行 38→35px",
+      "#hold-table tbody tr{height:35px}",
+      "持仓汇总操作按钮贴合文字 2026-11-20",
+      "#sum-table tbody td:last-child .mini{padding:2px 6px;line-height:1.2}"
     ],
     "assets/dashboard.js": [
       "PID_ALIAS",
