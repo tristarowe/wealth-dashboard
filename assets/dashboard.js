@@ -5474,6 +5474,10 @@
     /* 手机端没有表头（2026-11-21 用户要求），代销机构筛选改挂到标题行右侧，选项同源 */
     var miniSel = document.getElementById('np-org-sel-m');
     if (miniSel) miniSel.innerHTML = opts.join('');
+    /* 2026-11-21 七轮：手机竖屏标题行的代销机构按钮改为「透明 select + 自绘文字」，
+       自绘文字需跟随当前筛选值（无筛选时显示「代销机构」） */
+    var miniLab = document.getElementById('np-org-sel-m-lab');
+    if (miniLab) miniLab.textContent = NP_UI.channel || '代销机构';
 
     var totalCnt = 0;
     var out = [];
@@ -5566,7 +5570,12 @@
     var sel = document.getElementById('np-org-sel');
     if (sel) sel.onchange = function () { NP_UI.channel = this.value; renderNewProds(); };
     var selM = document.getElementById('np-org-sel-m');
-    if (selM) selM.onchange = function () { NP_UI.channel = this.value; renderNewProds(); };
+    if (selM) selM.onchange = function () {
+      NP_UI.channel = this.value;
+      var lab = document.getElementById('np-org-sel-m-lab');
+      if (lab) lab.textContent = this.value || '代销机构';
+      renderNewProds();
+    };
     /* 每次重绘都会新建这个 select，需要重新套一层「紧凑弹层」外壳 */
     if (sel) attachCompactSelect(sel);
   }

@@ -276,6 +276,16 @@
   /* 「持仓成立」表头 2026-11-21（原「天数」）：四字拆两行；桌面/横屏默认隐藏或内联 br，这里强制换行 */
   #hold-table thead th[data-sort="holddays"]{white-space:normal;line-height:1.25}
   #hold-table thead th[data-sort="holddays"] br{display:block}
+  /* 2026-11-21 七轮（用户要求）：电脑端「持仓成立」表头单行呈现，列宽 4.7%→5.5%，
+     差额从 7日~90日 五列各匀 0.16%（五列仍等宽、整表总宽 100% 不变，列距保持均匀）。
+     左右内边距收到 2px，给 4 字表头留足空间，1024 窄桌面也不溢出。 */
+  @media (min-width:969px){
+    #hold-table col:nth-child(8){width:5.5% !important}
+    #hold-table col:nth-child(10),#hold-table col:nth-child(11),#hold-table col:nth-child(12),
+    #hold-table col:nth-child(13),#hold-table col:nth-child(14){width:5.52% !important}
+    #hold-table thead th[data-sort="holddays"]{white-space:nowrap;padding-left:2px;padding-right:2px}
+    #hold-table thead th[data-sort="holddays"] br{display:none}
+  }
   /* 持仓汇总：净值日期保持单行，列窄时也不会断成「11-」「10」两行（2026-11-21 四轮：列序调整后为第 3 列） */
   #sum-table thead th:nth-child(3),#sum-table tbody td:nth-child(3){white-space:nowrap}
   #hold-table tbody td.dcell,#sum-table tbody td.dcell{white-space:nowrap;text-align:center}
@@ -630,9 +640,18 @@
   .ts-org{padding:5px 10px!important;text-align:left!important;display:flex;align-items:center;border-left:0!important}
   .ts-org select{font-family:var(--font);font-size:12px;color:#2a5563;border:1px solid #d7e3e9;background:#fff;border-radius:5px;padding:3px 6px;outline:none;cursor:pointer;width:100%}
   /* 手机端新品预告不再有表头（用户 2026-11-21 要求）：代销机构筛选挪到标题行右侧，
-     桌面/横屏仍用第一列表头里的下拉 */
-  .np-org-mini{display:none;font-family:var(--font);font-size:12px;color:#2a5563;border:1px solid #d7e3e9;
-    background:#fff;border-radius:6px;padding:4px 8px;outline:none;cursor:pointer;margin-left:auto;max-width:150px}
+     桌面/横屏仍用第一列表头里的下拉。
+     2026-11-21 七轮（用户反馈「手机竖屏代销银行按钮不显示」）：原生 <select> 在 iOS 上会被
+     系统重绘（白底细边框、箭头与文字贴近），在白底标题行上几乎看不见；改为
+     「透明原生 select（保留系统选单）+ 自绘文字/箭头」按钮，任何平台都清晰可见。 */
+  .np-org-btn{display:none;margin-left:auto;position:relative;align-items:center;height:30px;
+    border:1px solid #cfdde5;border-radius:7px;background:#fff;box-sizing:border-box;flex:none}
+  .np-org-btn-lab{font-family:var(--font);font-size:12px;font-weight:400;color:#2a5563;line-height:28px;
+    padding:0 24px 0 10px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .np-org-btn::after{content:'';position:absolute;right:10px;top:50%;width:5px;height:5px;margin-top:-4px;
+    border-right:1.4px solid #6f8b98;border-bottom:1.4px solid #6f8b98;transform:rotate(45deg);pointer-events:none}
+  .np-org-mini{position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;border:0;
+    opacity:0;cursor:pointer;font-size:12px;-webkit-appearance:none;appearance:none}
   .ts-lane{position:relative;grid-template-rows:42px;align-items:center;border-bottom:1px solid #cfdae2;padding:4px 0}
   .ts-lane:last-of-type{border-bottom:0}
   .ts-lane .org{grid-column:1;grid-row:1/-1;padding-left:12px;font-size:13px;color:#44535f;display:flex;align-items:center;gap:7px;white-space:nowrap}
@@ -1225,7 +1244,7 @@
     /* 手机竖屏 2026-11-21 五轮（用户要求）：新品预告直接去掉表头整条，
        代销机构筛选挪到标题行右侧（#np-org-sel-m），日期已在卡片内逐条展示 */
     .ts-grid{display:none}
-    .np-org-mini{display:block}
+    .np-org-btn{display:inline-flex}
     .ts-lane{display:flex;flex-direction:column;align-items:stretch;gap:8px;border:1px solid var(--rule);border-radius:10px;background:#fff;padding:10px;margin-bottom:10px;min-width:0}
     .ts-lane:last-of-type{margin-bottom:0}
     .ts-lane .org{padding-left:2px;font-weight:700;justify-content:flex-start}
@@ -1848,7 +1867,7 @@
   <!-- ================= 产品 ================= -->
   <div class="tabpane" id="pane-prod" hidden>
     <section>
-      <div class="sec-head"><span class="idx">01</span><h2>新品预告</h2><select class="np-org-mini" id="np-org-sel-m" aria-label="按代销机构筛选"></select></div>
+      <div class="sec-head"><span class="idx">01</span><h2>新品预告</h2><span class="np-org-btn" id="np-org-btn"><span class="np-org-btn-lab" id="np-org-sel-m-lab">代销机构</span><select class="np-org-mini" id="np-org-sel-m" aria-label="按代销机构筛选"><option value="">代销机构</option></select></span></div>
 
       <div class="timeline">
         <div class="ts-grid" id="np-head"></div>
@@ -2092,7 +2111,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261121g';
+      s.src = './assets/dashboard.js?v=20261121h';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();
