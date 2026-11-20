@@ -236,7 +236,7 @@
       "#pane-prod .filters{position:relative}",
       ".sel-pop.prod-sug{position:absolute}",
       "#pane-prod .filters #prod-search:focus{font-size:12px!important}",
-      "#prod-table thead th:nth-child(10) br{display:none}",
+      "#prod-table thead th:nth-child(10) br,",
       "#prod-table thead th:nth-child(11){white-space:nowrap}",
       "持有期放风险等级左侧",
       "lockIOSZoomOnInput",
