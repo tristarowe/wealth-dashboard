@@ -3092,6 +3092,9 @@
     var pop = document.createElement('div');
     pop.className = 'sel-pop prod-sug';
     pop.setAttribute('role', 'listbox');
+    /* 手机横屏：列表滑动到边界后阻止触摸冒泡到页面，避免整页跟着滑动
+       （overscroll-behavior:contain 已覆盖现代浏览器，此处兼容旧版 iOS Safari） */
+    pop.addEventListener('touchmove', function (e) { e.stopPropagation(); }, { passive: true });
     items.forEach(function (p, i) {
       var b = document.createElement('button');
       b.type = 'button';

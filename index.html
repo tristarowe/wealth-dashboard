@@ -245,10 +245,13 @@
   #hold-table td.dcell .dunit,#sum-table td.dcell .dunit{font-family:var(--mono);font-size:13px;font-weight:400;font-variant-numeric:tabular-nums}
   #hold-table td.dcell .dunit,#sum-table td.dcell .dunit{font-style:normal;color:var(--muted);margin-left:1px;vertical-align:baseline}
   /* 盈亏汇总「天数」列：上=持仓天数、下=成立天数，中间细分割线，均不带单位 */
-  #hold-table td.daystack{line-height:1.25}
+  /* 天数两行分割线 2026-11-20：改为绝对定位在「持仓天数/成立天数」两行正中的行边界，
+     与右侧数据列「日均万收/年化」之间的 border-bottom 严格同一水平线；
+     颜色/粗度也与数据列行线 (#f0f4f6, 1px) 完全一致。 */
+  #hold-table td.daystack{position:relative;line-height:1.25}
   #hold-table td.daystack .days{display:block}
-  #hold-table td.daystack .days.sub{color:var(--muted)}
-  #hold-table td.daystack .dsep{display:block;height:1px;background:#e3e9ed;margin:2px auto;width:70%}
+  #hold-table td.daystack .days.sub{color:var(--muted);margin-top:5px}
+  #hold-table td.daystack .dsep{position:absolute;left:0;right:0;top:50%;height:1px;background:#f0f4f6;width:auto}
   /* 四张数据表：表头与数值统一居中，保证同一列上下对齐（产品名称/交易时间仍左对齐） */
   #hold-table thead th,#hold-table tbody td,
   #sum-table thead th,#sum-table tbody td,
@@ -350,8 +353,12 @@
      原生多选框；包装后它不再是 .filters 直接子元素，规则自动失效，
      由下面的 .sel-wrap select 透明覆盖层接管点击。 */
   .filters > select[multiple]{display:none}
-  .filters input[type="search"]{font-family:var(--font);font-size:12.5px;padding:6px 10px;border:1px solid var(--rule);border-radius:7px;background:#fff;color:var(--ink);width:260px;min-width:200px}
-  .filters input[type="search"]:focus{outline:none;border-color:var(--accent)}
+  /* 2026-11-20：#prod-search 为规避 iOS 地址气泡由 type=search 改为 type=text，
+     这里同时覆盖两种类型，保证提示文字/边框/圆角与筛选栏一致（原先 type=text 落到浏览器默认内嵌框、提示不显示） */
+  .filters input[type="search"],.filters input#prod-search{font-family:var(--font);font-size:12.5px;padding:6px 10px;border:1px solid var(--rule);border-radius:7px;background:#fff;color:var(--ink);width:260px;min-width:200px}
+  .filters input[type="search"]:focus,.filters input#prod-search:focus{outline:none;border-color:var(--accent)}
+  /* placeholder 颜色：明确使用 muted，避免部分浏览器默认浅灰导致提示看不清 */
+  .filters input#prod-search::placeholder{color:var(--muted);opacity:1}
   .filters #open-add{margin-left:auto;flex:none}
   .filters #prod-reset{flex:none;color:var(--muted)}
   .filters .filter-tail{display:flex;align-items:center;gap:8px;flex:1 1 auto;min-width:0}
@@ -363,7 +370,8 @@
   .filters .sel-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:0 17px 0 6px;font-family:var(--font);font-size:12px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
   .filters .sel-wrap::after{content:'';position:absolute;right:9px;top:50%;width:5px;height:5px;margin-top:-3.5px;border-right:1.4px solid #8fa5b1;border-bottom:1.4px solid #8fa5b1;transform:rotate(45deg);pointer-events:none}
   .filters .sel-hit{position:absolute;inset:0;z-index:2;display:block;width:100%;height:100%;padding:0;border:0;background:transparent;cursor:pointer;font-size:0;color:transparent}
-  .sel-pop{position:fixed;z-index:250;min-width:132px;max-width:min(80vw,240px);max-height:264px;overflow:auto;background:#fff;border:1px solid #dbe7ed;border-radius:10px;box-shadow:0 12px 28px rgba(28,58,80,.16);padding:4px;-webkit-overflow-scrolling:touch}
+  /* overscroll-behavior:contain 阻止下拉列表滚到边界后把滚动「穿透」给整页（手机横屏滑搜索结果时整页跟着滑动） */
+  .sel-pop{position:fixed;z-index:250;min-width:132px;max-width:min(80vw,240px);max-height:264px;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;background:#fff;border:1px solid #dbe7ed;border-radius:10px;box-shadow:0 12px 28px rgba(28,58,80,.16);padding:4px}
   .sel-opt{display:block;width:100%;text-align:center;border:0;background:transparent;font-family:var(--font);font-size:12.5px;line-height:1.4;color:var(--ink);padding:6px 9px;border-radius:6px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .sel-opt:hover{background:#f2f7fa}
   .sel-opt.on{background:var(--accent-deep);color:#fff;font-weight:700}
@@ -1239,6 +1247,37 @@
     #sum-table tbody tr{height:48px}
     #sum-table tbody td{padding-top:6px;padding-bottom:6px}
   }
+
+  /* ===== 红框数值列统一左对齐 2026-11-20 =====
+     涉及：盈亏日历年度/月度「收益」列、交易流水「份额/金额」列、产品库「今日万收~成立至今」区间列、
+     盈亏汇总「持仓收益/持仓年化 + 7日~成立至今」列、持仓汇总「持仓收益/持仓年化/累计收益/持仓金额」列。
+     只改 text-align，字号/千分位/列宽/行高一律不动。 */
+  /* 盈亏日历：年度表收益列（第2列）+ 月度表收益列（第2列 span） */
+  .year-table thead th:nth-child(2),.year-table tbody td:nth-child(2){text-align:left}
+  .month-row.mhead span:nth-child(2),.month-item > span:nth-child(2){text-align:left}
+  /* 交易流水：份额（第5列）、金额（第7列） */
+  #flow-table thead th:nth-child(5),#flow-table tbody td:nth-child(5),
+  #flow-table thead th:nth-child(7),#flow-table tbody td:nth-child(7){text-align:left}
+  /* 产品库：今日万收（第4列）~ 成立至今（第8列） */
+  #prod-table thead th:nth-child(4),#prod-table tbody td:nth-child(4),
+  #prod-table thead th:nth-child(5),#prod-table tbody td:nth-child(5),
+  #prod-table thead th:nth-child(6),#prod-table tbody td:nth-child(6),
+  #prod-table thead th:nth-child(7),#prod-table tbody td:nth-child(7),
+  #prod-table thead th:nth-child(8),#prod-table tbody td:nth-child(8){text-align:left}
+  /* 盈亏汇总：持仓收益（第6）/持仓年化（第7）+ 7日~成立至今（第10~15）；
+     数据列双行（ma=pwin / mb=ann）都要对齐，表头同步 */
+  #hold-table thead th:nth-child(6),#hold-table tbody tr.ma > td:nth-child(6),
+  #hold-table thead th:nth-child(7),#hold-table tbody tr.ma > td:nth-child(7),
+  #hold-table thead th:nth-child(n+10):nth-child(-n+15),
+  #hold-table tbody tr.ma > td.pwin,
+  #hold-table tbody tr.mb > td.awin{text-align:left}
+  /* 盈亏汇总非双行模式（仅万收/仅年化）：第10~15列数据单元格左对齐 */
+  #hold-table tbody tr.ma > td.pwin,#hold-table tbody tr.ma > td.awin{text-align:left}
+  /* 持仓汇总：持仓收益（第3）/持仓年化（第4）/累计收益（第5）/持仓金额（第6） */
+  #sum-table thead th:nth-child(3),#sum-table tbody td:nth-child(3),
+  #sum-table thead th:nth-child(4),#sum-table tbody td:nth-child(4),
+  #sum-table thead th:nth-child(5),#sum-table tbody td:nth-child(5),
+  #sum-table thead th:nth-child(6),#sum-table tbody td:nth-child(6){text-align:left}
 
   /* 导出时撑满基准宽度，避免窄窗口裁切 */
   .page.is-exporting{width:1320px}
