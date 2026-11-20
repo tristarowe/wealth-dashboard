@@ -407,6 +407,9 @@
   #prod-pages{display:flex;align-items:center;gap:8px}
   .modal{position:fixed;inset:0;background:rgba(12,32,42,.35);display:flex;align-items:center;justify-content:center;z-index:200}
   .modal[hidden]{display:none}
+  /* 弹窗打开时锁住背景页 2026-11-20：JS 记 scrollY 后用 fixed+负 top 冻结 body，
+     防止 iOS Safari 滚动穿透；关闭时恢复原位（纯 overflow:hidden 在 iOS 上无效） */
+  body.modal-lock{overflow:hidden;position:fixed;left:0;right:0;width:100%}
   .modal-card{background:#fff;border-radius:14px;width:620px;max-width:calc(100vw - 40px);max-height:calc(100vh - 60px);overflow:auto;padding:18px 20px;box-shadow:0 20px 60px rgba(9,46,60,.25)}
   .modal-head{display:flex;align-items:center;justify-content:space-between;padding-bottom:10px;border-bottom:1px solid var(--rule);font-size:15px}
   .modal-head .x{border:0;background:transparent;font-size:20px;line-height:1;color:var(--muted);cursor:pointer}
@@ -774,9 +777,10 @@
        自适应布局整列 display:none 才会真正收掉（固定列宽下仍用 visibility 保持列对齐） */
     #prod-table.no-p10k [data-col="p10k"]{display:none}
     #hold-table colgroup col,#sum-table colgroup col,#flow-table colgroup col{width:auto !important}
-    #hold-table col:nth-child(1){width:26px !important}
+    /* 横屏序号列 2026-11-20：26→32px 让「序号」二字不换行（23px 字宽+padding），从产品名列匀出 6px，总宽不变 */
+    #hold-table col:nth-child(1){width:32px !important}
     /* 横屏产品名加宽（原 92px 会把长名称压成两三行、甚至单字换行） */
-    #hold-table col:nth-child(2){width:104px !important}
+    #hold-table col:nth-child(2){width:98px !important}
     /* 净值日期列放原生下拉：留出「净值日期」四字＋箭头，从产品名列让位 */
     #hold-table col:nth-child(3){width:72px !important}
     #hold-table col:nth-child(4){width:44px !important}
@@ -1508,8 +1512,9 @@
         <select id="incep-sel" aria-label="按成立月份筛选" multiple>
           <option value="">成立月份</option>
         </select>
-        <button class="chip" data-flag="new">新品</button>
         <span class="filter-tail">
+          <!-- 新品按钮 2026-11-20 移到第二行首位（与收藏/重置/搜索同组），横屏筛选栏更整齐 -->
+          <button class="chip" data-flag="new">新品</button>
           <button class="chip" data-flag="fav">★ 收藏</button>
           <button class="chip" id="prod-reset" title="清空搜索与全部筛选条件">↺ 重置</button>
           <input type="search" id="prod-search" placeholder="搜索产品名称" aria-label="搜索产品名称">
@@ -1534,7 +1539,7 @@
               <th class="c sortable" data-sort="w7">7日</th>
               <th class="c sortable" data-sort="w14">14日</th>
               <th class="c sortable" data-sort="w30">30日</th>
-              <th class="r sortable" data-sort="ann">成立<br>年化</th>
+              <th class="c sortable" data-sort="ann">成立<br>至今</th>
               <th class="c sortable" data-sort="risk">风险</th><th class="c sortable" data-sort="term">持有期</th>
               <th class="r sortable" data-sort="nav">净值</th>
               <th class="c sortable" data-sort="cdate">成立<br>日期</th>
@@ -1714,7 +1719,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261120j';
+      s.src = './assets/dashboard.js?v=20261120k';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();

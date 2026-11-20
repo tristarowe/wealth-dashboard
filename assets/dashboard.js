@@ -2644,6 +2644,12 @@
         return '<td class="c st"><b class="m-p10k ' + colorBy(w.per) + '">' + withBadge(fmt2(w.per), mark) +
           '</b><i class="m-ann ' + colorBy(w.ann) + '">' + withBadge(fmtAnn(w.ann), mark) + '</i></td>';
       }
+      /* 成立至今列：上日均万收 / 下成立年化，与 30日列同构；日均由年化按 per=ann/3.65 反算，口径自洽 */
+      function sinceCell(m) {
+        var per = (typeof m.sinceAnn === 'number') ? m.sinceAnn / 3.65 : null;
+        return '<td class="c st"><b class="m-p10k ' + colorBy(per) + '">' + fmt2(per) +
+          '</b><i class="m-ann ' + colorBy(m.sinceAnn) + '">' + fmtAnn(m.sinceAnn) + '</i></td>';
+      }
 
       return '<tr data-pid="' + p.id + '">' +
         '<td class="c"><button class="stars" data-fav="' + p.id + '" title="' +
@@ -2665,7 +2671,8 @@
         '<td class="c num">' + (m.latestDate ? withBadge(mmdd(m.latestDate), navLagBadge(p)) : '<span class="muted">待披露</span>') + '</td>' +
         '<td class="r num ' + colorBy(m.todayPer) + '" data-col="p10k">' + fmtSigned(m.todayPer) + '</td>' +
         winCell(w7) + winCell(w14) + winCell(w30) +
-        '<td class="r num ' + colorBy(m.sinceAnn) + '" data-col="ann">' + fmtAnn(m.sinceAnn) + '</td>' +
+        /* 成立至今 2026-11-20：与 30日列同款双行——上日均万收、下成立年化，同口径自洽（ann≈per×3.65） */
+        sinceCell(m) +
         '<td class="c pmeta">' + (riskShort(p) || '—') + '</td>' +
         '<td class="c pmeta">' + term + '</td>' +
         '<td class="r num">' + (m.latestNav != null ? fmtNav(m.latestNav) : '<span class="muted">待披露</span>') + '</td>' +
@@ -3293,6 +3300,8 @@
       renderAddHistory();
       var m = document.getElementById('modal-add');
       if (m) m.hidden = false;
+      /* 2026-11-20：打开弹窗即后台预热 OCR 引擎，把引擎加载耗时藏进用户填表时间 */
+      if (typeof warmupOcr === 'function') warmupOcr();
     });
   }
 
@@ -3304,6 +3313,9 @@
   var OCR_BASE = './_shared/js/ocr/';
   var ocrWorkerPromise = null;
   var ocrLibPromise = null;
+  /* 2026-11-20：进度回调与 worker 解耦——worker 可在打开弹窗时预热（此时无 UI 回调），
+     点识别时再挂上回调，recognize 阶段进度照常显示；旧写法把 logger 绑在创建时的 onProgress 上，预热后进度会丢失。 */
+  var ocrProgressCb = null;
   /* 把图片 dataURL 缩放到长边不超过 maxSide，返回压缩后的 jpeg dataURL。
      失败时回传 null，调用方回退用原图。手机大截图靠这一步避免内存溢出。 */
   function shrinkImage(dataUrl, maxSide, done) {
@@ -3366,6 +3378,7 @@
     return ocrLibPromise;
   }
   function getOcrWorker(onProgress) {
+    if (typeof onProgress === 'function') ocrProgressCb = onProgress;
     if (ocrWorkerPromise) return ocrWorkerPromise;
     ocrWorkerPromise = loadOcrLib().then(function () {
       return Tesseract.createWorker('chi_sim', 1, {
@@ -3374,8 +3387,8 @@
         langPath: OCR_BASE,
         gzip: true,
         logger: function (m) {
-          if (onProgress && m && m.status && /load|recogniz|initializ/i.test(m.status)) {
-            onProgress(m.status + (typeof m.progress === 'number' ? ' ' + Math.round(m.progress * 100) + '%' : ''));
+          if (ocrProgressCb && m && m.status && /load|recogniz|initializ/i.test(m.status)) {
+            ocrProgressCb(m.status + (typeof m.progress === 'number' ? ' ' + Math.round(m.progress * 100) + '%' : ''));
           }
         }
       });
@@ -3384,6 +3397,13 @@
       throw e;
     });
     return ocrWorkerPromise;
+  }
+  /* 2026-11-20：打开「添加产品」弹窗即后台预热引擎（下载+编译 3.8MB wasm、1.7MB 中文包）。
+     这段耗时在手机上可达数十秒，藏进用户「选图/填表」的时间后，点识别时 worker 已就绪，
+     只剩 recognize 本身，体感从约 1 分钟降到几秒。失败静默，不影响后续正式识别重试。 */
+  function warmupOcr() {
+    if (ocrWorkerPromise) return ocrWorkerPromise;
+    return getOcrWorker().catch(function () { return null; });
   }
   function aiMsg(text, kind) {
     var el = document.getElementById('add-ai-msg');
@@ -3575,7 +3595,8 @@
     var run = document.getElementById('add-ocr-run');
     if (!addState.image) { aiMsg('请先上传一张产品详情页截图', 'err'); return; }
     if (run) run.disabled = true;
-    aiMsg('正在加载本地识别引擎（首次约需几秒）…', 'busy');
+    /* 2026-11-20：弹窗打开时已预热引擎，这里直接提示识别中；若仍未就绪，进度回调会补充显示加载状态 */
+    aiMsg(ocrWorkerPromise ? '正在本地识别…' : '正在加载本地识别引擎…', 'busy');
     /* 识别超时保护 2026-11-20：手机首次加载中文 wasm 模型较慢，60→150 秒，降低误判；超时后仍可重试或手工填写 */
     var timedOut = false;
     var timer = setTimeout(function () {
@@ -3668,9 +3689,10 @@
       var reader = new FileReader();
       reader.onload = function () {
         var raw = String(reader.result || '');
-        /* 大图（手机截图常 1200×2600）直接喂给本地 OCR 极易在手机上内存溢出/超时，
-           这里先把长边压到 1600px 再识别，速度与稳定性都大幅提升，文字清晰度足够。 */
-        shrinkImage(raw, 1600, function (small) {
+        /* 大图（手机截图常 1200×2600）直接喂给本地 OCR 极易在手机上内存溢出/超时。
+           2026-11-20：长边 1600→1280px（面积少 36%），纯 CPU wasm 识别耗时明显下降；
+           产品详情页字号大，1280px 文字仍清晰、识别率不受影响。 */
+        shrinkImage(raw, 1280, function (small) {
           addState.image = small || raw;
           addState.filename = f.name;
           var txt = document.getElementById('add-image-text');
@@ -5626,6 +5648,42 @@
     });
   }
 
+  /* 弹窗打开时锁背景滚动 2026-11-20：覆盖添加产品/新增交易/确认框。
+     用 MutationObserver 监听三个 modal 的 hidden 变化，任一打开即锁 body（记 scrollY、fixed+负 top），
+     全部关闭再恢复原位——覆盖关闭按钮、点遮罩、提交成功、取消等所有开关路径，无需逐个改调用点。
+     纯 overflow:hidden 在 iOS Safari 会滚动穿透，故用 fixed 方案。 */
+  function bindModalScrollLock() {
+    var ids = ['modal-add', 'modal-trade', 'modal-confirm'];
+    var modals = ids.map(function (id) { return document.getElementById(id); }).filter(Boolean);
+    if (!modals.length) return;
+    var savedY = 0;
+    var locked = false;
+    function anyOpen() {
+      return modals.some(function (m) { return !m.hidden; });
+    }
+    function sync() {
+      var open = anyOpen();
+      if (open && !locked) {
+        savedY = window.pageYOffset || document.documentElement.scrollTop || 0;
+        document.body.style.top = (-savedY) + 'px';
+        document.body.classList.add('modal-lock');
+        locked = true;
+      } else if (!open && locked) {
+        document.body.classList.remove('modal-lock');
+        document.body.style.top = '';
+        locked = false;
+        try { window.scrollTo(0, savedY); } catch (e) { window.scrollTo(0, savedY); }
+      }
+    }
+    if (window.MutationObserver) {
+      modals.forEach(function (m) {
+        var mo = new MutationObserver(function () { sync(); });
+        mo.observe(m, { attributes: true, attributeFilter: ['hidden'] });
+      });
+    }
+    sync();
+  }
+
   function init() {
     populateOrgSelect();
     populateIncepSelect();
@@ -5646,6 +5704,7 @@
     bindTradeModal();
     initDatePicker();
     bindAddModal();
+    bindModalScrollLock();
     bindTableScrollChain();
     initFloatHeads();
     renderAll();
