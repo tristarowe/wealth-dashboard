@@ -4846,10 +4846,8 @@
       var inflightTip = h.pending
         ? ' title="申购待确认：确认日净值未披露，按最新净值估算计入"'
         : ' title="在途：确认日未到或确认日净值未披露，确认后自动更新"';
-      /* 列序 2026-11-21 四轮（用户要求）：持仓金额紧跟产品名称，产品净值放持仓份额右侧；
-         手机端隐藏产品净值列，改为名称下方小字灰字（.nav-under） */
-      var navUnder = (h.latestNav !== null && h.latestNav !== undefined && !isNaN(h.latestNav))
-        ? '<span class="nav-under" title="产品净值（最新披露日 ' + (h.latestDate || '') + '）">' + fmtNav(h.latestNav) + '</span>' : '';
+      /* 列序 2026-11-21 四轮／八轮（用户要求）：持仓金额紧跟产品名称，产品净值放持仓份额右侧；
+         八轮起产品净值**桌面与手机都是独立列**，名称下方不再放净值小字（.nav-under 已停用） */
       return '<tr>' +
         '<td><div class="pname"><a class="plink" href="javascript:void(0)" data-goto-prod="' + p.id + '" title="在产品库中查看「' + (p.name || '') + '」">' +
           prodDispName(p) + '</a>' +
@@ -4858,7 +4856,6 @@
           (h.cleared ? '<span class="cleared-date">' +
             (h.tx && h.tx.confirmDate ? h.tx.confirmDate.slice(5).replace('-', '.') : '') + ' 清仓</span>' : '') +
           '</span>' +
-          navUnder +
           '</div></td>' +
         '<td class="r num mv-col">' + fmtMoney(h.mv) + '</td>' +
         '<td class="c num">' + (h.latestDate ? withBadge(mmdd(h.latestDate), navLagBadge(h.product)) : '—') + '</td>' +

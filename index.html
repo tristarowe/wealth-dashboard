@@ -1094,13 +1094,13 @@
     #hold-table thead th:nth-child(3){padding-left:2px;padding-right:2px}
     #hold-table .th-select{width:100%;max-width:100%;font-size:11px;padding:1px 0}
     #hold-table tbody td:nth-child(2){min-width:0;max-width:none}
-    /* 持仓汇总竖屏 2026-11-21 五轮（用户要求「净值日期～持仓份额列宽列距统一」）：
-       「产品名称｜持仓金额｜净值日期｜持仓收益｜持仓年化｜累计收益｜持仓份额｜(产品净值已隐藏)｜
-       持仓天数｜成立天数｜操作」。数据列一律 72px 等宽、左右内边距统一 4px，
-       列与列之间视觉间距完全一致；合计 112+72×6+46+46+118 = 754px。
-       首屏（iPhone393 内容宽 367px）看全名称、持仓金额、净值日期、持仓收益，轻滑即见年化。
+    /* 持仓汇总竖屏 2026-11-21 五轮／八轮（用户要求「净值日期～持仓份额列宽列距统一」，
+       八轮再把产品净值单独成列、放持仓份额右侧）：
+       「产品名称｜持仓金额｜净值日期｜持仓收益｜持仓年化｜累计收益｜持仓份额｜产品净值｜
+       持仓天数｜成立天数｜操作」。数据列（第2~8列）一律 72px 等宽、左右内边距统一 4px，
+       列与列之间视觉间距完全一致；合计 112+72×7+46+46+118 = 826px。
        操作 118（三个按钮不折行）；天数两列 46（四字表头仍可两行）。 */
-    #sum-table{table-layout:fixed;width:754px;min-width:754px}
+    #sum-table{table-layout:fixed;width:826px;min-width:826px}
     #sum-table colgroup col{width:auto !important}
     #sum-table col:nth-child(1){width:112px !important}
     #sum-table col:nth-child(2){width:72px !important}
@@ -1160,12 +1160,15 @@
        产品名称与「操作」等 2 字表头保持单行 */
     #hold-table thead th br,
     #flow-table thead th br,#prod-table thead th br{display:block}
-    /* 产品库竖屏例外（2026-11-21 五轮 用户要求）：净值日期 / 今日万收 / 成立至今 三个表头
-       单行呈现（第 2/3/7 列），其余表头仍两行。选择器带 :nth-child 优先级高于上一行，无需调整顺序 */
+    /* 产品库竖屏例外（2026-11-21 五轮／八轮 用户要求）：净值日期 / 今日万收 / 成立至今 /
+       产品净值 / 成立日期 五个表头单行呈现（第 2/3/7/10/11 列），其余表头仍两行。
+       选择器带 :nth-child 优先级高于上一行，无需调整顺序 */
     #prod-table thead th:nth-child(2),#prod-table thead th:nth-child(3),
-    #prod-table thead th:nth-child(7){white-space:nowrap}
+    #prod-table thead th:nth-child(7),#prod-table thead th:nth-child(10),
+    #prod-table thead th:nth-child(11){white-space:nowrap}
     #prod-table thead th:nth-child(2) br,#prod-table thead th:nth-child(3) br,
-    #prod-table thead th:nth-child(7) br{display:none}
+    #prod-table thead th:nth-child(7) br,#prod-table thead th:nth-child(10) br,
+    #prod-table thead th:nth-child(11) br{display:none}
     /* 持仓汇总例外（2026-11-21 用户要求）：竖屏表头一律单行，只有「持仓天数/成立天数」两列换行，
        见上方 #sum-table thead th br 规则 */
     .sec-head{gap:8px;padding-bottom:7px;margin-bottom:8px}
@@ -1546,22 +1549,14 @@
   #pane-prod .filters{position:relative}
   .sel-pop.prod-sug{position:absolute}
 
-  /* ===== 持仓汇总 2026-11-21 四轮（用户要求）=====
+  /* ===== 持仓汇总 2026-11-21 四轮 / 八轮（用户要求）=====
      ① 持仓金额紧跟产品名称、产品净值放持仓份额右侧（HTML/JS 已改列序）；
-     ② 手机端（含横屏）取消「产品净值」独立列，改为产品名称下方 10.5px 灰色小字；
+     ② 产品净值：桌面与手机**一律独立成列**（2026-11-21 八轮改为手机也保留该列，
+        不再在产品名称下方显示小字 `.nav-under`）；
      ③ 数值列（尤其持仓份额）一律右对齐 + 等宽数字 + 不换行，保证小数点严格同一竖线。 */
   #sum-table tbody td.shares-col,#sum-table tbody td.nav-col{white-space:nowrap;font-variant-numeric:tabular-nums}
   /* 持仓金额用浅蓝（与盈亏汇总名称下的持仓金额同一色，2026-11-21 用户要求） */
   #sum-table tbody td.mv-col{color:var(--blue-soft)}
-  #sum-table .pname .nav-under{display:none;font-family:var(--mono);font-size:10.5px;line-height:1.5;
-    color:var(--muted);font-weight:400;margin-top:1px;white-space:nowrap}
-  @media (max-width:968px){
-    /* 整列收起：col / 表头 / 单元格三处一起 display:none，固定列宽下才不会留空列 */
-    #sum-table col:nth-child(8),
-    #sum-table thead th:nth-child(8),
-    #sum-table tbody td:nth-child(8){display:none}
-    #sum-table .pname .nav-under{display:block}
-  }
 </style>
 </head>
 <body>
@@ -1892,7 +1887,7 @@
           <option>1–14 天</option><option>15–30 天</option><option>31–60 天</option><option>61–90 天</option><option>91–180 天</option><option>180 天以上</option>
         </select>
         <select id="risk-sel" aria-label="按风险等级筛选" multiple>
-          <option value="">风险等级</option>
+          <option value="">风险</option>
           <option>R1 低风险</option><option>R2 中低风险</option><option>R3 中风险</option><option>R4 中高风险</option><option>R5 高风险</option>
         </select>
         <select id="hold-sel" aria-label="按持仓状态筛选" multiple>
@@ -1933,7 +1928,8 @@
               <th class="c sortable" data-sort="w14">14日</th>
               <th class="c sortable" data-sort="w30">30日</th>
               <th class="c sortable" data-sort="ann">成立<br>至今</th>
-              <th class="c sortable" data-sort="risk">风险<br>等级</th><th class="c sortable" data-sort="term">持有期</th>
+              <!-- 2026-11-21 八轮（用户要求）：风险等级改名风险，表头单行 -->
+              <th class="c sortable" data-sort="risk">风险</th><th class="c sortable" data-sort="term">持有期</th>
               <th class="r sortable" data-sort="nav">产品<br>净值</th>
               <th class="c sortable" data-sort="cdate">成立<br>日期</th>
               <th class="c">操作</th>
@@ -2111,7 +2107,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261121h';
+      s.src = './assets/dashboard.js?v=20261121i';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();
