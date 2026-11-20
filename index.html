@@ -12,6 +12,9 @@
     --accent:#0e5a73; --accent-deep:#0a3c4e; --gold:#B8860B;
     /* 2026-11-21 新增「品牌蓝」：模块标题与持仓金额用，比 accent 更偏蓝、更亮一档 */
     --blue:#16679b;
+    /* 2026-11-21 新增「浅蓝」：产品名称下的持仓金额用。
+       比品牌蓝亮一档但仍满足 AA（白底 4.78:1、卡片底 #F9FFFF 4.73:1），10.5px 小字也读得清 */
+    --blue-soft:#2878af;
     --up:#c0392b; --down:#1e8449;
     --mono:'Consolas','JetBrainsMono',monospace;
     --font:'Microsoft YaHei','PingFang SC','Hiragino Sans GB',sans-serif;
@@ -122,7 +125,7 @@
   .pname .pn-row>.pn-last{white-space:nowrap}
   .pname .pn-row>.thumb-under{margin-left:2px;vertical-align:baseline}
   .pname .salech{display:block;font-size:10.5px;line-height:1.5;color:var(--muted);font-weight:400;letter-spacing:0;margin-top:1px}
-  .pname .mv-under{display:block;font-size:10.5px;line-height:1.5;color:var(--muted);font-weight:400;letter-spacing:0;margin-top:1px;font-family:var(--mono)}
+  .pname .mv-under{display:block;font-size:10.5px;line-height:1.5;color:var(--blue-soft);font-weight:400;letter-spacing:0;margin-top:1px;font-family:var(--mono)}
   .plink{color:inherit;text-decoration:none;border-bottom:1px dashed #b9ccd4;cursor:pointer}
   .plink:hover{color:var(--accent-deep);border-bottom-color:var(--accent)}
   .prod-link{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;margin-left:5px;vertical-align:-2px;border-radius:4px;background:#edf6f9;color:var(--accent-deep);text-decoration:none}
@@ -1624,6 +1627,7 @@
           <tbody id="hold-body"></tbody>
         </table>
       </div>
+      <div class="note-line">持仓年化 = 持仓收益 ÷ 持仓成本 × 365 ÷ 计息天数；计息天数 = 最新净值日 − 成交净值日（申购日 T 日，非确认日），与买入所用净值同口径。计息不足 7 天的年化前标 <sup class="dag">*</sup>，样本过短、线性折算波动大，仅供参考。</div>
       <div class="swipe-tip">← 左右滑动查看完整指标 →</div>
     </section>
 
@@ -2037,7 +2041,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261121d';
+      s.src = './assets/dashboard.js?v=20261121e';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();

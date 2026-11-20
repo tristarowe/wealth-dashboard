@@ -67,6 +67,57 @@
     });
   }
 
+  /* 短样本阈值：计息天数少于此值时，年化属于「1~6 天的线性折算」，波动极大，
+     只作参考（表格里加 * 并置灰）。2026-11-21 用户要求「以后不再出这类错」后新增。 */
+  var SHORT_ANN_DAYS = 7;
+
+  /* 年化口径不变量：起点=成交净值日、终点=最新净值日、天数=两者相差天数。
+     违反即写 console.error 并记进 window.__ANN_GUARD_ERRORS__，供自动化回归断言抓取。
+     2026-11-21 的事故（悦享天添24号 14.51% → 7.25%）就是「起点错用确认日」，
+     这里把口径钉成可执行断言，避免再次静默算错。 */
+  window.__ANN_GUARD_ERRORS__ = [];
+  function assertHoldMath(p, rec, start, end, days) {
+    if (!start || !end) return;
+    var msgs = [];
+    var calc = dayDiff(parseDate(start), parseDate(end));
+    if (calc !== days) {
+      msgs.push('计息天数与区间不符：' + start + '~' + end + ' 应为 ' + calc + ' 天，实际 ' + days);
+    }
+    if (p.latestDate && end !== p.latestDate) {
+      msgs.push('计息终点应取最新净值日 ' + p.latestDate + '，实际 ' + end);
+    }
+    /* 起点必须等于「首个批次的成交净值日」（早于产品成立日时取成立日）：
+       这条才是 14.51% 事故的直接防线——把起点改回确认日、或改回「今天 − 起息日」，这里立刻报错。 */
+    var expect = rec.lots && rec.lots[0] && rec.lots[0].navDate;
+    var incep = inceptionDateOf(p);
+    if (expect && incep && expect < incep) expect = incep;
+    if (expect && start !== expect) {
+      msgs.push('计息起点应为首个批次成交净值日 ' + expect + '，实际 ' + start);
+    }
+    if (msgs.length) {
+      var text = msgs.join('；');
+      /* computeHoldings 可能因数据同步重算多次，同一产品同一问题只记一条 */
+      var dup = window.__ANN_GUARD_ERRORS__.some(function (x) { return x.pid === p.id && x.msg === text; });
+      if (!dup) {
+        window.__ANN_GUARD_ERRORS__.push({ pid: p.id, name: p.name, msg: text });
+        if (window.console && console.error) console.error('[ANN-GUARD] ' + (p.name || p.id) + '：' + text);
+      }
+    }
+  }
+
+  /* 年化单元格 tooltip：把算式和区间摊开，任何一格都能当场验算 */
+  function annTipOf(h) {
+    if (!h || h.ann === null || h.ann === undefined || !isFinite(h.ann)) return '计息天数不足，暂不折算年化';
+    /* 盈亏汇总是 unrealized、交易汇总行是 holdProfit，两者同义（均为持仓收益） */
+    var gain = (h.unrealized !== undefined && h.unrealized !== null) ? h.unrealized : h.holdProfit;
+    var tip = '持仓年化 = 持仓收益 ' + fmtMoney(gain) + ' ÷ 持仓成本 ' + fmtMoney(h.cost) +
+      ' × 365 ÷ 计息 ' + h.accrualDays + ' 天 = ' + h.ann.toFixed(2) + '%' +
+      '；计息区间 ' + (h.accrualStart || '') + ' 至 ' + (h.latestDate || '') +
+      '（起点为成交净值日，不是确认日）';
+    if (h.annShort) tip += '；样本仅 ' + h.accrualDays + ' 天，线性折算波动大，仅供参考';
+    return tip;
+  }
+
   /* 产品在指定日期披露的净值，未披露返回 null */
   function navOnDate(p, date) {
     if (!p || !p.dates || !date) return null;
@@ -788,6 +839,11 @@
       var accrualStart = (rec.lots && rec.lots[0] && rec.lots[0].navDate) || daysStart;
       if (incep && accrualStart && accrualStart < incep) accrualStart = incep;
       var accrualDays = alive ? Math.max(0, dayDiff(parseDate(accrualStart), parseDate(accrualEnd))) : 0;
+      /* 计息天数必须与分子同口径的硬校验（2026-11-21）：分子 unrealized 是按成交净值买入后的
+         市值变化，起点即「成交净值日」；若分母改用确认日会少算 1 天、把新仓年化放大近一倍
+         （中银悦享天添24号曾因此显示 14.51%，实际 7.25%）。这里做一次不变量自检，
+         任何后续改动把起点改回确认日、或把终点改成今天，都会在控制台直接报错。 */
+      if (alive) assertHoldMath(p, rec, accrualStart, accrualEnd, accrualDays);
       var costNav = alive ? rec.cost / rec.shares : 0;
       var lastPer = p.per10k[n - 1];
       /* 「持仓收益」只算当前仍持有份额的盈亏（市值 − 剩余成本），与建行 App 口径一致；
@@ -818,6 +874,9 @@
         invested: invested,
         profitRate: rec.cost > 0 ? unrealized / rec.cost * 100 : null,
         ann: (accrualDays > 0 && rec.cost > 0) ? unrealized / rec.cost * 365 / accrualDays * 100 : null,
+        /* 计息区间与短样本标记：表格据此加 * 并置灰，tooltip 据此处摊开算式 */
+        accrualStart: accrualStart,
+        annShort: accrualDays > 0 && accrualDays < SHORT_ANN_DAYS,
         days: days,
         accrualDays: accrualDays,
         income: incomePending ? 0 : lastPer * incomeShares / 10000,
@@ -1456,7 +1515,9 @@
         : '暂无持仓';
       html += '<td class="r num ' + colorBy(h ? h.unrealized : null) + '"' + rs + ' title="' + holdTip + '">' +
         fmtSigned(h ? h.unrealized : null) + '</td>';
-      html += '<td class="r num ' + colorBy(h ? h.ann : null) + '"' + rs + '>' + fmtAnnCell(h ? h.ann : null) + '</td>';
+      html += '<td class="r num ' + (h && h.annShort ? 'muted' : colorBy(h ? h.ann : null)) + '"' + rs +
+        ' title="' + (h ? annTipOf(h) : '') + '">' +
+        fmtAnnCell(h ? h.ann : null, h && h.annShort ? '<sup class="dag" title="计息不足 ' + SHORT_ANN_DAYS + ' 天，年化为短样本折算，仅供参考">*</sup>' : '') + '</td>';
       var listDays = listingDaysOf(p);
       var daysTip = (h ? '持仓天数 ' + h.days + ' 天 = 今天 − 起息日 ' + (h.effStartDate || '') +
           '；年化按计息 ' + h.accrualDays + ' 天（至最新净值日 ' + (h.latestDate || '') + '）折算' : '') +
@@ -4690,7 +4751,8 @@
         product: h.product, latestDate: h.latestDate, latestNav: h.latestNav,
         shares: h.shares, cost: h.cost, mv: h.mv, profit: h.profit, holdProfit: h.unrealized,
         realized: h.realized, ann: h.ann,
-        days: h.days, accrualDays: h.accrualDays, cleared: h.cleared, tx: h.tx, pending: false
+        days: h.days, accrualDays: h.accrualDays, accrualStart: h.accrualStart, annShort: h.annShort,
+        cleared: h.cleared, tx: h.tx, pending: false
       });
     });
     var pend = {};
@@ -4785,7 +4847,8 @@
           '</div></td>' +
         '<td class="c num">' + (h.latestDate ? withBadge(mmdd(h.latestDate), navLagBadge(h.product)) : '—') + '</td>' +
         '<td class="r num ' + colorBy(h.holdProfit) + '" title="持仓收益（仅当前持仓份额）= 市值 − 剩余成本">' + fmtSigned(h.holdProfit) + '</td>' +
-        '<td class="r num ' + colorBy(h.ann) + '">' + fmtAnnCell(h.ann) + '</td>' +
+        '<td class="r num ' + (h.annShort ? 'muted' : colorBy(h.ann)) + '" title="' + annTipOf(h) + '">' +
+          fmtAnnCell(h.ann, h.annShort ? '<sup class="dag" title="计息不足 ' + SHORT_ANN_DAYS + ' 天，年化为短样本折算，仅供参考">*</sup>' : '') + '</td>' +
         '<td class="r num ' + colorBy(h.profit) + '" title="累计收益 = 持仓收益 + 已赎回部分已实现">' + fmtSigned(h.profit) + '</td>' +
         '<td class="r num">' + fmtMoney(h.mv) + '</td>' +
         '<td class="c num">' + fmtNav(h.latestNav) + '</td>' +
