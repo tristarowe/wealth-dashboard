@@ -5461,12 +5461,25 @@
   var FLOAT_HEADS = [];
   var floatTicking = false;
 
+  /* 手机布局 = 竖屏窄屏 或 矮横屏（手机横屏宽 844~932，光看 max-width 会漏掉） */
+  function isPhoneLayout() {
+    return window.matchMedia('(max-width:760px)').matches ||
+           window.matchMedia('(orientation:landscape) and (max-height:520px)').matches;
+  }
+
+  /* 趋势图 tooltip 用 appendToBody:true 挂在 body 上：手机上划过图表后切页/滚动，
+     它不会随图表隐藏，会残留在页面底部（甚至把页面撑出一大片空白）。滚动与切 tab 时主动收起。 */
+  function hideTrendTip() {
+    if (!trendChart) return;
+    try { trendChart.dispatchAction({ type: 'hideTip' }); } catch (e) {}
+  }
+
   function buildFloatHeads() {
     FLOAT_HEADS.forEach(function (h) {
       if (h.box.parentNode) h.box.parentNode.removeChild(h.box);
     });
     FLOAT_HEADS = [];
-    if (!window.matchMedia('(max-width:760px)').matches) return;
+    if (!isPhoneLayout()) return;
     var wraps = document.querySelectorAll('.tbl-scroll');
     Array.prototype.forEach.call(wraps, function (wrap) {
       var table = wrap.querySelector('table');
@@ -5507,7 +5520,11 @@
   function onFloatScroll() {
     if (floatTicking) return;
     floatTicking = true;
-    requestAnimationFrame(function () { floatTicking = false; updateFloatHeads(); });
+    requestAnimationFrame(function () {
+      floatTicking = false;
+      updateFloatHeads();
+      hideTrendTip();
+    });
   }
 
   function initFloatHeads() {
@@ -5520,6 +5537,7 @@
     /* 切换 tab / 切换页面后容器位置变化，滚动事件不一定触发，补一帧重算 */
     document.addEventListener('click', function (e) {
       if (e.target && e.target.closest && e.target.closest('.tab')) {
+        hideTrendTip();
         setTimeout(updateFloatHeads, 60);
       }
     }, { passive: true });
@@ -5529,8 +5547,9 @@
     /* 手机滚动丝滑化（2026-11-20）：
        不再用 touchmove/wheel 里 preventDefault + window.scrollBy 手动交接——那种逐帧手动滚动
        没有惯性、松手即停，正是「滑到表格顶/底卡住」的根因。
-       改为完全依赖浏览器原生滚动链：.tbl-scroll 的 overscroll-behavior-y:auto 让表格内部
-       滚到顶/底后由原生交还给页面（带惯性、丝滑），表头 sticky 仍保持冻结吸顶。
+       改为完全依赖浏览器原生滚动链：手机端（竖屏+横屏）已取消表格内部纵向滚动，表格整段
+       展开、整页滚动，手势不再被吞在表格边界；表头改由 .float-head 克隆层冻结吸顶。
+       桌面端仍限高内部滚动，overscroll-behavior-y:auto 让滚到顶/底后由原生交还页面。
        这里只兜底设置滚动链属性，不拦截任何手势。 */
     var els = document.querySelectorAll('.tbl-scroll');
     Array.prototype.forEach.call(els, function (el) {

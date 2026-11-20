@@ -601,17 +601,24 @@
   /* 横向滚动 + 冻结首列；纵向超长时表头吸顶（滚动容器即卡片，表头 sticky 才生效） */
   /* 纵向超长时表头吸顶；滚动到顶/底要能把手势交还给页面（不能设 overscroll-behavior:contain，
      否则内部滚到尽头后页面卡住划不动） */
-  .tbl-scroll{overflow:auto;max-height:min(72vh,620px);overscroll-behavior-x:contain;overscroll-behavior-y:auto;scrollbar-gutter:stable}
+  .tbl-scroll{overflow:auto;max-height:min(72vh,620px);overscroll-behavior-x:contain;overscroll-behavior-y:auto}
   /* 细滚动条：避免系统粗滚动条浮在表格内容上、遮挡列文字（2026-11-20） */
   .tbl-scroll{scrollbar-width:thin;scrollbar-color:#c7d2d9 transparent}
   .tbl-scroll::-webkit-scrollbar{width:6px;height:6px}
   .tbl-scroll::-webkit-scrollbar-track{background:transparent}
   .tbl-scroll::-webkit-scrollbar-thumb{background:#c7d2d9;border-radius:6px}
   .tbl-scroll::-webkit-scrollbar-thumb:hover{background:#a9b8c1}
-  /* 手机横屏：可视高度只有 320–390px，72vh 只剩 4 行；贴近满屏高度可多显示 1–2 行，
-     首列与表头仍固定，纵向滚到尽头照旧把手势交还页面 */
+  /* 手机横屏也改成整页滚动（2026-11-20）：内部纵向滚动容器在横屏同样会卡在边界，
+     统一交给页面；表头由 .float-head 克隆层冻结。 */
   @media (orientation:landscape) and (max-height:520px){
-    .tbl-scroll{max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px)}
+    .tbl-scroll{max-height:none}
+  }
+  /* 手机端彻底隐藏滚动条：内嵌滚动条会浮在列文字上、挡住内容（2026-11-20）。
+     触摸设备直接横滑即可（另有「左右滑动查看」提示），桌面端仍保留上面的 6px 细滚动条。 */
+  @media (max-width:968px), (orientation:landscape) and (max-height:520px){
+    html,body,.card,.tbl-scroll{scrollbar-width:none;scrollbar-gutter:auto}
+    html::-webkit-scrollbar,body::-webkit-scrollbar,
+    .card::-webkit-scrollbar,.tbl-scroll::-webkit-scrollbar{display:none;width:0;height:0}
   }
   .tbl-scroll>table thead th{position:sticky;top:0;z-index:3;background:#f7f9fa;box-shadow:inset 0 -1px 0 var(--rule)}
   /* 手机端浮动表头（页面级冻结，2026-11-20）：手机竖屏取消内部纵向滚动后，
@@ -1561,7 +1568,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261120a';
+      s.src = './assets/dashboard.js?v=20261120b';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();
