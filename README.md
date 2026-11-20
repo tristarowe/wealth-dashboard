@@ -56,6 +56,8 @@
 - 新增交易：去掉底部文字说明（`.note-line{display:none}`），压缩字段间距与控件高度（field margin 6px、控件 min-height 34px），手机一屏录入无需滑动。
 - 添加产品：标题区顶部留白（padding-top 14px）、按钮行留 5px 呼吸间距；「一键识别填入」改浅蓝底（`#e6f2f6` / `accent-deep` 字，与上传按钮协调）；登记编码标签由「登记编码（选填，留空按名称自动匹配）」缩短为「登记编码（选填）」（说明移入 placeholder），解决两列布局下标签换行导致的输入框不对齐。
 - 本地 OCR 识别超时保护 60→150 秒（手机首次加载中文 wasm 模型较慢，降低误判），超时提示改为引导重试/手工填写。
+- **聚焦不自动放大（2026-11-20 修复）**：iOS Safari 只要聚焦的字号 <16px 就会强制放大整页（表现为点文本框后弹窗被推到右侧、按钮被截出屏幕）。根因是手机端为压高度写的 13px 规则（含 iOS 专属分支）覆盖了 16px。现统一在 `@media (max-width:760px)` 内用 `.modal-card input:not([type=hidden]):not([type=file]),.modal-card select{font-size:16px !important;-webkit-text-size-adjust:100%}` 抬回字号，高度/间距仍靠 `min-height`/`padding` 压缩，不再覆写小字号；删除 `#modal-trade` 与矮屏 `#modal-add` 的 iOS 13px 规则。
+- **底部按钮两列对齐与防误触（2026-11-20）**：`.modal-foot` 由 `flex:1` 改为 `display:grid;grid-template-columns:repeat(2,minmax(0,1fr))`，取消/提交（或取消/保存）严格等宽对齐；新增交易 `.modal-body` 底部加 20px padding，确认日期与按钮区之间留呼吸区，避免手指误触提交。iPhone 393×852 实测：所有控件 16px、按钮 176/176 等宽、日期面板在屏内、`visualViewport.scale=1`、`scrollWidth=393` 无横向溢出。
 
 **产品名联动与清除筛选（2026-11-20）**：点盈亏汇总/持仓汇总里的产品名（`data-goto-trade`）切到交易页并按该产品过滤持仓汇总与交易流水。持仓汇总页在筛选态显示提示条 `#sum-filter`（与交易流水 `#trade-filter` 同款 `.active-filter` 样式），含「清除筛选」按钮；清除逻辑抽为 `clearTradeFilters()`，两个清除按钮共用——清空 `flowState.pid` 并恢复全局产品全选。无筛选时提示条隐藏。
 

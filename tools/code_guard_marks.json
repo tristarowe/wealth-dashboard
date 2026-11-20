@@ -1,7 +1,7 @@
 {
   "_doc": "跨端代码守卫共用标记清单 —— 唯一权威来源。WorkBuddy 的 .githooks/pre-push 与 Trae 的 tools/sync_pages.py 都必须读取本文件，禁止在脚本里硬编码标记列表。新增功能后在此登记，两端自动生效。",
   "_maintainer": "任何一端修改本文件后，需在提交信息中说明原因；改动会同时影响两端的推送守卫。",
-  "version": "2026-11-20w",
+  "version": "2026-11-20x",
   "protected": {
     "_doc": "受『整批中止』保护的文件：远端内容被他人改过时，整批拒绝推送，必须先 pull 合并。markers 为该文件必须包含的字符串，缺失即判定为旧版/被回退，整批拒推。",
     "index.html": [
@@ -130,7 +130,12 @@
       "body.modal-lock{overflow:hidden",
       "#hold-table col:nth-child(1){width:32px !important}",
       "新品按钮 2026-11-20 移到第二行首位",
-      "成立<br>至今"
+      "成立<br>至今",
+      "弹窗底部两枚按钮严格两列等宽对齐",
+      "grid-template-columns:repeat(2,minmax(0,1fr))",
+      "确认日期与底部按钮之间留呼吸区",
+      "手机弹窗防自动放大（关键修复）",
+      "font-size:16px !important;-webkit-text-size-adjust:100%"
     ],
     "assets/dashboard.js": [
       "PID_ALIAS",

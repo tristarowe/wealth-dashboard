@@ -1072,8 +1072,10 @@
     .field input,.field select{font-size:15px;min-height:44px;padding:9px 12px;margin-top:6px}
     .seg-group .seg{font-size:14px;min-height:44px;padding:10px 6px}
     .note-line{font-size:11.5px;padding-bottom:6px}
-    .modal-foot{flex:none;margin:0;padding:12px 18px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--rule);gap:10px}
-    .modal-foot .btn{flex:1;justify-content:center;min-height:44px;font-size:14px}
+    /* 2026-11-20：弹窗底部两枚按钮严格两列等宽对齐（取消 / 提交 或 取消 / 保存），
+       不用 flex:1（宽度受内容影响会不等宽，iOS 放大时右侧按钮还会被截出屏幕） */
+    .modal-foot{flex:none;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin:0;padding:12px 18px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--rule);gap:10px}
+    .modal-foot .btn{width:100%;margin:0;padding-left:8px;padding-right:8px;justify-content:center;min-height:44px;font-size:14px;white-space:nowrap}
     /* 添加产品弹窗：手机端尽量压缩为一屏（保留16px字号避免iOS聚焦放大，改压高度/间距） */
     #modal-add .modal-head{padding:14px 16px 5px}
     #modal-add .modal-body{padding:0 16px}
@@ -1090,11 +1092,13 @@
     #modal-add .add-hist .add-hist-list{max-height:72px;overflow:auto}
     /* 新增交易弹窗 2026-11-20：去掉底部文字说明、压缩字段间距与控件高度，手机一屏录入无需滑动 */
     #modal-trade .modal-head{padding:10px 16px 7px}
-    #modal-trade .modal-body{padding:0 16px}
+    /* 2026-11-20：确认日期与底部按钮之间留呼吸区，避免手指误触提交 */
+    #modal-trade .modal-body{padding:0 16px 20px}
     #modal-trade .note-line{display:none}
     #modal-trade .field{font-size:11.5px;margin-top:6px}
-    #modal-trade .field input,#modal-trade .field select{font-size:13px;min-height:34px;padding:5px 10px;margin-top:2px}
-    html.is-ios #modal-trade .field input,html.is-ios #modal-trade .field select{font-size:13px}
+    /* 2026-11-20：字号由下方 .modal-card 的 16px 统一规则接管，避免 iOS 聚焦放大；
+       这里只压高度与间距，不再覆写 font-size */
+    #modal-trade .field input,#modal-trade .field select{min-height:34px;padding:5px 10px;margin-top:2px}
     #modal-trade .seg-group .seg{font-size:13px;min-height:34px;padding:6px}
     #modal-trade .sr-list{max-height:120px;margin-top:4px}
     #modal-trade .modal-foot{padding:8px 16px calc(8px + env(safe-area-inset-bottom))}
@@ -1118,11 +1122,16 @@
       #modal-add .add-grid{grid-template-columns:1fr 1fr;gap:4px 8px}
       #modal-add .modal-head{padding:7px 16px 5px}
       #modal-add .field{font-size:10.5px;margin-top:3px}
-      #modal-add .field input,#modal-add .field select{font-size:13px;min-height:32px;padding:4px 8px;margin-top:2px}
-      html.is-ios #modal-add .field input,html.is-ios #modal-add .field select{font-size:13px}
+      #modal-add .field input,#modal-add .field select{min-height:32px;padding:4px 8px;margin-top:2px}
       #modal-add .modal-foot{padding:8px 16px calc(8px + env(safe-area-inset-bottom))}
       #modal-add .modal-foot .btn{min-height:38px}
     }
+    /* 2026-11-20 手机弹窗防自动放大（关键修复）：
+       iOS Safari 只要聚焦的字号 <16px 就会把整页强制放大，且 zoom 后弹窗右侧按钮被截出屏幕。
+       上面为「一屏录入」写的 13px 只用于压高度，这里用 16px !important 统一抬回字号，
+       高度/间距仍保持压缩；仅针对弹窗内的输入与下拉，不影响表格与页面其它文字。 */
+    .modal-card input:not([type="hidden"]):not([type="file"]),
+    .modal-card select{font-size:16px !important;-webkit-text-size-adjust:100%}
   }
   @media (max-width:360px){
     /* 极窄屏仍保持 3 列 2 行，仅再收窄字号与内边距，避免长金额溢出 */
