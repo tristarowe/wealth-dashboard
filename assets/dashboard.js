@@ -5498,6 +5498,15 @@
            window.matchMedia('(orientation:landscape) and (max-height:520px)').matches;
   }
 
+  /* 是否需要页面级浮动表头：
+     - 手机：所有 .tbl-scroll 都整段展开（max-height:none），一律需要克隆层冻结表头；
+     - 桌面：只有标了 .full-scroll 的三个表（盈亏汇总/持仓汇总/产品库）整段展开需要克隆层；
+             交易流水仍是内部滚动 + 原生 sticky，不在其列，避免重复表头。 */
+  function needFloatHead(wrap) {
+    if (isPhoneLayout()) return true;
+    return wrap.classList && wrap.classList.contains('full-scroll');
+  }
+
   /* 趋势图 tooltip 用 appendToBody:true 挂在 body 上：手机上划过图表后切页/滚动，
      它不会随图表隐藏，会残留在页面底部（甚至把页面撑出一大片空白）。滚动与切 tab 时主动收起。
      注意：hideTip 只把 opacity/visibility 置 0，元素仍以 absolute+transform 留在 body 里，
@@ -5522,9 +5531,9 @@
       if (h.box.parentNode) h.box.parentNode.removeChild(h.box);
     });
     FLOAT_HEADS = [];
-    if (!isPhoneLayout()) return;
     var wraps = document.querySelectorAll('.tbl-scroll');
     Array.prototype.forEach.call(wraps, function (wrap) {
+      if (!needFloatHead(wrap)) return;
       var table = wrap.querySelector('table');
       if (!table || !table.tHead) return;
       var box = document.createElement('div');

@@ -607,6 +607,9 @@
   /* 产品库（用户 2026-11-20 要求）：桌面端一页 10 条明细完整呈现，不设内部纵向滚动。
      10 行约 620px + 表头 + 分页，给到 760px 足以一次看全，无需在表格内滚动。 */
   .prod-scroll{max-height:none;overflow-y:visible}
+  /* 桌面端「盈亏汇总/持仓汇总/产品库」整段展开全部行、容器无内部滚动条，
+     表头由 .float-head 克隆层冻结吸顶（2026-11-20，用户要求三表体现全部产品且只冻结表头） */
+  .full-scroll{max-height:none;overflow-y:visible}
   /* 细滚动条：避免系统粗滚动条浮在表格内容上、遮挡列文字（2026-11-20） */
   .tbl-scroll{scrollbar-width:thin;scrollbar-color:#c7d2d9 transparent}
   .tbl-scroll::-webkit-scrollbar{width:6px;height:6px}
@@ -1145,7 +1148,7 @@
   <div class="tabpane" id="pane-hold">
     <section>
       <div class="sec-head"><span class="idx">01</span><h2>盈亏汇总</h2></div>
-      <div class="card tbl-scroll">
+      <div class="card tbl-scroll full-scroll">
         <table id="hold-table">
           <colgroup>
             <col style="width:3%"><col style="width:15.9%"><col style="width:7.6%">
@@ -1261,7 +1264,7 @@
   <div class="tabpane" id="pane-trade" hidden>
     <section>
       <div class="sec-head"><span class="idx">01</span><h2>持仓汇总</h2></div>
-      <div class="card tbl-scroll">
+      <div class="card tbl-scroll full-scroll">
         <table id="sum-table">
           <colgroup>
             <col><col style="width:8.5%"><col style="width:8.5%"><col style="width:8%">
@@ -1387,7 +1390,7 @@
         </span>
       </div>
 
-      <div class="card tbl-scroll prod-scroll">
+      <div class="card tbl-scroll prod-scroll full-scroll">
         <table class="prod-tbl" id="prod-table">
           <colgroup>
             <col style="width:3%"><col>
@@ -1580,7 +1583,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261120e';
+      s.src = './assets/dashboard.js?v=20261120f';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();
