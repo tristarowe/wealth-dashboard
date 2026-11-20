@@ -84,6 +84,9 @@
   .sec-head .idx{font-family:var(--mono);font-size:21px;font-weight:700;color:var(--gold);letter-spacing:.02em}
   .sec-head h2{font-size:21px;font-weight:700;color:var(--ink);letter-spacing:.01em;line-height:1.3}
   .sec-head .note{margin-left:auto;font-size:12px;color:var(--muted)}
+  /* ===== 方案E 2026-11-20：页内快速跳转 + 返回顶部（默认隐藏，仅手机端显示） ===== */
+  .jumpbar{display:none}
+  .to-top{display:none}
 
   .card{background:#fff;border:1px solid var(--rule);border-radius:12px}
   table{width:100%;border-collapse:collapse;font-size:13px}
@@ -878,6 +881,20 @@
     body{padding:14px 12px calc(28px + env(safe-area-inset-bottom))}
     /* A档手机压缩 2026-11-19：模块间距/指标卡/日历/留白收紧，字号与触控尺寸不变 */
     section{margin-top:16px}
+    /* 方案E：页内快速跳转条（首页顶部）——点击平滑滚动到对应模块，当前模块高亮 */
+    .jumpbar{display:flex;gap:5px;margin:2px 0 12px;background:#eef5f8;border:1px solid #cbe3ec;border-radius:9px;padding:5px}
+    .jumpbar .j{flex:1;min-width:0;text-align:center;font-family:var(--font);font-size:10.5px;font-weight:700;
+      color:var(--accent);padding:6px 2px;border-radius:6px;background:#fff;border:1px solid #dbe9ef;
+      white-space:nowrap;cursor:pointer}
+    .jumpbar .j.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+    /* 方案E：返回顶部悬浮按钮——下滑后出现，点击平滑回页首 */
+    .to-top{display:flex;position:fixed;right:14px;bottom:calc(20px + env(safe-area-inset-bottom));z-index:120;
+      width:44px;height:44px;flex-direction:column;align-items:center;justify-content:center;gap:0;
+      border:0;border-radius:50%;background:rgba(43,111,134,.92);color:#fff;font-size:20px;font-weight:800;line-height:1;
+      box-shadow:0 4px 14px rgba(20,60,80,.3);cursor:pointer;opacity:0;visibility:hidden;
+      transform:translateY(10px);transition:opacity .2s,transform .2s,visibility .2s}
+    .to-top span{font-size:8px;font-weight:700;letter-spacing:.5px;margin-top:2px}
+    .to-top.show{opacity:1;visibility:visible;transform:translateY(0)}
     /* 竖屏窄屏才恢复自适应列宽；横屏沿用桌面百分比列宽，列间距才均匀 */
     #sum-table,#prod-table,#flow-table{table-layout:auto}
     #sum-table colgroup col,#prod-table colgroup col,#flow-table colgroup col{width:auto !important}
@@ -1102,16 +1119,20 @@
     .cal-sum .lead b{font-size:11px}
     .hero-actions{grid-template-columns:1fr}
   }
-  /* 审核稿 A4：手机表头统一 38px；数据行改「基准 44px / 双行 56px」两档 */
+  /* 审核稿 A4：手机表头统一 38px；数据行改「基准 44px / 双行 56px」两档
+     方案C 2026-11-20：不缩字号/千分位/列宽，仅收紧行高与纵向 padding——
+     基准行 44→38、双行 56→48；td 上下 padding 8→5（表头 38px 不动，左右 padding 不动以免影响列宽） */
   @media (max-width:760px){
     #hold-table thead th,#sum-table thead th,#flow-table thead th,#prod-table thead th{
       height:38px;padding-top:6px;padding-bottom:6px;line-height:1.3;box-sizing:border-box
     }
-    #hold-table tbody tr,#sum-table tbody tr,#flow-table tbody tr:not(.flow-month){height:44px}
-    #flow-table tbody tr.flow-month{height:56px}
-    #flow-table tbody tr.flow-month td{padding:6px 8px;line-height:1.5}
-    #prod-table tbody tr{height:56px}
-    #prod-table tbody td{padding:5.5px 6px}
+    #hold-table tbody tr,#sum-table tbody tr,#flow-table tbody tr:not(.flow-month){height:38px}
+    #flow-table tbody tr.flow-month{height:48px}
+    #flow-table tbody tr.flow-month td{padding:5px 8px;line-height:1.5}
+    #prod-table tbody tr{height:48px}
+    /* 只压 tbody 上下 padding：表头高度/左右 padding 保持原样，长名称换行行由内容自然撑高不被裁切 */
+    #hold-table tbody td,#sum-table tbody td,#flow-table tbody td{padding-top:5px;padding-bottom:5px}
+    #prod-table tbody td{padding:5px 6px}
     #prod-table .st b,#prod-table .st i,
     #prod-table .cdate span,#prod-table .cdate i{line-height:1.35}
   }
@@ -1217,7 +1238,13 @@
 
   <!-- ================= 首页 ================= -->
   <div class="tabpane" id="pane-hold">
-    <section>
+    <!-- 方案E 2026-11-20：页内快速跳转条（仅手机端显示，见 CSS .jumpbar）；当前模块高亮由脚本维护 -->
+    <nav class="jumpbar" id="jumpbar" aria-label="页内快速跳转">
+      <button type="button" class="j on" data-jump="sec-hold-sum">01 盈亏汇总</button>
+      <button type="button" class="j" data-jump="sec-hold-cal">02 盈亏日历</button>
+      <button type="button" class="j" data-jump="sec-hold-trend">03 盈亏趋势</button>
+    </nav>
+    <section id="sec-hold-sum">
       <div class="sec-head"><span class="idx">01</span><h2>盈亏汇总</h2></div>
       <div class="card tbl-scroll full-scroll">
         <table id="hold-table">
@@ -1255,7 +1282,7 @@
       <div class="swipe-tip">← 左右滑动查看完整指标 →</div>
     </section>
 
-    <section>
+    <section id="sec-hold-cal">
       <div class="sec-head"><span class="idx">02</span><h2>盈亏日历</h2></div>
       <div class="card" style="padding:16px 18px">
         <div class="cal-head">
@@ -1313,7 +1340,7 @@
       </div>
     </section>
 
-    <section>
+    <section id="sec-hold-trend">
       <div class="sec-head"><span class="idx">03</span><h2>盈亏趋势</h2></div>
       <div class="card" style="padding:16px 18px">
         <div class="trend-bar">
@@ -1636,6 +1663,9 @@
   </div>
 </div>
 
+<!-- 方案E 2026-11-20：返回顶部悬浮按钮（仅手机端显示） -->
+<button type="button" class="to-top" id="to-top" aria-label="返回顶部" title="返回顶部">↑<span>顶部</span></button>
+
 <!-- 代码类脚本带版本号，改动后同步更新，避免手机端命中旧缓存；数据类脚本不带版本号，保证每日更新能取到 -->
 <script src="./_shared/js/echarts.min.js?v=20261113c" onerror="this.onerror=null;this.src='./_shared/js/echarts.min.js?t='+Date.now()"></script>
 <script src="./assets/html2canvas.min.js?v=20261113c"></script>
@@ -1654,7 +1684,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261120f';
+      s.src = './assets/dashboard.js?v=20261120g';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();
@@ -1756,6 +1786,63 @@
       var cur = document.querySelector('.tab.on');
       if (VALID.indexOf(k) !== -1 && (!cur || cur.dataset.tab !== k)) show(k);
     });
+  })();
+
+  // 方案E 2026-11-20：页内快速跳转 + 返回顶部（仅手机端 .jumpbar/.to-top 可见时生效）
+  (function () {
+    var bar = document.getElementById('jumpbar');
+    var topBtn = document.getElementById('to-top');
+    var pane = document.getElementById('pane-hold');
+    var btns = bar ? [].slice.call(bar.querySelectorAll('.j')) : [];
+    if (!bar || !topBtn || !pane || !btns.length) return;
+    var ids = btns.map(function (b) { return b.dataset.jump; });
+
+    function activeTab() {
+      var t = document.querySelector('.tab.on');
+      return t ? t.dataset.tab : 'hold';
+    }
+    // 用 JS 平滑滚动，避免 #hash 锚点与页签切换的 hash 逻辑冲突
+    function goTo(id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      var y = el.getBoundingClientRect().top + window.pageYOffset - 12;
+      try { window.scrollTo({ top: y, behavior: 'smooth' }); }
+      catch (e) { window.scrollTo(0, y); }
+    }
+    btns.forEach(function (b) {
+      b.addEventListener('click', function () { goTo(b.dataset.jump); });
+    });
+
+    // 高亮当前所在模块：取视口顶部下方最近越过的 section
+    function syncHighlight() {
+      if (activeTab() !== 'hold') return;
+      var probe = window.pageYOffset + 90;
+      var cur = 0;
+      ids.forEach(function (id, i) {
+        var el = document.getElementById(id);
+        if (el && el.getBoundingClientRect().top + window.pageYOffset <= probe) cur = i;
+      });
+      btns.forEach(function (b, i) { b.classList.toggle('on', i === cur); });
+    }
+    // 返回顶部：首页且向下滚动超过约 1.2 屏时出现
+    function syncTopBtn() {
+      var show = activeTab() === 'hold' && window.pageYOffset > 420;
+      topBtn.classList.toggle('show', show);
+    }
+    topBtn.addEventListener('click', function () {
+      try { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+      catch (e) { window.scrollTo(0, 0); }
+    });
+    var ticking = false;
+    window.addEventListener('scroll', function () {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(function () { syncHighlight(); syncTopBtn(); ticking = false; });
+    }, { passive: true });
+    window.addEventListener('resize', function () { syncHighlight(); syncTopBtn(); });
+    // 页签切换/首次加载后同步一次
+    window.addEventListener('hashchange', function () { setTimeout(function () { syncHighlight(); syncTopBtn(); }, 60); });
+    syncHighlight(); syncTopBtn();
   })();
 
   // 导出整页看板为 PNG 图片
