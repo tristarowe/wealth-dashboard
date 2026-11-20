@@ -219,10 +219,10 @@
     #hold-table col:nth-child(10),#hold-table col:nth-child(11),
     #hold-table col:nth-child(12),#hold-table col:nth-child(13),
     #hold-table col:nth-child(14),#hold-table col:nth-child(15){width:5.68% !important}
-    /* 2026-11-20：盈亏汇总数据行统一 32px（原 26px），表头 40px 不动 */
-    #hold-table tbody tr{height:32px}
-    #hold-table tbody td{padding:5px 7px;line-height:1.3}
-    #hold-table tbody td.mlabel{padding:4px 8px;line-height:1.3}
+    /* 盈亏汇总数据行：桌面 26px（2026-11-20 用户拍板恢复原 26px），表头 40px 不动 */
+    #hold-table tbody tr{height:26px}
+    #hold-table tbody td{padding:3px 7px;line-height:1.25}
+    #hold-table tbody td.mlabel{padding:3px 8px;line-height:1.25}
     #sum-table tbody td{padding:6.8px 8px;line-height:1.3}
     /* 操作按钮贴合文字 2026-11-20：桌面端收紧到 1px 5px，边框贴住文字 */
     #sum-table tbody td:last-child .mini{padding:1px 5px;line-height:1.2}
@@ -375,8 +375,12 @@
   .sel-opt.mopt .mchk{flex:none;width:14px;height:14px;padding:0;margin:0;accent-color:var(--accent);cursor:pointer}
   .sel-opt.mopt .mtxt{overflow:hidden;text-overflow:ellipsis;cursor:pointer}
   .sel-label .mcount{color:var(--accent-deep);font-weight:700}
-  /* 产品库搜索候选：只列名称，不展示登记编码 */
+  /* 产品库搜索候选：只列名称，不展示登记编码。
+     2026-11-20：默认无底色填充；键盘导航高亮用浅蓝而非全局深蓝，避免大块深色刺眼。 */
   .prod-sug{max-width:min(92vw,340px)}
+  .prod-sug .sel-opt{text-align:left;padding:8px 10px;line-height:1.35}
+  .prod-sug .sel-opt.on{background:#eaf4f8;color:var(--accent-deep)}
+  .prod-sug .sel-opt.on:hover{filter:none;background:#e2eff5}
   .chip{font-family:var(--font);font-size:12.5px;padding:5px 10px;border-radius:999px;border:1px solid #dbe7ed;background:#f6fafc;cursor:pointer;color:var(--muted);width:auto;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;line-height:1.5}
   .chip.on{background:#e4f0f5;border-color:#cbe0e8;color:var(--accent-deep);font-weight:700}
   /* 产品库筛选按钮统一为 4 个汉字的宽度 */
@@ -1189,18 +1193,27 @@
     #hold-table thead th,#sum-table thead th,#flow-table thead th,#prod-table thead th{
       height:38px;padding-top:6px;padding-bottom:6px;line-height:1.3;box-sizing:border-box
     }
-    /* 盈亏汇总（hold-table）数据行统一 32px：表头 38px 不动，只收 tbody 行高与上下 padding；
+    /* 盈亏汇总（hold-table）数据行统一 30px：表头 38px 不动，只收 tbody 行高与上下 padding；
        持仓汇总/流水仍 38px，避免带按钮与双行名称的行被挤 */
-    #hold-table tbody tr{height:32px}
-    #sum-table tbody tr,#flow-table tbody tr:not(.flow-month){height:38px}
+    #hold-table tbody tr{height:30px}
+    /* 手机竖屏持仓汇总（sum-table）行高统一 2026-11-20：长名称换行行自然高约 52px，单行行 38px，
+       同一表里高低不一；固定 52px（略高于换行行，兼容亚像素舍入）让竖屏与横屏一样视觉均匀。
+       与下方横屏 48px 规则并存：竖屏(非landscape)取 52px，横屏取 48px。 */
+    #sum-table tbody tr{height:52px}
+    #flow-table tbody tr:not(.flow-month){height:38px}
     #flow-table tbody tr.flow-month{height:48px}
     #flow-table tbody tr.flow-month td{padding:5px 8px;line-height:1.5}
     #prod-table tbody tr{height:48px}
     /* 只压 tbody 上下 padding：表头高度/左右 padding 保持原样，长名称换行行由内容自然撑高不被裁切 */
-    #hold-table tbody td{padding-top:4px;padding-bottom:4px}
-    /* 区间标签单元格基础规则是 6px 上下（行 146），会把 32px 行撑到 32.8px；单独对齐到 4px */
-    #hold-table tbody td.mlabel{padding-top:4px;padding-bottom:4px}
+    #hold-table tbody td{padding-top:3px;padding-bottom:3px}
+    /* 区间标签单元格基础规则是 6px 上下（行 146），会把 30px 行撑高；单独对齐到 3px */
+    #hold-table tbody td.mlabel{padding-top:3px;padding-bottom:3px}
+    /* 日均万收/年化数值行：收紧 line-height（原继承 1.65→21.45px 会把 30px 行撑到 30.4px），
+       与 30px 行高严格一致 */
+    #hold-table tbody td.pwin,#hold-table tbody td.awin{line-height:1.4}
     #sum-table tbody td,#flow-table tbody td{padding-top:5px;padding-bottom:5px}
+    /* 竖屏持仓汇总行高固定 52px 后，td 上下 padding 给足让两行名称垂直居中不贴边（须放在通用规则之后） */
+    #sum-table tbody td{padding-top:7px;padding-bottom:7px}
     /* 持仓汇总操作按钮贴合文字 2026-11-20：与流水/产品库同款 2px 6px + line-height 1.2
        （原 4px 9px / normal 实测 44×26px，过宽过高；改后约 36×18px） */
     #sum-table tbody td:last-child .mini{padding:1px 5px;line-height:1.2}
@@ -1574,7 +1587,7 @@
           <button class="chip" data-flag="new">新品</button>
           <button class="chip" data-flag="fav">★ 收藏</button>
           <button class="chip" id="prod-reset" title="清空搜索与全部筛选条件">↺ 重置</button>
-          <input type="search" id="prod-search" placeholder="搜索产品名称" aria-label="搜索产品名称">
+          <input type="text" id="prod-search" placeholder="搜索产品名称" aria-label="搜索产品名称" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
         </span>
       </div>
 
@@ -1775,7 +1788,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261120p';
+      s.src = './assets/dashboard.js?v=20261120q';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();

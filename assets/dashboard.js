@@ -3028,12 +3028,12 @@
 
   /* ---------------- 产品库搜索：输入时弹出候选，点选即筛选 ---------------- */
   var prodSugPop = null;
-  var prodSugIdx = 0;
+  var prodSugIdx = -1; /* 默认不高亮任何产品（去掉底色填充），仅键盘上下键导航时出现浅色高亮 */
 
   function closeProdSug() {
     if (prodSugPop && prodSugPop.parentNode) prodSugPop.parentNode.removeChild(prodSugPop);
     prodSugPop = null;
-    prodSugIdx = 0;
+    prodSugIdx = -1;
   }
 
   function prodSugItems(kw) {
@@ -3048,20 +3048,36 @@
     return sortBySearch(hit, kw).slice(0, 8);
   }
 
-  /* 弹层跟随输入框定位：滚动/键盘弹出导致视口变化时重新贴靠，不关闭列表 */
+  /* 弹层跟随输入框定位：滚动/键盘弹出导致视口变化时重新贴靠，不关闭列表。
+     2026-11-20：iOS 键盘弹出后 window.innerHeight 不变、visualViewport 缩小并带 offsetTop，
+     旧逻辑用 innerHeight 会把整块下拉铺到键盘遮挡区、下方选项看不见也滚不到。改用 visualViewport
+     计算真实可视区，并把列表高度限制在「输入框到可视区边缘」之内，超出部分可向下滑动浏览。 */
   function placeProdSug() {
     var input = document.getElementById('prod-search');
     if (!prodSugPop || !input) return;
     var r = input.getBoundingClientRect();
+    var vv = window.visualViewport;
+    var vw = vv ? vv.width : window.innerWidth;
+    var vh = vv ? vv.height : window.innerHeight;
+    var vTop = vv ? vv.offsetTop : 0;
+    var vLeft = vv ? vv.offsetLeft : 0;
     prodSugPop.style.minWidth = Math.max(r.width, 220) + 'px';
     var pw = prodSugPop.offsetWidth;
-    var ph = prodSugPop.offsetHeight;
-    var vw = window.innerWidth;
-    var vh = window.innerHeight;
-    var left = Math.max(8, Math.min(r.left, vw - pw - 8));
-    var top = r.bottom + 6;
-    if (top + ph > vh - 8) top = r.top - ph - 6;
-    top = Math.max(8, Math.min(top, vh - ph - 8));
+    var left = Math.max(8, Math.min(r.left - vLeft, vw - pw - 8));
+    /* 输入框相对可视区的位置（getBoundingClientRect 相对布局视口，需减视觉视口偏移） */
+    var irTop = r.top - vTop;
+    var irBottom = r.bottom - vTop;
+    var gap = 6, pad = 8;
+    /* 下方/上方可用空间，取较大一侧放置并限高；至少留 140px，最多 300px。
+       限高后列表整体落在键盘之上、超出的选项在列表内部滚动（可向下滑动浏览）。 */
+    var below = vh - irBottom - gap - pad;
+    var above = irTop - gap - pad;
+    var useBelow = below >= above || above < 140;
+    var avail = Math.max(140, Math.min(useBelow ? below : above, 300));
+    prodSugPop.style.maxHeight = Math.round(avail) + 'px';
+    var ph = prodSugPop.offsetHeight; /* 限高后重新读取实际高度 */
+    var top = useBelow ? r.bottom + gap : r.top - ph - gap;
+    top = Math.max(vTop + pad, Math.min(top, vTop + vh - ph - pad));
     prodSugPop.style.left = left + 'px';
     prodSugPop.style.top = top + 'px';
   }
@@ -3089,6 +3105,8 @@
         e.stopPropagation();
         input.value = prodDispName(p);
         closeProdSug();
+        /* 选中后主动收起软键盘：地址气泡/QuickType 工具栏随键盘一起消失 */
+        try { input.blur(); } catch (err) {}
         prodUi.q = input.value;
         prodUi.page = 1;
         renderProductTable();
@@ -3105,11 +3123,11 @@
     if (!input) return;
 
     input.addEventListener('input', function () {
-      prodSugIdx = 0;
+      prodSugIdx = -1;
       openProdSug();
     });
     input.addEventListener('focus', function () {
-      if (input.value.trim()) { prodSugIdx = 0; openProdSug(); }
+      if (input.value.trim()) { prodSugIdx = -1; openProdSug(); }
     });
     input.addEventListener('keydown', function (e) {
       if (!prodSugPop) return;
@@ -3137,6 +3155,12 @@
     }, true);
     window.addEventListener('scroll', placeProdSug, true);
     window.addEventListener('resize', placeProdSug);
+    /* 2026-11-20：iOS 软键盘弹出/收起只改变 visualViewport，不触发 window.resize；
+       监听它才能在键盘顶起时把下拉限高并重定位到键盘上方。 */
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', function () { if (prodSugPop) placeProdSug(); });
+      window.visualViewport.addEventListener('scroll', function () { if (prodSugPop) placeProdSug(); });
+    }
   }
 
   function populateIncepSelect() {
