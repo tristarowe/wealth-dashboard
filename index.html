@@ -1109,8 +1109,9 @@
     #modal-trade .field{font-size:11.5px;margin-top:6px}
     /* 2026-11-20：字号由下方 .modal-card 的 16px 统一规则接管，避免 iOS 聚焦放大；
        这里只压高度与间距，不再覆写 font-size */
-    #modal-trade .field input,#modal-trade .field select{min-height:34px;padding:5px 10px;margin-top:2px}
-    #modal-trade .seg-group .seg{font-size:13px;min-height:34px;padding:6px}
+    /* 2026-11-20：手机新增交易页文本框/筛选框行高调高，适配手指点选与阅读（34→42px），字号仍 16px 不缩 */
+    #modal-trade .field input,#modal-trade .field select{min-height:42px;padding:9px 10px;margin-top:3px}
+    #modal-trade .seg-group .seg{font-size:13px;min-height:42px;padding:8px 6px}
     #modal-trade .sr-list{max-height:120px;margin-top:4px}
     #modal-trade .modal-foot{padding:8px 16px calc(8px + env(safe-area-inset-bottom))}
     #modal-trade .modal-foot .btn{min-height:38px}
@@ -1472,7 +1473,7 @@
           </div>
           <span class="sp"></span>
           <button class="btn danger" id="flow-del-sel" hidden>删除所选</button>
-          <button class="btn primary" id="open-trade">＋ 新增交易</button>
+          <button class="btn" id="open-trade">＋ 新增交易</button>
         </div>
         <div class="active-filter" id="trade-filter" hidden>
           筛选：<b id="trade-filter-name"></b>
