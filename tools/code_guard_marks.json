@@ -1,7 +1,7 @@
 {
   "_doc": "跨端代码守卫共用标记清单 —— 唯一权威来源。WorkBuddy 的 .githooks/pre-push 与 Trae 的 tools/sync_pages.py 都必须读取本文件，禁止在脚本里硬编码标记列表。新增功能后在此登记，两端自动生效。",
   "_maintainer": "任何一端修改本文件后，需在提交信息中说明原因；改动会同时影响两端的推送守卫。",
-  "version": "2026-11-20zc",
+  "version": "2026-11-20zd",
   "protected": {
     "_doc": "受『整批中止』保护的文件：远端内容被他人改过时，整批拒绝推送，必须先 pull 合并。markers 为该文件必须包含的字符串，缺失即判定为旧版/被回退，整批拒推。",
     "index.html": [
@@ -23,7 +23,7 @@
       "data-stamp",
       "B2/Q2：横屏全表由 11px 提到 11.5px",
       "Q1：手机年表/月表",
-      "v=20261120m",
+      "v=20261120n",
       "手机端彻底隐藏滚动条",
       "data-sort=\"total\"",
       "累计收益",
@@ -149,7 +149,10 @@
       "#hold-table col:nth-child(2){width:118px !important}",
       "「数据」列横屏调窄 76→56px",
       "#hold-table col:nth-child(9){width:56px !important}",
-      "已删除小字标识：删除记录不单独成行",
+      "状态小字标识（2026-11-20）：删除记录不单独成行，名称右侧标「已入库」(绿)/「已删除」(灰)",
+      ".add-hist-list .ah-stored{font-style:normal;font-size:11px;font-weight:400;color:var(--down);margin-left:5px}",
+      "id=\"trade-confirm\" type=\"text\" readonly inputmode=\"none\"",
+      "input,textarea{-webkit-touch-callout:none}",
       ".add-hist-list .ah-deleted",
       "手机新增交易页文本框/筛选框行高调高",
       "#modal-trade .field input,#modal-trade .field select{min-height:42px",
@@ -284,7 +287,10 @@
       "data-hist-edit",
       "ah-name",
       "最近添加记录右侧「修改 / 删除」小按钮",
-      "删除记录不单独成行，只在「添加」记录的名称右侧用小字标「已删除」",
+      "正常在产品库的标绿色「已入库」，已删除的标灰色「已删除」且删除按钮禁用",
+      "'<em class=\"ah-stored\">已入库</em>'",
+      "function suppressInputCallouts",
+      "var vv = window.visualViewport;",
       "var lastAction = {}",
       "var deleted = lastAction[r.id || ''] === 'del';",
       "ah-deleted"

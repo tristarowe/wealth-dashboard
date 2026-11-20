@@ -15,6 +15,11 @@
     --font:'Microsoft YaHei','PingFang SC','Hiragino Sans GB',sans-serif;
   }
   *{box-sizing:border-box;margin:0;padding:0}
+  /* 输入框抑制 iOS Safari 聚焦时弹出的「站点 URL / 自动填充 / 拼写建议」气泡（2026-11-20）：
+     这些系统浮层带尖角指向输入框、会挡住表单（截图中的 tristarowe.github.io 气泡）。
+     autocomplete 由 JS 补 off；此处禁长按 callout 与文本建议，配合日期框 readonly 从源头减少触发。 */
+  input,textarea{-webkit-touch-callout:none}
+  .modal-card input,.modal-card select,.modal-card textarea{-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
   html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;text-size-adjust:100%}
   body{font-family:var(--font);background:var(--bg);color:var(--ink);line-height:1.65;padding:24px 20px 60px;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility}
   .page{max-width:1320px;margin:0 auto}
@@ -503,8 +508,9 @@
   /* 2026-11-20：最近添加记录改为「名称 + 日期时间 + 右侧修改/删除小按钮」，
      不再展示登记编号与代销机构（编号长、机构名占宽，手机上把名称挤成两字） */
   .add-hist-list .ah-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  /* 已删除小字标识：删除记录不单独成行，仅在此处标灰，删除按钮同步禁用呈灰（2026-11-20） */
+  /* 状态小字标识（2026-11-20）：删除记录不单独成行，名称右侧标「已入库」(绿)/「已删除」(灰) */
   .add-hist-list .ah-deleted{font-style:normal;font-size:11px;font-weight:400;color:var(--muted);margin-left:5px}
+  .add-hist-list .ah-stored{font-style:normal;font-size:11px;font-weight:400;color:var(--down);margin-left:5px}
   .add-hist-list .ah-time{flex:none;font-style:normal;font-family:var(--mono);font-size:11px;color:var(--muted)}
   .add-hist-list .ah-ops{flex:none;display:flex;gap:4px}
   .add-hist-list .ah-ops .mini{font-size:11px;padding:1px 5px;line-height:1.2}
@@ -1654,7 +1660,7 @@
       <label class="field">成交净值（T日）<input id="trade-nav" inputmode="decimal" placeholder="自动带出T日净值，可手工修改"></label>
       <label class="field field-wide">确认日期
         <span class="dp-wrap">
-          <input id="trade-confirm" type="text" autocomplete="off" placeholder="默认T+1工作日，可手工修改" aria-haspopup="dialog">
+          <input id="trade-confirm" type="text" readonly inputmode="none" autocomplete="off" placeholder="默认T+1工作日，点此选择" aria-haspopup="dialog">
           <svg class="dp-ico" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="3" y="5.5" width="18" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3 10.5h18M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
         </span>
       </label>
@@ -1755,7 +1761,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261120m';
+      s.src = './assets/dashboard.js?v=20261120n';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();

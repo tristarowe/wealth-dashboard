@@ -3666,8 +3666,9 @@
     var box = document.getElementById('add-hist');
     var list = document.getElementById('add-hist-list');
     if (!box || !list) return;
-    /* 2026-11-20：删除记录不单独成行，只在「添加」记录的名称右侧用小字标「已删除」，
-       且已删除项的「删除」按钮默认灰色禁用。按 at 倒序保证保存后与刷新后顺序一致。 */
+    /* 2026-11-20：删除记录不单独成行，只在「添加」记录的名称右侧用小字标状态：
+       正常在产品库的标绿色「已入库」，已删除的标灰色「已删除」且删除按钮禁用。
+       按 at 倒序保证保存后与刷新后顺序一致。 */
     var all = (window.MANUAL_HISTORY || []).slice().sort(function (a, b) {
       return String(b.at || '').localeCompare(String(a.at || ''));
     });
@@ -3693,7 +3694,7 @@
       var deleted = lastAction[r.id || ''] === 'del';
       return '<li>' +
         '<span class="ah-name" title="' + histEsc(r.name || '') + '">' + histEsc(r.name || '—') +
-          (deleted ? '<em class="ah-deleted">已删除</em>' : '') + '</span>' +
+          (deleted ? '<em class="ah-deleted">已删除</em>' : '<em class="ah-stored">已入库</em>') + '</span>' +
         '<i class="ah-time">' + fmtHistTime(r.at) + '</i>' +
         '<span class="ah-ops">' +
         '<button type="button" class="mini" data-hist-edit="' + id + '" title="带入原记录，保存即重新添加">修改</button>' +
@@ -4071,9 +4072,11 @@
       syncTradeForm();
       applyTypeLimits();
     }
-    /* 成交净值与确认日期均可人工修改后再提交（自动带出默认值，允许覆盖） */
+    /* 成交净值可人工覆盖；确认日期保持只读、仅走日历选择——2026-11-20：
+       iOS 上可编辑的日期框点击会弹系统键盘，键盘改变视觉视口后日历被顶到屏幕顶部、
+       焦点错跳到确认日期框；改为只读后日历定位稳定，任意日期仍可选（清空后重选）。 */
     if (navEl) navEl.readOnly = false;
-    if (dateEl) dateEl.readOnly = false;
+    if (dateEl) dateEl.readOnly = true;
     applyTradeMode();
     modal.hidden = false;
   }
@@ -4315,11 +4318,25 @@
     var r = dpState.input.getBoundingClientRect();
     var w = dpEl.offsetWidth;
     var h = dpEl.offsetHeight;
-    var vw = window.innerWidth;
-    var vh = window.innerHeight;
-    var left = vw <= 560 ? Math.max(8, (vw - w) / 2) : Math.min(Math.max(8, r.left), vw - w - 8);
-    var top = r.bottom + 6;
-    if (top + h > vh - 8) top = Math.max(8, r.top - h - 6);
+    /* 2026-11-20：iOS 弹出系统键盘后 window.innerHeight 不变、但 visualViewport 会缩小并带上
+       offsetTop，旧逻辑用 innerHeight 会把日历算出屏幕外/顶到顶部。改用 visualViewport 的真实可视区。 */
+    var vv = window.visualViewport;
+    var vw = vv ? vv.width : window.innerWidth;
+    var vh = vv ? vv.height : window.innerHeight;
+    var vOffsetTop = vv ? vv.offsetTop : 0;
+    var vOffsetLeft = vv ? vv.offsetLeft : 0;
+    /* 输入框相对可视区的位置（getBoundingClientRect 相对布局视口，需减去视觉视口偏移） */
+    var irTop = r.top - vOffsetTop;
+    var irBottom = r.bottom - vOffsetTop;
+    var left = vw <= 560 ? Math.max(8, (vw - w) / 2) : Math.min(Math.max(8, r.left - vOffsetLeft), vw - w - 8);
+    var top;
+    if (irBottom + 6 + h <= vh - 8) {
+      top = r.bottom + 6;                                  /* 下方放得下：贴输入框下沿 */
+    } else if (irTop - 6 - h >= 8) {
+      top = r.top - h - 6;                                 /* 上方放得下：贴输入框上沿 */
+    } else {
+      top = vOffsetTop + Math.max(8, (vh - h) / 2);        /* 兜底：可视区垂直居中，绝不飞出屏幕 */
+    }
     dpEl.style.left = left + 'px';
     dpEl.style.top = top + 'px';
   }
@@ -4327,6 +4344,10 @@
   function openDp(input) {
     buildDp();
     if (!dpEl.hidden && dpState.input === input) { closeDp(); return; }
+    /* 2026-11-20：打开日历前先收起任何正在编辑的输入框的软键盘，
+       避免键盘占屏把日历顶飞、或焦点错跳到其它文本框 */
+    var ae = document.activeElement;
+    if (ae && ae !== input && typeof ae.blur === 'function') ae.blur();
     dpState.input = input;
     var v = String(input.value || '').trim();
     var ok = /^\d{4}-\d{2}-\d{2}$/.test(v);
@@ -4396,6 +4417,12 @@
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDp(); });
     window.addEventListener('resize', function () { if (dpEl && !dpEl.hidden) placeDp(); });
     window.addEventListener('scroll', function () { if (dpEl && !dpEl.hidden) placeDp(); }, true);
+    /* 2026-11-20：iOS 软键盘弹出/收起改变的是视觉视口（visualViewport），不触发 window.resize；
+       监听它的 resize/scroll 才能实时把日历重新定位回输入框附近，避免被键盘顶飞 */
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', function () { if (dpEl && !dpEl.hidden) placeDp(); });
+      window.visualViewport.addEventListener('scroll', function () { if (dpEl && !dpEl.hidden) placeDp(); });
+    }
   }
 
   /* 重置交易流水的年月/类型/状态筛选（不改产品维度）。
@@ -5763,7 +5790,21 @@
     sync();
   }
 
+  /* 2026-11-20：给弹窗/搜索框补抑制属性，减少 iOS Safari 聚焦时的
+     「站点 URL / 拼写建议 / 大写纠错」气泡挡住表单。autocomplete 已在多数框写 off，这里兜底。 */
+  function suppressInputCallouts() {
+    var els = document.querySelectorAll('input[type="text"],input:not([type]),input[type="search"],input[inputmode="decimal"],input[inputmode="url"],textarea');
+    Array.prototype.forEach.call(els, function (el) {
+      if (el.type === 'hidden' || el.type === 'file' || el.type === 'checkbox') return;
+      el.setAttribute('autocomplete', 'off');
+      el.setAttribute('autocorrect', 'off');
+      el.setAttribute('autocapitalize', 'off');
+      el.setAttribute('spellcheck', 'false');
+    });
+  }
+
   function init() {
+    suppressInputCallouts();
     populateOrgSelect();
     populateIncepSelect();
     initPicker();
