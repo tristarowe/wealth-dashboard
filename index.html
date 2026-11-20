@@ -86,7 +86,14 @@
   .sec-head .note{margin-left:auto;font-size:12px;color:var(--muted)}
   /* ===== 方案E 2026-11-20：页内快速跳转 + 返回顶部（默认隐藏，仅手机端显示） ===== */
   .jumpbar{display:none}
-  .to-top{display:none}
+  /* 返回顶部按钮 2026-11-20：全站通用（首页/交易/产品、手机/桌面），下滑后浮现 */
+  .to-top{display:flex;position:fixed;right:16px;bottom:20px;z-index:120;
+    width:34px;height:34px;align-items:center;justify-content:center;
+    border:1px solid #cbe3ec;border-radius:50%;background:rgba(255,255,255,.92);color:var(--accent);line-height:1;
+    box-shadow:0 4px 14px rgba(9,46,60,.12);cursor:pointer;
+    opacity:0;visibility:hidden;transform:translateY(8px);transition:opacity .2s,transform .2s,visibility .2s}
+  .to-top svg{width:16px;height:16px;display:block}
+  .to-top.show{opacity:1;visibility:visible;transform:translateY(0)}
 
   .card{background:#fff;border:1px solid var(--rule);border-radius:12px}
   table{width:100%;border-collapse:collapse;font-size:13px}
@@ -492,11 +499,13 @@
   .add-hist-list{list-style:none;margin:0;padding:0;max-height:148px;overflow:auto}
   .add-hist-list li{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f1f6f8;font-size:12px;color:var(--ink)}
   .add-hist-list li:last-child{border-bottom:0}
-  .add-hist-list b{flex:none;font-weight:400;font-size:11px;line-height:1.5;padding:1px 6px;border-radius:4px}
-  .add-hist-list b.add{background:#eef6f8;color:#3d6b7d}
-  .add-hist-list b.del{background:#fdf4f2;color:#b3564d}
+  /* 2026-11-20：最近添加记录改为「名称 + 日期时间 + 右侧修改/删除小按钮」，
+     不再展示登记编号与代销机构（编号长、机构名占宽，手机上把名称挤成两字） */
+  .add-hist-list .ah-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .add-hist-list .ah-time{flex:none;font-style:normal;font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .add-hist-list .ah-ops{flex:none;display:flex;gap:4px}
+  .add-hist-list .ah-ops .mini{font-size:11px;padding:1px 6px;line-height:1.4}
   .add-hist-list span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .add-hist-list em{flex:none;font-style:normal;font-size:11px;color:var(--muted)}
   .add-hist-list i{flex:none;font-style:normal;font-family:var(--mono);font-size:11px;color:var(--muted)}
   .drop{border:1px dashed #c9d5dc;border-radius:10px;padding:18px;text-align:center;font-size:12px;color:var(--muted);margin-top:10px;background:#fafcfd;cursor:pointer}
   .drop:hover,.drop.on{border-color:var(--accent);background:#f2f8fa}
@@ -894,13 +903,8 @@
       color:var(--muted);padding:4px 2px;border-radius:7px;background:transparent;border:0;
       white-space:nowrap;cursor:pointer}
     .jumpbar .j.on{background:#e6f2f6;color:var(--accent-deep)}
-    /* 方案E：返回顶部悬浮按钮——无填充向上箭头 SVG，下滑出现、点击回页首 */
-    .to-top{display:flex;position:fixed;right:12px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:120;
-      width:30px;height:30px;align-items:center;justify-content:center;
-      border:1px solid #cbe3ec;border-radius:50%;background:rgba(255,255,255,.9);color:var(--accent);line-height:1;
-      cursor:pointer;opacity:0;visibility:hidden;transform:translateY(8px);transition:opacity .2s,transform .2s,visibility .2s}
-    .to-top svg{width:16px;height:16px;display:block}
-    .to-top.show{opacity:1;visibility:visible;transform:translateY(0)}
+    /* 手机端返回顶部：贴底部安全区、尺寸略收（全站样式见文件头部 .to-top） */
+    .to-top{right:12px;bottom:calc(16px + env(safe-area-inset-bottom));width:30px;height:30px;box-shadow:none}
     /* 竖屏窄屏才恢复自适应列宽；横屏沿用桌面百分比列宽，列间距才均匀 */
     #sum-table,#prod-table,#flow-table{table-layout:auto}
     #sum-table colgroup col,#prod-table colgroup col,#flow-table colgroup col{width:auto !important}
@@ -1132,6 +1136,13 @@
        高度/间距仍保持压缩；仅针对弹窗内的输入与下拉，不影响表格与页面其它文字。 */
     .modal-card input:not([type="hidden"]):not([type="file"]),
     .modal-card select{font-size:16px !important;-webkit-text-size-adjust:100%}
+    /* 2026-11-20 全站防聚焦放大（不限弹窗）：iOS Safari 对任何 <16px 的文本输入框聚焦都会放大整页。
+       手机端所有文本类 input/textarea 统一抬到 16px；select 不触发缩放、复选框/文件框排除，表头下拉字号不受影响。 */
+    input:not([type="hidden"]):not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]),
+    textarea{font-size:16px !important;-webkit-text-size-adjust:100%}
+    /* 新增交易弹窗：申购日期与申购金额并列一行（交易类型、确认日期仍整行） */
+    #modal-trade .form-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:0 10px}
+    #modal-trade .form-grid>.field-wide{grid-column:1/-1}
   }
   @media (max-width:360px){
     /* 极窄屏仍保持 3 列 2 行，仅再收窄字号与内边距，避免长金额溢出 */
@@ -1614,7 +1625,7 @@
     <div class="sr-list" id="trade-prod-list"></div>
     <input type="hidden" id="trade-prod">
     <div class="form-grid">
-      <div class="field">交易类型
+      <div class="field field-wide">交易类型
         <div class="seg-group" id="trade-type-seg" role="group" aria-label="交易类型">
           <button type="button" class="seg on" data-type="申购">申购</button>
           <button type="button" class="seg" data-type="赎回">赎回</button>
@@ -1631,7 +1642,7 @@
       <label class="field"><span id="trade-amount-label">申购金额</span><input id="trade-amount" inputmode="decimal" placeholder="填写申购金额，按成交净值折算份额"></label>
       <label class="field"><span id="trade-shares-label">份额</span><input id="trade-shares" inputmode="decimal" readonly placeholder="按金额与成交净值自动计算"></label>
       <label class="field">成交净值（T日）<input id="trade-nav" inputmode="decimal" placeholder="自动带出T日净值，可手工修改"></label>
-      <label class="field">确认日期
+      <label class="field field-wide">确认日期
         <span class="dp-wrap">
           <input id="trade-confirm" type="text" autocomplete="off" placeholder="默认T+1工作日，可手工修改" aria-haspopup="dialog">
           <svg class="dp-ico" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="3" y="5.5" width="18" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3 10.5h18M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
@@ -1657,7 +1668,6 @@
         </label>
         <button type="button" class="ai-run" id="add-ocr-run" title="在本机识别截图文字并自动填入下方表单，无需联网和密钥">一键识别填入</button>
       </div>
-      <div class="ai-strip-tip">本地识别，不联网、不用密钥、永久免费；识别后请核对。也可直接手工填写。</div>
       <div class="ai-msg" id="add-ai-msg" hidden></div>
       <div class="add-grid">
         <label class="field wide">产品名称
@@ -1735,7 +1745,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261120k';
+      s.src = './assets/dashboard.js?v=20261120l';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();
@@ -1861,7 +1871,9 @@
       return t ? t.dataset.tab : 'hold';
     }
     function syncTopBtn() {
-      var show = activeTab() === 'hold' && window.pageYOffset > 420;
+      /* 2026-11-20：返回顶部全站应用——首页/交易/产品、手机/桌面均按滚动位置显示，
+         不再限定 activeTab()==='hold'（原来交易页/产品页下滑没有按钮） */
+      var show = window.pageYOffset > 420;
       if (topBtn) topBtn.classList.toggle('show', show);
     }
     // 切换子页：隐藏同 pane 其他子页、显示目标、高亮标签、回到页顶、触发 resize(趋势图从隐藏→显示需重算尺寸)

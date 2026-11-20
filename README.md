@@ -55,11 +55,15 @@
 **两行导航融合（2026-11-20）**：手机竖屏下，首页/交易的主标签与子页条拼成一张卡——主标签加 `.has-sub`（页签切换 JS 按当前页是否有子页条切换该类），去底圆角/下边框/下间距，子页条去上圆角改虚线顶边、紧贴无缝；行高进一步压缩（子页按钮 padding 4px 2px）。产品页无子页条，主标签保持全圆角。横屏/桌面不触发（媒体查询 max-width:760px）。
 
 ### 表单弹窗（手机 2026-11-20）
-- 新增交易：去掉底部文字说明（`.note-line{display:none}`），压缩字段间距与控件高度（field margin 6px、控件 min-height 34px），手机一屏录入无需滑动。
-- 添加产品：标题区顶部留白（padding-top 14px）、按钮行留 5px 呼吸间距；「一键识别填入」改浅蓝底（`#e6f2f6` / `accent-deep` 字，与上传按钮协调）；登记编码标签由「登记编码（选填，留空按名称自动匹配）」缩短为「登记编码（选填）」（说明移入 placeholder），解决两列布局下标签换行导致的输入框不对齐。
+- 新增交易：去掉底部文字说明（`.note-line{display:none}`），压缩字段间距与控件高度（field margin 6px、控件 min-height 34px），手机一屏录入无需滑动。**2026-11-20 手机端表单改两列**：交易类型与确认日期加 `.field-wide` 跨整行，申购日期与申购金额并列、份额与成交净值并列（`#modal-trade .form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}`）。
+- 添加产品：标题区顶部留白（padding-top 14px）、按钮行留 5px 呼吸间距；「一键识别填入」改浅蓝底（`#e6f2f6` / `accent-deep` 字，与上传按钮协调）；登记编码标签由「登记编码（选填，留空按名称自动匹配）」缩短为「登记编码（选填）」（说明移入 placeholder），解决两列布局下标签换行导致的输入框不对齐。**2026-11-20 去掉 OCR 下方的常驻说明文字**（原 `.ai-strip-tip`「本地识别，不联网、不用密钥、永久免费…」），识别结果提示仍由 `aiMsg()` 按需给出。
 - 本地 OCR 识别超时保护 60→150 秒（手机首次加载中文 wasm 模型较慢，降低误判），超时提示改为引导重试/手工填写。
-- **聚焦不自动放大（2026-11-20 修复）**：iOS Safari 只要聚焦的字号 <16px 就会强制放大整页（表现为点文本框后弹窗被推到右侧、按钮被截出屏幕）。根因是手机端为压高度写的 13px 规则（含 iOS 专属分支）覆盖了 16px。现统一在 `@media (max-width:760px)` 内用 `.modal-card input:not([type=hidden]):not([type=file]),.modal-card select{font-size:16px !important;-webkit-text-size-adjust:100%}` 抬回字号，高度/间距仍靠 `min-height`/`padding` 压缩，不再覆写小字号；删除 `#modal-trade` 与矮屏 `#modal-add` 的 iOS 13px 规则。
+- **聚焦不自动放大（2026-11-20 修复，全站）**：iOS Safari 只要聚焦的字号 <16px 就会强制放大整页（表现为点文本框后弹窗被推到右侧、按钮被截出屏幕）。根因是手机端为压高度写的 13px 规则（含 iOS 专属分支）覆盖了 16px。现统一在 `@media (max-width:760px)` 内用 `.modal-card input:not([type=hidden]):not([type=file]),.modal-card select{font-size:16px !important;-webkit-text-size-adjust:100%}` 抬回字号，高度/间距仍靠 `min-height`/`padding` 压缩，不再覆写小字号；删除 `#modal-trade` 与矮屏 `#modal-add` 的 iOS 13px 规则。**进一步全站化**：手机端所有文本类 `input`/`textarea`（产品搜索、筛选搜索、各弹窗输入框）统一 `font-size:16px !important`；`select` 不触发 iOS 缩放、复选框/文件框排除，表头下拉字号不受影响。
 - **底部按钮两列对齐与防误触（2026-11-20）**：`.modal-foot` 由 `flex:1` 改为 `display:grid;grid-template-columns:repeat(2,minmax(0,1fr))`，取消/提交（或取消/保存）严格等宽对齐；新增交易 `.modal-body` 底部加 20px padding，确认日期与按钮区之间留呼吸区，避免手指误触提交。iPhone 393×852 实测：所有控件 16px、按钮 176/176 等宽、日期面板在屏内、`visualViewport.scale=1`、`scrollWidth=393` 无横向溢出。
+
+**最近添加记录（2026-11-20，手机/桌面一致）**：添加产品弹窗底部的「最近添加记录」去掉登记编号（`AF…`）与代销机构（建设银行），改为「名称 + 日期时间 + 右侧『修改 / 删除』小按钮」。渲染按 `at` 倒序（保存后本地已 `unshift` 到首行，刷新后云端同样按时间倒序，两处顺序一致）。「修改」带原记录值打开弹窗（标题变「修改产品」），保存时用同一 id 走 `addProduct` 的 key upsert 覆盖更新（并跳过重复编码拦截）；「删除」调 `STORE.removeProduct(id)` 从云端产品库移除。
+
+**返回顶部按钮（2026-11-20 全站应用）**：悬浮按钮从仅首页手机端扩展到首页/交易/产品三个页签、手机与桌面端——CSS 基础样式放到文件头部（桌面 right16/bottom20、34px、带阴影；手机贴安全区、30px），`syncTopBtn()` 不再判断 `activeTab()==='hold'`，只按 `pageYOffset > 420` 显示。
 
 **产品名联动与清除筛选（2026-11-20）**：点盈亏汇总/持仓汇总里的产品名（`data-goto-trade`）切到交易页并按该产品过滤持仓汇总与交易流水。持仓汇总页在筛选态显示提示条 `#sum-filter`（与交易流水 `#trade-filter` 同款 `.active-filter` 样式），含「清除筛选」按钮；清除逻辑抽为 `clearTradeFilters()`，两个清除按钮共用——清空 `flowState.pid` 并恢复全局产品全选。无筛选时提示条隐藏。
 

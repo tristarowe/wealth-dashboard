@@ -3307,6 +3307,8 @@
 
   /* ---------------- 添加产品 ---------------- */
   var addState = { image: '', filename: '' };
+  /* 最近添加记录点「修改」时记住被编辑的产品 id：保存时用同一 id 覆盖（addProduct 按 key upsert） */
+  var addEditId = '';
 
   /* 本地 OCR：Tesseract.js 引擎与中文语言包随站点一起发布，识别全程在本机浏览器完成，
      不联网、不注册、不需要任何密钥，永久免费。worker/core/lang 均走站点内的相对路径。 */
@@ -3574,6 +3576,9 @@
   }
 
   function resetAddModal() {
+    addEditId = '';
+    var titleEl = document.querySelector('#modal-add .modal-head b');
+    if (titleEl) titleEl.textContent = '添加产品';
     ['add-name', 'add-code', 'add-org', 'add-nav', 'add-navdate', 'add-link'].forEach(function (id) {
       var el = document.getElementById(id);
       if (el) el.value = '';
@@ -3661,15 +3666,22 @@
     var box = document.getElementById('add-hist');
     var list = document.getElementById('add-hist-list');
     if (!box || !list) return;
-    var hist = (window.MANUAL_HISTORY || []).slice(0, 15);
+    /* 2026-11-20：保存后新记录本地已 unshift 到首行；这里再按 at 倒序兜底，
+       保证刷新（云端按 at 排序）与刚保存时的顺序一致。只展示名称+日期时间+右侧操作，
+       不再显示登记编号（AF…）与代销机构（建设银行），避免把名称挤成两字。 */
+    var hist = (window.MANUAL_HISTORY || []).slice().sort(function (a, b) {
+      return String(b.at || '').localeCompare(String(a.at || ''));
+    }).slice(0, 15);
     box.hidden = !hist.length;
     list.innerHTML = hist.map(function (r) {
-      var isDel = r.action === 'del';
-      var meta = [r.regCode, r.saleChannel].filter(Boolean).join(' · ');
-      return '<li><b class="' + (isDel ? 'del' : 'add') + '">' + (isDel ? '删除' : '添加') + '</b>' +
-        '<span title="' + histEsc(r.name || '') + '">' + histEsc(r.name || '—') + '</span>' +
-        (meta ? '<em>' + histEsc(meta) + '</em>' : '') +
-        '<i>' + fmtHistTime(r.at) + '</i></li>';
+      var id = histEsc(r.id || '');
+      return '<li>' +
+        '<span class="ah-name" title="' + histEsc(r.name || '') + '">' + histEsc(r.name || '—') + '</span>' +
+        '<i class="ah-time">' + fmtHistTime(r.at) + '</i>' +
+        '<span class="ah-ops">' +
+        '<button type="button" class="mini" data-hist-edit="' + id + '" title="带入原记录，保存即更新产品">修改</button>' +
+        '<button type="button" class="mini warn" data-hist-del="' + id + '" title="删除该产品">删除</button>' +
+        '</span></li>';
     }).join('');
   }
 
@@ -3678,6 +3690,53 @@
     if (!submit || submit.dataset.bound) return;
     submit.dataset.bound = '1';
     var busy = false;
+
+    /* 最近添加记录右侧「修改 / 删除」小按钮（2026-11-20）：
+       修改＝带原值打开弹窗、保存时同 id 覆盖；删除＝从云端产品库移除该产品 */
+    var histList = document.getElementById('add-hist-list');
+    if (histList && !histList.dataset.bound) {
+      histList.dataset.bound = '1';
+      histList.addEventListener('click', function (e) {
+        var editBtn = e.target.closest('[data-hist-edit]');
+        var delBtn = e.target.closest('[data-hist-del]');
+        if (editBtn) {
+          var pid = editBtn.getAttribute('data-hist-edit');
+          var prod = (window.MANUAL_PRODUCTS || []).filter(function (x) { return x.id === pid; })[0];
+          var rec = (window.MANUAL_HISTORY || []).filter(function (x) { return x.id === pid; })[0];
+          var src = prod || rec || {};
+          resetAddModal();
+          addEditId = pid;
+          fillAddForm({
+            name: src.name, regCode: src.regCode, org: src.org, risk: src.risk,
+            nav: src.nav, navDate: src.navDate, link: src.link
+          });
+          var channelEl = document.getElementById('add-channel');
+          if (channelEl && src.saleChannel) channelEl.value = src.saleChannel;
+          var titleEl = document.querySelector('#modal-add .modal-head b');
+          if (titleEl) titleEl.textContent = '修改产品';
+          var modal = document.getElementById('modal-add');
+          if (modal) modal.hidden = false;
+          aiMsg('已带入原记录，修改后保存即更新', 'ok');
+          return;
+        }
+        if (delBtn) {
+          var did = delBtn.getAttribute('data-hist-del');
+          var exists = (window.MANUAL_PRODUCTS || []).some(function (x) { return x.id === did; });
+          if (!exists) { toast('该产品已不在产品库，可点「修改」重新添加'); return; }
+          delBtn.disabled = true;
+          window.STORE.removeProduct(did).then(function () {
+            mergeManualProducts();
+            computeHoldings();
+            renderAll();
+            renderAddHistory();
+            toast('已删除产品');
+          }).catch(function (err) {
+            delBtn.disabled = false;
+            toast((err && err.message) || '删除失败，请重试');
+          });
+        }
+      });
+    }
 
     /* 图片识别：上传截图转 dataURL，一键识别填表，配置面板开关 */
     var fileEl = document.getElementById('add-image');
@@ -3722,12 +3781,14 @@
       /* 登记编码、净值、净值日期均选填：只填名称即可添加，系统每天按名称反查编码并抓净值。
          但若填了净值就必须同时给日期，否则前端无法定位净值点、会显示为空。 */
       if (nav > 0 && !/^\d{4}-\d{2}-\d{2}$/.test(navDate)) { toast('填了最新净值，请同时选择净值日期'); return; }
-      if (code && tradeProducts().some(function (p) { return p.regCode === code; })) {
+      /* 修改模式跳过重复编码拦截：产品本来就在库里，保存只是覆盖同一条记录 */
+      if (!addEditId && code && tradeProducts().some(function (p) { return p.regCode === code; })) {
         toast('该登记编码已在产品库，无需重复添加');
         return;
       }
+      var wasEdit = !!addEditId;
       var item = {
-        id: code ? 'M' + code : 'M' + Date.now(),
+        id: addEditId || (code ? 'M' + code : 'M' + Date.now()),
         name: name,
         regCode: code,
         org: org,
@@ -3753,7 +3814,7 @@
         resetAddModal();
         renderAddHistory();
         document.getElementById('modal-add').hidden = true;
-        toast('已加入产品库');
+        toast(wasEdit ? '已更新产品' : '已加入产品库');
       }).catch(function (e) {
         busy = false;
         submit.disabled = false;
