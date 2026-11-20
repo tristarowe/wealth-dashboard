@@ -2675,6 +2675,9 @@
       /* 2026-11-21 用户要求：日开型产品名统一缩写
          「建信嘉鑫按日开放式第123期」→「建信嘉鑫日开第123期」（同上千只日开产品同规则） */
       .replace(/按日开放式|按日开放/g, '日开')
+      /* 2026-11-21 用户要求：现金管理类产品统一去掉「类产品」
+         「建信龙宝现金管理类产品7号」→「建信龙宝现金管理7号」 */
+      .replace(/现金管理类产品|现金管理类/g, '现金管理')
       .replace(/\s{2,}/g, ' ').trim();
     /* 机构简称：orgShort / org / issuer 依次兜底；去掉公司后缀与「理财」 */
     var org = String(p.orgShort || p.org || p.issuer || '')
@@ -4846,7 +4849,7 @@
       /* 列序 2026-11-21 四轮（用户要求）：持仓金额紧跟产品名称，产品净值放持仓份额右侧；
          手机端隐藏产品净值列，改为名称下方小字灰字（.nav-under） */
       var navUnder = (h.latestNav !== null && h.latestNav !== undefined && !isNaN(h.latestNav))
-        ? '<span class="nav-under" title="产品净值（最新披露日 ' + (h.latestDate || '') + '）">净值 ' + fmtNav(h.latestNav) + '</span>' : '';
+        ? '<span class="nav-under" title="产品净值（最新披露日 ' + (h.latestDate || '') + '）">' + fmtNav(h.latestNav) + '</span>' : '';
       return '<tr>' +
         '<td><div class="pname"><a class="plink" href="javascript:void(0)" data-goto-prod="' + p.id + '" title="在产品库中查看「' + (p.name || '') + '」">' +
           prodDispName(p) + '</a>' +
@@ -4857,7 +4860,7 @@
           '</span>' +
           navUnder +
           '</div></td>' +
-        '<td class="r num">' + fmtMoney(h.mv) + '</td>' +
+        '<td class="r num mv-col">' + fmtMoney(h.mv) + '</td>' +
         '<td class="c num">' + (h.latestDate ? withBadge(mmdd(h.latestDate), navLagBadge(h.product)) : '—') + '</td>' +
         '<td class="r num ' + colorBy(h.holdProfit) + '" title="持仓收益（仅当前持仓份额）= 市值 − 剩余成本">' + fmtSigned(h.holdProfit) + '</td>' +
         '<td class="r num ' + (h.annShort ? 'muted' : colorBy(h.ann)) + '" title="' + annTipOf(h) + '">' +
@@ -5468,6 +5471,9 @@
         return '<div class="ts-cell' + (idx === 0 ? ' is-today' : '') + '"><b>' + mdText(ds) +
           (idx === 0 ? '<em>今天</em>' : '') + '</b><span>周' + wd[dd.getDay()] + '</span></div>';
       }).join('');
+    /* 手机端没有表头（2026-11-21 用户要求），代销机构筛选改挂到标题行右侧，选项同源 */
+    var miniSel = document.getElementById('np-org-sel-m');
+    if (miniSel) miniSel.innerHTML = opts.join('');
 
     var totalCnt = 0;
     var out = [];
@@ -5559,6 +5565,8 @@
 
     var sel = document.getElementById('np-org-sel');
     if (sel) sel.onchange = function () { NP_UI.channel = this.value; renderNewProds(); };
+    var selM = document.getElementById('np-org-sel-m');
+    if (selM) selM.onchange = function () { NP_UI.channel = this.value; renderNewProds(); };
     /* 每次重绘都会新建这个 select，需要重新套一层「紧凑弹层」外壳 */
     if (sel) attachCompactSelect(sel);
   }
