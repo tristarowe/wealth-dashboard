@@ -1,7 +1,7 @@
 {
   "_doc": "跨端代码守卫共用标记清单 —— 唯一权威来源。WorkBuddy 的 .githooks/pre-push 与 Trae 的 tools/sync_pages.py 都必须读取本文件，禁止在脚本里硬编码标记列表。新增功能后在此登记，两端自动生效。",
   "_maintainer": "任何一端修改本文件后，需在提交信息中说明原因；改动会同时影响两端的推送守卫。",
-  "version": "2026-11-20ze",
+  "version": "2026-11-20zf",
   "protected": {
     "_doc": "受『整批中止』保护的文件：远端内容被他人改过时，整批拒绝推送，必须先 pull 合并。markers 为该文件必须包含的字符串，缺失即判定为旧版/被回退，整批拒推。",
     "index.html": [
@@ -23,7 +23,7 @@
       "data-stamp",
       "B2/Q2：横屏全表由 11px 提到 11.5px",
       "Q1：手机年表/月表",
-      "v=20261120o",
+      "v=20261120p",
       "手机端彻底隐藏滚动条",
       "data-sort=\"total\"",
       "累计收益",
@@ -164,7 +164,9 @@
       "data-sort=\"mv\">持仓<br>金额",
       "id=\"submit-add\">提交",
       "横屏操作列 2026-11-20：160→126px",
-      "#sum-table col:nth-child(11){width:126px !important}"
+      "#sum-table col:nth-child(11){width:126px !important}",
+      "添加产品弹窗：下拉里「未填 / 建设银行」等选中值比相邻输入框占位文字视觉大一号",
+      "#modal-add .field select{font-size:14px !important;-webkit-text-size-adjust:100%}"
     ],
     "assets/dashboard.js": [
       "PID_ALIAS",
@@ -300,7 +302,10 @@
       "ah-deleted",
       "root.style.scrollBehavior = 'auto'",
       "同帧立即滚回原位",
-      "<span class=\"muted\">-</span>"
+      "<span class=\"muted\">-</span>",
+      "function isNameLine(ln)",
+      "function mergeNameLines(idx)",
+      "window.__parseOcrFields = parseOcrFields;"
     ],
     "assets/store.js": [
       "sbTombstones",

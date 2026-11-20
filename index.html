@@ -1154,6 +1154,9 @@
        高度/间距仍保持压缩；仅针对弹窗内的输入与下拉，不影响表格与页面其它文字。 */
     .modal-card input:not([type="hidden"]):not([type="file"]),
     .modal-card select{font-size:16px !important;-webkit-text-size-adjust:100%}
+    /* 2026-11-20 添加产品弹窗：下拉里「未填 / 建设银行」等选中值比相邻输入框占位文字视觉大一号，
+       不协调；收到 14px（select 聚焦不触发 iOS 缩放，输入框仍必须保持 16px 防放大）。 */
+    #modal-add .field select{font-size:14px !important;-webkit-text-size-adjust:100%}
     /* 2026-11-20 全站防聚焦放大（不限弹窗）：iOS Safari 对任何 <16px 的文本输入框聚焦都会放大整页。
        手机端所有文本类 input/textarea 统一抬到 16px；select 不触发缩放、复选框/文件框排除，表头下拉字号不受影响。 */
     input:not([type="hidden"]):not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]),
@@ -1772,7 +1775,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261120o';
+      s.src = './assets/dashboard.js?v=20261120p';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();

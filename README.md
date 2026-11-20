@@ -80,7 +80,7 @@
 
 **最近添加记录状态标识 + 日期框/日历修复 + 弹窗气泡抑制（2026-11-20）**：
 - 「最近添加记录」名称右侧新增状态小字：正常在产品库的显示绿色「已入库」（`.ah-stored`，`--down` 色），已删除的显示灰色「已删除」（`.ah-deleted`）且删除按钮禁用；删除记录仍不单独成行。
-- **日期框不再弹 iOS 键盘**：`#trade-apply`（申购日期）、`#trade-confirm`（确认日期）统一 `readonly`（确认日期去掉 `openTrade` 中旧的 `readOnly=false` 解禁），任意日期通过日历选（清空后重选）。日历 `placeDp()` 改用 `window.visualViewport`（宽/高/offsetTop/offsetLeft）计算可视区，优先贴输入框下方、否则上方、再否则可视区垂直居中兜底，不再用 `innerHeight` 被键盘顶到屏幕顶部；并监听 visualViewport 的 resize/scroll 实时重定位，打开日历前 blur 其它聚焦输入框收起键盘。JS 版本 `v=20261120o`。
+- **日期框不再弹 iOS 键盘**：`#trade-apply`（申购日期）、`#trade-confirm`（确认日期）统一 `readonly`（确认日期去掉 `openTrade` 中旧的 `readOnly=false` 解禁），任意日期通过日历选（清空后重选）。日历 `placeDp()` 改用 `window.visualViewport`（宽/高/offsetTop/offsetLeft）计算可视区，优先贴输入框下方、否则上方、再否则可视区垂直居中兜底，不再用 `innerHeight` 被键盘顶到屏幕顶部；并监听 visualViewport 的 resize/scroll 实时重定位，打开日历前 blur 其它聚焦输入框收起键盘。JS 版本 `v=20261120p`。
 - **弹窗气泡抑制**：输入框统一 `autocomplete/autocorrect/autocapitalize=off`、`spellcheck=false`（`suppressInputCallouts()` 在 init 兜底），全局 `input,textarea{-webkit-touch-callout:none}` 禁 iOS 长按 callout——减少聚焦时带尖角的「tristarowe.github.io」站点 URL/自动填充气泡挡住表单（该气泡为 iOS Safari 系统浮层，无法完全删除，从源头降低触发）。
 
 **文案与横屏操作列收窄（2026-11-20）**：持仓汇总（交易页 `#sum-table`）第 6 列表头由「持仓市值」改为「持仓金额」（`data-sort="mv"` 排序口径不变；盈亏汇总产品名称下的 `mv-under` tooltip 仍显示持仓市值，非同一处）；添加产品弹窗底部提交按钮由「保存」改为「提交」（`id="submit-add"` 逻辑不变，修改产品场景同样显示「提交」）。手机横屏（761–968px）`#sum-table` 操作列由定义 160px→126px（实测渲染 185→146px，三个 38px 按钮合计 114px、两侧各留约 16px 已贴合），收窄的 34px 按 +3~4px/列匀给其余 10 列（`col:nth-child(1~10)`，总宽 786px 保持不变），竖屏/桌面不受影响。
@@ -88,6 +88,10 @@
 **弹窗背景锁定（2026-11-20）**：添加产品/新增交易/确认框打开时锁住背景页滚动——`bindModalScrollLock()` 用 MutationObserver 监听三个 modal 的 hidden 变化，任一打开即记 scrollY 并给 body 加 `.modal-lock`（fixed+负 top，防 iOS Safari 滚动穿透），全部关闭再恢复原位；覆盖关闭按钮、点遮罩、提交成功、取消所有路径。
 
 **取消弹窗不再「跳顶再滚回」（2026-11-20）**：根因是 html 全局 `scroll-behavior:smooth`——解锁时 `window.scrollTo(0, savedY)` 变成从 0 平滑滚回原位的动画（393×852 实测 0→27→202→491→782，约 400ms 可见跳顶）。修复：解锁分支先临时把 `document.documentElement.style.scrollBehavior='auto'`，再移除 `.modal-lock` 并同步 `scrollTo` 回 savedY，强制布局后还原原样式；视觉上背景纹丝不动。产品库操作列无详情/非手工产品的占位符由长破折号「—」改成短横「-」；盈亏汇总数据行桌面/手机统一 32px。
+
+**OCR 折行产品名拼接 + 添加产品下拉字号（2026-11-20）**：
+- 建行 App 持仓详情标题会折成两行（「信银理财安盈象固收稳利十四天持有期」/「165号理财产品」），旧打分逻辑只取含「165号」的后半行。新增 `isNameLine()` 判定相邻行是否产品名续行（排除字段标签、日期、编码、净值、代销机构行），`mergeNameLines()` 把选中行与相邻续行拼回全名，并把「数字+号」尾段固定排末尾（兼容 OCR 上下行颠倒）。回归用例：`bank_split` 得到完整「信银理财安盈象固收稳利十四天持有期165号理财产品」，登记编码 `AF266423B00000000` 与净值日期仍正确；单行/带「产品名称:」标签的旧用例不回归。测试入口 `window.__parseOcrFields`。
+- 手机「添加产品」弹窗里「未填」「建设银行」两个下拉选中值视觉上比相邻输入框占位文字大一号，改为 `#modal-add .field select{font-size:14px!important}`（select 聚焦不会触发 iOS 缩放，输入框仍保持 16px 防放大）。393×852 截图实测两个下拉字号 14px，与占位文字协调。
 
 ### 列宽与间距（A0 / A2 / A3）
 - 桌面产品名称列两档：标准 220–240px（盈亏汇总 220px、持仓汇总 237px）、宽列 300–345px（交易流水、产品库）；`table-layout:fixed`。

@@ -3538,30 +3538,57 @@
        1) 优先带"产品名称:"标签的行（最可靠）；
        2) 否则取含"数字+天/号/期"或产品关键词、且不是机构行的最长行；
        3) 排除纯机构名、字段标签行、含净值/日期的行。 */
+    /* 产品名可能被 App 折成两行（如「信银理财安盈象固收稳利十四天持有期」+「165号理财产品」）。
+       打分只会选中含「165号」的后半行，故需要判断相邻行是否产品名续行，选中后拼回全名。 */
+    function isNameLine(ln) {
+      var s = String(ln || '').replace(/\s+/g, '');
+      if (!s || /^\d{1,2}:\d{2}/.test(s) || !/[\u4e00-\u9fa5]/.test(s)) return false;
+      if (/^(净值|单位净值|累计净值|日期|净值日期|风险等级|产品代码|登记编码|产品名称|名称|发行机构|产品类型|七日年化|业绩比较基准|参考市值|累计收益|持仓|交易账户|可用份额|最新净值|交易记录|持仓明细|收益分析)/.test(s)) return false;
+      if (/代销|登录|取消关注|加购|赎回|非交易时间/.test(s)) return false;
+      if (/20\d{2}[-./年]/.test(s) || /[Zz]\d{10}/.test(s) || /[0-9A-Z]{14,22}/.test(s)) return false;
+      return /(理财|产品|添利|嘉鑫|安盈|悦享|鸿锦|金鼎|睿|固收|现金管理|持有期)/.test(s) || /(天|号|期|产品)$/.test(s);
+    }
+    function mergeNameLines(idx) {
+      if (idx < 0 || idx >= lines.length) return;
+      var parts = [];
+      for (var a = idx - 1; a >= Math.max(0, idx - 2); a--) {
+        if (a === orgIdx || !isNameLine(lines[a])) break;
+        parts.unshift(lines[a].trim());
+      }
+      parts.push(out.name);
+      if (idx + 1 < lines.length && idx + 1 !== orgIdx && isNameLine(lines[idx + 1])) {
+        parts.push(lines[idx + 1].trim());
+      }
+      /* OCR 偶尔上下行顺序颠倒（"165号理财产品"在前），把「数字+号」的尾段固定放回末尾 */
+      parts.sort(function (a, b) { return (/^\d+\s*号/.test(a) ? 1 : 0) - (/^\d+\s*号/.test(b) ? 1 : 0); });
+      out.name = parts.join('');
+    }
     var labeled = -1;
     for (var j = 0; j < lines.length; j++) {
       if (/^(产品名称|名称)\s*[:：]/.test(lines[j])) { labeled = j; break; }
     }
     if (labeled >= 0) {
       out.name = lines[labeled].replace(/^(产品名称|名称)\s*[:：]?\s*/, '').trim();
+      mergeNameLines(labeled);
     } else {
       var noise = /^(净值|单位净值|累计净值|日期|净值日期|风险等级|产品代码|登记编码|产品名称|发行机构|产品类型|七日年化|业绩比较基准)/;
       var scored = lines.map(function (ln, idx) {
         var s = 0;
-        if (idx === orgIdx) return { ln: ln, s: -99 };
+        if (idx === orgIdx) return { ln: ln, s: -99, idx: idx };
         /* 排除手机状态栏时间（"17:59 HS"）、不含任何中文/字母的纯数字符号行。
            注意不能用 /^[\W\d]+$/：非 unicode 模式下中文也落入 \W，会误杀产品名。 */
-        if (/^\d{1,2}:\d{2}/.test(ln) || !/[\u4e00-\u9fa5A-Za-z]/.test(ln)) return { ln: ln, s: -99 };
+        if (/^\d{1,2}:\d{2}/.test(ln) || !/[\u4e00-\u9fa5A-Za-z]/.test(ln)) return { ln: ln, s: -99, idx: idx };
         if (/\d+\s*(天|号|期)/.test(ln)) s += 5;
         if (/添利|嘉鑫|安盈|悦享|鸿锦|金鼎|睿|固收|现金管理/.test(ln)) s += 3;
         if (/理财|产品/.test(ln)) s += 1;
         if (noise.test(ln)) s -= 6;
         if (/\d{4}[-./年]/.test(ln) || /1[.。]\d{3}/.test(ln) || /[Zz]\d{10}/.test(ln)) s -= 4;
         if (ln.length >= 6 && ln.length <= 60) s += 1;
-        return { ln: ln, s: s };
+        return { ln: ln, s: s, idx: idx };
       }).sort(function (a, b) { return b.s - a.s; });
       if (scored.length && scored[0].s > 0) {
         out.name = scored[0].ln.replace(/^(产品名称|名称)[:：]?\s*/, '').trim();
+        mergeNameLines(scored[0].idx);
       }
     }
     /* OCR 常在中英文/数字间插入空格（"合 盛 多 元 30 天"），
@@ -5330,6 +5357,8 @@
     return { ok: issues.length === 0, issues: issues, canonicalIds: window.REG_CANONICAL_IDS };
   }
   window.__auditProductIdentity = auditProductIdentity;
+  /* 2026-11-20：暴露 OCR 字段解析供本地回归测试（折行产品名拼接） */
+  window.__parseOcrFields = parseOcrFields;
 
   function renderAll(keepView) {
     refreshAggregate();
