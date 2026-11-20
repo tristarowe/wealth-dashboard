@@ -219,8 +219,10 @@
     #hold-table col:nth-child(10),#hold-table col:nth-child(11),
     #hold-table col:nth-child(12),#hold-table col:nth-child(13),
     #hold-table col:nth-child(14),#hold-table col:nth-child(15){width:5.68% !important}
-    #hold-table tbody td{padding:4px 7px;line-height:1.3}
-    #hold-table tbody td.mlabel{padding:3px 8px;line-height:1.3}
+    /* 2026-11-20：盈亏汇总数据行统一 32px（原 26px），表头 40px 不动 */
+    #hold-table tbody tr{height:32px}
+    #hold-table tbody td{padding:5px 7px;line-height:1.3}
+    #hold-table tbody td.mlabel{padding:4px 8px;line-height:1.3}
     #sum-table tbody td{padding:6.8px 8px;line-height:1.3}
     /* 操作按钮贴合文字 2026-11-20：桌面端收紧到 1px 5px，边框贴住文字 */
     #sum-table tbody td:last-child .mini{padding:1px 5px;line-height:1.2}
@@ -1184,15 +1186,17 @@
     #hold-table thead th,#sum-table thead th,#flow-table thead th,#prod-table thead th{
       height:38px;padding-top:6px;padding-bottom:6px;line-height:1.3;box-sizing:border-box
     }
-    /* 盈亏汇总（hold-table）数据行 38→35px：表头 38px 不动，只收 tbody 行高与上下 padding；
+    /* 盈亏汇总（hold-table）数据行统一 32px：表头 38px 不动，只收 tbody 行高与上下 padding；
        持仓汇总/流水仍 38px，避免带按钮与双行名称的行被挤 */
-    #hold-table tbody tr{height:35px}
+    #hold-table tbody tr{height:32px}
     #sum-table tbody tr,#flow-table tbody tr:not(.flow-month){height:38px}
     #flow-table tbody tr.flow-month{height:48px}
     #flow-table tbody tr.flow-month td{padding:5px 8px;line-height:1.5}
     #prod-table tbody tr{height:48px}
     /* 只压 tbody 上下 padding：表头高度/左右 padding 保持原样，长名称换行行由内容自然撑高不被裁切 */
     #hold-table tbody td{padding-top:4px;padding-bottom:4px}
+    /* 区间标签单元格基础规则是 6px 上下（行 146），会把 32px 行撑到 32.8px；单独对齐到 4px */
+    #hold-table tbody td.mlabel{padding-top:4px;padding-bottom:4px}
     #sum-table tbody td,#flow-table tbody td{padding-top:5px;padding-bottom:5px}
     /* 持仓汇总操作按钮贴合文字 2026-11-20：与流水/产品库同款 2px 6px + line-height 1.2
        （原 4px 9px / normal 实测 44×26px，过宽过高；改后约 36×18px） */
@@ -1205,6 +1209,13 @@
     /* 320px 极窄屏再收半档，确保收益率副行仍完整单行 */
     .metric .m-sub{font-size:9px;letter-spacing:-.3px}
     .metric .m-sub b{font-size:10px;letter-spacing:-.3px}
+  }
+  /*      手机横屏持仓汇总行高统一 2026-11-20：长名称换行行自然高 47~47.3px，单行行原为 33~34px，
+     同一表里高低不一；这里把所有行固定到同一高度 48px（略高于换行行，兼容亚像素舍入），视觉均匀。
+     放在竖屏 max-width:760 规则之后，故横屏 761–968 与 ≤760 两种宽度都生效。 */
+  @media (orientation:landscape) and (max-height:520px){
+    #sum-table tbody tr{height:48px}
+    #sum-table tbody td{padding-top:6px;padding-bottom:6px}
   }
 
   /* 导出时撑满基准宽度，避免窄窗口裁切 */
@@ -1761,7 +1772,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261120n';
+      s.src = './assets/dashboard.js?v=20261120o';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();

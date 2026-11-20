@@ -1,7 +1,7 @@
 {
   "_doc": "跨端代码守卫共用标记清单 —— 唯一权威来源。WorkBuddy 的 .githooks/pre-push 与 Trae 的 tools/sync_pages.py 都必须读取本文件，禁止在脚本里硬编码标记列表。新增功能后在此登记，两端自动生效。",
   "_maintainer": "任何一端修改本文件后，需在提交信息中说明原因；改动会同时影响两端的推送守卫。",
-  "version": "2026-11-20zd",
+  "version": "2026-11-20ze",
   "protected": {
     "_doc": "受『整批中止』保护的文件：远端内容被他人改过时，整批拒绝推送，必须先 pull 合并。markers 为该文件必须包含的字符串，缺失即判定为旧版/被回退，整批拒推。",
     "index.html": [
@@ -23,7 +23,7 @@
       "data-stamp",
       "B2/Q2：横屏全表由 11px 提到 11.5px",
       "Q1：手机年表/月表",
-      "v=20261120n",
+      "v=20261120o",
       "手机端彻底隐藏滚动条",
       "data-sort=\"total\"",
       "累计收益",
@@ -64,7 +64,7 @@
       "盈亏汇总（首页 hold-table）行高压缩 2026-11-20",
       "全站表头统一 40px（2026-11-20）",
       "#hold-table thead th,#sum-table thead th,#prod-table thead th,#flow-table thead th",
-      "#hold-table tbody td.mlabel{padding:3px 8px;line-height:1.3}",
+      "#hold-table tbody td.mlabel{padding:4px 8px;line-height:1.3}",
       "#sum-table tbody td{padding:6.8px 8px;line-height:1.3}",
       "持仓汇总（交易页 sum-table）数据行 2026-11-20：数据行 35px",
       "操作按钮贴合文字 2026-11-20：桌面端收紧到 1px 5px",
@@ -135,8 +135,12 @@
       "确认日期与底部按钮之间留呼吸区",
       "手机弹窗防自动放大（关键修复）",
       "font-size:16px !important;-webkit-text-size-adjust:100%",
-      "盈亏汇总（hold-table）数据行 38→35px",
-      "#hold-table tbody tr{height:35px}",
+      "盈亏汇总（hold-table）数据行统一 32px",
+      "#hold-table tbody tr{height:32px}",
+      "手机横屏持仓汇总行高统一 2026-11-20",
+      "#sum-table tbody tr{height:48px}",
+      "区间标签单元格基础规则是 6px 上下",
+      "#hold-table tbody td.mlabel{padding-top:4px;padding-bottom:4px}",
       "持仓汇总操作按钮贴合文字 2026-11-20",
       "操作按钮边框贴合文字 2026-11-20：全局收紧 padding/行高",
       "全站防聚焦放大（不限弹窗）",
@@ -293,7 +297,10 @@
       "var vv = window.visualViewport;",
       "var lastAction = {}",
       "var deleted = lastAction[r.id || ''] === 'del';",
-      "ah-deleted"
+      "ah-deleted",
+      "root.style.scrollBehavior = 'auto'",
+      "同帧立即滚回原位",
+      "<span class=\"muted\">-</span>"
     ],
     "assets/store.js": [
       "sbTombstones",
@@ -369,7 +376,8 @@
   "min_counts": {
     "_doc": "标记出现次数下限（可选，向后兼容：旧解析器忽略本段，只按『存在』判断）。防止『同一标记有多处、只被改坏一处』仍能通过校验——2026-11-18 daystack→daystacX 事故即由只判存在导致。",
     "index.html": {
-      "daystack": 4
+      "daystack": 4,
+      "#hold-table tbody tr{height:32px}": 2
     }
   },
   "data": {

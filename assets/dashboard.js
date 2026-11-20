@@ -2681,7 +2681,7 @@
           '<span class="muted">—</span>') + '</td>' +
         '<td class="c">' + (h ? '<button class="mini" data-detail="' + p.id + '">详情</button>' : '') +
           (p.manual ? '<button class="mini warn" data-del-product="' + p.id + '" style="margin-left:4px">删除</button>' : '') +
-          (!h && !p.manual ? '<span class="muted">—</span>' : '') + '</td>' +
+          (!h && !p.manual ? '<span class="muted">-</span>' : '') + '</td>' +
         '</tr>';
     }).join('');
 
@@ -5775,10 +5775,18 @@
         document.body.classList.add('modal-lock');
         locked = true;
       } else if (!open && locked) {
+        /* 取消/关闭弹窗时不要「跳顶再滚回」：html 全局 scroll-behavior:smooth 会让
+           scrollTo 从 0 平滑滚回 savedY（实测 ~400ms 动画）。恢复前临时改 auto，
+           同帧立即滚回原位，再还原原样式——页面视觉上纹丝不动。 */
+        var root = document.documentElement;
+        var prevBehavior = root.style.scrollBehavior;
+        root.style.scrollBehavior = 'auto';
         document.body.classList.remove('modal-lock');
         document.body.style.top = '';
         locked = false;
         try { window.scrollTo(0, savedY); } catch (e) { window.scrollTo(0, savedY); }
+        void root.offsetHeight; /* 强制布局后再还原，确保本次滚动已按 auto 执行 */
+        root.style.scrollBehavior = prevBehavior;
       }
     }
     if (window.MutationObserver) {
