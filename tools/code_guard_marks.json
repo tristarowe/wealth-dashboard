@@ -1,7 +1,7 @@
 {
   "_doc": "跨端代码守卫共用标记清单 —— 唯一权威来源。WorkBuddy 的 .githooks/pre-push 与 Trae 的 tools/sync_pages.py 都必须读取本文件，禁止在脚本里硬编码标记列表。新增功能后在此登记，两端自动生效。",
   "_maintainer": "任何一端修改本文件后，需在提交信息中说明原因；改动会同时影响两端的推送守卫。",
-  "version": "2026-11-20zl",
+  "version": "2026-11-20zm",
   "protected": {
     "_doc": "受『整批中止』保护的文件：远端内容被他人改过时，整批拒绝推送，必须先 pull 合并。markers 为该文件必须包含的字符串，缺失即判定为旧版/被回退，整批拒推。",
     "index.html": [
@@ -184,8 +184,9 @@
       ".filters input#prod-search{font-family:var(--font)",
       "天数两行分割线 2026-11-20",
       "#hold-table td.daystack .dsep{position:absolute;left:0;right:0;top:50%;height:1px;background:#f0f4f6;width:auto}",
-      "数值单元格右对齐 2026-11-20（表头保持原样：居中/名称左对齐）",
-      "#hold-table tbody td.pwin,#hold-table tbody td.awin{text-align:right}"
+      "数值单元格「居中向右」2026-11-20",
+      "#sum-table tbody td:nth-child(10)",
+      "{text-align:center;text-indent:0}"
     ],
     "assets/dashboard.js": [
       "PID_ALIAS",
