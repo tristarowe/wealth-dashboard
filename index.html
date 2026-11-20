@@ -67,8 +67,9 @@
   .metric .v.up{color:var(--up)}
   .metric .v.down{color:var(--down)}
   .metric .v.muted{color:var(--muted)}
-  .metric .m-sub{margin-top:7px;padding-top:6px;border-top:1px dashed #e8eef1;font-size:11.5px;color:var(--muted)}
-  .metric .m-sub b{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--up);margin:0 2px}
+  /* 指标卡副行：副行文字与数值强制同一行（手机三列时「持仓收益率 +0.43%」不再折行） */
+  .metric .m-sub{margin-top:7px;padding-top:6px;border-top:1px dashed #e8eef1;font-size:11.5px;color:var(--muted);white-space:nowrap}
+  .metric .m-sub b{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--up);margin:0}
   .metric .m-sub b.ink{color:var(--ink)}
   .metric .m-sub b.up{color:var(--up)}
   .metric .m-sub b.down{color:var(--down)}
@@ -179,6 +180,13 @@
   /* 产品库行高压缩（10 条一屏看全）：7→5px；交易流水保持 7px 不动 */
   #prod-table tbody td{padding:5px 8px}
   #flow-table tbody td{padding:7px 8px}
+  /* 盈亏汇总行高压缩 2026-11-20：桌面端单元格 10→5px、操作按钮 4→2px，
+     行高 47→约 30px，整页由约 10 条提升到 15 条；手机端沿用原有触控尺寸不变 */
+  @media (min-width:969px){
+    #sum-table thead th,#sum-table tbody td{padding:4px 8px}
+    #sum-table thead th,#sum-table tbody td{line-height:1.3}
+    #sum-table tbody td:last-child .mini{padding:1px 6px;line-height:1.2}
+  }
   #prod-table tbody td:nth-child(2),#prod-table thead th:nth-child(2){padding-left:10px}
   /* 持仓天数：整列与表头居中对齐，数字与「天」同字体、同字号、同字重 */
   #hold-table th[data-sort="holddays"],#sum-table th[data-sort="days"]{text-align:center}
@@ -1041,6 +1049,9 @@
     .metric{padding:8px 3px}
     /* 千分位逗号在 320 屏仍需约 78px，收紧字距容纳，字号保持 13px 不缩 */
     .metric .v{font-size:13px;letter-spacing:-.5px}
+    /* 极窄屏指标副行再收一档字号：保证「持仓收益率 +0.43%」仍单行不裁切 */
+    .metric .m-sub{font-size:9.5px;letter-spacing:-.2px}
+    .metric .m-sub b{font-size:10.5px;letter-spacing:-.2px}
     /* 极窄屏日历汇总再收一档，避免「挂0」被裁切 */
     .cal-sum{font-size:10px;gap:1px 2px}
     .cal-sum .lead,.cal-sum .st{padding:0 1px;gap:1px}
@@ -1048,6 +1059,11 @@
     .cal-sum b{font-size:10px}
     .cal-sum .lead b{font-size:11px}
     .hero-actions{grid-template-columns:1fr}
+  }
+  @media (max-width:340px){
+    /* 320px 极窄屏再收半档，确保收益率副行仍完整单行 */
+    .metric .m-sub{font-size:9px;letter-spacing:-.3px}
+    .metric .m-sub b{font-size:10px;letter-spacing:-.3px}
   }
 
   /* 导出时撑满基准宽度，避免窄窗口裁切 */
