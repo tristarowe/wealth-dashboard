@@ -5468,10 +5468,22 @@
   }
 
   /* 趋势图 tooltip 用 appendToBody:true 挂在 body 上：手机上划过图表后切页/滚动，
-     它不会随图表隐藏，会残留在页面底部（甚至把页面撑出一大片空白）。滚动与切 tab 时主动收起。 */
+     它不会随图表隐藏，会残留在页面底部（甚至把页面撑出一大片空白）。滚动与切 tab 时主动收起。
+     注意：hideTip 只把 opacity/visibility 置 0，元素仍以 absolute+transform 留在 body 里，
+     在较矮的页面（交易/产品页约 1600px）会把 documentElement 滚动高度撑到 3000px 以上，
+     滑到底部就露出一大片空白（刷新后 tooltip 重建才恢复）。必须 display:none 才真正退出布局。 */
   function hideTrendTip() {
     if (!trendChart) return;
     try { trendChart.dispatchAction({ type: 'hideTip' }); } catch (e) {}
+    var chartDom = trendChart.getDom();
+    for (var i = 0; i < document.body.children.length; i++) {
+      var el = document.body.children[i];
+      if (el === chartDom || el.nodeType !== 1 || !el.style) continue;
+      if (getComputedStyle(el).position === 'absolute' && /当日收益/.test(el.textContent || '')) {
+        el.style.display = 'none';   /* 真正退出布局，不再撑高页面 */
+        break;
+      }
+    }
   }
 
   function buildFloatHeads() {

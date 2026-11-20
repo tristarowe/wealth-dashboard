@@ -807,6 +807,8 @@
   /* 手机横屏矮屏（高 ≤520）：指标卡仍压成一行 6 列，把纵向空间让给表格；
      放在 761–968 规则之后，故能覆盖其 3 列布局 */
   @media (orientation:landscape) and (max-height:520px){
+    /* 「数据」列百分比宽在横屏只有约 60px，「日均万收」会贴住/压过右分割线，固定加宽 */
+    #hold-table col:nth-child(9){width:76px !important}
     .metrics{grid-template-columns:repeat(6,minmax(0,1fr))}
     .metrics .metric:last-child{grid-column:auto}
     .metric{padding:9px 8px}
@@ -824,7 +826,7 @@
     #sum-table colgroup col,#prod-table colgroup col,#flow-table colgroup col{width:auto !important}
     /* 盈亏汇总 16 列在竖屏下按固定像素列宽排布：列距统一、不因内容长短忽宽忽窄，
        整表 942px 横向滚动（表头吸顶 + 首屏可见产品名） */
-    #hold-table{table-layout:fixed;width:942px;min-width:942px}
+    #hold-table{table-layout:fixed;width:962px;min-width:962px}
     #hold-table colgroup col{width:auto !important}
     #hold-table col:nth-child(1){width:28px !important}
     #hold-table col:nth-child(2){width:132px !important}
@@ -834,7 +836,9 @@
     #hold-table col:nth-child(6){width:62px !important}
     #hold-table col:nth-child(7){width:58px !important}
     #hold-table col:nth-child(8){width:44px !important}
-    #hold-table col:nth-child(9){width:56px !important}
+    /* 「数据」列 56→76px：原宽减去左右 padding 仅 40px，「日均万收」四字需 48px，
+       文字被挤到贴住分割线；加宽后内容区 60px，左右各留约 6px（2026-11-20） */
+    #hold-table col:nth-child(9){width:76px !important}
     #hold-table col:nth-child(10),
     #hold-table col:nth-child(11),
     #hold-table col:nth-child(12),
@@ -1568,7 +1572,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261120b';
+      s.src = './assets/dashboard.js?v=20261120c';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();
