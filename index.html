@@ -153,7 +153,10 @@
   .th-select:focus{outline:none;border-color:var(--accent);color:var(--accent-deep)}
   /* 交易流水表头筛选：下拉宽度跟随列宽，窄屏也不撑破表格 */
   #flow-table .th-select{width:100%;max-width:100%;font-size:11.5px;padding:1px 2px;text-align:center;text-align-last:center}
-  .dag{position:absolute;top:-.45em;left:100%;margin-left:1px;font-size:10px;color:var(--muted)}
+  /* † 标记（2026-11-20）：数值列右对齐后数字贴右边缘，绝对定位的 † 会越出单元格；
+     改为行内小标记放在数字左侧（右对齐不受影响，数字右边缘仍是唯一对齐基准），
+     标记自带宽度但不会推挤数字的右边缘，也不会跨过单元格边框 */
+  .dag{font-size:10px;line-height:1;vertical-align:super;margin-right:1px;font-style:normal;color:var(--muted)}
   /* 角标定位锚点：宽度只等于日期/数值文本，角标 absolute 浮于右上角，不参与居中对齐 */
   .lag-anchor{position:relative;display:inline-block}
   /* 表头手动换行标记：默认隐藏（桌面/竖屏单行），仅横屏紧凑布局启用 */
@@ -967,6 +970,10 @@
     #hold-table col:nth-child(15){width:61px !important}
     #hold-table col:nth-child(16){width:58px !important}
     #hold-table thead th,#hold-table tbody td{padding:8px 3px}
+    /* 百分比挂位窄屏取 7px（% 字宽约 7px），并把区间数值左内边距收到 1px，
+       让 -11.94% 这类最宽值在 53px 周期列里仍有余量，数字右边缘不被挤到溢出 */
+    #hold-table{--pgut:7px}
+    #hold-table tbody td.pwin,#hold-table tbody td.awin{padding-left:1px}
     /* B1/Q1：手机四表正文统一 12.5px（flow 原 12px 纳入同档） */
     #sum-table tbody td,#flow-table tbody td,#prod-table tbody td{font-size:12.5px}
     /* 交易流水/产品库按钮贴合文字 2026-11-20：padding 收到 1px 5px */
@@ -1272,6 +1279,37 @@
   {text-align:right;text-indent:0}
   /* 月度表「收益」格（grid 子项）跟随右对齐 */
   .month-item > span:nth-child(2){text-align:right}
+  /* 月度表「收益」表头同步右对齐（年度表 .year-table thead th 在第 2 条规则里） */
+  .month-row.mhead span:nth-child(2){text-align:right}
+
+  /* ===== 表头跟随数值列右对齐 2026-11-20（用户要求）=====
+     与上面同一批数值列的表头一起右对齐；天数列（#hold-table 第8列）仍居中，
+     产品名称/交易时间/净值日期/状态/操作/评分等表头保持原样不动。 */
+  .year-table thead th:nth-child(2),
+  #flow-table thead th:nth-child(5),#flow-table thead th:nth-child(7),
+  #prod-table thead th:nth-child(4),#prod-table thead th:nth-child(5),
+  #prod-table thead th:nth-child(6),#prod-table thead th:nth-child(7),
+  #prod-table thead th:nth-child(8),
+  #hold-table thead th:nth-child(4),#hold-table thead th:nth-child(5),
+  #hold-table thead th:nth-child(6),#hold-table thead th:nth-child(7),
+  #hold-table thead th:nth-child(n+10):nth-child(-n+15),
+  #sum-table thead th:nth-child(3),#sum-table thead th:nth-child(4),
+  #sum-table thead th:nth-child(5),#sum-table thead th:nth-child(6),
+  #sum-table thead th:nth-child(7),#sum-table thead th:nth-child(8),
+  #sum-table thead th:nth-child(9),#sum-table thead th:nth-child(10)
+  {text-align:right}
+
+  /* ===== 百分比「%」不参与对齐 2026-11-20（用户要求）=====
+     对齐基准只认数字：数字右边缘对齐，% 悬挂在数字右侧的专属挂位里。
+     实现：% 包在 .pu 内（宽度 0 + 溢出可见），不再占据行内宽度；挂位由 th/td 的
+     padding-right 预留（变量 --pgut，默认 .62em ≈ 等宽字体一个字符宽），同列不带 % 的行（万收）
+     与表头同步预留同一挂位，这样双行「万收 / 年化」的数字右边缘严格共线，% 也不会越出边框。 */
+  .pu{display:inline-block;width:0;overflow:visible;text-align:left}
+  #hold-table thead th:nth-child(7),#hold-table thead th:nth-child(n+10):nth-child(-n+15),
+  #hold-table tbody td:nth-child(7),#hold-table tbody td.pwin,#hold-table tbody td.awin,
+  #sum-table thead th:nth-child(4),#sum-table tbody td:nth-child(4),
+  #prod-table thead th:nth-child(n+5):nth-child(-n+8),
+  #prod-table tbody td:nth-child(n+5):nth-child(-n+8){padding-right:var(--pgut,.62em)}
 
   /* 导出时撑满基准宽度，避免窄窗口裁切 */
   .page.is-exporting{width:1320px}

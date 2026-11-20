@@ -965,6 +965,19 @@
     return v === null || v === undefined || isNaN(v) ? '—' : v.toFixed(2) + '%';
   }
 
+  /* 表格单元格专用年化：% 不参与对齐（2026-11-20 用户要求）
+     % 包进 .pu（宽度 0、溢出可见），数字右边缘成为对齐基准，% 悬挂进 th/td 预留的右侧挂位。
+     † 标记（成立不足 1 年）放在数字左侧：右对齐下不会移动数字右边缘，
+     也就不会像原来那样越出单元格边框。 */
+  function fmtAnnCell(v, badge) {
+    if (v === null || v === undefined || isNaN(v)) return '—';
+    return (badge || '') + v.toFixed(2) + '<span class="pu">%</span>';
+  }
+  /* 日均万收单元格：† 同样前置 */
+  function fmtPerCell(v, badge) {
+    return (badge || '') + fmt2(v);
+  }
+
   function fmtNav(v) {
     return v === null || v === undefined || isNaN(v) ? '—' : v.toFixed(6);
   }
@@ -1408,7 +1421,7 @@
         : '暂无持仓';
       html += '<td class="r num ' + colorBy(h ? h.unrealized : null) + '"' + rs + ' title="' + holdTip + '">' +
         fmtSigned(h ? h.unrealized : null) + '</td>';
-      html += '<td class="r num ' + colorBy(h ? h.ann : null) + '"' + rs + '>' + fmtAnn(h ? h.ann : null) + '</td>';
+      html += '<td class="r num ' + colorBy(h ? h.ann : null) + '"' + rs + '>' + fmtAnnCell(h ? h.ann : null) + '</td>';
       var listDays = listingDaysOf(p);
       var daysTip = (h ? '持仓天数 ' + h.days + ' 天 = 今天 − 起息日 ' + (h.effStartDate || '') +
           '；年化按计息 ' + h.accrualDays + ' 天（至最新净值日 ' + (h.latestDate || '') + '）折算' : '') +
@@ -1429,8 +1442,8 @@
         var annTip = w.ann === null ? '历史区间不足'
           : w.ann.toFixed(4) + '%（' + w.start + ' 至 ' + m.latestDate + '，按 ' + w.span + ' 天年化）' +
             (w.fallback ? '；成立不足 1 年，按成立以来计算' : '');
-        perCells += '<td class="c num pwin ' + colorBy(w.per) + '" title="' + perTip + '">' + withBadge(fmt2(w.per), mark) + '</td>';
-        annCells += '<td class="c num awin ' + colorBy(w.ann) + '" title="' + annTip + '">' + withBadge(fmtAnn(w.ann), mark) + '</td>';
+        perCells += '<td class="c num pwin ' + colorBy(w.per) + '" title="' + perTip + '">' + fmtPerCell(w.per, mark) + '</td>';
+        annCells += '<td class="c num awin ' + colorBy(w.ann) + '" title="' + annTip + '">' + fmtAnnCell(w.ann, mark) + '</td>';
       });
       html += holdMetric === 'ann' ? annCells : perCells;
 
@@ -2641,14 +2654,14 @@
       var w7 = m.windows[0], w14 = m.windows[1], w30 = m.windows[2];
       function winCell(w) {
         var mark = w.fallback ? '<sup class="dag">†</sup>' : '';
-        return '<td class="c st"><b class="m-p10k ' + colorBy(w.per) + '">' + withBadge(fmt2(w.per), mark) +
-          '</b><i class="m-ann ' + colorBy(w.ann) + '">' + withBadge(fmtAnn(w.ann), mark) + '</i></td>';
+        return '<td class="c st"><b class="m-p10k ' + colorBy(w.per) + '">' + fmtPerCell(w.per, mark) +
+          '</b><i class="m-ann ' + colorBy(w.ann) + '">' + fmtAnnCell(w.ann, mark) + '</i></td>';
       }
       /* 成立至今列：上日均万收 / 下成立年化，与 30日列同构；日均由年化按 per=ann/3.65 反算，口径自洽 */
       function sinceCell(m) {
         var per = (typeof m.sinceAnn === 'number') ? m.sinceAnn / 3.65 : null;
         return '<td class="c st"><b class="m-p10k ' + colorBy(per) + '">' + fmt2(per) +
-          '</b><i class="m-ann ' + colorBy(m.sinceAnn) + '">' + fmtAnn(m.sinceAnn) + '</i></td>';
+          '</b><i class="m-ann ' + colorBy(m.sinceAnn) + '">' + fmtAnnCell(m.sinceAnn) + '</i></td>';
       }
 
       return '<tr data-pid="' + p.id + '">' +
@@ -4659,7 +4672,7 @@
           '</div></td>' +
         '<td class="c num">' + (h.latestDate ? withBadge(mmdd(h.latestDate), navLagBadge(h.product)) : '—') + '</td>' +
         '<td class="r num ' + colorBy(h.holdProfit) + '" title="持仓收益（仅当前持仓份额）= 市值 − 剩余成本">' + fmtSigned(h.holdProfit) + '</td>' +
-        '<td class="r num ' + colorBy(h.ann) + '">' + fmtAnn(h.ann) + '</td>' +
+        '<td class="r num ' + colorBy(h.ann) + '">' + fmtAnnCell(h.ann) + '</td>' +
         '<td class="r num ' + colorBy(h.profit) + '" title="累计收益 = 持仓收益 + 已赎回部分已实现">' + fmtSigned(h.profit) + '</td>' +
         '<td class="r num">' + fmtMoney(h.mv) + '</td>' +
         '<td class="c num">' + fmtNav(h.latestNav) + '</td>' +
