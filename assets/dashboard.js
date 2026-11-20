@@ -3576,13 +3576,13 @@
     if (!addState.image) { aiMsg('请先上传一张产品详情页截图', 'err'); return; }
     if (run) run.disabled = true;
     aiMsg('正在加载本地识别引擎（首次约需几秒）…', 'busy');
-    /* 识别超时保护：手机上 wasm/内存问题可能让 worker 卡住不返回，60 秒后主动失败 */
+    /* 识别超时保护 2026-11-20：手机首次加载中文 wasm 模型较慢，60→150 秒，降低误判；超时后仍可重试或手工填写 */
     var timedOut = false;
     var timer = setTimeout(function () {
       timedOut = true;
-      aiMsg('识别超时，可能是当前设备性能或内存不足。请关闭其它应用后重试，或直接手工填写', 'err');
+      aiMsg('识别耗时较长已停止。请点「一键识别填入」重试，或直接手工填写', 'err');
       if (run) run.disabled = false;
-    }, 60000);
+    }, 150000);
     getOcrWorker(function (p) {
       if (!timedOut) aiMsg('本地识别中 ' + p, 'busy');
     }).then(function (worker) {

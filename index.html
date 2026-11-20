@@ -423,8 +423,9 @@
   .ai-upload:hover{border-color:var(--accent);background:#f7fbfc}
   .ai-strip svg{width:16px;height:16px;flex:none}
   .ai-upload.has-img{border-color:var(--accent);background:#edf6f9}
-  .ai-run{border-color:var(--accent-deep);background:var(--accent-deep);color:#fff}
-  .ai-run:hover{opacity:.9}
+  /* 一键识别填入 2026-11-20：深青底改浅蓝底（与主标签高亮同款 #e6f2f6），与上传按钮视觉协调 */
+  .ai-run{border-color:#bcd9e3;background:#e6f2f6;color:var(--accent-deep)}
+  .ai-run:hover{background:#d8eaf1}
   .ai-run:disabled{opacity:.5;cursor:not-allowed}
   .ai-msg{margin-top:8px;font-size:12px;padding:6px 10px;border-radius:7px;line-height:1.5}
   .ai-msg.ok{background:#eef8f2;color:#1c7a5e}
@@ -883,10 +884,10 @@
     section{margin-top:16px}
     /* 方案E：手机端子页分页——同一 pane 内只显示当前子页（桌面端不隐藏，仍全部纵向排列） */
     .subpage-off{display:none !important}
-    /* 方案E：页内分页条（首页/交易顶部）——点击切换到对应子页，高亮色与主标签一致（#e6f2f6 底 / accent-deep 字） */
-    .jumpbar{display:flex;gap:4px;margin:2px 0 12px;background:#fff;border:1px solid var(--rule);border-radius:999px;padding:4px}
-    .jumpbar .j{flex:1;min-width:0;text-align:center;font-family:var(--font);font-size:12px;font-weight:700;
-      color:var(--muted);padding:6px 2px;border-radius:999px;background:transparent;border:0;
+    /* 两行导航融合 2026-11-20：子页条与主标签合成一个圆角卡片（自身去上圆角衔接主标签），中间虚线分隔，行高压缩；高亮仍为浅蓝底深字 */
+    .jumpbar{display:flex;gap:4px;margin:-1px 0 12px;background:#fff;border:1px solid var(--rule);border-top:1px dashed var(--rule);border-radius:0 0 12px 12px;padding:3px 4px}
+    .jumpbar .j{flex:1;min-width:0;text-align:center;font-family:var(--font);font-size:12px;font-weight:600;
+      color:var(--muted);padding:4px 2px;border-radius:7px;background:transparent;border:0;
       white-space:nowrap;cursor:pointer}
     .jumpbar .j.on{background:#e6f2f6;color:var(--accent-deep)}
     /* 方案E：返回顶部悬浮按钮——无填充向上箭头 SVG，下滑出现、点击回页首 */
@@ -960,6 +961,8 @@
     .metric .m-sub{font-size:10.5px;margin-top:5px;padding-top:4px}
     .metric .m-sub b{font-size:12px}
     .tabs{width:100%;overflow-x:auto;justify-content:flex-start;border-radius:12px}
+    /* 两行导航融合 2026-11-20：首页/交易有子页条时，主标签去底圆角/下边框/下间距，与子页条拼成一个卡片；产品页无子页条保持圆角 */
+    .tabs.has-sub{border-radius:12px 12px 0 0;border-bottom:0;margin-bottom:0}
     /* 手机主标签行高压缩 2026-11-20：padding 8→5px、min-height 42→36px（下方 min-height 规则同步），字号不变 */
     .tab{flex:1 0 auto;padding:5px 14px;font-size:12.5px}
     .sec-head{gap:8px;padding-bottom:7px;margin-bottom:8px}
@@ -1068,8 +1071,10 @@
     .modal-foot{flex:none;margin:0;padding:12px 18px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--rule);gap:10px}
     .modal-foot .btn{flex:1;justify-content:center;min-height:44px;font-size:14px}
     /* 添加产品弹窗：手机端尽量压缩为一屏（保留16px字号避免iOS聚焦放大，改压高度/间距） */
-    #modal-add .modal-head{padding:10px 16px 7px}
+    #modal-add .modal-head{padding:14px 16px 5px}
     #modal-add .modal-body{padding:0 16px}
+    /* 顶部留白后，按钮行与分割线之间留 5px 呼吸空间，避免贴线 */
+    #modal-add .ai-strip{margin-top:5px}
     #modal-add .add-grid{gap:5px 10px}
     #modal-add .field{font-size:11.5px;margin-top:5px}
     #modal-add .field input,#modal-add .field select{min-height:34px;padding:5px 10px;margin-top:2px}
@@ -1079,6 +1084,17 @@
     #modal-add .ai-upload,#modal-add .ai-run{height:32px;font-size:12px}
     #modal-add .ai-msg{margin-top:5px;padding:4px 8px}
     #modal-add .add-hist .add-hist-list{max-height:72px;overflow:auto}
+    /* 新增交易弹窗 2026-11-20：去掉底部文字说明、压缩字段间距与控件高度，手机一屏录入无需滑动 */
+    #modal-trade .modal-head{padding:10px 16px 7px}
+    #modal-trade .modal-body{padding:0 16px}
+    #modal-trade .note-line{display:none}
+    #modal-trade .field{font-size:11.5px;margin-top:6px}
+    #modal-trade .field input,#modal-trade .field select{font-size:13px;min-height:34px;padding:5px 10px;margin-top:2px}
+    html.is-ios #modal-trade .field input,html.is-ios #modal-trade .field select{font-size:13px}
+    #modal-trade .seg-group .seg{font-size:13px;min-height:34px;padding:6px}
+    #modal-trade .sr-list{max-height:120px;margin-top:4px}
+    #modal-trade .modal-foot{padding:8px 16px calc(8px + env(safe-area-inset-bottom))}
+    #modal-trade .modal-foot .btn{min-height:38px}
     /* iOS 输入控件保持16px，避免聚焦时页面被强制放大 */
     html.is-ios .field input,html.is-ios .field select,html.is-ios .seg-group .seg,html.is-ios .filters input{font-size:16px}
     .sr-list{max-height:190px}
@@ -1624,8 +1640,8 @@
         <label class="field wide">产品链接（选填）
           <input id="add-link" autocomplete="off" inputmode="url" placeholder="粘贴产品详情页链接，保存后可在产品库点击打开">
         </label>
-        <label class="field">登记编码（选填，留空按名称自动匹配）
-          <input id="add-code" autocomplete="off" placeholder="选填，如 Z7001026001785">
+        <label class="field">登记编码（选填）
+          <input id="add-code" autocomplete="off" placeholder="留空按名称自动匹配，如 Z7001026001785">
         </label>
         <label class="field">风险等级
           <select id="add-risk"><option value="">未填</option><option>R1</option><option>R2</option><option>R3</option><option>R4</option><option>R5</option></select>
@@ -1693,7 +1709,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261120g';
+      s.src = './assets/dashboard.js?v=20261120h';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();
@@ -1769,6 +1785,9 @@
     }
     function show(id) {
       tabs.forEach(function (t) { t.classList.toggle('on', t.dataset.tab === id); });
+      // 两行导航融合：首页/交易有子页条时给主标签加 has-sub（去底圆角拼成一体），产品页无子页条保持圆角
+      var tabsBox = document.getElementById('tabs');
+      if (tabsBox) tabsBox.classList.toggle('has-sub', id === 'hold' || id === 'trade');
       VALID.forEach(function (k) {
         var pane = document.getElementById('pane-' + k);
         if (pane) pane.hidden = (k !== id);
