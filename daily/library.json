@@ -1,6 +1,6 @@
 {
   "asOf": "2026-11-19",
-  "fetchedAt": "2026-11-20 22:19",
+  "fetchedAt": "2026-11-20 22:40",
   "source": "建行新品公告·销售文件要素表 + 中国理财网净值",
   "window": {
     "start": "2026-08-01",
@@ -19,13 +19,20 @@
       "inception": "2026-11-18",
       "raiseStart": "2026-11-17",
       "raiseEnd": "2026-11-17",
-      "dates": [],
-      "nav": [],
-      "per10k": [
-        null
+      "dates": [
+        "2026-11-18",
+        "2026-11-19"
       ],
-      "latestDate": "",
-      "latestNav": null,
+      "nav": [
+        1.0,
+        1.0001
+      ],
+      "per10k": [
+        null,
+        1.0
+      ],
+      "latestDate": "2026-11-19",
+      "latestNav": 1.0001,
       "navTried": "2026-11-19"
     },
     {
@@ -40,13 +47,20 @@
       "inception": "2026-11-18",
       "raiseStart": "2026-11-17",
       "raiseEnd": "2026-11-17",
-      "dates": [],
-      "nav": [],
-      "per10k": [
-        null
+      "dates": [
+        "2026-11-18",
+        "2026-11-19"
       ],
-      "latestDate": "",
-      "latestNav": null
+      "nav": [
+        1.0,
+        1.0001
+      ],
+      "per10k": [
+        null,
+        1.0
+      ],
+      "latestDate": "2026-11-19",
+      "latestNav": 1.0001
     },
     {
       "id": "LZ7001026001176",
