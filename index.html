@@ -433,7 +433,9 @@
   .modal-head{display:flex;align-items:center;justify-content:space-between;padding-bottom:10px;border-bottom:1px solid var(--rule);font-size:15px}
   .modal-head .x{border:0;background:transparent;font-size:20px;line-height:1;color:var(--muted);cursor:pointer}
   .field{display:block;font-size:12px;color:var(--muted);margin-top:12px}
-  .field input,.field select{display:block;width:100%;margin-top:4px;font-family:var(--font);font-size:13px;padding:8px 10px;border:1px solid var(--rule);border-radius:7px;color:var(--ink);background:#fff}
+  /* 表单控件统一高度 2026-11-20：select 默认行盒比 input 高 2px（37 vs 35），两列行因此高低不齐。
+     box-sizing + 固定 height 让输入框/下拉框严格等高，标签行高也一致，整体对齐。 */
+  .field input,.field select{display:block;width:100%;box-sizing:border-box;height:36px;line-height:1.3;margin-top:4px;font-family:var(--font);font-size:13px;padding:7px 10px;border:1px solid var(--rule);border-radius:7px;color:var(--ink);background:#fff}
   .field input[readonly]{background:#f7f9fa;color:var(--muted)}
   /* 自定义日期选择器：替换浏览器原生日期面板 */
   .add-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
@@ -919,9 +921,11 @@
     /* 方案E：手机端子页分页——同一 pane 内只显示当前子页（桌面端不隐藏，仍全部纵向排列） */
     .subpage-off{display:none !important}
     /* 两行导航融合 2026-11-20：子页条与主标签合成一个圆角卡片（自身去上圆角衔接主标签），中间虚线分隔，行高压缩；高亮仍为浅蓝底深字 */
-    .jumpbar{display:flex;gap:4px;margin:-1px 0 12px;background:#fff;border:1px solid var(--rule);border-top:1px dashed var(--rule);border-radius:0 0 12px 12px;padding:3px 4px}
-    .jumpbar .j{flex:1;min-width:0;text-align:center;font-family:var(--font);font-size:12px;font-weight:600;
-      color:var(--muted);padding:4px 2px;border-radius:7px;background:transparent;border:0;
+    /* 两行导航高度统一 2026-11-20：主标签行与子页行都固定 36px（内部按钮 32px），
+       上下内容均匀、整体从 45+32=77px 压到 36+36=72px；第二行字体 11px 比第一行 12.5px 小一档 */
+    .jumpbar{display:flex;gap:4px;margin:-1px 0 12px;background:#fff;border:1px solid var(--rule);border-top:1px dashed var(--rule);border-radius:0 0 12px 12px;padding:2px 4px;height:36px;box-sizing:border-box}
+    .jumpbar .j{flex:1;min-width:0;text-align:center;font-family:var(--font);font-size:11px;font-weight:600;
+      color:var(--muted);padding:2px;border-radius:7px;background:transparent;border:0;height:32px;box-sizing:border-box;
       white-space:nowrap;cursor:pointer}
     .jumpbar .j.on{background:#e6f2f6;color:var(--accent-deep)}
     /* 手机端返回顶部：贴底部安全区、尺寸略收（全站样式见文件头部 .to-top） */
@@ -933,25 +937,27 @@
        整表 942px 横向滚动（表头吸顶 + 首屏可见产品名） */
     #hold-table{table-layout:fixed;width:962px;min-width:962px}
     #hold-table colgroup col{width:auto !important}
+    /* 2026-11-20 竖屏列宽再压缩：按每列文字实测最小宽度收紧，省出的 65px 全给产品名称列
+       （132→197px），总宽仍 962px。实测所有 th/td 无内容裁切、无横向溢出。 */
     #hold-table col:nth-child(1){width:28px !important}
-    #hold-table col:nth-child(2){width:132px !important}
-    #hold-table col:nth-child(3){width:72px !important}
-    #hold-table col:nth-child(4){width:56px !important}
-    #hold-table col:nth-child(5){width:62px !important}
-    #hold-table col:nth-child(6){width:62px !important}
-    #hold-table col:nth-child(7){width:58px !important}
-    #hold-table col:nth-child(8){width:44px !important}
-    /* 「数据」列 56→76px：原宽减去左右 padding 仅 40px，「日均万收」四字需 48px，
-       文字被挤到贴住分割线；加宽后内容区 60px，左右各留约 6px（2026-11-20） */
-    #hold-table col:nth-child(9){width:76px !important}
-    /* 评分列 2026-11-20：48→54px，与周期列齐平；从第 10-15 列各让 1px（总宽不变） */
+    #hold-table col:nth-child(2){width:197px !important}
+    #hold-table col:nth-child(3){width:64px !important}
+    #hold-table col:nth-child(4){width:52px !important}
+    #hold-table col:nth-child(5){width:56px !important}
+    #hold-table col:nth-child(6){width:56px !important}
+    #hold-table col:nth-child(7){width:54px !important}
+    #hold-table col:nth-child(8){width:38px !important}
+    /* 「数据」列内容「日均万收」需约 55px（含左右 padding），压缩后 64px 仍留余量 */
+    #hold-table col:nth-child(9){width:64px !important}
+    /* 周期列按最宽数值 -11.94%（约 43px）+ padding 收紧到 49px；
+       「成立至今」表头两行文字需 56px，评分列「新持仓」需 52px */
     #hold-table col:nth-child(10),
     #hold-table col:nth-child(11),
     #hold-table col:nth-child(12),
     #hold-table col:nth-child(13),
-    #hold-table col:nth-child(14),
-    #hold-table col:nth-child(15){width:53px !important}
-    #hold-table col:nth-child(16){width:54px !important}
+    #hold-table col:nth-child(14){width:49px !important}
+    #hold-table col:nth-child(15){width:56px !important}
+    #hold-table col:nth-child(16){width:52px !important}
     #hold-table thead th,#hold-table tbody td{padding:8px 3px}
     /* B1/Q1：手机四表正文统一 12.5px（flow 原 12px 纳入同档） */
     #sum-table tbody td,#flow-table tbody td,#prod-table tbody td{font-size:12.5px}
@@ -991,9 +997,9 @@
     .metric .m-sub b{font-size:12px}
     .tabs{width:100%;overflow-x:auto;justify-content:flex-start;border-radius:12px}
     /* 两行导航融合 2026-11-20：首页/交易有子页条时，主标签去底圆角/下边框/下间距，与子页条拼成一个卡片；产品页无子页条保持圆角 */
-    .tabs.has-sub{border-radius:12px 12px 0 0;border-bottom:0;margin-bottom:0}
-    /* 手机主标签行高压缩 2026-11-20：padding 8→5px、min-height 42→36px（下方 min-height 规则同步），字号不变 */
-    .tab{flex:1 0 auto;padding:5px 14px;font-size:12.5px}
+    .tabs.has-sub{border-radius:12px 12px 0 0;border-bottom:0;margin-bottom:0;height:36px;padding:2px 4px;box-sizing:border-box}
+    /* 手机主标签行高压缩 2026-11-20：与子页条统一 36px 行高（按钮 32px），字号不变 */
+    .tab{flex:1 0 auto;padding:2px 14px;font-size:12.5px;height:32px;min-height:0;box-sizing:border-box}
     .sec-head{gap:8px;padding-bottom:7px;margin-bottom:8px}
     .sec-head h2{font-size:17px}
     .sec-head .idx{font-size:17px}
@@ -1094,7 +1100,7 @@
     .modal-body{flex:1 1 auto;min-height:0;overflow:auto;padding:0 18px;-webkit-overflow-scrolling:touch}
     .form-grid{grid-template-columns:1fr}
     .field{font-size:12.5px;margin-top:12px}
-    .field input,.field select{font-size:15px;min-height:44px;padding:9px 12px;margin-top:6px}
+    .field input,.field select{font-size:15px;height:44px;min-height:0;padding:9px 12px;margin-top:6px}
     .seg-group .seg{font-size:14px;min-height:44px;padding:10px 6px}
     .note-line{font-size:11.5px;padding-bottom:6px}
     /* 2026-11-20：弹窗底部两枚按钮严格两列等宽对齐（取消 / 提交 或 取消 / 保存），
@@ -1108,7 +1114,7 @@
     #modal-add .ai-strip{margin-top:5px}
     #modal-add .add-grid{gap:5px 10px}
     #modal-add .field{font-size:11.5px;margin-top:5px}
-    #modal-add .field input,#modal-add .field select{min-height:34px;padding:5px 10px;margin-top:2px}
+    #modal-add .field input,#modal-add .field select{height:34px;min-height:0;padding:5px 10px;margin-top:2px}
     /* 手机端隐藏纯说明文字，把纵向空间让给表单，实现一屏录入 */
     #modal-add .note-line{display:none}
     #modal-add .ai-strip{gap:6px}
@@ -1124,7 +1130,7 @@
     /* 2026-11-20：字号由下方 .modal-card 的 16px 统一规则接管，避免 iOS 聚焦放大；
        这里只压高度与间距，不再覆写 font-size */
     /* 2026-11-20：手机新增交易页文本框/筛选框行高调高，适配手指点选与阅读（34→42px），字号仍 16px 不缩 */
-    #modal-trade .field input,#modal-trade .field select{min-height:42px;padding:9px 10px;margin-top:3px}
+    #modal-trade .field input,#modal-trade .field select{height:42px;min-height:0;padding:9px 10px;margin-top:3px}
     #modal-trade .seg-group .seg{font-size:13px;min-height:42px;padding:8px 6px}
     #modal-trade .sr-list{max-height:120px;margin-top:4px}
     #modal-trade .modal-foot{padding:8px 16px calc(8px + env(safe-area-inset-bottom))}
@@ -1135,7 +1141,7 @@
     .filters select{font-size:12.5px;min-height:32px}
     .filters .chip{font-size:11.5px;min-height:30px}
     .filters input{font-size:16px;min-height:36px}
-    .tab{min-height:36px}
+    .tab{min-height:32px}
     .pager button{min-width:29px;height:29px;font-size:12px}
     .pager .pg-cur{height:29px;min-width:34px;font-size:12px}
     .pager .pg-total{font-size:12px}
@@ -1148,7 +1154,7 @@
       #modal-add .add-grid{grid-template-columns:1fr 1fr;gap:4px 8px}
       #modal-add .modal-head{padding:7px 16px 5px}
       #modal-add .field{font-size:10.5px;margin-top:3px}
-      #modal-add .field input,#modal-add .field select{min-height:32px;padding:4px 8px;margin-top:2px}
+      #modal-add .field input,#modal-add .field select{height:32px;min-height:0;padding:4px 8px;margin-top:2px}
       #modal-add .modal-foot{padding:8px 16px calc(8px + env(safe-area-inset-bottom))}
       #modal-add .modal-foot .btn{min-height:38px}
     }
@@ -2096,13 +2102,18 @@
 
       var prevWidth = target.style.width;
       var widened = target.getBoundingClientRect().width < EXPORT_WIDTH - 1;
+      /* 手机 export 第二处坑：趋势图子页平时 .subpage-off 隐藏（宽度 0），图表按窄尺寸画成一条竖线。
+         导出前临时展开所有子页让 ECharts 按 1320px 重绘，导出后恢复原状。 */
+      var hiddenSubs = [].slice.call(target.querySelectorAll('.subpage.subpage-off'));
+      hiddenSubs.forEach(function (s) { s.classList.remove('subpage-off'); });
       if (widened) {
         target.classList.add('is-exporting');
         target.style.width = EXPORT_WIDTH + 'px';
-        window.dispatchEvent(new Event('resize'));
       }
+      window.dispatchEvent(new Event('resize'));
 
       function restoreLayout() {
+        hiddenSubs.forEach(function (s) { s.classList.add('subpage-off'); });
         if (!widened) return;
         target.style.width = prevWidth;
         target.classList.remove('is-exporting');
@@ -2114,49 +2125,48 @@
         requestAnimationFrame(function () { requestAnimationFrame(res); });
       });
 
-      // html2canvas 渲染原生 select 时文字会被裁切，导出期间用等价文本块替换
-      function swapSelects() {
-        var selects = Array.prototype.slice.call(target.querySelectorAll('select'));
-        var undo = selects.map(function (sel) {
-          var opt = sel.options[sel.selectedIndex];
+      /* 导出修复 2026-11-20：
+         ① 旧逻辑把手机 DOM 的 scrollHeight(1446) 当画布高度传给 html2canvas，而 windowWidth=1360
+            让克隆文档按桌面布局渲染出 2638px 内容 —— 画布只有 1446px，下方内容被整段裁掉，
+            表头/数值挤在一起（用户说的「有些不显示、格式乱掉、表头字体重叠模糊」）。
+            现在不再传 width/height，让 html2canvas 在桌面布局的克隆文档里自行量取完整尺寸。
+         ② 原生 select 替换必须在 onclone 的克隆文档里做：旧逻辑在真实 DOM（手机 393px 布局）里
+            量宽度/字号，插入的代理块宽度与桌面列宽对不上，导致表头下拉错位重叠。 */
+      function swapSelectsInClone(doc) {
+        var win = doc.defaultView || window;
+        Array.prototype.forEach.call(doc.querySelectorAll('select'), function (sel) {
+          var opt = sel.options && sel.options[sel.selectedIndex];
+          var cs = win.getComputedStyle(sel);
           var rect = sel.getBoundingClientRect();
-          var span = document.createElement('span');
+          if (!rect.width || !rect.height) return;
+          var span = doc.createElement('span');
           span.className = sel.className + ' export-select-proxy';
-          span.style.cssText = 'display:inline-flex;align-items:center;box-sizing:border-box;position:relative;' +
-            'width:' + Math.ceil(rect.width) + 'px;height:' + Math.ceil(rect.height) + 'px;' +
-            'justify-content:center;padding:0 3px;background-color:#ffffff;background-image:none;' +
-            'cursor:default;user-select:none;overflow:hidden;white-space:nowrap;font-size:12px;color:#5d6b76;';
           span.textContent = opt ? opt.text : '';
+          span.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;' +
+            'width:' + Math.ceil(rect.width) + 'px;height:' + Math.ceil(rect.height) + 'px;' +
+            'margin:' + cs.margin + ';font:' + cs.font + ';color:' + cs.color + ';' +
+            'background:' + cs.backgroundColor + ';border:' + cs.border + ';' +
+            'border-radius:' + cs.borderRadius + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;' +
+            'text-align:' + cs.textAlign + ';vertical-align:middle;';
           sel.parentNode.insertBefore(span, sel);
           sel.style.display = 'none';
-          return function () {
-            if (span.parentNode) span.parentNode.removeChild(span);
-            sel.style.display = '';
-          };
         });
-        return function () { undo.forEach(function (fn) { fn(); }); };
       }
 
-      var restoreSelects = null;
       var fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
 
       Promise.all([fontsReady, framesReady]).then(function () {
-        var cropWidth = Math.max(EXPORT_WIDTH, Math.ceil(target.scrollWidth));
-        var cropHeight = Math.ceil(target.scrollHeight);
-        restoreSelects = swapSelects();
         return html2canvas(target, {
           backgroundColor: '#f3f5f7',
           scale: SCALE,
           useCORS: true,
           logging: false,
-          width: cropWidth,
-          height: cropHeight,
           windowWidth: Math.max(EXPORT_WINDOW_WIDTH, document.documentElement.clientWidth),
           scrollX: 0,
-          scrollY: 0
+          scrollY: 0,
+          onclone: function (doc) { swapSelectsInClone(doc); }
         });
       }).then(function (canvas) {
-        if (restoreSelects) restoreSelects();
         restoreLayout();
         window.scrollTo(scrollX, scrollY);
         if (actions) actions.style.visibility = '';
@@ -2166,7 +2176,6 @@
         setLabel('已导出');
         restoreLabel();
       }).catch(function (err) {
-        if (restoreSelects) restoreSelects();
         restoreLayout();
         window.scrollTo(scrollX, scrollY);
         if (actions) actions.style.visibility = '';

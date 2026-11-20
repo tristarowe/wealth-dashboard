@@ -95,6 +95,13 @@
 
 **产品库搜索下拉不再被键盘挡住（2026-11-20）**：根因与日历相同——`placeProdSug()` 旧逻辑用 `window.innerHeight` 计算位置，iOS 键盘弹出后 `innerHeight` 不变、只有 `visualViewport` 缩小，于是整块候选列表铺在键盘遮挡区，下方选项看不见也滚不到。改为：① 用 visualViewport 的宽/高/offsetTop/offsetLeft 算真实可视区，取「输入框上/下可用空间」较大一侧放置；② 动态 `maxHeight = min(可用空间, 300px)` 限高，超出选项在列表内部滚动（可向下滑动浏览）——模拟键盘弹出（输入框在可视区 200px、可视区高 440）时 8 项候选 276px 被限到 190px、`scrollable=true`；③ 监听 visualViewport 的 resize/scroll 实时重定位。同时：产品搜索框由 `type="search"` 改为 `type="text"` 并补全 autocomplete/autocorrect/autocapitalize/spellcheck off（减少 iOS QuickType 地址气泡/自动填充联系人条），选中候选项后立即 `input.blur()` 主动收起键盘让气泡随键盘消失；下拉默认不高亮任何项（`prodSugIdx=-1`，去掉深色底色填充），仅键盘上下键导航时出现浅蓝高亮（`.prod-sug .sel-opt.on`）。JS 版本 `v=20261120q`。
 
+**导出图片全面修复（2026-11-20）**：旧逻辑存在三处 bug——① 把手机 DOM 的 `scrollHeight`（1446px）当画布高度传给 html2canvas，但 `windowWidth=1360` 让克隆文档按桌面布局渲染出 2638px 内容，画布只有 1446px，下半段整块被裁掉（日历/趋势消失、表头挤压重叠）；② 原生 select 替换在真实 DOM（手机 393px 布局）里量宽度/字号，插入的代理块宽度与桌面列宽对不上，表头下拉错位；③ 趋势图子页平时 `.subpage-off` 隐藏宽度 0，ECharts 按窄尺寸画成一条竖线。修复：不再传 width/height，让 html2canvas 在桌面布局的克隆文档里自行量取完整尺寸；select 替换移到 `onclone(clonedDoc)` 中用克隆文档的 computed style 与 rect，保证与导出布局一致；导出前临时展开所有 `.subpage-off` 并触发 resize 让图表按 1320px 重绘，导出后恢复。实测手机端首页导出 2864×5500（含完整趋势折线图）、交易页 2864×3036（含交易流水）、产品页 2864×3728，与桌面版一致、无裁切无重叠。
+
+**表单控件等高 + 两行导航均匀 + 竖屏列宽压缩（2026-11-20）**：
+- 弹窗表单：`.field input/select` 统一 `box-sizing:border-box` + 固定 height（桌面 36px、手机 34px、矮屏 32px、新增交易 42px），消除 select 默认比 input 高 2px 导致的两列行高低不齐；实测 8 个控件高度桌面全部 36px、手机全部 34px。
+- 手机两行导航：主标签行与子页条统一 36px 行高（内部按钮 32px），整体从 45+32=77px 压到 72px；第二行字体 11px 比第一行 12.5px 小一档，视觉更协调。
+- 手机竖屏盈亏汇总列宽再压缩：按每列文字实测最小宽度收紧，省出的 65px 全给产品名称列（132→197px），总宽仍 962px；数据列 净值日期 72→64、今日万收 56→52、今日收益/持仓收益 62→56、持仓年化 58→54、天数 44→38、数据 76→64、周期列 53→49、成立至今 53→56、评分 54→52。实测所有 th/td 无内容裁切。
+
 ### 列宽与间距（A0 / A2 / A3）
 - 桌面产品名称列两档：标准 220–240px（盈亏汇总 220px、持仓汇总 237px）、宽列 300–345px（交易流水、产品库）；`table-layout:fixed`。
 - 操作列维持现状：持仓汇总 151px（3 按钮）、交易流水 124px、产品库 112px，不再压缩（压窄会导致按钮换行、反抬高行高）。
