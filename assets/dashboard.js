@@ -2673,8 +2673,7 @@
       }
 
       return '<tr data-pid="' + p.id + '">' +
-        '<td class="c"><button class="stars" data-fav="' + p.id + '" title="' +
-          (isFav ? '取消收藏' : '收藏') + '">' + (isFav ? '★' : '☆') + '</button></td>' +
+        /* 星标列 2026-11-21 按用户要求移除，释放的列宽已均分给其余各列（colgroup 6.1%→6.37%） */
         '<td><div class="pname">' + (h ?
           '<a class="plink" href="javascript:void(0)" data-goto-trade="' + p.id + '" title="' + (p.name || '') + '">' +
             prodDispName(p) + '</a>' :
@@ -2706,7 +2705,7 @@
         '</tr>';
     }).join('');
 
-    tbody.innerHTML = html || '<tr><td colspan="13" class="c muted" style="padding:28px">当前筛选条件下暂无产品</td></tr>';
+    tbody.innerHTML = html || '<tr><td colspan="12" class="c muted" style="padding:28px">当前筛选条件下暂无产品</td></tr>';
 
     var totalEl = document.getElementById('prod-total');
     if (totalEl) totalEl.textContent = allModels.length;

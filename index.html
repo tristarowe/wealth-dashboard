@@ -113,7 +113,8 @@
   .pname .pn-row{display:block}
   @media (max-width:968px){
     .pname .pn-row{display:flex;align-items:flex-start;gap:3px}
-    .pname .pn-row>.plink{flex:1 1 auto;min-width:0}
+    /* 2026-11-21：名称不再撑满整列，👍/👎 紧贴名称文字右侧（名称换行时仍停在首行右端） */
+    .pname .pn-row>.plink{flex:0 1 auto;min-width:0}
     .pname .pn-row>.thumb-under{flex:0 0 auto;margin-left:0}
   }
   .pname .salech{display:block;font-size:10.5px;line-height:1.5;color:var(--muted);font-weight:400;letter-spacing:0;margin-top:1px}
@@ -156,7 +157,11 @@
   #hold-table td.pwin,#hold-table td.awin{font-size:13px;font-weight:400;text-align:center}
   .lbl span{display:block;font-size:11px;color:var(--muted);white-space:nowrap}
   .th-lbl{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:3px;white-space:nowrap}
-  .th-select{font-family:var(--font);font-size:12px;font-weight:600;color:var(--muted);background:#fff;border:1px solid var(--rule);border-radius:6px;padding:2px 3px;cursor:pointer;max-width:84px}
+  /* 表头下拉按钮 2026-11-21（用户要求）：去掉原生下拉箭头符号（^ / ▾），文字居中，
+     与「净值日期」胶囊保持同一观感；原生 select 仍可点选 */
+  .th-select{font-family:var(--font);font-size:12px;font-weight:600;color:var(--muted);background:#fff;border:1px solid var(--rule);border-radius:6px;padding:2px 3px;cursor:pointer;max-width:84px;
+    -webkit-appearance:none;-moz-appearance:none;appearance:none;text-align:center;text-align-last:center;text-indent:0}
+  .th-select::-ms-expand{display:none}
   .th-select:hover{border-color:#c9dbe3;color:var(--accent-deep)}
   .th-select:focus{outline:none;border-color:var(--accent);color:var(--accent-deep)}
   /* 交易流水表头筛选：下拉宽度跟随列宽，窄屏也不撑破表格 */
@@ -188,7 +193,7 @@
   .prod-tbl tbody td.num{font-size:13px}
   /* 产品库行高压缩，产品名称列：表头加粗、内容不加粗 */
   .prod-tbl tbody td{padding:6px 8px}
-  .prod-tbl thead th:nth-child(2){font-weight:700}
+  .prod-tbl thead th:nth-child(1){font-weight:700}
   .prod-tbl .pname{font-weight:400;font-size:13px;line-height:1.35}
   .prod-tbl.only-ann .st i{font-size:13px;font-weight:700}
   .prod-tbl.only-p10k .st b{font-size:13px}
@@ -246,9 +251,12 @@
     #prod-table .cdate span,#prod-table .cdate i{line-height:1.3}
     #prod-table .st i,#prod-table .cdate i{margin-top:0}
   }
-  #prod-table tbody td:nth-child(2),#prod-table thead th:nth-child(2){padding-left:10px}
+  #prod-table tbody td:nth-child(1),#prod-table thead th:nth-child(1){padding-left:10px}
   /* 持仓天数：整列与表头居中对齐，数字与「天」同字体、同字号、同字重 */
   #hold-table th[data-sort="holddays"],#sum-table th[data-sort="days"]{text-align:center}
+  /* 「持仓成立」表头 2026-11-21（原「天数」）：四字拆两行；桌面/横屏默认隐藏或内联 br，这里强制换行 */
+  #hold-table thead th[data-sort="holddays"]{white-space:normal;line-height:1.25}
+  #hold-table thead th[data-sort="holddays"] br{display:block}
   /* 持仓汇总：净值日期保持单行，列窄时也不会断成「11-」「10」两行 */
   #sum-table thead th:nth-child(2),#sum-table tbody td:nth-child(2){white-space:nowrap}
   #hold-table tbody td.dcell,#sum-table tbody td.dcell{white-space:nowrap;text-align:center}
@@ -274,14 +282,14 @@
   #flow-table thead th,#flow-table tbody td{text-align:center}
   #hold-table thead th:nth-child(2),#hold-table tbody tr:not(.mb) > td:nth-child(2),
   #sum-table thead th:first-child,#sum-table tbody td:first-child,
-  #prod-table thead th:nth-child(2),#prod-table tbody td:nth-child(2),
+  #prod-table thead th:nth-child(1),#prod-table tbody td:nth-child(1),
   #flow-table thead th:nth-child(3),#flow-table tbody td:nth-child(3){text-align:left}
   /* 月份汇总行：整行左侧靠齐 */
   #flow-table tbody tr.flow-month td{text-align:left}
   /* 表头与数值共用同一左右内边距，居中对齐时才不会左右错位 */
   #hold-table thead th:nth-child(2),#hold-table tbody tr:not(.mb) > td:nth-child(2),
   #sum-table thead th:first-child,#sum-table tbody td:first-child,
-  #prod-table thead th:nth-child(2),#prod-table tbody td:nth-child(2){padding-left:10px;padding-right:10px}
+  #prod-table thead th:nth-child(1),#prod-table tbody td:nth-child(1){padding-left:10px;padding-right:10px}
 
   /* calendar */
   .cal-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
@@ -770,10 +778,12 @@
     html,body{width:100%;max-width:100%;overflow-x:hidden;overflow-x:clip}
     .page{width:100%}
     .swipe-tip{display:block}
-    #prod-table tbody td:nth-child(2) .pname{white-space:normal}
-    /* 手机端产品名称：限制列宽并允许换行，避免名称撑宽整张表 */
-    #prod-table tbody td:nth-child(2){min-width:144px;max-width:176px}
-    #prod-table tbody td:nth-child(2) .pname{white-space:normal;word-break:break-word;overflow-wrap:anywhere;line-height:1.45}
+    #prod-table tbody td:nth-child(1) .pname{white-space:normal}
+    /* 手机端产品名称：限制列宽并允许换行，避免名称撑宽整张表。
+       2026-11-21：去掉星标列后名称列不再吸收多出的 26px，固定回 176px，
+       多余宽度由 auto 布局均分给其余 11 列 */
+    #prod-table tbody td:nth-child(1),#prod-table thead th:nth-child(1){min-width:144px;max-width:176px;width:176px}
+    #prod-table tbody td:nth-child(1) .pname{white-space:normal;word-break:break-word;overflow-wrap:anywhere;line-height:1.45}
     #hold-table tbody td:nth-child(2){min-width:124px;max-width:158px}
     #sum-table tbody td:nth-child(1){min-width:144px;max-width:176px}
     #hold-table tbody td:nth-child(2) .pname,#sum-table tbody td:nth-child(1) .pname{
@@ -801,13 +811,13 @@
     /* B1：四表产品名称统一 12.5px（flow 原 13px 纳入同档） */
     #hold-table .pname,#sum-table .pname,#prod-table .pname,#flow-table .pname{font-size:12.5px}
     /* 产品名称右侧标签不换行，固定显示在名称右侧 */
-    #prod-table tbody td:nth-child(2) .pname,#sum-table tbody td:nth-child(1) .pname{
+    #prod-table tbody td:nth-child(1) .pname,#sum-table tbody td:nth-child(1) .pname{
       display:flex;flex-wrap:wrap;align-items:flex-start;column-gap:4px}
-    #prod-table tbody td:nth-child(2) .pname>a,#sum-table tbody td:nth-child(1) .pname>a,
-    #prod-table tbody td:nth-child(2) .pname>.pname-t{flex:1 1 46%;min-width:0}
-    #prod-table tbody td:nth-child(2) .pname>.ptags,
+    #prod-table tbody td:nth-child(1) .pname>a,#sum-table tbody td:nth-child(1) .pname>a,
+    #prod-table tbody td:nth-child(1) .pname>.pname-t{flex:1 1 46%;min-width:0}
+    #prod-table tbody td:nth-child(1) .pname>.ptags,
     #sum-table tbody td:nth-child(1) .pname>.ptags{flex:0 0 auto;margin-left:0}
-    #prod-table tbody td:nth-child(2) .pname>.salech,
+    #prod-table tbody td:nth-child(1) .pname>.salech,
     #sum-table tbody td:nth-child(1) .pname>.salech{flex:0 0 100%}
     /* 输入框默认15px，iOS 下用16px避免聚焦自动放大 */
     .ms-search{font-size:15px;width:auto;padding:5px 8px}
@@ -973,19 +983,21 @@
     #sum-table colgroup col,#prod-table colgroup col,#flow-table colgroup col{width:auto !important}
     /* 盈亏汇总 16 列在竖屏下按固定像素列宽排布：列距统一、不因内容长短忽宽忽窄，
        整表 942px 横向滚动（表头吸顶 + 首屏可见产品名） */
-    #hold-table{table-layout:fixed;width:962px;min-width:962px}
+    /* 2026-11-21 首屏压缩（用户要求）：净值日期~持仓年化 压到首屏内 ——
+       序号 24 + 名称 111 + 净值日期 50 + 今日万收 40 + 今日收益 42 + 持仓收益 55 + 持仓年化 46 = 368px，
+       iPhone 393 视口内容宽 369px，首屏即可看全这 7 列；「持仓成立」紧随其后（38px，轻滑即可见）。
+       释放出来的宽度不再匀给右侧周期列（仍 60/60/60/60/60/66/58），整表 962 → 886px。 */
+    #hold-table{table-layout:fixed;width:886px;min-width:886px}
     #hold-table colgroup col{width:auto !important}
-    /* 2026-11-20 第三轮压缩：左侧数据列再收 40px（「数据」列收到 56px，边框正好贴合「日均万收」四字），
-       腾出的宽度全部匀给 7日~成立至今 六个区间列（53→60、成立至今 61→66），总宽仍 962px。 */
-    #hold-table col:nth-child(1){width:26px !important}
-    #hold-table col:nth-child(2){width:128px !important}
-    #hold-table col:nth-child(3){width:60px !important}
-    #hold-table col:nth-child(4){width:54px !important}
-    #hold-table col:nth-child(5){width:58px !important}
-    #hold-table col:nth-child(6){width:59px !important}
-    #hold-table col:nth-child(7){width:57px !important}
-    #hold-table col:nth-child(8){width:40px !important}
-    /* 「数据」列内容「日均万收」需 48px + 左右 padding 6px = 54px，列框贴合文字、不再留空 */
+    #hold-table col:nth-child(1){width:24px !important}
+    #hold-table col:nth-child(2){width:111px !important}
+    #hold-table col:nth-child(3){width:50px !important}
+    #hold-table col:nth-child(4){width:40px !important}
+    #hold-table col:nth-child(5){width:42px !important}
+    #hold-table col:nth-child(6){width:55px !important}
+    #hold-table col:nth-child(7){width:46px !important}
+    #hold-table col:nth-child(8){width:38px !important}
+    /* 「数据」列内容「日均万收」需 48px + 左右 padding 4px = 52px，列框贴合文字、不再留空 */
     #hold-table col:nth-child(9){width:56px !important}
     /* 区间列：7日~90日统一 60px，成立至今 66px（表头两行「成立/至今」） */
     #hold-table col:nth-child(10),
@@ -995,7 +1007,8 @@
     #hold-table col:nth-child(14){width:60px !important}
     #hold-table col:nth-child(15){width:66px !important}
     #hold-table col:nth-child(16){width:58px !important}
-    #hold-table thead th,#hold-table tbody td{padding:8px 3px}
+    /* 数值列左右内边距 3→2px，让压缩后的 40~55px 列刚好容纳「+208.00」这类最宽值 */
+    #hold-table thead th,#hold-table tbody td{padding:8px 2px}
     /* 百分比挂位窄屏取 7px（% 字宽约 7px），并把区间数值左内边距收到 1px，
        让 -11.94% 这类最宽值在 53px 周期列里仍有余量，数字右边缘不被挤到溢出 */
     #hold-table{--pgut:7px}
@@ -1013,6 +1026,8 @@
     /* 自适应列宽下产品名会把表头筛选下拉挤扁：按钮按文字宽度显示，列保留最小可读宽度 */
     #flow-table .th-select{width:auto;min-width:0;font-size:11px}
     #flow-table thead th:nth-child(4),#flow-table thead th:nth-child(9){min-width:56px}
+    /* 2026-11-21：交易日期表头与产品名称一样单行不换行（原两行「交易/日期」已合并） */
+    #flow-table thead th:nth-child(2){white-space:nowrap}
     /* 自适应列宽时整列移除「今日万收」，不占位也不留空列（固定列宽下改用 visibility 隐藏） */
     #prod-table.no-p10k [data-col="p10k"]{display:none}
     .hero{padding:16px 14px 18px;border-radius:14px}
@@ -1300,10 +1315,12 @@
      持仓汇总「持仓收益/持仓年化/累计收益/持仓金额/净值/持仓份额/持仓天数/成立天数」列。
      字号/千分位/列宽/行高一律不动。 */
   .year-table tbody td:nth-child(2),
+  /* 2026-11-21：盈亏日历「日均万收」数据列也右对齐（表头不动，仍居中） */
+  .year-table tbody td:nth-child(3),
   #flow-table tbody td:nth-child(5),#flow-table tbody td:nth-child(7),
-  #prod-table tbody td:nth-child(4),#prod-table tbody td:nth-child(5),
-  #prod-table tbody td:nth-child(6),#prod-table tbody td:nth-child(7),
-  #prod-table tbody td:nth-child(8),
+  #prod-table tbody td:nth-child(3),#prod-table tbody td:nth-child(4),
+  #prod-table tbody td:nth-child(5),#prod-table tbody td:nth-child(6),
+  #prod-table tbody td:nth-child(7),
   #hold-table tbody td:nth-child(4),#hold-table tbody td:nth-child(5),
   #hold-table tbody td:nth-child(6),#hold-table tbody td:nth-child(7),
   #hold-table tbody td:nth-child(n+10):nth-child(-n+15),
@@ -1315,6 +1332,8 @@
   {text-align:right;text-indent:0}
   /* 月度表「收益」格（grid 子项）跟随右对齐 */
   .month-item > span:nth-child(2){text-align:right}
+  /* 2026-11-21：月度表「日均万收」数值也右对齐（表头不动） */
+  .month-item > span:nth-child(3){text-align:right}
   /* 月度表「收益」表头同步右对齐（年度表 .year-table thead th 在第 2 条规则里） */
   .month-row.mhead span:nth-child(2){text-align:right}
 
@@ -1328,10 +1347,11 @@
      与上面同一批数值列的表头一起右对齐；天数列（#hold-table 第8列）仍居中，
      产品名称/交易时间/净值日期/状态/操作/评分等表头保持原样不动。 */
   .year-table thead th:nth-child(2),
-  #flow-table thead th:nth-child(5),#flow-table thead th:nth-child(7),
-  #prod-table thead th:nth-child(4),#prod-table thead th:nth-child(5),
-  #prod-table thead th:nth-child(6),#prod-table thead th:nth-child(7),
-  #prod-table thead th:nth-child(8),
+  #flow-table thead th:nth-child(5),#flow-table thead th:nth-child(6),
+  #flow-table thead th:nth-child(7),#flow-table thead th:nth-child(8),
+  #prod-table thead th:nth-child(3),#prod-table thead th:nth-child(4),
+  #prod-table thead th:nth-child(5),#prod-table thead th:nth-child(6),
+  #prod-table thead th:nth-child(7),
   #hold-table thead th:nth-child(4),#hold-table thead th:nth-child(5),
   #hold-table thead th:nth-child(6),#hold-table thead th:nth-child(7),
   #hold-table thead th:nth-child(n+10):nth-child(-n+15),
@@ -1350,8 +1370,8 @@
   #hold-table thead th:nth-child(7),#hold-table thead th:nth-child(n+10):nth-child(-n+15),
   #hold-table tbody td:nth-child(7),#hold-table tbody td.pwin,#hold-table tbody td.awin,
   #sum-table thead th:nth-child(4),#sum-table tbody td:nth-child(4),
-  #prod-table thead th:nth-child(n+5):nth-child(-n+8),
-  #prod-table tbody td:nth-child(n+5):nth-child(-n+8){padding-right:var(--pgut,.62em)}
+  #prod-table thead th:nth-child(n+4):nth-child(-n+7),
+  #prod-table tbody td:nth-child(n+4):nth-child(-n+7){padding-right:var(--pgut,.62em)}
 
   /* 导出时撑满基准宽度，避免窄窗口裁切 */
   .page.is-exporting{width:1320px}
@@ -1363,6 +1383,22 @@
   @media (max-width:760px){
     #year-view .year-table td:nth-child(2),#year-view .year-table thead th:nth-child(2),
     .month-list .month-item > span:nth-child(2),.month-list .month-row.mhead span:nth-child(2){padding-right:5px}
+  }
+
+  /* ===== 产品库筛选栏（手机横屏）统一规格 2026-11-21 =====
+     用户要求：所有筛选按钮与搜索框同宽、同高、同间距。取消「★ 收藏」后共 9 项
+     （7 个下拉 + ↺重置 + 搜索框），用 9 列等宽网格排成一行，间距 6px、高度 32px。 */
+  @media (min-width:761px) and (max-width:968px){
+    #pane-prod .filters{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:6px;padding:8px}
+    #pane-prod .filters .fl-sep{display:none}
+    /* 让「重置 / 搜索框」脱离 flex 容器，直接成为网格子项，才能与其他 7 项等宽 */
+    #pane-prod .filters .filter-tail{display:contents}
+    /* !important：sizeSelWrap() 会给「发行机构」写死内联宽度（按最长机构名），这里必须盖掉，9 项才等宽 */
+    #pane-prod .filters .sel-wrap{width:auto !important;height:32px;flex:none;min-width:0}
+    #pane-prod .filters .sel-label{font-size:11.5px;padding:0 12px 0 4px}
+    #pane-prod .filters .sel-opt{font-size:12.5px}
+    #pane-prod .filters .chip{width:auto;height:32px;min-height:32px;padding:0;font-size:11.5px;justify-content:center}
+    #pane-prod .filters #prod-search{width:auto;min-width:0;height:32px;min-height:32px;padding:0 8px;font-size:12.5px}
   }
 </style>
 </head>
@@ -1483,7 +1519,7 @@
               <th class="r sortable" data-sort="income">今日<br>收益</th>
               <th class="r sortable" data-sort="profit">持仓<br>收益</th>
               <th class="r sortable" data-sort="holdann">持仓<br>年化</th>
-              <th class="c sortable" data-sort="holddays">天数</th>
+              <th class="c sortable" data-sort="holddays">持仓<br>成立</th>
               <th class="c" style="width:92px"><select class="th-select" id="hold-data-sel" title="数据" aria-label="数据"><option value="both">数据</option><option value="per10k">万收</option><option value="ann">年化</option></select></th>
               <th class="c sortable" data-sort="w7">7日</th>
               <th class="c sortable" data-sort="w14">14日</th>
@@ -1649,7 +1685,7 @@
           <thead>
             <tr>
               <th><input type="checkbox" id="flow-check-all" title="全选当前列表"></th>
-              <th>交易<br>日期</th><th>产品名称</th>
+              <th>交易日期</th><th>产品名称</th>
               <th class="c"><select class="th-select" id="flow-type-sel" title="按交易类型筛选" aria-label="按交易类型筛选"><option value="">类型</option><option>申购</option><option>赎回</option><option>清仓</option></select></th>
               <th class="r">确认<br>份额</th>
               <th class="r">确认<br>净值</th><th class="r">成交<br>金额</th><th class="c">确认<br>日期</th>
@@ -1709,24 +1745,22 @@
           <option value="">成立月份</option>
         </select>
         <span class="filter-tail">
-          <button class="chip" data-flag="fav">★ 收藏</button>
+          <!-- 「★ 收藏」筛选按钮 2026-11-21 按用户要求移除（收藏数据与逻辑保留，不再有入口） -->
           <button class="chip" id="prod-reset" title="清空搜索与全部筛选条件">↺ 重置</button>
-          <input type="text" id="prod-search" placeholder="" aria-label="搜索产品名称" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+          <input type="text" id="prod-search" placeholder="搜索产品名称" aria-label="搜索产品名称" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
         </span>
       </div>
 
       <div class="card tbl-scroll prod-scroll full-scroll">
         <table class="prod-tbl" id="prod-table">
           <colgroup>
-            <col style="width:3%"><col>
-            <col style="width:6.1%"><col id="prod-p10k-col" style="width:6.1%"><col style="width:6.1%">
-            <col style="width:6.1%"><col style="width:6.1%"><col style="width:6.1%">
-            <col style="width:6.1%"><col style="width:6.1%"><col style="width:6.1%">
-            <col style="width:7.4%"><col style="width:8.5%">
+            <col><col style="width:6.37%"><col id="prod-p10k-col" style="width:6.37%"><col style="width:6.37%">
+            <col style="width:6.37%"><col style="width:6.37%"><col style="width:6.37%">
+            <col style="width:6.37%"><col style="width:6.37%"><col style="width:6.37%">
+            <col style="width:7.82%"><col style="width:8.92%">
           </colgroup>
           <thead>
             <tr>
-              <th style="width:34px"></th>
               <th class="sortable" data-sort="name">产品名称</th>
               <th class="c sortable" data-sort="navdate">净值<br>日期</th>
               <th class="r sortable" data-col="p10k" data-sort="p10k">今日<br>万收</th>
@@ -1912,7 +1946,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261120r';
+      s.src = './assets/dashboard.js?v=20261121a';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();
