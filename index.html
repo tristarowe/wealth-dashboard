@@ -123,7 +123,7 @@
   .pname .pn-row>.plink{display:inline;min-width:0}
   /* 末字 + 角标同组、禁止内部换行：角标永远紧跟名称最后一个字 */
   .pname .pn-row>.pn-last{white-space:nowrap}
-  .pname .pn-row>.thumb-under{margin-left:2px;vertical-align:baseline}
+  .pname .pn-row>.thumb-under{margin-left:2px;vertical-align:-1px}
   .pname .salech{display:block;font-size:10.5px;line-height:1.5;color:var(--muted);font-weight:400;letter-spacing:0;margin-top:1px}
   .pname .mv-under{display:block;font-size:10.5px;line-height:1.5;color:var(--blue-soft);font-weight:400;letter-spacing:0;margin-top:1px;font-family:var(--mono)}
   .plink{color:inherit;text-decoration:none;border-bottom:1px dashed #b9ccd4;cursor:pointer}
@@ -264,8 +264,8 @@
   /* 「持仓成立」表头 2026-11-21（原「天数」）：四字拆两行；桌面/横屏默认隐藏或内联 br，这里强制换行 */
   #hold-table thead th[data-sort="holddays"]{white-space:normal;line-height:1.25}
   #hold-table thead th[data-sort="holddays"] br{display:block}
-  /* 持仓汇总：净值日期保持单行，列窄时也不会断成「11-」「10」两行 */
-  #sum-table thead th:nth-child(2),#sum-table tbody td:nth-child(2){white-space:nowrap}
+  /* 持仓汇总：净值日期保持单行，列窄时也不会断成「11-」「10」两行（2026-11-21 四轮：列序调整后为第 3 列） */
+  #sum-table thead th:nth-child(3),#sum-table tbody td:nth-child(3){white-space:nowrap}
   #hold-table tbody td.dcell,#sum-table tbody td.dcell{white-space:nowrap;text-align:center}
   #hold-table td.dcell .days,#sum-table td.dcell .days,
   #hold-table td.dcell .dunit,#sum-table td.dcell .dunit{font-family:var(--mono);font-size:13px;font-weight:400;font-variant-numeric:tabular-nums}
@@ -623,9 +623,8 @@
   .ts-lane .org .dot{width:8px;height:8px;border-radius:50%;background:var(--c);flex:none}
   .gapfill{background:#f7fafb;align-self:stretch;display:flex;align-items:center;justify-content:center;border-left:1px solid #eef2f5}
   .gapfill em{font-style:normal;font-size:11px;color:#b7c3cb;letter-spacing:.5px}
-  /* 手机竖屏：日期列改为卡片内逐条展示，表头退化为「代销机构 + 字段说明」一行；
-     桌面/横屏仍是日期列，说明文字隐藏（2026-11-21 用户要求竖屏恢复表头） */
-  .ts-legend{display:none}
+  /* 手机竖屏：日期列改为卡片内逐条展示，表头为「代销机构筛选 + 日期列」；
+     2026-11-21 四轮按用户要求去掉右侧「募集期 · 产品名称 · 额度 · 风险 · 成立日」说明文字 */
   .n-legend{display:flex;gap:16px;align-items:center;font-size:12px;color:var(--muted);margin-top:10px;flex-wrap:wrap}
   .n-legend i{display:inline-block;width:22px;height:9px;border-radius:3px;background:#fff;border:1.5px solid #0e5a73;vertical-align:middle;margin-right:5px}
   .nchip{height:32px;border-radius:6px;background:#fff;border:1px solid var(--c);box-shadow:0 1px 3px rgba(20,45,60,.05);display:flex;align-items:center;gap:7px;padding:0 8px;overflow:hidden;z-index:2;justify-self:stretch;margin:0 3px;cursor:pointer;transition:background .15s}
@@ -721,9 +720,14 @@
   .sc-none b,.sc-none i{color:var(--muted)}
 
   .tabpane[hidden]{display:none}
-  .thumb-under{display:inline-block;font-size:11px;line-height:1;margin-left:4px;vertical-align:middle}
-  /* 今日收益最低角标：灰色倒立大拇指 */
-  .thumb-down{filter:grayscale(1);opacity:.6}
+  /* 手势角标 2026-11-21 四轮：改为内联 SVG（颜色写死在 CSS，跨端/导出图片一致）。
+     向上=品牌金 #d9a02a；向下=深灰 #4d5964（用户要求，电脑端不再变黄、手机端也更沉）。 */
+  .thumb-under{display:inline-block;font-size:11px;line-height:1;margin-left:4px;vertical-align:middle;color:#d9a02a}
+  .thumb-under svg{width:12px;height:12px;display:block}
+  .thumb-under.thumb-down,
+  .thumb.thumb-down{color:#4d5964;opacity:1;filter:none}
+  .thumb{color:#d9a02a}
+  .thumb svg{width:11px;height:11px;display:inline-block;vertical-align:-1px}
   /* 净值披露节奏角标：净值日期右上角的红色 +N（T+N 工作日披露），小号、不撑破窄列 */
   sup.nav-lag{position:absolute;top:-.55em;right:-.95em;font-family:var(--mono);font-size:9px;font-weight:700;line-height:1;color:#d13b32;padding:0;white-space:nowrap;cursor:help}
 
@@ -908,14 +912,15 @@
     #hold-table .pname,#hold-table .plink,#hold-table .st i{font-size:11.5px}
     /* 横屏操作列 2026-11-20：160→126px（原渲染185px但3按钮仅114px、两侧各留30px空白过宽），
        收窄34px按 +3/列匀给其余10列，总宽不变；操作列贴合按钮（实测渲染约146px） */
+    /* 持仓汇总横屏列宽 2026-11-21 四轮：随新列序（金额紧邻名称、净值在份额右侧）重排 */
     #sum-table col:nth-child(1){width:120px !important}
-    #sum-table col:nth-child(2){width:60px !important}
-    #sum-table col:nth-child(3){width:70px !important}
+    #sum-table col:nth-child(2){width:62px !important}
+    #sum-table col:nth-child(3){width:58px !important}
     #sum-table col:nth-child(4){width:66px !important}
-    #sum-table col:nth-child(5){width:65px !important}
+    #sum-table col:nth-child(5){width:60px !important}
     #sum-table col:nth-child(6){width:63px !important}
-    #sum-table col:nth-child(7){width:59px !important}
-    #sum-table col:nth-child(8){width:59px !important}
+    #sum-table col:nth-child(7){width:60px !important}
+    #sum-table col:nth-child(8){width:58px !important}
     #sum-table col:nth-child(9){width:49px !important}
     #sum-table col:nth-child(10){width:49px !important}
     #sum-table col:nth-child(11){width:126px !important}
@@ -1053,25 +1058,26 @@
     #hold-table thead th:nth-child(3){padding-left:2px;padding-right:2px}
     #hold-table .th-select{width:100%;max-width:100%;font-size:11px;padding:1px 0}
     #hold-table tbody td:nth-child(2){min-width:0;max-width:none}
-    /* 持仓汇总竖屏定稿 2026-11-21（用户要求）：产品名称列收窄，
-       「净值日期~累计收益」压进首屏，其余列按内容定宽、内边距统一，列间距均匀。
-       120+54+62+52+68 = 356px < iPhone393 内容宽 367px —— 首屏可看全到「累计收益」，
-       「持仓金额」68px 紧随其后（轻滑即见）。整表 766px 横向滚动，不再由名称列独吞宽度。
-       各列宽度按「该列最宽真实值」定：持仓金额/份额 68（26,059.80）、产品净值 62（1.002300 六位小数）、
-       操作 120（加购/赎回/清仓三个按钮不折行）。 */
-    #sum-table{table-layout:fixed;width:766px;min-width:766px}
+    /* 持仓汇总竖屏 2026-11-21 四轮（列序调整后重排）：
+       「产品名称｜持仓金额｜净值日期｜持仓收益｜持仓年化｜累计收益｜持仓份额｜(产品净值已隐藏)｜
+       持仓天数｜成立天数｜操作」，合计 718px（隐藏的产品净值列不再占宽）。
+       116+72+54+66+54 = 362px < iPhone393 内容宽 367px —— 首屏可看全到「持仓年化」，
+       紧接「累计收益」（轻滑即见）。各列按「该列最宽真实值」定宽：
+       持仓金额/份额 72（26,059.80）、净值日期 54、操作 118（三个按钮不折行）。
+       产品净值列在手机端隐藏（col/表头/单元格三处 display:none），净值改为名称下方 10.5px 灰字。 */
+    #sum-table{table-layout:fixed;width:718px;min-width:718px}
     #sum-table colgroup col{width:auto !important}
-    #sum-table col:nth-child(1){width:120px !important}
-    #sum-table col:nth-child(2){width:54px !important}
-    #sum-table col:nth-child(3){width:62px !important}
-    #sum-table col:nth-child(4){width:52px !important}
-    #sum-table col:nth-child(5){width:68px !important}
-    #sum-table col:nth-child(6){width:68px !important}
-    #sum-table col:nth-child(7){width:62px !important}
-    #sum-table col:nth-child(8){width:68px !important}
+    #sum-table col:nth-child(1){width:116px !important}
+    #sum-table col:nth-child(2){width:72px !important}
+    #sum-table col:nth-child(3){width:54px !important}
+    #sum-table col:nth-child(4){width:66px !important}
+    #sum-table col:nth-child(5){width:54px !important}
+    #sum-table col:nth-child(6){width:72px !important}
+    #sum-table col:nth-child(7){width:72px !important}
+    #sum-table col:nth-child(8){width:62px !important}
     #sum-table col:nth-child(9){width:46px !important}
     #sum-table col:nth-child(10){width:46px !important}
-    #sum-table col:nth-child(11){width:120px !important}
+    #sum-table col:nth-child(11){width:118px !important}
     /* 统一列间距：所有列左右各 4px，首列左内边距 8px 与卡片边距对齐 */
     #sum-table thead th,#sum-table tbody td{padding:8px 4px}
     #sum-table thead th:first-child,#sum-table tbody td:first-child{padding-left:8px;padding-right:4px}
@@ -1190,14 +1196,12 @@
     .trade-tool:has(#flow-del-sel:not([hidden])) #flow-del-sel{margin-left:auto;margin-right:4px}
     .trade-tool:has(#flow-del-sel:not([hidden])) #open-trade{margin-left:0}
     .timeline{overflow:visible;border:0;background:transparent;border-radius:0}
-    /* 手机竖屏表头（2026-11-21 用户要求恢复）：日期列在卡片里逐条展示，故表头改为
-       「代销机构筛选 + 字段说明」单行；不再整块隐藏，章节始终有表头 */
-    .ts-grid{display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--rule);
-      border-radius:10px;background:#f7f9fa;margin-bottom:10px}
+    /* 手机竖屏表头：日期列在卡片里逐条展示，表头只剩「代销机构」筛选（2026-11-21 四轮
+       去掉右侧「募集期 · 产品名称 · 额度 · 风险 · 成立日」说明后，不再需要整条灰色空槽，
+       直接让下拉浮在卡片上方，更紧凑） */
+    .ts-grid{display:flex;align-items:center;gap:8px;padding:0;border:0;background:transparent;margin-bottom:8px}
     .ts-grid>.ts-cell:not(.ts-org){display:none}
-    .ts-grid>.ts-cell.ts-org{display:block;flex:0 0 112px;width:112px;padding:0!important;border-left:0!important}
-    .ts-legend{display:block;flex:1 1 auto;min-width:0;text-align:right;font-family:var(--font);font-size:11px;
-      color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .ts-grid>.ts-cell.ts-org{display:block;flex:0 0 118px;width:118px;padding:0!important;border-left:0!important}
     .ts-lane{display:flex;flex-direction:column;align-items:stretch;gap:8px;border:1px solid var(--rule);border-radius:10px;background:#fff;padding:10px;margin-bottom:10px;min-width:0}
     .ts-lane:last-of-type{margin-bottom:0}
     .ts-lane .org{padding-left:2px;font-weight:700;justify-content:flex-start}
@@ -1381,7 +1385,8 @@
      持仓汇总「持仓收益/持仓年化/累计收益/持仓金额/净值/持仓份额/持仓天数/成立天数」列。
      字号/千分位/列宽/行高一律不动。 */
   .year-table tbody td:nth-child(2),
-  #flow-table tbody td:nth-child(5),#flow-table tbody td:nth-child(7),
+  #flow-table tbody td:nth-child(5),#flow-table tbody td:nth-child(6),
+  #flow-table tbody td:nth-child(7),#flow-table tbody td:nth-child(8),
   #prod-table tbody td:nth-child(3),#prod-table tbody td:nth-child(4),
   #prod-table tbody td:nth-child(5),#prod-table tbody td:nth-child(6),
   #prod-table tbody td:nth-child(7),
@@ -1389,10 +1394,13 @@
   #hold-table tbody td:nth-child(6),#hold-table tbody td:nth-child(7),
   #hold-table tbody td:nth-child(n+10):nth-child(-n+15),
   #hold-table tbody td.pwin,#hold-table tbody td.awin,
-  #sum-table tbody td:nth-child(3),#sum-table tbody td:nth-child(4),
-  #sum-table tbody td:nth-child(5),#sum-table tbody td:nth-child(6),
-  #sum-table tbody td:nth-child(7),#sum-table tbody td:nth-child(8),
-  #sum-table tbody td:nth-child(9),#sum-table tbody td:nth-child(10)
+  /* 持仓汇总 2026-11-21 四轮：列序改为「名称｜持仓金额｜净值日期｜持仓收益｜持仓年化｜累计收益｜
+     持仓份额｜产品净值｜持仓天数｜成立天数｜操作」，右对齐索引随列序重排（2、4~10 列为数值列） */
+  #sum-table tbody td:nth-child(2),
+  #sum-table tbody td:nth-child(4),#sum-table tbody td:nth-child(5),
+  #sum-table tbody td:nth-child(6),#sum-table tbody td:nth-child(7),
+  #sum-table tbody td:nth-child(8),#sum-table tbody td:nth-child(9),
+  #sum-table tbody td:nth-child(10)
   {text-align:right;text-indent:0}
   /* 月度表「收益」格（grid 子项）跟随右对齐 */
   .month-item > span:nth-child(2){text-align:right}
@@ -1420,10 +1428,11 @@
   #hold-table thead th:nth-child(4),#hold-table thead th:nth-child(5),
   #hold-table thead th:nth-child(6),#hold-table thead th:nth-child(7),
   #hold-table thead th:nth-child(n+10):nth-child(-n+15),
-  #sum-table thead th:nth-child(3),#sum-table thead th:nth-child(4),
-  #sum-table thead th:nth-child(5),#sum-table thead th:nth-child(6),
-  #sum-table thead th:nth-child(7),#sum-table thead th:nth-child(8),
-  #sum-table thead th:nth-child(9),#sum-table thead th:nth-child(10)
+  #sum-table thead th:nth-child(2),
+  #sum-table thead th:nth-child(4),#sum-table thead th:nth-child(5),
+  #sum-table thead th:nth-child(6),#sum-table thead th:nth-child(7),
+  #sum-table thead th:nth-child(8),#sum-table thead th:nth-child(9),
+  #sum-table thead th:nth-child(10)
   {text-align:right}
 
   /* ===== 百分比「%」不参与对齐 2026-11-20（用户要求）=====
@@ -1434,7 +1443,7 @@
   .pu{display:inline-block;width:0;overflow:visible;text-align:left}
   #hold-table thead th:nth-child(7),#hold-table thead th:nth-child(n+10):nth-child(-n+15),
   #hold-table tbody td:nth-child(7),#hold-table tbody td.pwin,#hold-table tbody td.awin,
-  #sum-table thead th:nth-child(4),#sum-table tbody td:nth-child(4),
+  #sum-table thead th:nth-child(5),#sum-table tbody td:nth-child(5),
   #prod-table thead th:nth-child(n+4):nth-child(-n+7),
   #prod-table tbody td:nth-child(n+4):nth-child(-n+7){padding-right:var(--pgut,.62em)}
 
@@ -1494,6 +1503,21 @@
      页面怎么滚、键盘怎么弹都跟着筛选项走，绝不脱离页面坐标。 */
   #pane-prod .filters{position:relative}
   .sel-pop.prod-sug{position:absolute}
+
+  /* ===== 持仓汇总 2026-11-21 四轮（用户要求）=====
+     ① 持仓金额紧跟产品名称、产品净值放持仓份额右侧（HTML/JS 已改列序）；
+     ② 手机端（含横屏）取消「产品净值」独立列，改为产品名称下方 10.5px 灰色小字；
+     ③ 数值列（尤其持仓份额）一律右对齐 + 等宽数字 + 不换行，保证小数点严格同一竖线。 */
+  #sum-table tbody td.shares-col,#sum-table tbody td.nav-col{white-space:nowrap;font-variant-numeric:tabular-nums}
+  #sum-table .pname .nav-under{display:none;font-family:var(--mono);font-size:10.5px;line-height:1.5;
+    color:var(--muted);font-weight:400;margin-top:1px;white-space:nowrap}
+  @media (max-width:968px){
+    /* 整列收起：col / 表头 / 单元格三处一起 display:none，固定列宽下才不会留空列 */
+    #sum-table col:nth-child(8),
+    #sum-table thead th:nth-child(8),
+    #sum-table tbody td:nth-child(8){display:none}
+    #sum-table .pname .nav-under{display:block}
+  }
 </style>
 </head>
 <body>
@@ -1724,20 +1748,22 @@
       <div class="card tbl-scroll full-scroll">
         <table id="sum-table">
           <colgroup>
-            <col><col style="width:8.5%"><col style="width:8.5%"><col style="width:8%">
-            <col style="width:8.5%"><col style="width:8%"><col style="width:6.5%">
-            <col style="width:7.5%"><col style="width:7.5%"><col style="width:7.5%">
+            <col><col style="width:8%"><col style="width:7.5%">
+            <col style="width:8.5%"><col style="width:8.5%"><col style="width:8%">
+            <col style="width:8%"><col style="width:8%">
+            <col style="width:7.5%"><col style="width:7.5%">
             <col style="width:11.5%">
           </colgroup>
           <thead>
             <tr>
               <th class="sortable" data-sort="name">产品名称</th>
+              <th class="r sortable" data-sort="mv">持仓<br>金额</th>
               <th class="c sortable" data-sort="navdate">净值<br>日期</th>
               <th class="r sortable" data-sort="profit">持仓<br>收益</th>
               <th class="r sortable" data-sort="ann">持仓<br>年化</th>
               <th class="r sortable" data-sort="total">累计<br>收益</th>
-              <th class="r sortable" data-sort="mv">持仓<br>金额</th>
-              <th class="c sortable" data-sort="nav">产品<br>净值</th><th class="r sortable" data-sort="shares">持仓<br>份额</th>
+              <th class="r sortable" data-sort="shares">持仓<br>份额</th>
+              <th class="c sortable nav-col" data-sort="nav">产品<br>净值</th>
               <th class="c sortable" data-sort="days">持仓<br>天数</th>
               <th class="c sortable" data-sort="listdays">成立<br>天数</th>
               <th class="c">操作</th>
@@ -1773,8 +1799,8 @@
         </div>
         <table id="flow-table">
           <colgroup>
-            <col style="width:4%"><col style="width:11%"><col><col style="width:7.4%"><col style="width:9.6%">
-            <col style="width:9.2%"><col style="width:9.6%"><col style="width:9.6%">
+            <col style="width:4%"><col style="width:11%"><col><col style="width:7.4%"><col style="width:9.4%">
+            <col style="width:9.4%"><col style="width:9.4%"><col style="width:9.4%">
             <col style="width:7.4%"><col style="width:9.4%">
           </colgroup>
           <thead>
@@ -2041,7 +2067,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261121e';
+      s.src = './assets/dashboard.js?v=20261121f';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();
@@ -2382,6 +2408,13 @@
       function swapSelectsInClone(doc) {
         var win = doc.defaultView || window;
         Array.prototype.forEach.call(doc.querySelectorAll('select'), function (sel) {
+          /* 2026-11-21 四轮：产品库筛选栏的 select 是「透明覆盖层 + 自绘 .sel-label」，
+             label 里已有真实文字节点在渲染；再插一个代理 span 就会与 label 叠成重影（图3 的模糊双字）。
+             透明（opacity:0）的 select 一律跳过，交给旁边的 label 呈现。 */
+          var par = sel.parentNode;
+          if (par && par.classList && par.classList.contains('sel-wrap')) return;
+          var csOpacity = win.getComputedStyle(sel).opacity;
+          if (csOpacity === '0') return;
           var opt = sel.options && sel.options[sel.selectedIndex];
           var cs = win.getComputedStyle(sel);
           var rect = sel.getBoundingClientRect();

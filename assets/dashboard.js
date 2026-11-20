@@ -3,8 +3,15 @@
   if (!DATA || !Array.isArray(DATA.products)) return;
 
   var DAY = 86400000;
-  var THUMB_UP = '👍';
-  var THUMB_DOWN = '👎';
+  /* 手势角标 2026-11-21 四轮（用户要求：向下的改为深灰色）：
+     emoji 是彩色字体，Windows/部分内核不执行 CSS grayscale 滤镜，👎 会直接显示成黄色，
+     导出图片（html2canvas）同样不支持滤镜。改为内联 SVG —— 颜色由 currentColor 决定，
+     电脑/手机/导出图片三处完全一致。向上=品牌金，向下=深灰 #4d5964。 */
+  var THUMB_PATH = '<path fill="currentColor" d="M2.1 6.6h1.9c.3 0 .5.2.5.5v7.3c0 .3-.2.5-.5.5H2.1a.6.6 0 0 1-.6-.6V7.2c0-.3.3-.6.6-.6Z"/>' +
+    '<path fill="currentColor" d="M5.6 14.6V7.1c0-.2.1-.4.2-.6l2.5-3.2c.4-.5 1-.7 1.5-.5.6.2 1 .8.9 1.4l-.3 2.9h3.4c.8 0 1.4.7 1.3 1.5l-.7 5c-.1.6-.6 1-1.2 1H5.6Z"/>';
+  var THUMB_UP = '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">' + THUMB_PATH + '</svg>';
+  var THUMB_DOWN = '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">' +
+    '<g transform="translate(0,16) scale(1,-1)">' + THUMB_PATH + '</g></svg>';
 
   /* 披露节奏红色角标（+N）：净值日 T 的净值为何晚于 T+1 披露，按登记编码人工核定后登记到这里，
      优先级高于自动推断。格式：'登记编码': N（工作日）。未登记的产品走 disclosureLagOf 的自动推断。
@@ -4836,6 +4843,10 @@
       var inflightTip = h.pending
         ? ' title="申购待确认：确认日净值未披露，按最新净值估算计入"'
         : ' title="在途：确认日未到或确认日净值未披露，确认后自动更新"';
+      /* 列序 2026-11-21 四轮（用户要求）：持仓金额紧跟产品名称，产品净值放持仓份额右侧；
+         手机端隐藏产品净值列，改为名称下方小字灰字（.nav-under） */
+      var navUnder = (h.latestNav !== null && h.latestNav !== undefined && !isNaN(h.latestNav))
+        ? '<span class="nav-under" title="产品净值（最新披露日 ' + (h.latestDate || '') + '）">净值 ' + fmtNav(h.latestNav) + '</span>' : '';
       return '<tr>' +
         '<td><div class="pname"><a class="plink" href="javascript:void(0)" data-goto-prod="' + p.id + '" title="在产品库中查看「' + (p.name || '') + '」">' +
           prodDispName(p) + '</a>' +
@@ -4844,15 +4855,16 @@
           (h.cleared ? '<span class="cleared-date">' +
             (h.tx && h.tx.confirmDate ? h.tx.confirmDate.slice(5).replace('-', '.') : '') + ' 清仓</span>' : '') +
           '</span>' +
+          navUnder +
           '</div></td>' +
+        '<td class="r num">' + fmtMoney(h.mv) + '</td>' +
         '<td class="c num">' + (h.latestDate ? withBadge(mmdd(h.latestDate), navLagBadge(h.product)) : '—') + '</td>' +
         '<td class="r num ' + colorBy(h.holdProfit) + '" title="持仓收益（仅当前持仓份额）= 市值 − 剩余成本">' + fmtSigned(h.holdProfit) + '</td>' +
         '<td class="r num ' + (h.annShort ? 'muted' : colorBy(h.ann)) + '" title="' + annTipOf(h) + '">' +
           fmtAnnCell(h.ann, h.annShort ? '<sup class="dag" title="计息不足 ' + SHORT_ANN_DAYS + ' 天，年化为短样本折算，仅供参考">*</sup>' : '') + '</td>' +
         '<td class="r num ' + colorBy(h.profit) + '" title="累计收益 = 持仓收益 + 已赎回部分已实现">' + fmtSigned(h.profit) + '</td>' +
-        '<td class="r num">' + fmtMoney(h.mv) + '</td>' +
-        '<td class="c num">' + fmtNav(h.latestNav) + '</td>' +
-        '<td class="r num">' + fmtMoney(h.shares) + '</td>' +
+        '<td class="r num shares-col">' + fmtMoney(h.shares) + '</td>' +
+        '<td class="r num nav-col">' + fmtNav(h.latestNav) + '</td>' +
         '<td class="c num dcell" title="持仓天数 ' + h.days + ' 天 = 今天 − 起息日 ' + (h.effStartDate || '') +
           '；年化按计息 ' + (h.accrualDays || h.days) + ' 天（至最新净值日 ' + (h.latestDate || '') + '）折算">' +
           '<span class="days">' + h.days + '</span><i class="dunit">天</i></td>' +
@@ -5455,9 +5467,7 @@
         var dd = parseDate(ds);
         return '<div class="ts-cell' + (idx === 0 ? ' is-today' : '') + '"><b>' + mdText(ds) +
           (idx === 0 ? '<em>今天</em>' : '') + '</b><span>周' + wd[dd.getDay()] + '</span></div>';
-      }).join('') +
-      /* 手机竖屏表头（日期列改为卡片内逐条展示）：右侧字段说明，横屏/桌面隐藏 */
-      '<div class="ts-legend">募集期 · 产品名称 · 额度 · 风险 · 成立日</div>';
+      }).join('');
 
     var totalCnt = 0;
     var out = [];
