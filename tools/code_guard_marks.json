@@ -1,7 +1,7 @@
 {
   "_doc": "跨端代码守卫共用标记清单 —— 唯一权威来源。WorkBuddy 的 .githooks/pre-push 与 Trae 的 tools/sync_pages.py 都必须读取本文件，禁止在脚本里硬编码标记列表。新增功能后在此登记，两端自动生效。",
   "_maintainer": "任何一端修改本文件后，需在提交信息中说明原因；改动会同时影响两端的推送守卫。",
-  "version": "2026-11-20p",
+  "version": "2026-11-20q",
   "protected": {
     "_doc": "受『整批中止』保护的文件：远端内容被他人改过时，整批拒绝推送，必须先 pull 合并。markers 为该文件必须包含的字符串，缺失即判定为旧版/被回退，整批拒推。",
     "index.html": [
@@ -70,7 +70,10 @@
       "持仓汇总操作按钮调高 2026-11-20：16.4→20.4px",
       "#sum-table tbody td:last-child .mini{padding:2px 7px;line-height:1.2}",
       "交易流水（flow-table）数据行 2026-11-20",
-      "#flow-table tbody tr.flow-detail td{padding:2.5px 8px}",
+      "#flow-table tbody tr.flow-detail td{padding:4.5px 8px}",
+      "交易流水/产品库按钮压缩 2026-11-20：贴合12px字体",
+      "#flow-table tbody .mini,#prod-table tbody .mini{padding:2px 7px;line-height:1.2}",
+      "#flow-table tbody .mini,#prod-table tbody .mini{padding:2px 6px;line-height:1.2}",
       "产品库（prod-table）数据行压缩 2026-11-20",
       "#prod-table .st b,#prod-table .st i",
       "极窄屏指标副行再收一档字号",
@@ -79,6 +82,9 @@
       "#hold-table col:nth-child(2){width:16.7% !important}",
       "评分列 2026-11-20：4.2%→5.8%",
       "#hold-table col:nth-child(16){width:5.8% !important}",
+      "评分列手机端 2026-11-20：横屏52/竖屏54",
+      "#hold-table col:nth-child(16){width:52px !important}",
+      "#hold-table col:nth-child(16){width:54px !important}",
       "审核稿 B4：h1 改为断点固定整数",
       "h1{font-size:36px",
       "h1{font-size:27px}",
