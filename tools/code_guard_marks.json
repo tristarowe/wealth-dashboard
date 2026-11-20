@@ -1,7 +1,7 @@
 {
   "_doc": "跨端代码守卫共用标记清单 —— 唯一权威来源。WorkBuddy 的 .githooks/pre-push 与 Trae 的 tools/sync_pages.py 都必须读取本文件，禁止在脚本里硬编码标记列表。新增功能后在此登记，两端自动生效。",
   "_maintainer": "任何一端修改本文件后，需在提交信息中说明原因；改动会同时影响两端的推送守卫。",
-  "version": "2026-11-20h",
+  "version": "2026-11-20i",
   "protected": {
     "_doc": "受『整批中止』保护的文件：远端内容被他人改过时，整批拒绝推送，必须先 pull 合并。markers 为该文件必须包含的字符串，缺失即判定为旧版/被回退，整批拒推。",
     "index.html": [
@@ -61,8 +61,8 @@
       ".full-scroll{max-height:none;overflow-y:visible}",
       "card tbl-scroll full-scroll",
       "指标卡副行：副行文字与数值强制同一行",
-      "盈亏汇总行高压缩 2026-11-20",
-      "#sum-table tbody td:last-child .mini{padding:1px 6px;line-height:1.2}",
+      "盈亏汇总（首页 hold-table）行高压缩 2026-11-20",
+      "#hold-table tbody td.mlabel{padding:3px 8px;line-height:1.45}",
       "极窄屏指标副行再收一档字号",
       "@media (max-width:340px)"
     ],
