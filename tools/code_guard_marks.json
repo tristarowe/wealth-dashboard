@@ -1,7 +1,7 @@
 {
   "_doc": "跨端代码守卫共用标记清单 —— 唯一权威来源。WorkBuddy 的 .githooks/pre-push 与 Trae 的 tools/sync_pages.py 都必须读取本文件，禁止在脚本里硬编码标记列表。新增功能后在此登记，两端自动生效。",
   "_maintainer": "任何一端修改本文件后，需在提交信息中说明原因；改动会同时影响两端的推送守卫。",
-  "version": "2026-11-20zj",
+  "version": "2026-11-20zl",
   "protected": {
     "_doc": "受『整批中止』保护的文件：远端内容被他人改过时，整批拒绝推送，必须先 pull 合并。markers 为该文件必须包含的字符串，缺失即判定为旧版/被回退，整批拒推。",
     "index.html": [
@@ -56,9 +56,7 @@
       "prod-scroll",
       "#prod-table{min-width:0}",
       "#prod-table tbody td{padding:5px 8px}",
-      "#hold-table col:nth-child(9){width:64px !important}",
-      "竖屏列宽再压缩",
-      "#hold-table col:nth-child(2){width:197px !important}",
+      "#hold-table col:nth-child(2){width:132px !important}",
       ".full-scroll{max-height:none;overflow-y:visible}",
       "card tbl-scroll full-scroll",
       "指标卡副行：副行文字与数值强制同一行",
@@ -84,7 +82,6 @@
       "#hold-table col:nth-child(16){width:5.8% !important}",
       "评分列手机端 2026-11-20：横屏52/竖屏54",
       "#hold-table col:nth-child(16){width:52px !important}",
-      "#hold-table col:nth-child(15){width:56px !important}",
       "#hold-table col:nth-child(16){width:52px !important}",
       "审核稿 B4：h1 改为断点固定整数",
       "h1{font-size:36px",
@@ -187,8 +184,8 @@
       ".filters input#prod-search{font-family:var(--font)",
       "天数两行分割线 2026-11-20",
       "#hold-table td.daystack .dsep{position:absolute;left:0;right:0;top:50%;height:1px;background:#f0f4f6;width:auto}",
-      "红框数值列统一右对齐 2026-11-20",
-      "#hold-table tbody tr.mb > td.awin{text-align:right}"
+      "数值单元格右对齐 2026-11-20（表头保持原样：居中/名称左对齐）",
+      "#hold-table tbody td.pwin,#hold-table tbody td.awin{text-align:right}"
     ],
     "assets/dashboard.js": [
       "PID_ALIAS",

@@ -945,27 +945,27 @@
        整表 942px 横向滚动（表头吸顶 + 首屏可见产品名） */
     #hold-table{table-layout:fixed;width:962px;min-width:962px}
     #hold-table colgroup col{width:auto !important}
-    /* 2026-11-20 竖屏列宽再压缩：按每列文字实测最小宽度收紧，省出的 65px 全给产品名称列
-       （132→197px），总宽仍 962px。实测所有 th/td 无内容裁切、无横向溢出。 */
+    /* 2026-11-20 竖屏列宽回调：产品名称列从 197px 回到上一次的 132px，
+       腾出的 65px 匀分给其余数据列（+4~6px），总宽仍 962px。
+       数值右对齐后小数点/末位有更多呼吸空间，表头保持居中不动。 */
     #hold-table col:nth-child(1){width:28px !important}
-    #hold-table col:nth-child(2){width:197px !important}
-    #hold-table col:nth-child(3){width:64px !important}
-    #hold-table col:nth-child(4){width:52px !important}
-    #hold-table col:nth-child(5){width:56px !important}
-    #hold-table col:nth-child(6){width:56px !important}
-    #hold-table col:nth-child(7){width:54px !important}
-    #hold-table col:nth-child(8){width:38px !important}
-    /* 「数据」列内容「日均万收」需约 55px（含左右 padding），压缩后 64px 仍留余量 */
-    #hold-table col:nth-child(9){width:64px !important}
-    /* 周期列按最宽数值 -11.94%（约 43px）+ padding 收紧到 49px；
-       「成立至今」表头两行文字需 56px，评分列「新持仓」需 52px */
+    #hold-table col:nth-child(2){width:132px !important}
+    #hold-table col:nth-child(3){width:69px !important}
+    #hold-table col:nth-child(4){width:57px !important}
+    #hold-table col:nth-child(5){width:61px !important}
+    #hold-table col:nth-child(6){width:61px !important}
+    #hold-table col:nth-child(7){width:59px !important}
+    #hold-table col:nth-child(8){width:42px !important}
+    /* 「数据」列内容「日均万收」需约 55px（含左右 padding） */
+    #hold-table col:nth-child(9){width:69px !important}
+    /* 周期列按最宽数值 -11.94%（约 43px）+ padding 留足；「成立至今」表头两行文字、评分列同理 */
     #hold-table col:nth-child(10),
     #hold-table col:nth-child(11),
     #hold-table col:nth-child(12),
     #hold-table col:nth-child(13),
-    #hold-table col:nth-child(14){width:49px !important}
-    #hold-table col:nth-child(15){width:56px !important}
-    #hold-table col:nth-child(16){width:52px !important}
+    #hold-table col:nth-child(14){width:53px !important}
+    #hold-table col:nth-child(15){width:61px !important}
+    #hold-table col:nth-child(16){width:58px !important}
     #hold-table thead th,#hold-table tbody td{padding:8px 3px}
     /* B1/Q1：手机四表正文统一 12.5px（flow 原 12px 纳入同档） */
     #sum-table tbody td,#flow-table tbody td,#prod-table tbody td{font-size:12.5px}
@@ -1248,36 +1248,35 @@
     #sum-table tbody td{padding-top:6px;padding-bottom:6px}
   }
 
-  /* ===== 红框数值列统一右对齐 2026-11-20（修正同日 left 版） =====
+  /* ===== 数值单元格右对齐 2026-11-20（表头保持原样：居中/名称左对齐） =====
+     用户要求：表头不动，只让数字/数值/百分比右对齐，使同列小数点落在同一竖线上。
      涉及：盈亏日历年度/月度「收益」列、交易流水「份额/金额」列、产品库「今日万收~成立至今」区间列、
-     盈亏汇总「持仓收益/持仓年化 + 7日~成立至今」列、持仓汇总「持仓收益/持仓年化/累计收益/持仓金额」列。
-     只改 text-align，字号/千分位/列宽/行高一律不动。 */
-  /* 盈亏日历：年度表收益列（第2列）+ 月度表收益列（第2列 span） */
-  .year-table thead th:nth-child(2),.year-table tbody td:nth-child(2){text-align:right}
-  .month-row.mhead span:nth-child(2),.month-item > span:nth-child(2){text-align:right}
+     盈亏汇总「今日万收/今日收益/持仓收益/持仓年化/天数 + 7日~成立至今」列、
+     持仓汇总「持仓收益/持仓年化/累计收益/持仓金额/净值/持仓份额/持仓天数/成立天数」列。
+     只改 tbody 数据单元格，字号/千分位/列宽/行高一律不动。 */
+  /* 盈亏日历：年度表收益列（第2列）+ 月度表收益列（第2格） */
+  .year-table tbody td:nth-child(2){text-align:right}
+  .month-item > span:nth-child(2){text-align:right}
   /* 交易流水：份额（第5列）、金额（第7列） */
-  #flow-table thead th:nth-child(5),#flow-table tbody td:nth-child(5),
-  #flow-table thead th:nth-child(7),#flow-table tbody td:nth-child(7){text-align:right}
+  #flow-table tbody td:nth-child(5),#flow-table tbody td:nth-child(7){text-align:right}
   /* 产品库：今日万收（第4列）~ 成立至今（第8列） */
-  #prod-table thead th:nth-child(4),#prod-table tbody td:nth-child(4),
-  #prod-table thead th:nth-child(5),#prod-table tbody td:nth-child(5),
-  #prod-table thead th:nth-child(6),#prod-table tbody td:nth-child(6),
-  #prod-table thead th:nth-child(7),#prod-table tbody td:nth-child(7),
-  #prod-table thead th:nth-child(8),#prod-table tbody td:nth-child(8){text-align:right}
-  /* 盈亏汇总：持仓收益（第6）/持仓年化（第7）+ 7日~成立至今（第10~15）；
-     数据列双行（ma=pwin / mb=ann）都要对齐，表头同步 */
-  #hold-table thead th:nth-child(6),#hold-table tbody tr.ma > td:nth-child(6),
-  #hold-table thead th:nth-child(7),#hold-table tbody tr.ma > td:nth-child(7),
-  #hold-table thead th:nth-child(n+10):nth-child(-n+15),
-  #hold-table tbody tr.ma > td.pwin,
-  #hold-table tbody tr.mb > td.awin{text-align:right}
-  /* 盈亏汇总非双行模式（仅万收/仅年化）：第10~15列数据单元格右对齐 */
-  #hold-table tbody tr.ma > td.pwin,#hold-table tbody tr.ma > td.awin{text-align:right}
-  /* 持仓汇总：持仓收益（第3）/持仓年化（第4）/累计收益（第5）/持仓金额（第6） */
-  #sum-table thead th:nth-child(3),#sum-table tbody td:nth-child(3),
-  #sum-table thead th:nth-child(4),#sum-table tbody td:nth-child(4),
-  #sum-table thead th:nth-child(5),#sum-table tbody td:nth-child(5),
-  #sum-table thead th:nth-child(6),#sum-table tbody td:nth-child(6){text-align:right}
+  #prod-table tbody td:nth-child(4),#prod-table tbody td:nth-child(5),
+  #prod-table tbody td:nth-child(6),#prod-table tbody td:nth-child(7),
+  #prod-table tbody td:nth-child(8){text-align:right}
+  /* 盈亏汇总：今日万收（4）/今日收益（5）/持仓收益（6）/持仓年化（7）/天数（8）
+     + 7日~成立至今（10~15）；双行模式 ma=pwin、mb=awin 与非双行模式都要覆盖。
+     第3列净值日期、第9列「数据」标签、第16列评分不是数值，保持原样。 */
+  #hold-table tbody td:nth-child(4),#hold-table tbody td:nth-child(5),
+  #hold-table tbody td:nth-child(6),#hold-table tbody td:nth-child(7),
+  #hold-table tbody td:nth-child(8),
+  #hold-table tbody td:nth-child(n+10):nth-child(-n+15),
+  #hold-table tbody td.pwin,#hold-table tbody td.awin{text-align:right}
+  /* 持仓汇总：持仓收益（3）/持仓年化（4）/累计收益（5）/持仓金额（6）/净值（7）/
+     持仓份额（8）/持仓天数（9）/成立天数（10）；第11列操作为按钮，保持居中。 */
+  #sum-table tbody td:nth-child(3),#sum-table tbody td:nth-child(4),
+  #sum-table tbody td:nth-child(5),#sum-table tbody td:nth-child(6),
+  #sum-table tbody td:nth-child(7),#sum-table tbody td:nth-child(8),
+  #sum-table tbody td:nth-child(9),#sum-table tbody td:nth-child(10){text-align:right}
 
   /* 导出时撑满基准宽度，避免窄窗口裁切 */
   .page.is-exporting{width:1320px}
