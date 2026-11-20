@@ -4499,6 +4499,21 @@
         th.classList.add(sumState.dir === 'asc' ? 'sorted-asc' : 'sorted-desc');
       }
     });
+    /* 持仓汇总筛选提示 2026-11-20：从盈亏汇总点产品名联动过来时显示当前筛选产品与清除按钮（与交易流水同款） */
+    var sumFilterEl = document.getElementById('sum-filter');
+    var sumNameEl = document.getElementById('sum-filter-name');
+    if (sumFilterEl) {
+      var sumScopeActive = selectedIds.length < pickableProducts().length;
+      if (flowState.pid || sumScopeActive) {
+        sumFilterEl.hidden = false;
+        var sumParts = [];
+        if (sumScopeActive) sumParts.push(selectedIds.length ? '已选 ' + selectedIds.length + ' 款' : '未选择产品');
+        if (flowState.pid) sumParts.push(shortOf(flowState.pid));
+        if (sumNameEl) sumNameEl.textContent = sumParts.join(' · ');
+      } else {
+        sumFilterEl.hidden = true;
+      }
+    }
   }
 
   /* 交易汇总表头排序：点第一次降序，再点升序 */
@@ -4800,8 +4815,7 @@
     var yn = document.getElementById('flow-year-next');
     if (yn) yn.addEventListener('click', function () { stepFlowYear(1); });
 
-    var clear = document.getElementById('clear-filter');
-    if (clear) clear.addEventListener('click', function () {
+    function clearTradeFilters() {
       openTradeFor('');
       /* 全局产品筛选也一并恢复全选，否则清掉产品名后流水/汇总仍被顶部筛选挡住 */
       var ids = pickableProducts().map(function (p) { return p.id; });
@@ -4809,7 +4823,12 @@
         selectedIds = ids.slice();
         applySelection();
       }
-    });
+    }
+    var clear = document.getElementById('clear-filter');
+    if (clear) clear.addEventListener('click', clearTradeFilters);
+    /* 持仓汇总的清除筛选（从盈亏汇总联动进来时用），与交易流水同逻辑 */
+    var clearSum = document.getElementById('clear-sum-filter');
+    if (clearSum) clearSum.addEventListener('click', clearTradeFilters);
 
     var open = document.getElementById('open-trade');
     if (open) open.addEventListener('click', function () {
