@@ -1,7 +1,7 @@
 {
   "_doc": "跨端代码守卫共用标记清单 —— 唯一权威来源。WorkBuddy 的 .githooks/pre-push 与 Trae 的 tools/sync_pages.py 都必须读取本文件，禁止在脚本里硬编码标记列表。新增功能后在此登记，两端自动生效。",
   "_maintainer": "任何一端修改本文件后，需在提交信息中说明原因；改动会同时影响两端的推送守卫。",
-  "version": "2026-11-21zs",
+  "version": "2026-11-21zt",
   "protected": {
     "_doc": "受『整批中止』保护的文件：远端内容被他人改过时，整批拒绝推送，必须先 pull 合并。markers 为该文件必须包含的字符串，缺失即判定为旧版/被回退，整批拒推。",
     "index.html": [
@@ -23,7 +23,7 @@
       "data-stamp",
       "B2/Q2：横屏全表由 11px 提到 11.5px",
       "Q1：手机年表/月表",
-      "v=20261121c",
+      "v=20261121d",
       "手机端彻底隐藏滚动条",
       "data-sort=\"total\"",
       "累计收益",
@@ -248,7 +248,15 @@
       "--blue:#16679b",
       "#metric-value{color:var(--blue)}",
       "#hold-table tbody td.income-col{font-weight:400",
-      "#prod-search:focus{font-size:16px!important}"
+      "#prod-search:focus{font-size:16px!important}",
+      ".csel-wrap{position:relative;display:block;width:100%;text-align:center}",
+      ".sel-pop.single{width:max-content",
+      ".csel-hit{position:absolute;inset:0;z-index:3",
+      "#hold-table th.navdate-th .csel-wrap{position:absolute;inset:0;width:auto}",
+      ".ts-legend{display:none}",
+      ".ts-grid{display:flex;align-items:center;gap:8px;padding:7px 10px",
+      ".ts-grid>.ts-cell:not(.ts-org){display:none}",
+      ".ts-lane .nchip .nr{display:none}"
     ],
     "assets/dashboard.js": [
       "PID_ALIAS",
@@ -411,7 +419,14 @@
       "function navDateAt(",
       "var accrualStart = (rec.lots && rec.lots[0] && rec.lots[0].navDate)",
       "navDate: navDateAt(p, t.applyDate || t.confirmDate)",
-      "按日开放式|按日开放"
+      "按日开放式|按日开放",
+      "function attachCompactSelect(sel)",
+      "attachCompactSelects();",
+      "openSelPop(sel, wrap, { single: true })",
+      "pop.className = 'sel-pop' + (opts.single ? ' single' : '')",
+      "var left = selPop.classList.contains('single')",
+      "'<div class=\"ts-legend\">募集期 · 产品名称 · 额度 · 风险 · 成立日</div>'",
+      "if (sel) attachCompactSelect(sel);"
     ],
     "assets/store.js": [
       "sbTombstones",
@@ -452,7 +467,8 @@
       "nav_holdings_t1",
       "sync_nav_data",
       "nav_official",
-      "pull_cloud"
+      "pull_cloud",
+      "poppler-utils"
     ],
     "tools/sync_pages.py": [
       "def guard_marks"
@@ -482,6 +498,14 @@
       "表格行高分层（2026-11-20 审核稿 A1 登记）",
       "列宽与间距（A0 / A2 / A3）",
       "颜色例外（B5）"
+    ],
+    "daily/fetch_newproducts.py": [
+      "pymupdf",
+      "pdftotext",
+      "def label_dates(",
+      "def own_detail_text(",
+      "\"failed\": len(failed)",
+      "timedelta(days=7)"
     ]
   },
   "min_counts": {

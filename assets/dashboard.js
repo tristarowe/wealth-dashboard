@@ -2877,7 +2877,9 @@
     var vw = window.innerWidth;
     var pw = selPop.offsetWidth;
     var ph = selPop.offsetHeight;
-    var left = Math.max(8, Math.min(r.left, vw - pw - 8));
+    /* 紧凑单列弹层（表头筛选）水平居中对齐锚点，多选筛选仍左对齐 */
+    var left = selPop.classList.contains('single') ? (r.left + r.width / 2 - pw / 2) : r.left;
+    left = Math.max(8, Math.min(left, vw - pw - 8));
     var top = r.bottom + 6;
     if (top + ph > vh - 8) top = r.top - ph - 6;
     top = Math.max(8, Math.min(top, vh - ph - 8));
@@ -2910,17 +2912,19 @@
     if (selPopSel === sel && selPopAnchor === anchorEl) { closeSelPop(); return; }
     closeSelPop();
     var pop = document.createElement('div');
-    pop.className = 'sel-pop';
+    pop.className = 'sel-pop' + (opts.single ? ' single' : '');
     pop.setAttribute('role', 'listbox');
+    var single = !!opts.single;
 
     function selectAll() {
       Array.prototype.forEach.call(sel.options, function (o, j) { o.selected = (j === 0); });
     }
-    /* 勾选态回写：首项＝全部，其余按 select 选中情况 */
+    /* 勾选态回写：首项＝全部，其余按 select 选中情况；单列弹层直接按 selected 标记 */
     function paint() {
       Array.prototype.forEach.call(pop.querySelectorAll('.sel-opt'), function (row, j) {
-        var all = (j === 0);
-        var on = all ? selIsAll(sel) : (!!sel.options[j] && sel.options[j].selected && !selIsAll(sel));
+        var on = single
+          ? !!(sel.options[j] && sel.options[j].selected)
+          : ((j === 0) ? selIsAll(sel) : (!!sel.options[j] && sel.options[j].selected && !selIsAll(sel)));
         row.classList.toggle('on', on);
         row.setAttribute('aria-selected', on ? 'true' : 'false');
         var cb = row.querySelector('.mchk');
@@ -2933,6 +2937,24 @@
     }
 
     Array.prototype.forEach.call(sel.options, function (opt, i) {
+      if (single) {
+        /* 表头筛选（类型/状态/净值日期/数据）与新品代销机构：单列、点选即生效并收起 */
+        var one = document.createElement('button');
+        one.type = 'button';
+        one.className = 'sel-opt';
+        one.setAttribute('role', 'option');
+        one.textContent = opt.text;
+        one.addEventListener('click', function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          Array.prototype.forEach.call(sel.options, function (o) { o.selected = false; });
+          opt.selected = true;
+          commit();
+          closeSelPop();
+        });
+        pop.appendChild(one);
+        return;
+      }
       var isAllItem = (i === 0);
       var row = document.createElement('label');
       row.className = 'sel-opt mopt';
@@ -2989,8 +3011,35 @@
     selPopAt = Date.now();
 
     var r = anchorEl.getBoundingClientRect();
-    pop.style.minWidth = Math.max(r.width, 132) + 'px';
+    /* 单列弹层宽度由 CSS width:max-content 贴合文字，这里只约束多选筛选的最小宽度 */
+    if (!single) pop.style.minWidth = Math.max(r.width, 132) + 'px';
     placeSelPop();
+  }
+
+  /* 表头筛选 / 新品代销机构：拦掉原生 select 的系统弹层，改用贴合内容宽度的自绘单列弹层。
+     原生 select 在手机上会弹出接近整屏的对话框（2026-11-21 用户反馈占屏太大）。 */
+  function attachCompactSelect(sel) {
+    if (!sel || !sel.parentNode) return;
+    if (sel.parentNode.classList && sel.parentNode.classList.contains('csel-wrap')) return;
+    var wrap = document.createElement('span');
+    wrap.className = 'csel-wrap';
+    sel.parentNode.insertBefore(wrap, sel);
+    wrap.appendChild(sel);
+    var hit = document.createElement('button');
+    hit.type = 'button';
+    hit.className = 'csel-hit';
+    hit.setAttribute('aria-haspopup', 'listbox');
+    hit.setAttribute('aria-label', sel.getAttribute('aria-label') || sel.getAttribute('title') || '筛选');
+    hit.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      openSelPop(sel, wrap, { single: true });
+    });
+    wrap.appendChild(hit);
+  }
+
+  function attachCompactSelects() {
+    Array.prototype.forEach.call(document.querySelectorAll('select.th-select'), attachCompactSelect);
   }
 
   /* 下拉当前值：由自绘标签居中展示（原生 select 文本无法居中）；多选时显示「已选 N 项」 */
@@ -5343,7 +5392,9 @@
         var dd = parseDate(ds);
         return '<div class="ts-cell' + (idx === 0 ? ' is-today' : '') + '"><b>' + mdText(ds) +
           (idx === 0 ? '<em>今天</em>' : '') + '</b><span>周' + wd[dd.getDay()] + '</span></div>';
-      }).join('');
+      }).join('') +
+      /* 手机竖屏表头（日期列改为卡片内逐条展示）：右侧字段说明，横屏/桌面隐藏 */
+      '<div class="ts-legend">募集期 · 产品名称 · 额度 · 风险 · 成立日</div>';
 
     var totalCnt = 0;
     var out = [];
@@ -5435,6 +5486,8 @@
 
     var sel = document.getElementById('np-org-sel');
     if (sel) sel.onchange = function () { NP_UI.channel = this.value; renderNewProds(); };
+    /* 每次重绘都会新建这个 select，需要重新套一层「紧凑弹层」外壳 */
+    if (sel) attachCompactSelect(sel);
   }
 
   /* 产品身份一致性自检：同一登记编码只能有一个身份；持仓/交易必须能解析到产品库。
@@ -5959,6 +6012,7 @@
     bindProductFilters();
     bindProdSort();
     beautifyFilterSelects();
+    attachCompactSelects();
     bindProdSearchSuggest();
     bindTrade();
     bindFlowBulk();

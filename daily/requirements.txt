@@ -2,3 +2,6 @@ requests>=2.31
 pycryptodome>=3.20
 playwright>=1.44
 Pillow>=10.0
+# 2026-11-21：新品预告要解析销售文件 PDF。缺了这个包，fetch_newproducts.py 的
+# 每个候选品都会在 _pdf_to_text 抛 ImportError（被 try 吞掉），线上长期 kept 0。
+pymupdf>=1.24

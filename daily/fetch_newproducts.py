@@ -43,19 +43,45 @@ from fetch_notice import process_url, UA           # noqa: E402
 
 
 def _pdf_to_text(pdf_bytes, cache, nid):
-    """pdftotext 不可用时的兜底：用 PyMuPDF 抽取文本并落盘缓存。"""
+    """PDF → 文本并落盘缓存。
+
+    2026-11-21 修复（线上长期「抓了 0 条」的根因）：
+    原先只 try `import pymupdf`，而 CI 的 requirements 里没有 pymupdf、apt 也没装
+    poppler-utils，于是每个候选品都在这里抛 ImportError，被 build() 的 try 吞掉，
+    最终 stats 恒为 kept 0 / dropped 0（看起来像「没有新品」，其实是解析器全挂）。
+    现在三级兜底：PyMuPDF → 系统 pdftotext → 明确报错（不再静默返回空）。
+    """
     os.makedirs(cache, exist_ok=True)
     p_pdf = os.path.join(cache, nid + ".pdf")
     p_txt = os.path.join(cache, nid + ".txt")
     with open(p_pdf, "wb") as f:
         f.write(pdf_bytes)
-    try:
-        import pymupdf
-    except ImportError:                             # 兼容旧版包名
-        import fitz as pymupdf
-    doc = pymupdf.open(p_pdf)
-    text = "\n".join(pg.get_text("text") for pg in doc)
-    doc.close()
+
+    text = None
+    try:                                            # 首选 PyMuPDF（纯 Python，CI 已加依赖）
+        try:
+            import pymupdf
+        except ImportError:                         # 兼容旧版包名
+            import fitz as pymupdf
+        doc = pymupdf.open(p_pdf)
+        text = "\n".join(pg.get_text("text") for pg in doc)
+        doc.close()
+    except Exception:
+        text = None
+
+    if not text:                                    # 兜底：系统 pdftotext（poppler-utils）
+        try:
+            import subprocess
+            r = subprocess.run(["pdftotext", "-layout", p_pdf, "-"],
+                               capture_output=True, timeout=120)
+            if r.returncode == 0 and r.stdout:
+                text = r.stdout.decode("utf-8", errors="ignore")
+        except Exception:
+            text = None
+
+    if not text:
+        raise RuntimeError("PDF 解析失败：请安装 pymupdf（pip install pymupdf）或 poppler-utils")
+
     with open(p_txt, "w", encoding="utf-8") as f:
         f.write(text)
     return text
@@ -169,32 +195,53 @@ def _d(m, i=0):
 
 
 def extract_dates(flat):
-    """从说明书正文抽取募集起止与成立日；多套要素表样式兜底。"""
+    """从说明书正文抽取募集起止与成立日。
+
+    2026-11-21 增强：建行代销的中银/建信系说明书是「标签一行、取值在下一行」的版式
+    （如「认购期↵【2026】年【11】月【23】日，开放认购的时间为…」），旧规则要求标签与
+    日期紧贴在同一行、且区间必须「日期 至 日期」连写，于是取不到日期 → 成立日为空 →
+    plausible() 判假 → 全部被判 dropped，线上长期 0 条。改为：
+    ① 标签命中后在固定窗口内取日期（允许换行）；② 两个日期之间只要出现「至/到/-」
+       且间隔不长即视为区间，避免把「首日09:00 至末日15:30」这类描述误当第二日。
+    """
+    def dates_in(seg):
+        return [(m, _d(m)) for m in re.finditer(DATE, seg)]
+
+    def label_dates(label_re, span=160):
+        """遍历标签的所有出现位置，返回第一个「标签后 span 字内既有日期」的结果。"""
+        for m in re.finditer(label_re + r"\s*[:：]?\s*", flat):
+            seg = flat[m.end():m.end() + span]
+            dd = dates_in(seg)
+            if dd:
+                return seg, dd
+        return "", []
+
     start = end = est = ""
-    m = re.search(r"募集起始日期\s*[:：]?\s*" + DATE, flat)
-    if m:
-        start = _d(m)
-    m = re.search(r"募集结束日期\s*[:：]?\s*" + DATE, flat)
-    if m:
-        end = _d(m)
+
+    # ① 明确的起止字段
+    seg, dd = label_dates(r"募集起始日(?:期)?")
+    if dd:
+        start = dd[0][1]
+    seg, dd = label_dates(r"募集结束日(?:期)?")
+    if dd:
+        end = dd[0][1]
+
+    # ② 募集期 / 认购期（建行代销版式的主路径）
     if not start:
-        m = re.search(r"(?:募集期|认购期)\s*[:：]?\s*" + DATE +
-                      r"(?:\s*\d{1,2}:\d{2})?\s*(?:（[^）]{0,10}）)?\s*(?:至|-|~|—)\s*" + DATE, flat)
-        if m:
-            start, end = _d(m), _d(m, 3)
-        else:
-            m = re.search(r"(?:募集期|认购期)\s*[:：]?\s*" + DATE, flat)
-            if m:
-                start = end = _d(m)
+        seg, dd = label_dates(r"(?:募集期|认购期|募集期限|认购期限|认购时间|募集时间)", span=160)
+        if dd:
+            start = dd[0][1]
+            if len(dd) > 1:
+                between = seg[dd[0][0].end():dd[1][0].start()]
+                if len(between) <= 40 and re.search(r"至|到|—|–|-|~|～", between):
+                    end = dd[1][1]
     if not end:
         end = start
-    m = re.search(r"(?:理财产品成立日|产品成立日|成立日[期]?)\s*[:：]?\s*" + DATE, flat)
-    if m:
-        est = _d(m)
-    if not est:
-        m = re.search(r"产品成立日期\s*[:：]?\s*" + DATE, flat)
-        if m:
-            est = _d(m)
+
+    # ③ 成立日
+    seg, dd = label_dates(r"(?:理财产品成立日|产品成立日|产品成立日期|预计成立日|成立日期|成立日)", span=80)
+    if dd:
+        est = dd[0][1]
     return start, end, est
 
 
@@ -318,6 +365,79 @@ def extract_manager(flat, R=None):
     return ""
 
 
+def _nid_of(url):
+    m = re.search(r"/(\d{8}_\d+)\.html", url or "")
+    return m.group(1) if m else ""
+
+
+def read_cached_text(nid):
+    p = os.path.join(CACHE, nid + ".txt") if nid else ""
+    if p and os.path.exists(p):
+        return open(p, encoding="utf-8", errors="ignore").read()
+    return ""
+
+
+def own_detail_text(url, nid):
+    """兜底取数：直接抓详情页 → PDF 直链 → 文本（不依赖 skill 解析器）。
+
+    2026-11-21 新增。process_url 走 skill 的字段映射，遇到版式变化或依赖缺失会整条抛错；
+    这里只做「拿到说明书写真文本」这一件事，字段解析统一交给本文件的规则，链路更短。
+    """
+    s = requests.Session()
+    s.headers.update({"User-Agent": UA, "Referer": LIST_PAGE})
+    html = s.get(url, timeout=40, verify=False).text
+    links = re.findall(r'(?:href|src)="([^"]+\.pdf[^"]*)"', html, re.I)
+    if not links:
+        links = re.findall(r'([\w/\.\-]*attachDir[\w/\.\-]+\.pdf)', html, re.I)
+    if not links:
+        raise RuntimeError("详情页未找到 PDF 附件")
+    pdf_url = links[0]
+    if pdf_url.startswith("//"):
+        pdf_url = "https:" + pdf_url
+    elif pdf_url.startswith("/"):
+        pdf_url = DETAIL_HOST + pdf_url
+    data = s.get(pdf_url, timeout=90, verify=False).content
+    if not data:
+        raise RuntimeError("PDF 下载为空")
+    return _pdf_to_text(data, CACHE, nid or ("tmp_" + str(int(datetime.now().timestamp()))))
+
+
+# 要素表字段名（用于「标签 → 取值」切片，遇到下一个字段名即截断）
+FIELD_LABELS = ["理财产品名称", "理财产品简称", "理财产品销售名称", "产品简称",
+                "理财产品代码", "理财产品份额代码",
+                "登记编码", "理财币种", "理财产品管理人", "理财产品托管人", "理财产品销售机构",
+                "产品类型", "产品运作模式", "募集方式", "投资目标", "投资策略", "募集规模上限",
+                "认购起点金额", "份额面值", "认购期", "募集期", "理财产品成立日", "产品成立日",
+                "存续期限", "开放日", "份额净值", "确认日"]
+
+
+def tidy_name(s):
+    """清洗 PDF 抽取带来的空格：数字与汉字之间、连续空白（「稳富7 天持有期8 号」→「稳富7天持有期8号」）。"""
+    s = re.sub(r"(?<=[0-9])\s+(?=[\u4e00-\u9fa5])", "", s or "")
+    s = re.sub(r"(?<=[\u4e00-\u9fa5])\s+(?=[0-9])", "", s)
+    return re.sub(r"\s{2,}", " ", s).strip()
+
+
+def flat_field(flat, label, maxlen=90):
+    """「标签 + 取值」切片：允许取值在标签下一行（建行代销说明书版式），遇下一字段名截断。"""
+    for m in re.finditer(label + r"\s*[:：]?\s*", flat):
+        seg = flat[m.end():m.end() + maxlen]
+        cut = len(seg)
+        for lb in FIELD_LABELS:
+            i = seg.find(lb)
+            if 0 < i < cut:
+                cut = i
+        val = seg[:cut].strip(" 　，,。；;:：")
+        if val:
+            return val
+    return ""
+
+
+def flat_reg_code(flat):
+    m = re.search(r"登记编码\s*[:：]?\s*[\[【]?\s*([A-Za-z0-9]{6,})", flat)
+    return m.group(1).upper() if m else ""
+
+
 def build():
     ap = argparse.ArgumentParser(description="新品预告抓取")
     ap.add_argument("--days", type=int, default=10)
@@ -332,23 +452,38 @@ def build():
     cand = [n for n in notices if is_candidate(n["title"])][: a.limit]
     print("公告 %d 条，开放式预筛后 %d 条进入 PDF 解析" % (len(notices), len(cand)))
 
-    recs = []
+    rows = []
+    failed = []
     for i, n in enumerate(cand, 1):
+        nid = _nid_of(n["url"])
         print("[%d/%d] %s" % (i, len(cand), n["title"][:40]))
+        recs = []
         try:
-            recs.extend(process_url(n["url"], CACHE, a.gap, R))
+            recs = process_url(n["url"], CACHE, a.gap, R)
         except Exception as exc:
-            print("  ! 失败：%s" % str(exc)[:160])
+            print("  ! 解析器失败：%s" % str(exc)[:160])
+        flat = read_cached_text(nid)
+        if not flat:
+            try:
+                flat = own_detail_text(n["url"], nid)
+                print("  · 已用兜底链路取到说明书文本")
+            except Exception as exc:
+                print("  ! 兜底取数失败：%s" % str(exc)[:120])
+                failed.append({"title": n["title"], "url": n["url"], "reason": str(exc)[:160]})
+        if not recs and flat:
+            recs = [{"公告ID": nid, "产品名称": ""}]
+        if not recs:
+            failed.append({"title": n["title"], "url": n["url"], "reason": "无可用说明书文本"})
+        for r in recs:
+            rows.append((n, r, flat))
 
     items, established, dropped = [], [], 0
     seen = set()
     ref = datetime.now()
-    for r in recs:
-        nid = str(r.get("公告ID") or r.get("id") or "")
-        flat = ""
-        p_txt = os.path.join(CACHE, nid + ".txt")
-        if nid and os.path.exists(p_txt):
-            flat = re.sub(r"\s+", " ", open(p_txt, encoding="utf-8", errors="ignore").read())
+    for n, r, raw_flat in rows:
+        nid = str(r.get("公告ID") or _nid_of(n["url"]))
+        flat = raw_flat or read_cached_text(nid)
+        flat = re.sub(r"\s+", " ", flat) if flat else ""
 
         start, end, est = extract_dates(flat) if flat else ("", "", "")
         start = start or norm_date(r.get("募集起始日期"))
@@ -363,22 +498,28 @@ def build():
             end = ""
 
         issuer = extract_manager(flat, R) or (r.get("产品管理人") or "").strip()
-        name = re.sub(r"^[（(][^）)]{2,12}[）)]", "", (r.get("产品名称") or "").strip())
+        # 名称优先取要素表原文（说明书「理财产品名称」），其次解析器字段，最后退回公告标题
+        name = (flat_field(flat, r"理财产品名称", 60) if flat else "") or (r.get("产品名称") or "")
+        name = re.sub(r"^[（(][^）)]{2,12}[）)]", "", name.strip())
         # 说明书写法「产品名称为【…】」会把前缀和书名号带进名称
         name = name.lstrip("为").lstrip("【[").rstrip("】]").strip()
         if name.endswith("理财产"):
             name += "品"
-        reg = (r.get("登记编码") or "").strip()
+        if not name:
+            name = re.sub(r"-\s*[A-Z0-9]{6,}.*$", "", re.sub(r"^[（(][^）)]{2,12}[）)]", "", n["title"]))
+        name = tidy_name(name)
+        reg = (r.get("登记编码") or "").strip() or flat_reg_code(flat)
         if not issuer or not name:
             dropped += 1
             continue
         if not R.in_whitelist(issuer):
             dropped += 1
             continue
-        if not R.is_cny({"产品名称": name, "募集币种": r.get("投资及收益币种") or ""}):
+        cur = flat_field(flat, r"理财币种", 20) or r.get("投资及收益币种") or ""
+        if not R.is_cny({"产品名称": name, "募集币种": cur}):
             dropped += 1
             continue
-        mode = (r.get("产品运作模式") or "")
+        mode = flat_field(flat, r"产品运作模式", 40) or (r.get("产品运作模式") or "")
         if mode and not R.is_open({"运作模式": mode}):
             dropped += 1
             continue
@@ -389,6 +530,7 @@ def build():
         if key in seen:
             continue
         seen.add(key)
+        channel_raw = flat_field(flat, r"理财产品销售机构", 120) or (r.get("产品销售机构_简称") or "")
         item = {
             "name": name,
             "issuer": issuer,
@@ -397,11 +539,11 @@ def build():
             "raiseStart": start,
             "raiseEnd": end,
             "establish": est,
-            "quotaWan": extract_quota(flat) if flat else quota_wan(r.get("发行额度")),
+            "quotaWan": (extract_quota(flat) if flat else None) or quota_wan(r.get("发行额度")),
             "risk": extract_risk(flat) or (r.get("风险等级_R级") or "").upper(),
             "riskRaw": r.get("风险等级原文") or "",
             "mode": mode,
-            "saleChannel": clean_channels(r.get("产品销售机构_简称") or ""),
+            "saleChannel": clean_channels(channel_raw),
             "source": "建行官网新品公告·销售文件要素表",
         }
         # 成立当天起不再作为「新品预告」展示，转入已在库清单，由 promote_newproducts.py 并入产品库
@@ -424,7 +566,10 @@ def build():
     lanes.sort(key=lambda l: (-len(l["products"]), l["channel"]))
 
     window_start = today
-    window_end = (datetime.now() + timedelta(days=6)).strftime("%Y-%m-%d")
+    # 2026-11-21：窗口由 7 天放宽到 8 天（今天起含今天共 8 列）。周六跑时正好覆盖
+    # 「下周一募集、下周日成立」，原 7 天窗口会把周日成立/周日截止募集的新品裁掉；
+    # 再放宽到 10 天则横屏每列只剩 78px，产品名会被挤成省略号，故取 8 天折中。
+    window_end = (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%d")
     payload = {
         "asOf": today,
         "fetchedAt": datetime.now().strftime("%Y-%m-%d %H:%M"),
@@ -433,17 +578,21 @@ def build():
         "institutions": [l["channel"] for l in lanes],
         "items": items,
         "lanes": lanes,
-        "stats": {"notices": len(notices), "candidates": len(cand), "kept": len(items), "dropped": dropped},
+        "stats": {"notices": len(notices), "candidates": len(cand), "kept": len(items),
+                  "dropped": dropped, "failed": len(failed)},
+        "failed": failed[:20],
         "established": established,
     }
     with open(RAW_OUT, "w", encoding="utf-8") as f:
         json.dump(payload, f, ensure_ascii=False, indent=2)
-    ui_payload = {k: v for k, v in payload.items() if k != "established"}
+    ui_payload = {k: v for k, v in payload.items() if k not in ("established", "failed")}
     with open(JS_OUT, "w", encoding="utf-8") as f:
         f.write("window.NEW_PRODUCTS = " + json.dumps(ui_payload, ensure_ascii=False, indent=2) + ";\n")
-    print("完成：公告 %d → 预筛 %d → 入库 %d 条，机构 %d 家"
-          % (len(notices), len(cand), len(items), len(lanes)))
+    print("完成：公告 %d → 预筛 %d → 入库 %d 条，机构 %d 家，解析失败 %d 条"
+          % (len(notices), len(cand), len(items), len(lanes), len(failed)))
     print("机构：" + "、".join(l["channel"] for l in lanes))
+    for f in failed[:10]:
+        print("  × %s ｜ %s" % (f["title"][:40], f["reason"][:100]))
     return 0
 
 

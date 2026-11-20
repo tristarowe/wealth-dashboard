@@ -409,6 +409,17 @@
   .sel-opt.mopt.on:hover{filter:none;background:#e2eff5}
   .sel-opt.mopt .mchk{flex:none;width:14px;height:14px;padding:0;margin:0;accent-color:var(--accent);cursor:pointer}
   .sel-opt.mopt .mtxt{overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+  /* 2026-11-21 四轮：表头「类型 / 状态 / 净值日期 / 数据」与新品「代销机构」这类原生 select，
+     手机上点开会弹出接近整屏的系统选择框（占屏太大）。改为盖一层透明按钮 + 自绘紧凑弹层，
+     宽度贴合选项文字（width:max-content），高度按行数自适应，不再铺满屏幕。 */
+  .csel-wrap{position:relative;display:block;width:100%;text-align:center}
+  .csel-wrap>select{pointer-events:none;width:100%;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+  .csel-hit{position:absolute;inset:0;z-index:3;display:block;width:100%;height:100%;padding:0;border:0;background:transparent;cursor:pointer;font-size:0;color:transparent}
+  .sel-pop.single{width:max-content;min-width:0;max-width:min(58vw,200px);padding:4px}
+  .sel-pop.single .sel-opt{text-align:left;padding:7px 13px;font-size:13px;min-height:32px;line-height:1.35;
+    white-space:nowrap;overflow:visible;text-overflow:clip}
+  .sel-pop.single .sel-opt.on{background:#eaf4f8;color:var(--accent-deep);font-weight:700}
+  .sel-pop.single .sel-opt.on:hover{filter:none;background:#e2eff5}
   .sel-label .mcount{color:var(--accent-deep);font-weight:700}
   /* 产品库搜索候选：只列名称，不展示登记编码。
      2026-11-20：默认无底色填充；键盘导航高亮用浅蓝而非全局深蓝，避免大块深色刺眼。 */
@@ -609,6 +620,9 @@
   .ts-lane .org .dot{width:8px;height:8px;border-radius:50%;background:var(--c);flex:none}
   .gapfill{background:#f7fafb;align-self:stretch;display:flex;align-items:center;justify-content:center;border-left:1px solid #eef2f5}
   .gapfill em{font-style:normal;font-size:11px;color:#b7c3cb;letter-spacing:.5px}
+  /* 手机竖屏：日期列改为卡片内逐条展示，表头退化为「代销机构 + 字段说明」一行；
+     桌面/横屏仍是日期列，说明文字隐藏（2026-11-21 用户要求竖屏恢复表头） */
+  .ts-legend{display:none}
   .n-legend{display:flex;gap:16px;align-items:center;font-size:12px;color:var(--muted);margin-top:10px;flex-wrap:wrap}
   .n-legend i{display:inline-block;width:22px;height:9px;border-radius:3px;background:#fff;border:1.5px solid #0e5a73;vertical-align:middle;margin-right:5px}
   .nchip{height:32px;border-radius:6px;background:#fff;border:1px solid var(--c);box-shadow:0 1px 3px rgba(20,45,60,.05);display:flex;align-items:center;gap:7px;padding:0 8px;overflow:hidden;z-index:2;justify-self:stretch;margin:0 3px;cursor:pointer;transition:background .15s}
@@ -761,6 +775,9 @@
   #hold-table th.navdate-th .th-btn.on{color:var(--accent-deep);border-color:var(--accent);font-weight:700}
   #hold-table th.navdate-th #hold-date-sel{position:absolute;inset:0;width:100%;max-width:none;height:100%;
     margin:0;padding:0;border:0;opacity:0;cursor:pointer;z-index:2}
+  /* 2026-11-21：select 是 inset:0 的透明覆盖层，包壳必须同样铺满表头，
+     否则包壳高度为 0、上层透明按钮点不到（净值日期筛选会失效） */
+  #hold-table th.navdate-th .csel-wrap{position:absolute;inset:0;width:auto}
   #hold-table .th-select#hold-date-sel.on{color:var(--accent-deep);border-color:var(--accent);font-weight:700}
   .swipe-tip{display:none;text-align:center;font-size:11.5px;color:var(--muted);margin-top:6px}
   /* 交易流水按月折叠：表头行显示整月汇总，点击展开明细 */
@@ -1170,7 +1187,14 @@
     .trade-tool:has(#flow-del-sel:not([hidden])) #flow-del-sel{margin-left:auto;margin-right:4px}
     .trade-tool:has(#flow-del-sel:not([hidden])) #open-trade{margin-left:0}
     .timeline{overflow:visible;border:0;background:transparent;border-radius:0}
-    .ts-grid{display:none}
+    /* 手机竖屏表头（2026-11-21 用户要求恢复）：日期列在卡片里逐条展示，故表头改为
+       「代销机构筛选 + 字段说明」单行；不再整块隐藏，章节始终有表头 */
+    .ts-grid{display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--rule);
+      border-radius:10px;background:#f7f9fa;margin-bottom:10px}
+    .ts-grid>.ts-cell:not(.ts-org){display:none}
+    .ts-grid>.ts-cell.ts-org{display:block;flex:0 0 112px;width:112px;padding:0!important;border-left:0!important}
+    .ts-legend{display:block;flex:1 1 auto;min-width:0;text-align:right;font-family:var(--font);font-size:11px;
+      color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .ts-lane{display:flex;flex-direction:column;align-items:stretch;gap:8px;border:1px solid var(--rule);border-radius:10px;background:#fff;padding:10px;margin-bottom:10px;min-width:0}
     .ts-lane:last-of-type{margin-bottom:0}
     .ts-lane .org{padding-left:2px;font-weight:700;justify-content:flex-start}
@@ -1421,6 +1445,17 @@
   @media (max-width:760px){
     #year-view .year-table td:nth-child(2),#year-view .year-table thead th:nth-child(2),
     .month-list .month-item > span:nth-child(2),.month-list .month-row.mhead span:nth-child(2){padding-right:5px}
+  }
+
+  /* ===== 2026-11-21 五轮：横屏新品时间轴列变多后，压缩条目内的冗余信息 =====
+     日期已由表头列呈现，条目里再写一遍「募集起始」会把产品名挤到只剩一个字；
+     横屏去掉条目内的起始日与「—」空额度，把宽度全部让给产品名与成立日。 */
+  @media (min-width:761px) and (max-width:968px){
+    .ts-lane .nchip{gap:5px;padding:0 6px}
+    .ts-lane .nchip .nr{display:none}
+    /* 额度在横屏空间不足时让位给产品名（完整信息仍在该条目的 title 提示里） */
+    .ts-lane .nchip .na{display:none}
+    .ts-lane .nchip .nmid{gap:4px}
   }
 
   /* ===== 产品库筛选栏（手机横屏）统一规格 2026-11-21 =====
@@ -2002,7 +2037,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261121c';
+      s.src = './assets/dashboard.js?v=20261121d';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();
