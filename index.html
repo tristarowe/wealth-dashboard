@@ -397,7 +397,7 @@
   .filters > select[multiple]{display:none}
   /* 2026-11-20：#prod-search 为规避 iOS 地址气泡由 type=search 改为 type=text，
      这里同时覆盖两种类型，保证提示文字/边框/圆角与筛选栏一致（原先 type=text 落到浏览器默认内嵌框、提示不显示） */
-  .filters input[type="search"],.filters input#prod-search{font-family:var(--font);font-size:12.5px;padding:6px 10px;border:1px solid var(--rule);border-radius:7px;background:#fff;color:var(--ink);width:260px;min-width:200px}
+  .filters input[type="search"],.filters input#prod-search{font-family:var(--font);font-size:12px;padding:6px 10px;border:1px solid var(--rule);border-radius:7px;background:#fff;color:var(--ink);width:260px;min-width:200px}
   .filters input[type="search"]:focus,.filters input#prod-search:focus{outline:none;border-color:var(--accent)}
   /* placeholder 颜色：明确使用 muted，避免部分浏览器默认浅灰导致提示看不清 */
   .filters input#prod-search::placeholder{color:var(--muted);opacity:1}
@@ -863,12 +863,12 @@
     #sum-table tbody td:nth-child(1) .pname>.ptags{flex:0 0 auto;margin-left:0}
     #prod-table tbody td:nth-child(1) .pname>.salech,
     #sum-table tbody td:nth-child(1) .pname>.salech{flex:0 0 100%}
-    /* 移动端输入框统一 16px：低于 16px 时 iOS/安卓会在聚焦瞬间放大整页，
-       固定 16px 后点开键盘页面不动、字体也不忽大忽小（2026-11-21 二轮） */
+    /* 移动端输入框 16px 仅为防 iOS 聚焦放大；产品库搜索框例外（2026-11-21 五轮用户要求：
+       与表头同字号 12px，放大改由 JS 锁 viewport 兜底），故此处不再纳入 #prod-search */
     .ms-search{font-size:16px;width:auto;padding:5px 8px}
     .ms-panel{width:min(276px,calc(100vw - 24px))}
-    #prod-search,#trade-prod-q{font-size:16px}
-    html.is-ios .ms-search,html.is-ios #prod-search,html.is-ios #trade-prod-q{font-size:16px}
+    #trade-prod-q{font-size:16px}
+    html.is-ios .ms-search,html.is-ios #trade-prod-q{font-size:16px}
   }
   /* 横屏：表头超 2 字自动分两行，列宽压到数据宽度，尽量一屏看全 */
   @media (min-width:761px) and (max-width:968px){
@@ -1141,6 +1141,12 @@
        产品名称与「操作」等 2 字表头保持单行 */
     #hold-table thead th br,
     #flow-table thead th br,#prod-table thead th br{display:block}
+    /* 产品库竖屏例外（2026-11-21 五轮 用户要求）：净值日期 / 今日万收 / 成立至今 三个表头
+       单行呈现（第 2/3/7 列），其余表头仍两行。选择器带 :nth-child 优先级高于上一行，无需调整顺序 */
+    #prod-table thead th:nth-child(2),#prod-table thead th:nth-child(3),
+    #prod-table thead th:nth-child(7){white-space:nowrap}
+    #prod-table thead th:nth-child(2) br,#prod-table thead th:nth-child(3) br,
+    #prod-table thead th:nth-child(7) br{display:none}
     /* 持仓汇总例外（2026-11-21 用户要求）：竖屏表头一律单行，只有「持仓天数/成立天数」两列换行，
        见上方 #sum-table thead th br 规则 */
     .sec-head{gap:8px;padding-bottom:7px;margin-bottom:8px}
@@ -1199,14 +1205,12 @@
     .filters .filter-tail .chip{flex:0 0 60px;width:60px;height:32px;padding:0;font-size:11.5px;
       white-space:nowrap;justify-content:center}
     /* 搜索框：与筛选按钮同高 32px。
-       **字号恒为 16px**（2026-11-21 二轮用户要求）：iOS/Android 只在聚焦控件字号
-       <16px 时自动放大整页，固定 16px 后聚焦不缩放、字体也不会忽大忽小；
-       占位提示单独用 12.5px（::placeholder 不参与聚焦判定），窄框里仍完整显示。 */
-    /* 搜索框 2026-11-21 三轮：未聚焦时与表头同字号 12.5px（选中产品后不再显示成大字），
-       聚焦瞬间 16px —— iOS 只有在聚焦控件字号 <16px 时才放大整页，这样既不缩放也不长期大字 */
-    #pane-prod .filters #prod-search{flex:1 1 0;min-width:44px;height:32px;min-height:32px;padding:0 8px;font-size:12.5px!important}
-    #pane-prod .filters #prod-search:focus{font-size:16px!important}
-    #pane-prod .filters #prod-search::placeholder{font-size:12.5px}
+       **字号 2026-11-21 五轮（用户要求）：恒为 12px，与产品库表头完全一致**，
+       聚焦、输入、选完产品后都不再变大（原「聚焦瞬间 16px」已删除）。
+       iOS 聚焦放大改由 JS 锁定 viewport 解决，见脚本区 `lockIOSZoomOnInput`。 */
+    #pane-prod .filters #prod-search{flex:1 1 0;min-width:44px;height:32px;min-height:32px;padding:0 8px;font-size:12px!important}
+    #pane-prod .filters #prod-search:focus{font-size:12px!important}
+    #pane-prod .filters #prod-search::placeholder{font-size:12px}
     .trade-tool{flex-wrap:nowrap;gap:6px}
     .trade-tool .sp{display:none}
     .trade-tool .month-switch{flex:0 1 auto;min-width:0}
@@ -1503,10 +1507,9 @@
     #pane-prod .filters .sel-label{font-size:11.5px;padding:0 12px 0 4px}
     #pane-prod .filters .sel-opt{font-size:12.5px}
     #pane-prod .filters .chip{width:auto;height:32px;min-height:32px;padding:0;font-size:11.5px;justify-content:center}
-    /* 搜索框字号同样固定 16px（不做任何聚焦变化），避免安卓/iOS 键盘弹起时整页放大 */
-    /* 横屏同口径：常规 11.5px（与表头一致），聚焦时 16px 防 iOS 放大 */
+    /* 搜索框 2026-11-21 五轮（用户要求）：横屏同口径 11.5px（与表头一致），不做任何聚焦变化 */
     #pane-prod .filters #prod-search{width:auto;min-width:0;height:32px;min-height:32px;padding:0 8px;font-size:11.5px!important}
-    #pane-prod .filters #prod-search:focus{font-size:16px!important}
+    #pane-prod .filters #prod-search:focus{font-size:11.5px!important}
     #pane-prod .filters #prod-search::placeholder{font-size:11.5px}
   }
 
@@ -1864,13 +1867,14 @@
         <select id="org-sel" aria-label="按发行机构筛选" multiple>
           <option value="">发行机构</option>
         </select>
-        <select id="risk-sel" aria-label="按风险等级筛选" multiple>
-          <option value="">风险等级</option>
-          <option>R1 低风险</option><option>R2 中低风险</option><option>R3 中风险</option><option>R4 中高风险</option><option>R5 高风险</option>
-        </select>
+        <!-- 2026-11-21 五轮（用户要求）：持有期放风险等级左侧 -->
         <select id="term-sel" aria-label="按持有期筛选" multiple>
           <option value="">持有期</option>
           <option>1–14 天</option><option>15–30 天</option><option>31–60 天</option><option>61–90 天</option><option>91–180 天</option><option>180 天以上</option>
+        </select>
+        <select id="risk-sel" aria-label="按风险等级筛选" multiple>
+          <option value="">风险等级</option>
+          <option>R1 低风险</option><option>R2 中低风险</option><option>R3 中风险</option><option>R4 中高风险</option><option>R5 高风险</option>
         </select>
         <select id="hold-sel" aria-label="按持仓状态筛选" multiple>
           <option value="both">持仓状态</option>
@@ -2357,6 +2361,28 @@
     }
     // iOS 需要输入框≥16px 才不会被聚焦放大，用 class 单独处理字号
     if (isIOS()) document.documentElement.classList.add('is-ios');
+
+    /* lockIOSZoomOnInput：iOS 聚焦不放大兜底（2026-11-21 五轮）：产品库搜索框字号按用户要求降到与表头一致的
+       12px（<16px 会被 iOS 在聚焦瞬间放大整页）。聚焦时临时把 viewport 锁成 maximum-scale=1，
+       失焦立刻还原（不影响用户双指缩放整页）。非 iOS 设备不介入。 */
+    if (isIOS()) {
+      var vpMeta = document.querySelector('meta[name="viewport"]');
+      var vpBase = vpMeta ? (vpMeta.getAttribute('content') || '') : '';
+      var zoomLocked = false;
+      document.addEventListener('focusin', function (e) {
+        var t = e.target;
+        if (!t || t.tagName !== 'INPUT' || t.type === 'checkbox' || t.type === 'radio') return;
+        if (!vpMeta || zoomLocked) return;
+        if (parseFloat(getComputedStyle(t).fontSize) >= 16) return;
+        vpMeta.setAttribute('content', vpBase + ', maximum-scale=1.0');
+        zoomLocked = true;
+      }, true);
+      document.addEventListener('focusout', function () {
+        if (!vpMeta || !zoomLocked) return;
+        vpMeta.setAttribute('content', vpBase);
+        zoomLocked = false;
+      }, true);
+    }
 
     // iOS 不支持 a[download]，改为展示图片让用户长按保存
     function showShot(dataUrl) {

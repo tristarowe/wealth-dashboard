@@ -1,7 +1,7 @@
 {
   "_doc": "跨端代码守卫共用标记清单 —— 唯一权威来源。WorkBuddy 的 .githooks/pre-push 与 Trae 的 tools/sync_pages.py 都必须读取本文件，禁止在脚本里硬编码标记列表。新增功能后在此登记，两端自动生效。",
   "_maintainer": "任何一端修改本文件后，需在提交信息中说明原因；改动会同时影响两端的推送守卫。",
-  "version": "2026-11-21zw",
+  "version": "2026-11-21zx",
   "protected": {
     "_doc": "受『整批中止』保护的文件：远端内容被他人改过时，整批拒绝推送，必须先 pull 合并。markers 为该文件必须包含的字符串，缺失即判定为旧版/被回退，整批拒推。",
     "index.html": [
@@ -234,9 +234,12 @@
       "#flow-table thead th:nth-child(2),#flow-table tbody td:nth-child(2){text-align:left}",
       "#pane-prod .filters{position:relative}",
       ".sel-pop.prod-sug{position:absolute}",
-      "#pane-prod .filters #prod-search::placeholder{font-size:12.5px}",
+      "#pane-prod .filters #prod-search:focus{font-size:12px!important}",
+      "#prod-table thead th:nth-child(7) br{display:none}",
+      "持有期放风险等级左侧",
+      "lockIOSZoomOnInput",
       "#pane-prod .filters #prod-search::placeholder{font-size:11.5px}",
-      "font-size:16px!important}",
+      "font-size:11.5px!important}",
       "#hold-table col:nth-child(4){width:46px !important}",
       "#hold-table col:nth-child(5){width:50px !important}",
       "#hold-table col:nth-child(7){width:52px !important}",
@@ -251,7 +254,6 @@
       "--blue:#16679b",
       "#metric-value{color:var(--blue)}",
       "#hold-table tbody td.income-col{font-weight:400",
-      "#prod-search:focus{font-size:16px!important}",
       ".csel-wrap{position:relative;display:block;width:100%;text-align:center}",
       ".sel-pop.single{width:max-content",
       ".csel-hit{position:absolute;inset:0;z-index:3",
