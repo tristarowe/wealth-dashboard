@@ -182,7 +182,8 @@
   #flow-table tbody td{padding:7px 8px}
   /* 全站表头统一 40px（2026-11-20）：四张数据表 thead th 固定高度，纵向 padding 与行高配套收紧 */
   /* 盈亏汇总（首页 hold-table）行高压缩 2026-11-20：数据行 26px */
-  /* 持仓汇总（交易页 sum-table）数据行压缩 2026-11-20：数据行 23px，按钮同步收紧 */
+  /* 持仓汇总（交易页 sum-table）数据行 2026-11-20：数据行 32px，按钮同步收紧 */
+  /* 交易流水（flow-table）数据行 2026-11-20：明细行与月份行统一 32px */
   /* 产品库（prod-table）数据行压缩 2026-11-20：只压 tbody 与两行数值块 */
   @media (min-width:969px){
     #hold-table thead th,#sum-table thead th,#prod-table thead th,#flow-table thead th{
@@ -190,8 +191,10 @@
     }
     #hold-table tbody td{padding:4px 7px;line-height:1.3}
     #hold-table tbody td.mlabel{padding:3px 8px;line-height:1.3}
-    #sum-table tbody td{padding:1.25px 8px;line-height:1.3}
+    #sum-table tbody td{padding:5.75px 8px;line-height:1.3}
     #sum-table tbody td:last-child .mini{padding:0 6px;line-height:1.2}
+    #flow-table tbody tr.flow-detail td{padding:2.5px 8px}
+    #flow-table tbody tr.flow-month td{padding:5px 8px}
     #prod-table tbody td{padding:3px 8px}
     #prod-table .st b,#prod-table .st i,
     #prod-table .cdate span,#prod-table .cdate i{line-height:1.3}
