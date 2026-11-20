@@ -1394,13 +1394,13 @@
       var badge = '';
       var tv = todayWanOf(p);
       if (tv !== null && tv !== undefined && maxV !== minV) {
-        if (Math.abs(tv - maxV) < 1e-9) badge = '<span class="thumb-under" title="今日万收最高">' + THUMB_UP + '</span>';
+        if (Math.abs(tv - maxV) < 1e-9) badge = '<span class="thumb-under" title="今日万收最高">&#8288;' + THUMB_UP + '</span>';
       }
       var downBadge = '';
       if (minIncome !== null && maxIncome !== minIncome && h && !h.incomePending && h.income !== null
           && h.income !== undefined && isFinite(h.income)
           && Math.abs(h.income - minIncome) < 1e-9) {
-        downBadge = '<span class="thumb-under thumb-down" title="今日收益最低">' + THUMB_DOWN + '</span>';
+        downBadge = '<span class="thumb-under thumb-down" title="今日收益最低">&#8288;' + THUMB_DOWN + '</span>';
       }
 
       var dual = holdMetric === 'both';
@@ -1410,8 +1410,17 @@
       var mvUnder = (h && h.mv !== null && h.mv !== undefined && !isNaN(h.mv))
         ? '<span class="mv-under" title="持仓市值 ¥' + fmtMoney(h.mv) + '">¥' + fmtMoney(h.mv) + '</span>' : '';
       html += '<td class="c num"' + rs + '>' + (i + 1) + '</td>';
-      /* 名称与角标拆成第一行 flex 容器：👍/👎 永远贴在名称首行右侧，不随名称换行掉到末行 */
-      html += '<td' + rs + '><div class="pname"><div class="pn-row"><a class="plink" href="javascript:void(0)" data-goto-trade="' + p.id + '" title="查看「' + (p.name || '') + '」的交易记录">' + prodDispName(p) + '</a>' + badge + downBadge + '</div>' + mvUnder + '</div></td>';
+      /* 名称 + 角标（2026-11-21 二轮）：名称拆成「主体 + 末字」，末字与 👍/👎 同组 nowrap，
+         角标因此永远紧跟名称最后一个字；名称换行时末字连同角标整体落到下一行，
+         不会出现角标孤零零独占一行、也不会跑回首行右端。 */
+      var nm = prodDispName(p);
+      var nmHead = nm.length > 1 ? nm.slice(0, -1) : '';
+      var nmLast = nm.slice(-1);
+      var nmAttr = ' href="javascript:void(0)" data-goto-trade="' + p.id + '" title="查看「' + (p.name || '') + '」的交易记录"';
+      html += '<td' + rs + '><div class="pname"><div class="pn-row">' +
+        '<a class="plink"' + nmAttr + '>' + nmHead + '</a>' +
+        '<span class="pn-last"><a class="plink"' + nmAttr + '>' + nmLast + '</a>' + badge + downBadge + '</span>' +
+        '</div>' + mvUnder + '</div></td>';
       html += '<td class="c num"' + rs + '>' + (m.latestDate ? withBadge(mmdd(m.latestDate), navLagBadge(p)) : '—') + '</td>';
       html += '<td class="r num today-col ' + colorBy(tv) + '"' + rs + '>' + fmtSigned(tv) + '</td>';
       html += '<td class="r num income-col ' + colorBy(h && !h.incomePending ? h.income : null) + '"' + rs +
@@ -3075,31 +3084,36 @@
   function placeProdSug() {
     var input = document.getElementById('prod-search');
     if (!prodSugPop || !input) return;
+    /* 2026-11-21 二轮：候选层改为 .filters 内的 absolute 元素，
+       坐标直接相对筛选栏计算，不再依赖 window / visualViewport 偏移，
+       手机横屏 + 键盘弹起时也不会飘到页面中央。 */
+    var host = prodSugPop.parentNode;
     var r = input.getBoundingClientRect();
+    var hr = host.getBoundingClientRect();
+    var cs = window.getComputedStyle(host);
+    var bl = parseFloat(cs.borderLeftWidth) || 0;
+    var bt = parseFloat(cs.borderTopWidth) || 0;
+    var gap = 6, pad = 8;
     var vv = window.visualViewport;
-    var vw = vv ? vv.width : window.innerWidth;
     var vh = vv ? vv.height : window.innerHeight;
     var vTop = vv ? vv.offsetTop : 0;
-    var vLeft = vv ? vv.offsetLeft : 0;
-    prodSugPop.style.minWidth = Math.max(r.width, 220) + 'px';
+
+    prodSugPop.style.minWidth = Math.max(r.width, 200) + 'px';
     var pw = prodSugPop.offsetWidth;
-    var left = Math.max(8, Math.min(r.left - vLeft, vw - pw - 8));
-    /* 输入框相对可视区的位置（getBoundingClientRect 相对布局视口，需减视觉视口偏移） */
-    var irTop = r.top - vTop;
-    var irBottom = r.bottom - vTop;
-    var gap = 6, pad = 8;
-    /* 下方/上方可用空间，取较大一侧放置并限高；至少留 140px，最多 300px。
-       限高后列表整体落在键盘之上、超出的选项在列表内部滚动（可向下滑动浏览）。 */
-    var below = vh - irBottom - gap - pad;
-    var above = irTop - gap - pad;
-    var useBelow = below >= above || above < 140;
-    var avail = Math.max(140, Math.min(useBelow ? below : above, 300));
+    var hostW = host.clientWidth;
+    /* 左边界对齐输入框，右侧超出筛选栏时整体回收，保持整块在可视范围内 */
+    var left = Math.max(0, Math.min(r.left - hr.left - bl, hostW - pw));
+    prodSugPop.style.left = Math.round(left) + 'px';
+
+    /* 只在下方空间不足时向上翻转；限高保证列表落在键盘上方，超出的选项内部滑动 */
+    var below = vh - (r.bottom - vTop) - gap - pad;
+    var above = (r.top - vTop) - gap - pad;
+    var useBelow = below >= 140 || above < 140;
+    var avail = Math.max(120, Math.min(useBelow ? below : above, 300));
     prodSugPop.style.maxHeight = Math.round(avail) + 'px';
-    var ph = prodSugPop.offsetHeight; /* 限高后重新读取实际高度 */
-    var top = useBelow ? r.bottom + gap : r.top - ph - gap;
-    top = Math.max(vTop + pad, Math.min(top, vTop + vh - ph - pad));
-    prodSugPop.style.left = left + 'px';
-    prodSugPop.style.top = top + 'px';
+    var ph = prodSugPop.offsetHeight;
+    var top = useBelow ? (r.bottom - hr.top - bt + gap) : (r.top - hr.top - bt - ph - gap);
+    prodSugPop.style.top = Math.round(top) + 'px';
   }
 
   function openProdSug() {
@@ -3112,9 +3126,19 @@
     var pop = document.createElement('div');
     pop.className = 'sel-pop prod-sug';
     pop.setAttribute('role', 'listbox');
-    /* 手机横屏：列表滑动到边界后阻止触摸冒泡到页面，避免整页跟着滑动
-       （overscroll-behavior:contain 已覆盖现代浏览器，此处兼容旧版 iOS Safari） */
-    pop.addEventListener('touchmove', function (e) { e.stopPropagation(); }, { passive: true });
+    /* 滑动候选列表时不带动整页（2026-11-21 二轮）：列表自身可滚就让它滚，
+       不可滚 / 已滚到边界时阻止默认手势，页面绝不会跟着滑动。 */
+    var touchY = 0;
+    pop.addEventListener('touchstart', function (e) {
+      if (e.touches.length === 1) touchY = e.touches[0].clientY;
+    }, { passive: true });
+    pop.addEventListener('touchmove', function (e) {
+      if (e.touches.length !== 1) { e.preventDefault(); return; }
+      var dy = e.touches[0].clientY - touchY;
+      var st = pop.scrollTop;
+      var max = pop.scrollHeight - pop.clientHeight;
+      if (max <= 1 || (st <= 0 && dy > 0) || (st >= max - 1 && dy < 0)) e.preventDefault();
+    }, { passive: false });
     items.forEach(function (p, i) {
       var b = document.createElement('button');
       b.type = 'button';
@@ -3136,7 +3160,10 @@
       });
       pop.appendChild(b);
     });
-    document.body.appendChild(pop);
+    /* 挂到筛选栏内部（.filters 已 position:relative）：候选层跟着筛选栏走，
+       不再像 fixed 那样在键盘弹起/页面缩放时脱离输入框飘到屏幕中央 */
+    var host = document.querySelector('#pane-prod .filters') || document.body;
+    host.appendChild(pop);
     prodSugPop = pop;
     placeProdSug();
   }

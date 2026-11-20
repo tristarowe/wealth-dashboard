@@ -108,15 +108,14 @@
   .c{text-align:center}
   .r{text-align:right}
   .pname{font-weight:400;font-size:13px;line-height:1.5;letter-spacing:.005em}
-  /* 名称首行结构：.pn-row 只包「名称 + 角标」，窄屏下变 flex，
-     👍/👎 固定贴在首行右侧，名称换行不会把角标推到末行（2026-11-20 用户要求） */
+  /* 名称结构：.pn-row 只包「名称 + 角标」，采用普通行内流，
+     👍/👎 紧跟在产品名称最后一个字后面（名称换行时角标随末字落在同一行）。
+     2026-11-21 用户要求：角标不再贴首行右端，改为紧靠名称最后一个字。 */
   .pname .pn-row{display:block}
-  @media (max-width:968px){
-    .pname .pn-row{display:flex;align-items:flex-start;gap:3px}
-    /* 2026-11-21：名称不再撑满整列，👍/👎 紧贴名称文字右侧（名称换行时仍停在首行右端） */
-    .pname .pn-row>.plink{flex:0 1 auto;min-width:0}
-    .pname .pn-row>.thumb-under{flex:0 0 auto;margin-left:0}
-  }
+  .pname .pn-row>.plink{display:inline;min-width:0}
+  /* 末字 + 角标同组、禁止内部换行：角标永远紧跟名称最后一个字 */
+  .pname .pn-row>.pn-last{white-space:nowrap}
+  .pname .pn-row>.thumb-under{margin-left:2px;vertical-align:baseline}
   .pname .salech{display:block;font-size:10.5px;line-height:1.5;color:var(--muted);font-weight:400;letter-spacing:0;margin-top:1px}
   .pname .mv-under{display:block;font-size:10.5px;line-height:1.5;color:var(--muted);font-weight:400;letter-spacing:0;margin-top:1px;font-family:var(--mono)}
   .plink{color:inherit;text-decoration:none;border-bottom:1px dashed #b9ccd4;cursor:pointer}
@@ -819,10 +818,11 @@
     #sum-table tbody td:nth-child(1) .pname>.ptags{flex:0 0 auto;margin-left:0}
     #prod-table tbody td:nth-child(1) .pname>.salech,
     #sum-table tbody td:nth-child(1) .pname>.salech{flex:0 0 100%}
-    /* 输入框默认15px，iOS 下用16px避免聚焦自动放大 */
-    .ms-search{font-size:15px;width:auto;padding:5px 8px}
+    /* 移动端输入框统一 16px：低于 16px 时 iOS/安卓会在聚焦瞬间放大整页，
+       固定 16px 后点开键盘页面不动、字体也不忽大忽小（2026-11-21 二轮） */
+    .ms-search{font-size:16px;width:auto;padding:5px 8px}
     .ms-panel{width:min(276px,calc(100vw - 24px))}
-    #prod-search,#trade-prod-q{font-size:15px}
+    #prod-search,#trade-prod-q{font-size:16px}
     html.is-ios .ms-search,html.is-ios #prod-search,html.is-ios #trade-prod-q{font-size:16px}
   }
   /* 横屏：表头超 2 字自动分两行，列宽压到数据宽度，尽量一屏看全 */
@@ -983,20 +983,22 @@
     #sum-table colgroup col,#prod-table colgroup col,#flow-table colgroup col{width:auto !important}
     /* 盈亏汇总 16 列在竖屏下按固定像素列宽排布：列距统一、不因内容长短忽宽忽窄，
        整表 942px 横向滚动（表头吸顶 + 首屏可见产品名） */
-    /* 2026-11-21 首屏压缩（用户要求）：净值日期~持仓年化 压到首屏内 ——
-       序号 24 + 名称 111 + 净值日期 50 + 今日万收 40 + 今日收益 42 + 持仓收益 55 + 持仓年化 46 = 368px，
-       iPhone 393 视口内容宽 369px，首屏即可看全这 7 列；「持仓成立」紧随其后（38px，轻滑即可见）。
-       释放出来的宽度不再匀给右侧周期列（仍 60/60/60/60/60/66/58），整表 962 → 886px。 */
-    #hold-table{table-layout:fixed;width:886px;min-width:886px}
+    /* 2026-11-21 二轮（用户要求「净值日期~持仓成立适当调宽，只需净值日期~持仓收益压进首屏，
+       所有列均匀分布、不挤压不溢出」）：
+       序号 26 + 名称 124 + 净值日期 52 + 今日万收 44 + 今日收益 48 + 持仓收益 60 = 354px，
+       iPhone 393 视口内容宽 367px —— 首屏稳稳看全「净值日期~持仓收益」；
+       「持仓成立」46px 紧随其后（354~400px，轻滑即见，且已从 38 加宽到 46）。
+       名称列 116→124 让 8 字名（含数字）不再被挤掉末字；右侧周期列仍 60/60/60/60/60/66/58 不变。 */
+    #hold-table{table-layout:fixed;width:880px;min-width:880px}
     #hold-table colgroup col{width:auto !important}
-    #hold-table col:nth-child(1){width:24px !important}
-    #hold-table col:nth-child(2){width:111px !important}
-    #hold-table col:nth-child(3){width:50px !important}
-    #hold-table col:nth-child(4){width:40px !important}
-    #hold-table col:nth-child(5){width:42px !important}
-    #hold-table col:nth-child(6){width:55px !important}
+    #hold-table col:nth-child(1){width:26px !important}
+    #hold-table col:nth-child(2){width:124px !important}
+    #hold-table col:nth-child(3){width:52px !important}
+    #hold-table col:nth-child(4){width:44px !important}
+    #hold-table col:nth-child(5){width:48px !important}
+    #hold-table col:nth-child(6){width:60px !important}
     #hold-table col:nth-child(7){width:46px !important}
-    #hold-table col:nth-child(8){width:38px !important}
+    #hold-table col:nth-child(8){width:46px !important}
     /* 「数据」列内容「日均万收」需 48px + 左右 padding 4px = 52px，列框贴合文字、不再留空 */
     #hold-table col:nth-child(9){width:56px !important}
     /* 区间列：7日~90日统一 60px，成立至今 66px（表头两行「成立/至今」） */
@@ -1115,11 +1117,12 @@
     .filters .filter-tail{flex:1 1 0;min-width:0;gap:5px}
     .filters .filter-tail .chip{flex:0 0 60px;width:60px;height:32px;padding:0;font-size:11.5px;
       white-space:nowrap;justify-content:center}
-    /* 搜索框：去掉文字提示后按表头同字号（12px）+ 与筛选按钮同高 32px。
-       全局 input 有 16px !important（防 iOS 聚焦放大），这里必须带 !important 才生效；
-       聚焦瞬间回到 16px，键盘弹出时不会触发整页放大 */
-    #pane-prod .filters #prod-search{flex:1 1 0;min-width:44px;height:32px;min-height:32px;padding:0 8px;font-size:12px!important}
-    #pane-prod .filters #prod-search:focus{font-size:16px!important}
+    /* 搜索框：与筛选按钮同高 32px。
+       **字号恒为 16px**（2026-11-21 二轮用户要求）：iOS/Android 只在聚焦控件字号
+       <16px 时自动放大整页，固定 16px 后聚焦不缩放、字体也不会忽大忽小；
+       占位提示单独用 12.5px（::placeholder 不参与聚焦判定），窄框里仍完整显示。 */
+    #pane-prod .filters #prod-search{flex:1 1 0;min-width:44px;height:32px;min-height:32px;padding:0 8px;font-size:16px!important}
+    #pane-prod .filters #prod-search::placeholder{font-size:12.5px}
     .trade-tool{flex-wrap:nowrap;gap:6px}
     .trade-tool .sp{display:none}
     .trade-tool .month-switch{flex:0 1 auto;min-width:0}
@@ -1315,8 +1318,6 @@
      持仓汇总「持仓收益/持仓年化/累计收益/持仓金额/净值/持仓份额/持仓天数/成立天数」列。
      字号/千分位/列宽/行高一律不动。 */
   .year-table tbody td:nth-child(2),
-  /* 2026-11-21：盈亏日历「日均万收」数据列也右对齐（表头不动，仍居中） */
-  .year-table tbody td:nth-child(3),
   #flow-table tbody td:nth-child(5),#flow-table tbody td:nth-child(7),
   #prod-table tbody td:nth-child(3),#prod-table tbody td:nth-child(4),
   #prod-table tbody td:nth-child(5),#prod-table tbody td:nth-child(6),
@@ -1332,8 +1333,9 @@
   {text-align:right;text-indent:0}
   /* 月度表「收益」格（grid 子项）跟随右对齐 */
   .month-item > span:nth-child(2){text-align:right}
-  /* 2026-11-21：月度表「日均万收」数值也右对齐（表头不动） */
-  .month-item > span:nth-child(3){text-align:right}
+  /* 2026-11-21 二轮：盈亏日历「日均万收」数据列改为居中（与表头同一条竖线；用户明确要求） */
+  .year-table tbody td:nth-child(3){text-align:center}
+  .month-item > span:nth-child(3){text-align:center}
   /* 月度表「收益」表头同步右对齐（年度表 .year-table thead th 在第 2 条规则里） */
   .month-row.mhead span:nth-child(2){text-align:right}
 
@@ -1398,8 +1400,24 @@
     #pane-prod .filters .sel-label{font-size:11.5px;padding:0 12px 0 4px}
     #pane-prod .filters .sel-opt{font-size:12.5px}
     #pane-prod .filters .chip{width:auto;height:32px;min-height:32px;padding:0;font-size:11.5px;justify-content:center}
-    #pane-prod .filters #prod-search{width:auto;min-width:0;height:32px;min-height:32px;padding:0 8px;font-size:12.5px}
+    /* 搜索框字号同样固定 16px（不做任何聚焦变化），避免安卓/iOS 键盘弹起时整页放大 */
+    #pane-prod .filters #prod-search{width:auto;min-width:0;height:32px;min-height:32px;padding:0 8px;font-size:16px!important}
+    #pane-prod .filters #prod-search::placeholder{font-size:11.5px}
   }
+
+  /* ===== 2026-11-21 二轮：交易流水表头全部单行 =====
+     用户要求「全部表头取消超二字换行，全部单行呈现」。表头 <br> 统一隐藏，
+     交易日期与产品名称表头连同单元格一起左对齐（数值列仍右对齐、其余居中）。 */
+  #flow-table thead th{white-space:nowrap}
+  #flow-table thead th br{display:none}
+  #flow-table thead th:nth-child(2),#flow-table tbody td:nth-child(2){text-align:left}
+
+  /* ===== 产品库搜索候选层定位（2026-11-21 二轮）=====
+     原来是 position:fixed + visualViewport 换算，iOS 键盘弹出/页面缩放时会整体飘到
+     屏幕中央或压在键盘下。改为**相对筛选栏 absolute**：永远挂在输入框正下方，
+     页面怎么滚、键盘怎么弹都跟着筛选项走，绝不脱离页面坐标。 */
+  #pane-prod .filters{position:relative}
+  .sel-pop.prod-sug{position:absolute}
 </style>
 </head>
 <body>
@@ -1946,7 +1964,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261121a';
+      s.src = './assets/dashboard.js?v=20261121b';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();
