@@ -10,6 +10,8 @@
     --bg:#f3f5f7; --card:#fff; --soft:#F9FFFF;
     --ink:#172530; --muted:#5d6b76; --rule:#dfe5ea;
     --accent:#0e5a73; --accent-deep:#0a3c4e; --gold:#B8860B;
+    /* 2026-11-21 新增「品牌蓝」：模块标题与持仓金额用，比 accent 更偏蓝、更亮一档 */
+    --blue:#16679b;
     --up:#c0392b; --down:#1e8449;
     --mono:'Consolas','JetBrainsMono',monospace;
     --font:'Microsoft YaHei','PingFang SC','Hiragino Sans GB',sans-serif;
@@ -74,6 +76,8 @@
   .metric .v.up{color:var(--up)}
   .metric .v.down{color:var(--down)}
   .metric .v.muted{color:var(--muted)}
+  /* 2026-11-21 用户要求：持仓金额数值改蓝色（「元」单位仍为辅助灰） */
+  #metric-value{color:var(--blue)}
   /* 指标卡副行：副行文字与数值强制同一行（手机三列时「持仓收益率 +0.43%」不再折行） */
   .metric .m-sub{margin-top:7px;padding-top:6px;border-top:1px dashed #e8eef1;font-size:11.5px;color:var(--muted);white-space:nowrap}
   .metric .m-sub b{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--up);margin:0}
@@ -87,7 +91,8 @@
   section{margin-top:26px}
   .sec-head{display:flex;align-items:baseline;gap:10px;padding-bottom:9px;border-bottom:1px solid var(--rule);margin-bottom:14px}
   .sec-head .idx{font-family:var(--mono);font-size:21px;font-weight:700;color:var(--gold);letter-spacing:.02em}
-  .sec-head h2{font-size:21px;font-weight:700;color:var(--ink);letter-spacing:.01em;line-height:1.3}
+  /* 2026-11-21 用户要求：模块名称（序号仍为金色）改蓝色 */
+  .sec-head h2{font-size:21px;font-weight:700;color:var(--blue);letter-spacing:.01em;line-height:1.3}
   .sec-head .note{margin-left:auto;font-size:12px;color:var(--muted)}
   /* ===== 方案E 2026-11-20：页内快速跳转 + 返回顶部（默认隐藏，仅手机端显示） ===== */
   .jumpbar{display:none}
@@ -138,8 +143,8 @@
   /* 重点列：评分加粗+底色 */
   #hold-table thead th[data-sort="score"]{font-weight:700;color:var(--accent-deep);background:#e6f2f6}
   #hold-table thead th[data-sort="name"]{font-weight:700}
-  /* 重点列单元格：今日收益加粗、不再填充底色 */
-  #hold-table tbody td.income-col{font-weight:700;background:transparent}
+  /* 重点列单元格：今日收益不加粗（2026-11-21 用户要求），不再填充底色 */
+  #hold-table tbody td.income-col{font-weight:400;background:transparent}
   #hold-table tbody td.score-col{background:#f2f8fa}
   #hold-table .pname{font-size:13px}
   #hold-table .st i{font-size:12px}
@@ -936,6 +941,10 @@
     .year-table td{font-size:12px}
     .rate-cell{font-size:12px}
     .seg button{font-size:11.5px}
+    /* 横屏表头单行 2026-11-21（用户要求）：交易页（持仓汇总/交易流水）与产品库
+       的表头一律不换行、单行呈现；覆盖上方 761–968 的 white-space:normal 与 br:inline */
+    #sum-table thead th,#flow-table thead th,#prod-table thead th{white-space:nowrap}
+    #sum-table thead th br,#flow-table thead th br,#prod-table thead th br{display:none}
   }
   /* 手机横屏矮屏（高 ≤520）：指标卡仍压成一行 6 列，把纵向空间让给表格；
      放在 761–968 规则之后，故能覆盖其 3 列布局 */
@@ -983,30 +992,29 @@
     #sum-table colgroup col,#prod-table colgroup col,#flow-table colgroup col{width:auto !important}
     /* 盈亏汇总 16 列在竖屏下按固定像素列宽排布：列距统一、不因内容长短忽宽忽窄，
        整表 942px 横向滚动（表头吸顶 + 首屏可见产品名） */
-    /* 2026-11-21 二轮（用户要求「净值日期~持仓成立适当调宽，只需净值日期~持仓收益压进首屏，
-       所有列均匀分布、不挤压不溢出」）：
-       序号 26 + 名称 124 + 净值日期 52 + 今日万收 44 + 今日收益 48 + 持仓收益 60 = 354px，
-       iPhone 393 视口内容宽 367px —— 首屏稳稳看全「净值日期~持仓收益」；
-       「持仓成立」46px 紧随其后（354~400px，轻滑即见，且已从 38 加宽到 46）。
-       名称列 116→124 让 8 字名（含数字）不再被挤掉末字；右侧周期列仍 60/60/60/60/60/66/58 不变。 */
-    #hold-table{table-layout:fixed;width:880px;min-width:880px}
+    /* 2026-11-21 三轮（用户要求「持仓变化列 % 号有溢出，7日~90日列宽适当调整，
+       均匀分一点给今日万收~持仓成立」）：
+       序号 26 + 名称 124 + 净值日期 52 + 今日万收 46 + 今日收益 50 + 持仓收益 62 = 360px，
+       iPhone 393 视口内容宽 367px —— 首屏仍看全「净值日期~持仓收益」；
+       持仓年化 46→52（容纳「-14.51%」不再顶到相邻列）、持仓成立 46→48，差额取自 7日~90日（60→57）。 */
+    #hold-table{table-layout:fixed;width:925px;min-width:925px}
     #hold-table colgroup col{width:auto !important}
     #hold-table col:nth-child(1){width:26px !important}
     #hold-table col:nth-child(2){width:124px !important}
     #hold-table col:nth-child(3){width:52px !important}
-    #hold-table col:nth-child(4){width:44px !important}
-    #hold-table col:nth-child(5){width:48px !important}
-    #hold-table col:nth-child(6){width:60px !important}
-    #hold-table col:nth-child(7){width:46px !important}
-    #hold-table col:nth-child(8){width:46px !important}
+    #hold-table col:nth-child(4){width:46px !important}
+    #hold-table col:nth-child(5){width:50px !important}
+    #hold-table col:nth-child(6){width:62px !important}
+    #hold-table col:nth-child(7){width:52px !important}
+    #hold-table col:nth-child(8){width:48px !important}
     /* 「数据」列内容「日均万收」需 48px + 左右 padding 4px = 52px，列框贴合文字、不再留空 */
     #hold-table col:nth-child(9){width:56px !important}
-    /* 区间列：7日~90日统一 60px，成立至今 66px（表头两行「成立/至今」） */
+    /* 区间列：7日~90日统一 57px，成立至今 66px（表头两行「成立/至今」） */
     #hold-table col:nth-child(10),
     #hold-table col:nth-child(11),
     #hold-table col:nth-child(12),
     #hold-table col:nth-child(13),
-    #hold-table col:nth-child(14){width:60px !important}
+    #hold-table col:nth-child(14){width:57px !important}
     #hold-table col:nth-child(15){width:66px !important}
     #hold-table col:nth-child(16){width:58px !important}
     /* 数值列左右内边距 3→2px，让压缩后的 40~55px 列刚好容纳「+208.00」这类最宽值 */
@@ -1025,6 +1033,31 @@
     #hold-table thead th:nth-child(3){padding-left:2px;padding-right:2px}
     #hold-table .th-select{width:100%;max-width:100%;font-size:11px;padding:1px 0}
     #hold-table tbody td:nth-child(2){min-width:0;max-width:none}
+    /* 持仓汇总竖屏定稿 2026-11-21（用户要求）：产品名称列收窄，
+       「净值日期~累计收益」压进首屏，其余列按内容定宽、内边距统一，列间距均匀。
+       120+54+62+52+68 = 356px < iPhone393 内容宽 367px —— 首屏可看全到「累计收益」，
+       「持仓金额」68px 紧随其后（轻滑即见）。整表 766px 横向滚动，不再由名称列独吞宽度。
+       各列宽度按「该列最宽真实值」定：持仓金额/份额 68（26,059.80）、产品净值 62（1.002300 六位小数）、
+       操作 120（加购/赎回/清仓三个按钮不折行）。 */
+    #sum-table{table-layout:fixed;width:766px;min-width:766px}
+    #sum-table colgroup col{width:auto !important}
+    #sum-table col:nth-child(1){width:120px !important}
+    #sum-table col:nth-child(2){width:54px !important}
+    #sum-table col:nth-child(3){width:62px !important}
+    #sum-table col:nth-child(4){width:52px !important}
+    #sum-table col:nth-child(5){width:68px !important}
+    #sum-table col:nth-child(6){width:68px !important}
+    #sum-table col:nth-child(7){width:62px !important}
+    #sum-table col:nth-child(8){width:68px !important}
+    #sum-table col:nth-child(9){width:46px !important}
+    #sum-table col:nth-child(10){width:46px !important}
+    #sum-table col:nth-child(11){width:120px !important}
+    /* 统一列间距：所有列左右各 4px，首列左内边距 8px 与卡片边距对齐 */
+    #sum-table thead th,#sum-table tbody td{padding:8px 4px}
+    #sum-table thead th:first-child,#sum-table tbody td:first-child{padding-left:8px;padding-right:4px}
+    #sum-table tbody td:nth-child(1){min-width:0;max-width:none}
+    /* 名称列收窄到 120px（约 9 字/行）后，代销渠道等副行不再撑宽单元格 */
+    #sum-table tbody td:nth-child(1) .pname{white-space:normal;word-break:break-word;overflow-wrap:anywhere}
     /* 自适应列宽下产品名会把表头筛选下拉挤扁：按钮按文字宽度显示，列保留最小可读宽度 */
     #flow-table .th-select{width:auto;min-width:0;font-size:11px}
     #flow-table thead th:nth-child(4),#flow-table thead th:nth-child(9){min-width:56px}
@@ -1121,7 +1154,10 @@
        **字号恒为 16px**（2026-11-21 二轮用户要求）：iOS/Android 只在聚焦控件字号
        <16px 时自动放大整页，固定 16px 后聚焦不缩放、字体也不会忽大忽小；
        占位提示单独用 12.5px（::placeholder 不参与聚焦判定），窄框里仍完整显示。 */
-    #pane-prod .filters #prod-search{flex:1 1 0;min-width:44px;height:32px;min-height:32px;padding:0 8px;font-size:16px!important}
+    /* 搜索框 2026-11-21 三轮：未聚焦时与表头同字号 12.5px（选中产品后不再显示成大字），
+       聚焦瞬间 16px —— iOS 只有在聚焦控件字号 <16px 时才放大整页，这样既不缩放也不长期大字 */
+    #pane-prod .filters #prod-search{flex:1 1 0;min-width:44px;height:32px;min-height:32px;padding:0 8px;font-size:12.5px!important}
+    #pane-prod .filters #prod-search:focus{font-size:16px!important}
     #pane-prod .filters #prod-search::placeholder{font-size:12.5px}
     .trade-tool{flex-wrap:nowrap;gap:6px}
     .trade-tool .sp{display:none}
@@ -1401,7 +1437,9 @@
     #pane-prod .filters .sel-opt{font-size:12.5px}
     #pane-prod .filters .chip{width:auto;height:32px;min-height:32px;padding:0;font-size:11.5px;justify-content:center}
     /* 搜索框字号同样固定 16px（不做任何聚焦变化），避免安卓/iOS 键盘弹起时整页放大 */
-    #pane-prod .filters #prod-search{width:auto;min-width:0;height:32px;min-height:32px;padding:0 8px;font-size:16px!important}
+    /* 横屏同口径：常规 11.5px（与表头一致），聚焦时 16px 防 iOS 放大 */
+    #pane-prod .filters #prod-search{width:auto;min-width:0;height:32px;min-height:32px;padding:0 8px;font-size:11.5px!important}
+    #pane-prod .filters #prod-search:focus{font-size:16px!important}
     #pane-prod .filters #prod-search::placeholder{font-size:11.5px}
   }
 
@@ -1964,7 +2002,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261121b';
+      s.src = './assets/dashboard.js?v=20261121c';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();

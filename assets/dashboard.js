@@ -74,6 +74,20 @@
     return i === -1 ? null : p.nav[i];
   }
 
+  /* 成交净值日（2026-11-21）：T 日申购按 T 日（或其之前最近一日）披露的净值定价。
+     年化分母必须与分子同口径 —— 分子是按成交净值买入后的市值变化，
+     收益自「成交净值日之后」才开始累积；若拿确认日（T+1）当起点，
+     会漏掉确认日当天的净值涨幅，新买入产品的年化被放大近一倍
+     （例：中银悦享天添24号 11-17 定价、11-19 最新，实际计息 2 天）。 */
+  function navDateAt(p, date) {
+    if (!p || !p.dates || !p.dates.length || !date) return null;
+    var hit = null;
+    for (var i = 0; i < p.dates.length; i++) {
+      if (p.dates[i] <= date) hit = p.dates[i]; else break;
+    }
+    return hit;
+  }
+
   /* 确认日成交净值：当日已披露直接取；未披露时取确认日之后最近一日，
      都没有才回落到最新净值（即「确认日已到、净值未披露」按最新净值估算） */
   function navForConfirm(p, date) {
@@ -722,8 +736,13 @@
         if (!(rec.shares > 0.000001)) rec.startDate = t.confirmDate;
         /* 每笔买入记为独立份额批次，起息日 = 该笔确认日（T+1）。
            银行规则：T 日按 T 日净值成交、T+1 确认起息；一批份额的收益从
-           「确认日当日净值」开始归属，确认日之前的净值涨跌与其无关。 */
-        rec.lots.push({ date: t.confirmDate || t.applyDate, shares: sh });
+           「确认日当日净值」开始归属，确认日之前的净值涨跌与其无关。
+           navDate 记录「成交净值日」（T 日），只用于年化分母，保证与按成交净值买入的分子同口径。 */
+        rec.lots.push({
+          date: t.confirmDate || t.applyDate,
+          navDate: navDateAt(p, t.applyDate || t.confirmDate) || t.confirmDate || t.applyDate,
+          shares: sh
+        });
         rec.shares += sh;
         var paid = Number(t.amount) || sh * nav;
         rec.cost += paid;
@@ -750,7 +769,7 @@
          起息日按首个净值日计：产品没有净值的日子不可能产生收益，也不能算进持有期。
          例：信银安盈象14天165号 08-25 成立并确认、08-26 首个净值日，
          持仓天数按 08-26 起算（84 天），与建行 App 一致；成立天数仍按 08-25 算（85 天）。
-         年化分母另用「计息天数 = 最新净值日 − 起息日」：收益只覆盖到最新净值日，
+         年化分母另用「计息天数 = 最新净值日 − 成交净值日」（见下方 accrualStart）：收益只覆盖到最新净值日，
          若拿今天当分母，会把尚未披露收益的那一天也算进持有期、系统性低估年化。 */
       var accrualEnd = p.latestDate || todayStr;
       var daysStart = rec.startDate;
@@ -762,7 +781,13 @@
       var incep = inceptionDateOf(p);
       if (incep && daysStart && daysStart < incep) daysStart = incep;
       var days = alive ? Math.max(0, dayDiff(parseDate(daysStart), parseDate(todayStr))) : 0;
-      var accrualDays = alive ? Math.max(0, dayDiff(parseDate(daysStart), parseDate(accrualEnd))) : 0;
+      /* 计息起点用「成交净值日」（首个批次的 T 日），不用确认日：
+         分子是按成交净值买入后的市值变化，已包含确认日当天的净值涨幅，
+         分母若从确认日算会少算一天、把新买入产品的年化放大近一倍（2026-11-21 修正）。
+         买入日早于产品成立日（募集期认购）时仍以成立日为下限。 */
+      var accrualStart = (rec.lots && rec.lots[0] && rec.lots[0].navDate) || daysStart;
+      if (incep && accrualStart && accrualStart < incep) accrualStart = incep;
+      var accrualDays = alive ? Math.max(0, dayDiff(parseDate(accrualStart), parseDate(accrualEnd))) : 0;
       var costNav = alive ? rec.cost / rec.shares : 0;
       var lastPer = p.per10k[n - 1];
       /* 「持仓收益」只算当前仍持有份额的盈亏（市值 − 剩余成本），与建行 App 口径一致；
@@ -2579,6 +2604,9 @@
       /* 去风险收益定位词（非产品系列名）：固收稳利/增利稳健/固收增利等，系列名（安盈象/阳光金/稳富等）保留 */
       .replace(/固收稳利|增利稳健|固收增利|固收增强|固收精选|固收添益|固收/g, '')
       .replace(/产品(?=第\d+期|$)/g, '')                 // 去「产品」字样（如 添利产品第2期 → 添利第2期）
+      /* 2026-11-21 用户要求：日开型产品名统一缩写
+         「建信嘉鑫按日开放式第123期」→「建信嘉鑫日开第123期」（同上千只日开产品同规则） */
+      .replace(/按日开放式|按日开放/g, '日开')
       .replace(/\s{2,}/g, ' ').trim();
     /* 机构简称：orgShort / org / issuer 依次兜底；去掉公司后缀与「理财」 */
     var org = String(p.orgShort || p.org || p.issuer || '')
@@ -4584,8 +4612,10 @@
     });
     prodUi.holdHolding = true; prodUi.holdCleared = true;
     var search = document.getElementById('prod-search');
-    if (search) search.value = p.short || p.name;
-    prodUi.q = p.short || p.name;
+    /* 2026-11-21：回填「产品库展示名」而不是原始 short，避免跳转后搜索框里出现
+       一长串原始全名（如「招睿添利日开25号固定收益类」），与表格里的简称对不上 */
+    if (search) search.value = prodDispName(p);
+    prodUi.q = prodDispName(p);
     prodUi.page = 1;
     renderProductTable();
     var tbl = document.getElementById('prod-table');
