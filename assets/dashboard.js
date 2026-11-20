@@ -1241,7 +1241,9 @@
           '与只算当前持仓、假设满仓的「持仓年化」不同。';
     }
     el = document.getElementById('metric-value');
-    if (el) el.innerHTML = hs.length ? fmtMoney(mv) + '<em>元</em>' : '—';
+    /* 持仓金额去千分位逗号（用户 2026-11-20 要求）：221240.69 比 221,240.69 少一个字符，
+       窄卡里靠与其他指标卡同档的字号即可放下，不再为它单独缩字号 */
+    if (el) el.innerHTML = hs.length ? fmtMoney(mv).replace(/,/g, '') + '<em>元</em>' : '—';
     el = document.getElementById('metric-mom');
     if (el) {
       el.textContent = portAnn === null ? '—'
@@ -5451,6 +5453,78 @@
      - wheel：桌面滚轮在边界时 preventDefault 并手动滚动 window
      - touch：手指在边界继续滑动时 preventDefault 并手动滚动 window
      仅当表格真的可纵向滚动（scrollHeight>clientHeight）时才介入，短表不干扰。 */
+  /* ---------------- 手机端页面级表头冻结（浮动表头） ----------------
+     手机竖屏把 .tbl-scroll 的内部纵向滚动整个取消（表格整段展开、整页滚动），
+     于是 thead 的 position:sticky 只在"容器内"生效、容器不滚就失效。
+     这里克隆一份表头挂到视口顶部：表格顶端滚出屏幕且表格仍在视口内时显示，
+     宽度与滚动容器对齐，横向随 scrollLeft 同步位移——等同"只冻结表头、底部不冻结"。 */
+  var FLOAT_HEADS = [];
+  var floatTicking = false;
+
+  function buildFloatHeads() {
+    FLOAT_HEADS.forEach(function (h) {
+      if (h.box.parentNode) h.box.parentNode.removeChild(h.box);
+    });
+    FLOAT_HEADS = [];
+    if (!window.matchMedia('(max-width:760px)').matches) return;
+    var wraps = document.querySelectorAll('.tbl-scroll');
+    Array.prototype.forEach.call(wraps, function (wrap) {
+      var table = wrap.querySelector('table');
+      if (!table || !table.tHead) return;
+      var box = document.createElement('div');
+      box.className = 'float-head';
+      box.setAttribute('aria-hidden', 'true');
+      /* cloneNode(false) 保留 id/class，表头样式才能沿用；克隆体排在 body 末尾，
+         getElementById 仍先取到原表，不影响既有逻辑 */
+      var clone = table.cloneNode(false);
+      var cg = table.querySelector('colgroup');
+      if (cg) clone.appendChild(cg.cloneNode(true));
+      clone.appendChild(table.tHead.cloneNode(true));
+      box.appendChild(clone);
+      document.body.appendChild(box);
+      FLOAT_HEADS.push({ wrap: wrap, table: table, box: box, clone: clone });
+    });
+    updateFloatHeads();
+  }
+
+  function updateFloatHeads() {
+    for (var i = 0; i < FLOAT_HEADS.length; i++) {
+      var h = FLOAT_HEADS[i];
+      var r = h.wrap.getBoundingClientRect();
+      var thH = (h.table.tHead && h.table.tHead.offsetHeight) || 0;
+      if (thH && r.top < 0 && r.bottom > thH + 4) {
+        if (!h.box.classList.contains('show')) h.box.classList.add('show');
+        h.box.style.left = r.left + 'px';
+        h.box.style.width = r.width + 'px';
+        h.clone.style.width = h.table.offsetWidth + 'px';
+        h.clone.style.transform = 'translateX(' + (-h.wrap.scrollLeft) + 'px)';
+      } else if (h.box.classList.contains('show')) {
+        h.box.classList.remove('show');
+      }
+    }
+  }
+
+  function onFloatScroll() {
+    if (floatTicking) return;
+    floatTicking = true;
+    requestAnimationFrame(function () { floatTicking = false; updateFloatHeads(); });
+  }
+
+  function initFloatHeads() {
+    buildFloatHeads();
+    window.addEventListener('scroll', onFloatScroll, { passive: true });
+    Array.prototype.forEach.call(document.querySelectorAll('.tbl-scroll'), function (w) {
+      w.addEventListener('scroll', onFloatScroll, { passive: true });
+    });
+    window.addEventListener('resize', function () { buildFloatHeads(); });
+    /* 切换 tab / 切换页面后容器位置变化，滚动事件不一定触发，补一帧重算 */
+    document.addEventListener('click', function (e) {
+      if (e.target && e.target.closest && e.target.closest('.tab')) {
+        setTimeout(updateFloatHeads, 60);
+      }
+    }, { passive: true });
+  }
+
   function bindTableScrollChain() {
     /* 手机滚动丝滑化（2026-11-20）：
        不再用 touchmove/wheel 里 preventDefault + window.scrollBy 手动交接——那种逐帧手动滚动
@@ -5486,6 +5560,7 @@
     initDatePicker();
     bindAddModal();
     bindTableScrollChain();
+    initFloatHeads();
     renderAll();
     var identityAudit = auditProductIdentity();
     if (!identityAudit.ok) console.warn('[产品身份自检]', identityAudit.issues);
@@ -5509,6 +5584,8 @@
       void document.documentElement.offsetWidth;
       if (trendChart) trendChart.resize();
       renderCalendar();
+      /* 旋转后表宽/方向都变了：竖屏重建浮动表头，横屏则清空（横屏保留内部滚动+原生 sticky） */
+      buildFloatHeads();
     }
     window.addEventListener('orientationchange', function () {
       clearTimeout(rotTimer);

@@ -614,6 +614,15 @@
     .tbl-scroll{max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px)}
   }
   .tbl-scroll>table thead th{position:sticky;top:0;z-index:3;background:#f7f9fa;box-shadow:inset 0 -1px 0 var(--rule)}
+  /* 手机端浮动表头（页面级冻结，2026-11-20）：手机竖屏取消内部纵向滚动后，
+     thead 的原生 sticky 只剩容器内粘性（容器不再滚动→失效），故由 JS 克隆一份表头固定在
+     视口顶部：表格顶端滚出屏幕且表格仍在视口内时显示，宽度随容器、横向随 scrollLeft 同步 */
+  .float-head{position:fixed;top:0;left:0;z-index:60;display:none;overflow:hidden;
+    background:#f7f9fa;box-shadow:0 3px 8px rgba(28,58,80,.12);border-radius:0 0 8px 8px}
+  .float-head.show{display:block}
+  .float-head table{table-layout:fixed;border-collapse:collapse;transform-origin:0 0}
+  .float-head thead th{position:static;box-shadow:inset 0 -1px 0 var(--rule)}
+  .page.is-exporting .float-head{display:none!important}
   #hold-table thead th[data-sort="score"]{background:#e6f2f6}
   /* 净值日期表头：与「数据」列完全同款的原生下拉（.th-select），
      首项为列名「净值日期」＝全部，其余为各披露日；单选，点选即收起 */
@@ -794,10 +803,9 @@
     .metrics{grid-template-columns:repeat(6,minmax(0,1fr))}
     .metrics .metric:last-child{grid-column:auto}
     .metric{padding:9px 8px}
-    .metric .v{font-size:15px;overflow:hidden;text-overflow:ellipsis}
-    /* 横屏 6 列很窄：持仓金额长数字单独缩小，单位「元」不允许换行溢出 */
+    .metric .v{font-size:15px;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.2px}
+    /* 横屏 6 列很窄：持仓金额与其他卡同档字号（去逗号后已够窄，不再单独缩字号），单位「元」不换行 */
     .metric .v em{font-size:9.5px;margin-left:1px}
-    #metric-value{font-size:12px}
     .metric .m-sub{font-size:10px;margin-top:5px;padding-top:5px}
   }
   @media (max-width:760px){
@@ -857,9 +865,9 @@
     .metrics{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:14px}
     .metrics .metric:last-child{grid-column:auto}
     .metric{padding:9px 8px}
-    .metric .v{font-size:15px}
-    .metric .v em{font-size:9.5px;margin-left:2px}
-    #metric-value{font-size:14px}
+    /* 去逗号后与其余指标卡同档字号（不再单独缩字），letter-spacing 收一丁点留出真机字体差异余量 */
+    .metric .v{font-size:15px;overflow:hidden;letter-spacing:-.2px}
+    .metric .v em{font-size:9.5px;margin-left:1px}
     .metric .m-sub{font-size:10.5px;margin-top:5px;padding-top:4px}
     .metric .m-sub b{font-size:12px}
     .tabs{width:100%;overflow-x:auto;justify-content:flex-start;border-radius:12px}
@@ -952,6 +960,10 @@
     .trend-sub{margin:7px 0 0;padding-top:6px}
     .doc-attach{padding:12px 14px}
     .card{overflow-x:auto}
+    /* 手机端表格整段展开、整页滚动（2026-11-20）：纵向内部滚动容器在手机上滑到边界
+       必须松手再滑，正是「锁在顶部/底部」的根因。去掉 max-height 后容器纵向不再溢出，
+       手势整段交给页面；表头改由 .float-head 克隆层冻结（见下） */
+    .tbl-scroll{max-height:none}
     /* 手机端表单：底部弹层，放大字号与点击区，聚焦不再被系统放大 */
     .modal{align-items:flex-end;padding:0}
     .modal-card{width:100%;max-width:100%;max-height:92vh;border-radius:16px 16px 0 0;padding:0;display:flex;flex-direction:column;overflow:hidden}
@@ -1007,7 +1019,6 @@
     .metrics{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
     .metric{padding:8px 5px}
     .metric .v{font-size:13px}
-    #metric-value{font-size:12px}
     /* 极窄屏日历汇总再收一档，避免「挂0」被裁切 */
     .cal-sum{font-size:10px;gap:1px 2px}
     .cal-sum .lead,.cal-sum .st{padding:0 1px;gap:1px}
