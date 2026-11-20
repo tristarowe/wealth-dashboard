@@ -1248,36 +1248,36 @@
     #sum-table tbody td{padding-top:6px;padding-bottom:6px}
   }
 
-  /* ===== 红框数值列统一左对齐 2026-11-20 =====
+  /* ===== 红框数值列统一右对齐 2026-11-20（修正同日 left 版） =====
      涉及：盈亏日历年度/月度「收益」列、交易流水「份额/金额」列、产品库「今日万收~成立至今」区间列、
      盈亏汇总「持仓收益/持仓年化 + 7日~成立至今」列、持仓汇总「持仓收益/持仓年化/累计收益/持仓金额」列。
      只改 text-align，字号/千分位/列宽/行高一律不动。 */
   /* 盈亏日历：年度表收益列（第2列）+ 月度表收益列（第2列 span） */
-  .year-table thead th:nth-child(2),.year-table tbody td:nth-child(2){text-align:left}
-  .month-row.mhead span:nth-child(2),.month-item > span:nth-child(2){text-align:left}
+  .year-table thead th:nth-child(2),.year-table tbody td:nth-child(2){text-align:right}
+  .month-row.mhead span:nth-child(2),.month-item > span:nth-child(2){text-align:right}
   /* 交易流水：份额（第5列）、金额（第7列） */
   #flow-table thead th:nth-child(5),#flow-table tbody td:nth-child(5),
-  #flow-table thead th:nth-child(7),#flow-table tbody td:nth-child(7){text-align:left}
+  #flow-table thead th:nth-child(7),#flow-table tbody td:nth-child(7){text-align:right}
   /* 产品库：今日万收（第4列）~ 成立至今（第8列） */
   #prod-table thead th:nth-child(4),#prod-table tbody td:nth-child(4),
   #prod-table thead th:nth-child(5),#prod-table tbody td:nth-child(5),
   #prod-table thead th:nth-child(6),#prod-table tbody td:nth-child(6),
   #prod-table thead th:nth-child(7),#prod-table tbody td:nth-child(7),
-  #prod-table thead th:nth-child(8),#prod-table tbody td:nth-child(8){text-align:left}
+  #prod-table thead th:nth-child(8),#prod-table tbody td:nth-child(8){text-align:right}
   /* 盈亏汇总：持仓收益（第6）/持仓年化（第7）+ 7日~成立至今（第10~15）；
      数据列双行（ma=pwin / mb=ann）都要对齐，表头同步 */
   #hold-table thead th:nth-child(6),#hold-table tbody tr.ma > td:nth-child(6),
   #hold-table thead th:nth-child(7),#hold-table tbody tr.ma > td:nth-child(7),
   #hold-table thead th:nth-child(n+10):nth-child(-n+15),
   #hold-table tbody tr.ma > td.pwin,
-  #hold-table tbody tr.mb > td.awin{text-align:left}
-  /* 盈亏汇总非双行模式（仅万收/仅年化）：第10~15列数据单元格左对齐 */
-  #hold-table tbody tr.ma > td.pwin,#hold-table tbody tr.ma > td.awin{text-align:left}
+  #hold-table tbody tr.mb > td.awin{text-align:right}
+  /* 盈亏汇总非双行模式（仅万收/仅年化）：第10~15列数据单元格右对齐 */
+  #hold-table tbody tr.ma > td.pwin,#hold-table tbody tr.ma > td.awin{text-align:right}
   /* 持仓汇总：持仓收益（第3）/持仓年化（第4）/累计收益（第5）/持仓金额（第6） */
   #sum-table thead th:nth-child(3),#sum-table tbody td:nth-child(3),
   #sum-table thead th:nth-child(4),#sum-table tbody td:nth-child(4),
   #sum-table thead th:nth-child(5),#sum-table tbody td:nth-child(5),
-  #sum-table thead th:nth-child(6),#sum-table tbody td:nth-child(6){text-align:left}
+  #sum-table thead th:nth-child(6),#sum-table tbody td:nth-child(6){text-align:right}
 
   /* 导出时撑满基准宽度，避免窄窗口裁切 */
   .page.is-exporting{width:1320px}

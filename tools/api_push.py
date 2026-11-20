@@ -175,7 +175,15 @@ def main():
 
     problems, payload = [], []
     for rel in paths:
-        data = (ROOT / rel).read_bytes()
+        # 用 git 索引的规范字节（LF）而非工作区原始字节（Windows 为 CRLF），
+        # 确保上传后的远端 blob sha 与本地 git hash-object 完全一致，避免整文件假差异。
+        canon = subprocess.run(("git", "cat-file", "-p", "HEAD:%s" % rel), cwd=ROOT,
+                               capture_output=True)
+        if canon.returncode != 0:
+            print("无法从 git 索引读取 %s：%s" % (rel, canon.stderr.decode("utf-8", "ignore")[:160]),
+                  file=sys.stderr)
+            return 1
+        data = canon.stdout
         lsha, rsha = blob_sha(data), remote.get(rel)
         payload.append((rel, data, lsha))
         if rel not in protected:
