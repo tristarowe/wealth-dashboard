@@ -1410,7 +1410,8 @@
       var mvUnder = (h && h.mv !== null && h.mv !== undefined && !isNaN(h.mv))
         ? '<span class="mv-under" title="持仓市值 ¥' + fmtMoney(h.mv) + '">¥' + fmtMoney(h.mv) + '</span>' : '';
       html += '<td class="c num"' + rs + '>' + (i + 1) + '</td>';
-      html += '<td' + rs + '><div class="pname"><a class="plink" href="javascript:void(0)" data-goto-trade="' + p.id + '" title="查看「' + (p.name || '') + '」的交易记录">' + prodDispName(p) + '</a>' + badge + downBadge + mvUnder + '</div></td>';
+      /* 名称与角标拆成第一行 flex 容器：👍/👎 永远贴在名称首行右侧，不随名称换行掉到末行 */
+      html += '<td' + rs + '><div class="pname"><div class="pn-row"><a class="plink" href="javascript:void(0)" data-goto-trade="' + p.id + '" title="查看「' + (p.name || '') + '」的交易记录">' + prodDispName(p) + '</a>' + badge + downBadge + '</div>' + mvUnder + '</div></td>';
       html += '<td class="c num"' + rs + '>' + (m.latestDate ? withBadge(mmdd(m.latestDate), navLagBadge(p)) : '—') + '</td>';
       html += '<td class="r num today-col ' + colorBy(tv) + '"' + rs + '>' + fmtSigned(tv) + '</td>';
       html += '<td class="r num income-col ' + colorBy(h && !h.incomePending ? h.income : null) + '"' + rs +
@@ -1429,7 +1430,7 @@
           (inceptionDateOf(p) || '') : '');
       html += '<td class="c num dcell daystack"' + rs + ' title="' + daysTip + '">' +
         (h ? '<span class="days">' + h.days + '</span>' : '—') +
-        (listDays !== null ? '<span class="dsep"></span><span class="days sub">' + listDays + '</span>' : '') + '</td>';
+        (listDays !== null ? '<span class="dsep">' + (h ? h.days : listDays) + '</span><span class="days sub">' + listDays + '</span>' : '') + '</td>';
       html += '<td class="c mlabel">' + lbl + '</td>';
 
       var perCells = '';
@@ -1530,6 +1531,13 @@
     }
     s.value = keep;
     s.classList.toggle('on', !!keep);
+    /* 表头文字由 .th-btn 渲染（原生 select 已透明覆盖在上方），
+       未筛选时显示两行「净值 / 日期」，选定日期后显示该日 mm-dd */
+    var lab = document.getElementById('hold-date-lab');
+    if (lab) {
+      lab.classList.toggle('on', !!keep);
+      lab.innerHTML = '<span>' + (keep ? mmdd(keep) : '净值<br>日期') + '</span>';
+    }
   }
 
   function bindDateFilter() {

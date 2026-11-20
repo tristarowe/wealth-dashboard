@@ -1,7 +1,7 @@
 {
   "_doc": "跨端代码守卫共用标记清单 —— 唯一权威来源。WorkBuddy 的 .githooks/pre-push 与 Trae 的 tools/sync_pages.py 都必须读取本文件，禁止在脚本里硬编码标记列表。新增功能后在此登记，两端自动生效。",
   "_maintainer": "任何一端修改本文件后，需在提交信息中说明原因；改动会同时影响两端的推送守卫。",
-  "version": "2026-11-20zo",
+  "version": "2026-11-20zp",
   "protected": {
     "_doc": "受『整批中止』保护的文件：远端内容被他人改过时，整批拒绝推送，必须先 pull 合并。markers 为该文件必须包含的字符串，缺失即判定为旧版/被回退，整批拒推。",
     "index.html": [
@@ -23,7 +23,7 @@
       "data-stamp",
       "B2/Q2：横屏全表由 11px 提到 11.5px",
       "Q1：手机年表/月表",
-      "v=20261120q",
+      "v=20261120r",
       "手机端彻底隐藏滚动条",
       "data-sort=\"total\"",
       "累计收益",
@@ -56,7 +56,7 @@
       "prod-scroll",
       "#prod-table{min-width:0}",
       "#prod-table tbody td{padding:5px 8px}",
-      "#hold-table col:nth-child(2){width:132px !important}",
+      "#hold-table col:nth-child(2){width:128px !important}",
       ".full-scroll{max-height:none;overflow-y:visible}",
       "card tbl-scroll full-scroll",
       "指标卡副行：副行文字与数值强制同一行",
@@ -129,7 +129,7 @@
       "class=\"active-filter sum-filter\"",
       "body.modal-lock{overflow:hidden",
       "#hold-table col:nth-child(1){width:32px !important}",
-      "新品按钮 2026-11-20 移到第二行首位",
+      "<button class=\"chip\" data-flag=\"fav\">★ 收藏</button>",
       "成立<br>至今",
       "弹窗底部两枚按钮严格两列等宽对齐",
       "grid-template-columns:repeat(2,minmax(0,1fr))",
@@ -144,7 +144,7 @@
       "#sum-table tbody tr{height:52px}",
       "#hold-table tbody td.pwin,#hold-table tbody td.awin{line-height:1.4}",
       "区间标签单元格基础规则是 6px 上下",
-      "#hold-table tbody td.mlabel{padding-top:3px;padding-bottom:3px}",
+      "#hold-table tbody td.mlabel{padding:3px 2px}",
       "持仓汇总操作按钮贴合文字 2026-11-20",
       "操作按钮边框贴合文字 2026-11-20：全局收紧 padding/行高",
       "全站防聚焦放大（不限弹窗）",
@@ -183,7 +183,7 @@
       "overscroll-behavior:contain",
       ".filters input#prod-search{font-family:var(--font)",
       "天数两行分割线 2026-11-20",
-      "#hold-table td.daystack .dsep{position:absolute;left:0;right:0;top:50%;height:1px;background:#f0f4f6;width:auto}",
+      "#hold-table td.daystack .dsep{position:absolute;left:50%;top:50%;transform:translateX(-50%)",
       "数值单元格右对齐 2026-11-20（恢复 21:00 那版口径",
       "#sum-table tbody td:nth-child(10)",
       "{text-align:right;text-indent:0}",
@@ -191,7 +191,24 @@
       "表头跟随数值列右对齐 2026-11-20",
       ".pu{display:inline-block;width:0;overflow:visible;text-align:left}",
       "padding-right:var(--pgut,.62em)",
-      ".month-row.mhead span:nth-child(2){text-align:right}"
+      ".month-row.mhead span:nth-child(2){text-align:right}",
+      "两行之间的虚线分隔",
+      ".jumpbar::before{content:",
+      "border-top:1px dashed #cfdae1",
+      "竖屏表头两行化 2026-11-20",
+      "#hold-table thead th br,#sum-table thead th br",
+      "hold-date-lab",
+      "#hold-table th.navdate-th",
+      ".pname .pn-row{display:block}",
+      "#hold-table td.daystack{position:relative;line-height:1.25;--dayfs:13px}",
+      "2026-11-20 第三轮压缩",
+      "确认<br>份额",
+      "产品<br>净值",
+      "风险<br>等级",
+      "盈亏日历「收益」列与右邻列留白 2026-11-20",
+      "#year-view .year-table td:nth-child(2)",
+      "#pane-prod .filters #prod-search{flex:1 1 0",
+      ".filters .filter-tail .chip{flex:0 0 60px"
     ],
     "assets/dashboard.js": [
       "PID_ALIAS",
@@ -338,7 +355,12 @@
       "if (prodSugPop) placeProdSug();",
       "pop.addEventListener('touchmove', function (e) { e.stopPropagation(); }, { passive: true })",
       "function fmtAnnCell",
-      "function fmtPerCell"
+      "function fmtPerCell",
+      "名称与角标拆成第一行 flex 容器",
+      "pn-row",
+      "dsep\">",
+      "hold-date-lab",
+      "fmtAnnCell(w.ann, mark)"
     ],
     "assets/store.js": [
       "sbTombstones",
@@ -415,7 +437,8 @@
     "_doc": "标记出现次数下限（可选，向后兼容：旧解析器忽略本段，只按『存在』判断）。防止『同一标记有多处、只被改坏一处』仍能通过校验——2026-11-18 daystack→daystacX 事故即由只判存在导致。",
     "index.html": {
       "daystack": 4,
-      "#hold-table tbody tr{height:26px}": 1
+      "#hold-table tbody tr{height:26px}": 1,
+      "pn-row": 4
     }
   },
   "data": {
