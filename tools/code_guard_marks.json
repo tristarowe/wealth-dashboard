@@ -1,7 +1,7 @@
 {
   "_doc": "跨端代码守卫共用标记清单 —— 唯一权威来源。WorkBuddy 的 .githooks/pre-push 与 Trae 的 tools/sync_pages.py 都必须读取本文件，禁止在脚本里硬编码标记列表。新增功能后在此登记，两端自动生效。",
   "_maintainer": "任何一端修改本文件后，需在提交信息中说明原因；改动会同时影响两端的推送守卫。",
-  "version": "2026-11-20r",
+  "version": "2026-11-20s",
   "protected": {
     "_doc": "受『整批中止』保护的文件：远端内容被他人改过时，整批拒绝推送，必须先 pull 合并。markers 为该文件必须包含的字符串，缺失即判定为旧版/被回退，整批拒推。",
     "index.html": [
@@ -106,7 +106,16 @@
       "id=\"sec-hold-cal\"",
       "id=\"sec-hold-trend\"",
       "class=\"to-top\" id=\"to-top\"",
-      "方案E 2026-11-20：页内快速跳转 + 返回顶部（仅手机端"
+      "方案E 2026-11-20（分页版）：首页3子页 / 交易页2子页切换 + 返回顶部",
+      "subpage-off{display:none !important}",
+      "id=\"jumpbar-trade\"",
+      "id=\"sec-trade-sum\"",
+      "id=\"sec-trade-flow\"",
+      "方案E 2026-11-20（分页版）",
+      "viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\"",
+      ".jumpbar .j.on{background:#e6f2f6;color:var(--accent-deep)}",
+      ".tab{min-height:36px}",
+      "手机主标签行高压缩 2026-11-20"
     ],
     "assets/dashboard.js": [
       "PID_ALIAS",
