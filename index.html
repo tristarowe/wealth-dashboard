@@ -176,7 +176,9 @@
   #sum-table thead th,#sum-table tbody td{padding:10px 8px}
   #sum-table tbody td:first-child,#sum-table thead th:first-child{padding-left:12px}
   #prod-table thead th,#flow-table thead th{padding:9px 8px}
-  #prod-table tbody td,#flow-table tbody td{padding:7px 8px}
+  /* 产品库行高压缩（10 条一屏看全）：7→5px；交易流水保持 7px 不动 */
+  #prod-table tbody td{padding:5px 8px}
+  #flow-table tbody td{padding:7px 8px}
   #prod-table tbody td:nth-child(2),#prod-table thead th:nth-child(2){padding-left:10px}
   /* 持仓天数：整列与表头居中对齐，数字与「天」同字体、同字号、同字重 */
   #hold-table th[data-sort="holddays"],#sum-table th[data-sort="days"]{text-align:center}
@@ -602,6 +604,9 @@
   /* 纵向超长时表头吸顶；滚动到顶/底要能把手势交还给页面（不能设 overscroll-behavior:contain，
      否则内部滚到尽头后页面卡住划不动） */
   .tbl-scroll{overflow:auto;max-height:min(72vh,620px);overscroll-behavior-x:contain;overscroll-behavior-y:auto}
+  /* 产品库（用户 2026-11-20 要求）：桌面端一页 10 条明细完整呈现，不设内部纵向滚动。
+     10 行约 620px + 表头 + 分页，给到 760px 足以一次看全，无需在表格内滚动。 */
+  .prod-scroll{max-height:none;overflow-y:visible}
   /* 细滚动条：避免系统粗滚动条浮在表格内容上、遮挡列文字（2026-11-20） */
   .tbl-scroll{scrollbar-width:thin;scrollbar-color:#c7d2d9 transparent}
   .tbl-scroll::-webkit-scrollbar{width:6px;height:6px}
@@ -643,7 +648,8 @@
   tr.flow-month.open .fm-caret{transform:rotate(90deg)}
   tr.flow-month .fm-meta{font-weight:400;color:var(--muted);font-size:11.5px;margin-left:10px}
   #hold-table{min-width:1120px}
-  #prod-table{min-width:1080px}
+  /* 产品库不设最小宽度：13 列按百分比自适应容器，窄屏也不出现横向滚动条 */
+  #prod-table{min-width:0}
 
   @media (max-width:968px){
     /* 横屏/平板宽度下日历并排会把「每日收益」压成窄条，统一改为上下堆叠 */
@@ -811,9 +817,10 @@
     #hold-table col:nth-child(9){width:76px !important}
     .metrics{grid-template-columns:repeat(6,minmax(0,1fr))}
     .metrics .metric:last-child{grid-column:auto}
-    .metric{padding:9px 8px}
-    .metric .v{font-size:15px;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.2px}
-    /* 横屏 6 列很窄：持仓金额与其他卡同档字号（去逗号后已够窄，不再单独缩字号），单位「元」不换行 */
+    /* 恢复千分位：横屏 6 列更窄，左右内边距 8→4px、字距收紧容纳逗号，字号不缩 */
+    .metric{padding:9px 4px}
+    .metric .v{font-size:15px;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.5px}
+    /* 横屏 6 列很窄：持仓金额与其他卡同档字号，单位「元」不换行 */
     .metric .v em{font-size:9.5px;margin-left:1px}
     .metric .m-sub{font-size:10px;margin-top:5px;padding-top:5px}
   }
@@ -875,9 +882,9 @@
     /* 6 张指标卡在手机竖屏按 3 列 × 2 行排（用户 2026-11-20 要求），缩小数值字号防止长金额溢出 */
     .metrics{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:14px}
     .metrics .metric:last-child{grid-column:auto}
-    .metric{padding:9px 8px}
-    /* 去逗号后与其余指标卡同档字号（不再单独缩字），letter-spacing 收一丁点留出真机字体差异余量 */
-    .metric .v{font-size:15px;overflow:hidden;letter-spacing:-.2px}
+    /* 恢复千分位逗号：左右内边距 8→5px 腾出约 6px 容纳逗号，字号与其他卡同档不缩 */
+    .metric{padding:9px 5px}
+    .metric .v{font-size:15px;overflow:hidden;letter-spacing:-.4px}
     .metric .v em{font-size:9.5px;margin-left:1px}
     .metric .m-sub{font-size:10.5px;margin-top:5px;padding-top:4px}
     .metric .m-sub b{font-size:12px}
@@ -1027,9 +1034,10 @@
   }
   @media (max-width:360px){
     /* 极窄屏仍保持 3 列 2 行，仅再收窄字号与内边距，避免长金额溢出 */
-    .metrics{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
-    .metric{padding:8px 5px}
-    .metric .v{font-size:13px}
+    .metrics{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+    .metric{padding:8px 3px}
+    /* 千分位逗号在 320 屏仍需约 78px，收紧字距容纳，字号保持 13px 不缩 */
+    .metric .v{font-size:13px;letter-spacing:-.5px}
     /* 极窄屏日历汇总再收一档，避免「挂0」被裁切 */
     .cal-sum{font-size:10px;gap:1px 2px}
     .cal-sum .lead,.cal-sum .st{padding:0 1px;gap:1px}
@@ -1379,7 +1387,7 @@
         </span>
       </div>
 
-      <div class="card tbl-scroll">
+      <div class="card tbl-scroll prod-scroll">
         <table class="prod-tbl" id="prod-table">
           <colgroup>
             <col style="width:3%"><col>
@@ -1572,7 +1580,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261120c';
+      s.src = './assets/dashboard.js?v=20261120d';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();

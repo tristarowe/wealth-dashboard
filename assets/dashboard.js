@@ -1241,9 +1241,9 @@
           '与只算当前持仓、假设满仓的「持仓年化」不同。';
     }
     el = document.getElementById('metric-value');
-    /* 持仓金额去千分位逗号（用户 2026-11-20 要求）：221240.69 比 221,240.69 少一个字符，
-       窄卡里靠与其他指标卡同档的字号即可放下，不再为它单独缩字号 */
-    if (el) el.innerHTML = hs.length ? fmtMoney(mv).replace(/,/g, '') + '<em>元</em>' : '—';
+    /* 恢复千分位（用户 2026-11-20 后续要求）：逗号保留、字号与其他卡同档不缩，
+       靠收紧六卡左右内边距与间距腾出空间（见 index.html 的 .metric padding） */
+    if (el) el.innerHTML = hs.length ? fmtMoney(mv) + '<em>元</em>' : '—';
     el = document.getElementById('metric-mom');
     if (el) {
       el.textContent = portAnn === null ? '—'
@@ -1710,14 +1710,16 @@
     // 年 / 月下拉
     var ySel = document.getElementById('cal-year-sel');
     if (ySel) {
-      ySel.innerHTML = years.map(function (y) {
+      /* 下拉按降序呈现（最新在最前），底层 years 数组仍升序供 stepYear 箭头使用 */
+      ySel.innerHTML = years.slice().reverse().map(function (y) {
         return '<option value="' + y + '">' + y + ' 年</option>';
       }).join('');
       ySel.value = String(calState.y);
     }
     var mSel = document.getElementById('cal-month-sel');
     if (mSel) {
-      mSel.innerHTML = months.map(function (m) {
+      /* 月份同样降序；months 来自实际净值日期，天然不含未来月 */
+      mSel.innerHTML = months.slice().reverse().map(function (m) {
         return '<option value="' + m + '">' + (m + 1) + ' 月</option>';
       }).join('');
       mSel.value = String(calState.m);
@@ -4513,6 +4515,27 @@
     });
   }
 
+  /* 交易流水「月份」下拉：只列该年份实际有交易的月份（降序），不再写死 1–12 月，
+     从而不会出现未来/未发生的月份。year 为空时列所有交易月份。 */
+  function flowMonthsForYear(year) {
+    var items = (window.TRANSACTIONS && window.TRANSACTIONS.items) || [];
+    var set = {};
+    items.forEach(function (t) {
+      if (year && t.applyDate.slice(0, 4) !== year) return;
+      set[+t.applyDate.slice(5, 7) - 1] = 1;
+    });
+    return Object.keys(set).map(Number).sort(function (a, b) { return b - a; }); /* 降序 */
+  }
+
+  /* 重建月份下拉 options（不动 ms.value，由调用方设置），联动年份切换 */
+  function refreshFlowMonthOptions(year) {
+    var ms = document.getElementById('flow-month');
+    if (!ms) return;
+    ms.innerHTML = '<option value="">月份</option>' + flowMonthsForYear(year).map(function (i) {
+      return '<option value="' + i + '">' + (i + 1) + ' 月</option>';
+    }).join('');
+  }
+
   function populateFlowSelects() {
     var items = (window.TRANSACTIONS && window.TRANSACTIONS.items) || [];
     /* 默认定位到最近一笔交易日所在年月 */
@@ -4532,16 +4555,14 @@
         var y = t.applyDate.slice(0, 4);
         if (years.indexOf(y) === -1) years.push(y);
       });
-      years.sort();
-      ys.innerHTML = '<option value="">年份</option>' + years.map(function (y) {
+      /* 年份降序（最新在前）；底层 flowYearKeys 仍升序供箭头逻辑使用 */
+      ys.innerHTML = '<option value="">年份</option>' + years.slice().sort().reverse().map(function (y) {
         return '<option value="' + y + '">' + y + ' 年</option>';
       }).join('');
       ys.value = flowState.year;
     }
     if (ms) {
-      ms.innerHTML = '<option value="">月份</option>' + Array.apply(null, Array(12)).map(function (_, i) {
-        return '<option value="' + i + '">' + (i + 1) + ' 月</option>';
-      }).join('');
+      refreshFlowMonthOptions(flowState.year);
       ms.value = flowState.month === '' ? '' : String(+flowState.month);
     }
   }
@@ -4598,6 +4619,7 @@
     else target = years[Math.min(Math.max(idx + delta, 0), years.length - 1)];
     flowState.year = target;
     flowState.month = '';
+    refreshFlowMonthOptions(flowState.year);
     var ys = document.getElementById('flow-year');
     var ms = document.getElementById('flow-month');
     if (ys) ys.value = flowState.year;
@@ -4753,7 +4775,14 @@
 
   function bindTrade() {
     var ys = document.getElementById('flow-year');
-    if (ys) ys.addEventListener('change', function () { flowState.year = ys.value; renderFlows(); });
+    if (ys) ys.addEventListener('change', function () {
+      flowState.year = ys.value;
+      flowState.month = '';                    /* 切年后月份回落「全部」，避免沿用旧年月份 */
+      refreshFlowMonthOptions(flowState.year);
+      var ms = document.getElementById('flow-month');
+      if (ms) ms.value = '';
+      renderFlows();
+    });
     var ms = document.getElementById('flow-month');
     if (ms) ms.addEventListener('change', function () { flowState.month = ms.value; renderFlows(); });
     var ts = document.getElementById('flow-type-sel');
