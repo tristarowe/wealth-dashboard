@@ -42,6 +42,8 @@ jobs:
       - name: 拉取云端交易
         env:
           PYTHONIOENCODING: utf-8
+          # service_role 绕过 RLS 读取全量交易；未配置时自动回退 anon key（兼容 RLS 开启前）
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         # 必须排在 T-1 攻坚之前：新买入的持仓要当天就进入攻坚清单，
         # 否则当天新增的品会漏抓 T-1（2026-11-19 建信嘉鑫7天第63期即因此停在 T-2）
         run: python daily/pull_cloud.py || true

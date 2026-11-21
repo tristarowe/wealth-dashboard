@@ -34,17 +34,24 @@
     return (items || []).filter(function (t) { return !delIds[t.id]; });
   }
 
+  /* 公开底稿已脱敏（只留 id+pid，供后台抓净值用），不含 applyDate 等明细字段。
+     这类占位行不能进入前端渲染（会触发 t.applyDate.slice 等错误），在此统一过滤；
+     真实交易明细一律来自 Supabase（登录后可读）。 */
+  function renderable(items) {
+    return dropDeleted(items).filter(function (t) { return !!t.applyDate; });
+  }
+
   /* 页面内置底稿快照：load() 里 applyTrades(cached) 会覆盖 window.TRANSACTIONS，
      必须在覆盖前留存。云端合并只认「底稿 ∪ 云端」，缓存行不参与——
      旧缓存里的已删交易曾借合并并回数据，表现为「删了又冒出来」的幽灵持仓 */
   var DRAFT = ((window.TRANSACTIONS && window.TRANSACTIONS.items) || []).slice();
 
   function fileItems() {
-    return dropDeleted((window.TRANSACTIONS && window.TRANSACTIONS.items) || []);
+    return renderable((window.TRANSACTIONS && window.TRANSACTIONS.items) || []);
   }
 
   function draftItems() {
-    return dropDeleted(DRAFT);
+    return renderable(DRAFT);
   }
 
   function readCache() {
@@ -125,10 +132,15 @@
     return 'TX' + d + String(Math.floor(Math.random() * 900) + 100);
   }
 
+  /* 登录态优先：登录后用用户 access_token（RLS 按 auth.uid() 放行），
+     未登录仍回退 anon key（RLS 开启前站点照常读写，兼容平滑切换）。 */
+  function authToken() {
+    try { return (window.AUTH && window.AUTH.token && window.AUTH.token()) || ''; } catch (e) { return ''; }
+  }
   function headers(extra) {
     var h = {
       apikey: key,
-      Authorization: 'Bearer ' + key,
+      Authorization: 'Bearer ' + (authToken() || key),
       'Content-Type': 'application/json',
       Prefer: 'return=representation'
     };
@@ -622,7 +634,8 @@
     addProduct: addProduct,
     removeProduct: removeProduct,
     status: status,
-    source: function () { return source; }
+    source: function () { return source; },
+    loggedIn: function () { return !!authToken(); }
   };
   window.STORE_READY = load();
 

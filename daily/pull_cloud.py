@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parent.parent
 SB_JS = ROOT / "assets" / "supabase-config.js"
 TRADE_JS = ROOT / "assets" / "transactions.js"
 NP_JS = ROOT / "assets" / "newproducts.js"
-DROP = {"_id", "_openid", "updatedAt", "created_at"}
+DROP = {"_id", "_openid", "updatedAt", "created_at", "owner"}
 
 SB_MAP = {
     "apply_date": "applyDate",
@@ -52,8 +52,16 @@ def supabase_config():
     )
 
 
+def read_key():
+    """云端读取密钥：优先 service_role（RLS 开启后仍能读全量），回退前端 anon key。
+       service_role 只在服务端环境变量/GitHub Secret 中存在，绝不写进仓库文件。"""
+    import os
+    return (os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or "").strip()
+
+
 def sb_get(table, params):
-    url, key, tx_table, np_table = supabase_config()
+    url, anon_key, tx_table, np_table = supabase_config()
+    key = read_key() or anon_key
     if not (url and key):
         print("未配置 Supabase，跳过云端拉取")
         return []
@@ -149,13 +157,30 @@ def merge_newproducts(rows, current):
     return out
 
 
+def sanitize_tx(t):
+    """公开底稿只保留后台抓净值所需的产品归属，去除全部金额/日期/份额/渠道等隐私明细。
+       真实交易明细只存 Supabase（RLS 保护），登录后前端云端读取。"""
+    out = {}
+    for k in ("id", "pid"):
+        if t.get(k) not in (None, ""):
+            out[k] = t[k]
+    return out
+
+
 def pull():
     tx = supabase_trades()
     if tx:
         prefix, current = read_js(TRADE_JS)
-        current["items"] = sorted(tx, key=lambda t: (t.get("confirmDate") or "", t.get("id") or ""))
+        # 脱敏：公开文件只留 id+pid；后台 nav_holdings_t1 / nav_rotate 仅依赖 pid 抓净值
+        current["items"] = [sanitize_tx(t) for t in
+                            sorted(tx, key=lambda t: (t.get("confirmDate") or "", t.get("id") or ""))]
+        # asOf 只升不降，保持日期戳单调（守卫要求）
+        fetched = max([str(t.get("confirmDate") or "") for t in tx] or [""])
+        if fetched > str(current.get("asOf", "")):
+            current["asOf"] = fetched
+        current["source"] = "产品归属底稿（金额明细见云端，登录后可见）"
         write_js(TRADE_JS, prefix, "TRANSACTIONS", current)
-        print("Supabase 交易 %d 笔" % len(tx))
+        print("Supabase 交易 %d 笔（公开底稿已脱敏：仅 id+pid）" % len(tx))
     else:
         print("云端暂无交易，保留页面底稿")
 

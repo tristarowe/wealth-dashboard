@@ -725,6 +725,11 @@
   .cloud-chip .cloud-ico{width:14px;height:14px;flex:none;color:#a9bac3}
   .cloud-chip.on{color:#1c7a5e;border-color:#bfe3d8;background:#f2fbf7}
   .cloud-chip.on .cloud-ico{color:#2f9e7a;fill:#d8f0e6}
+  /* 登录入口：与云端状态胶囊同款，登录后用主色高亮 */
+  .auth-chip{gap:4px}
+  .auth-chip .auth-ico{width:14px;height:14px;flex:none;color:#a9bac3}
+  .auth-chip.on{color:#185fa5;border-color:#c5ddf5;background:#eef5fd}
+  .auth-chip.on .auth-ico{color:#185fa5}
   .ms-panel{position:fixed;z-index:130;width:248px;max-width:calc(100vw - 32px);background:#fff;border:1px solid var(--rule);border-radius:12px;box-shadow:0 18px 40px rgba(9,46,60,.18);padding:10px 10px 10px 12px;color:var(--ink)}
   .ms-panel[hidden]{display:none}
   .ms-head{display:flex;align-items:center;gap:8px;padding-bottom:8px;border-bottom:1px solid var(--rule)}
@@ -1606,10 +1611,15 @@
               <path d="M13.9 2.6v3.4h-3.4"></path>
             </svg>
           </button>
-          <button class="coverage cloud-chip" id="cloud-chip" title="云端登记：点击输入口令后即可在任意设备录入交易">
+          <button class="coverage cloud-chip" id="cloud-chip" title="云端连接状态：点击可刷新；登录后可读写个人数据">
             <svg class="cloud-ico" viewBox="0 0 20 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M5.2 13.2h9.6a3.4 3.4 0 0 0 .3-6.8 5.2 5.2 0 0 0-9.9 1A3 3 0 0 0 5.2 13.2z"></path>
             </svg><span id="cloud-label">未连接</span>
+          </button>
+          <button class="coverage auth-chip" id="auth-btn" title="登录后可保存个人交易数据；数据受行级权限保护">
+            <svg class="auth-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="8" cy="5" r="2.7"></circle><path d="M2.8 13.6c.5-2.7 2.5-4.2 5.2-4.2s4.7 1.5 5.2 4.2"></path>
+            </svg><span id="auth-label">登录</span>
           </button>
           <button class="coverage" id="ms-trigger" aria-haspopup="listbox" aria-expanded="false" title="选择产品">
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -2117,6 +2127,22 @@
   </div>
 </div>
 
+<!-- 登录弹层：邮箱+密码，会话保存在本机；数据受 Supabase 行级权限保护 -->
+<div class="modal" id="modal-auth" hidden>
+  <div class="modal-card" style="width:420px">
+    <div class="modal-head"><b>登录</b><button type="button" class="x" data-close="modal-auth">×</button></div>
+    <div class="modal-body">
+      <p style="font-size:12.5px;line-height:1.7;color:var(--muted);margin:6px 0 16px">登录后可保存你的交易与手工产品数据，仅本人账号可读写。会话只保存在本机浏览器。</p>
+      <label style="display:block;font-size:12.5px;color:var(--muted);margin:0 0 5px">邮箱</label>
+      <input id="auth-email" type="email" autocomplete="username" placeholder="name@example.com" style="width:100%;font-size:16px;padding:9px 11px;border:1px solid var(--rule);border-radius:8px;margin-bottom:13px">
+      <label style="display:block;font-size:12.5px;color:var(--muted);margin:0 0 5px">密码</label>
+      <input id="auth-pass" type="password" autocomplete="current-password" placeholder="请输入密码" style="width:100%;font-size:16px;padding:9px 11px;border:1px solid var(--rule);border-radius:8px">
+      <p id="auth-err" style="display:none;font-size:12.5px;color:#b4232a;margin:12px 0 0"></p>
+    </div>
+    <div class="modal-foot"><button type="button" class="btn" data-close="modal-auth">取消</button><button type="button" class="btn primary" id="auth-submit">登录</button></div>
+  </div>
+</div>
+
 <!-- 方案E 2026-11-20：返回顶部悬浮按钮（仅手机端显示，无填充向上箭头） -->
 <button type="button" class="to-top" id="to-top" aria-label="返回顶部" title="返回顶部">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"></path></svg>
@@ -2128,10 +2154,19 @@
 <script src="./assets/data.js" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
 <script src="./assets/risk_levels.js?v=20261113c"></script>
 <script src="./assets/transactions.js"></script>
+<script>
+  /* 公开底稿已脱敏：只含 id+pid 的占位行供后台抓净值，不含 applyDate 等明细。
+     前端渲染前剔除这类行，真实交易明细由登录后从 Supabase 云端拉取。 */
+  (function () {
+    var T = window.TRANSACTIONS;
+    if (T && T.items) T.items = T.items.filter(function (t) { return !!t.applyDate; });
+  })();
+</script>
 <script src="./assets/newproducts.js"></script>
 <script src="./assets/library.js"></script>
 <script src="./assets/supabase-config.js?v=20261113c"></script>
-<script src="./assets/store.js?v=20261119" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
+<script src="./assets/auth.js?v=20261121p"></script>
+<script src="./assets/store.js?v=20261121p" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
 <script>
   /* 先用本地缓存/内置底稿立即渲染，云端数据在后台取回后再重绘，避免等待网络白屏 */
   /* 前序脚本缺失或命中旧缓存时（STORE_READY 不存在）也照常加载看板，避免页面停在空白骨架 */
@@ -2140,7 +2175,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261121o';
+      s.src = './assets/dashboard.js?v=20261121p';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();
@@ -2189,6 +2224,78 @@
     window.addEventListener('store:synced', check);
     paint('连接中…', false);
     window.STORE_READY.then(check);
+  })();
+</script>
+<script>
+  // 登录入口：点击弹登录框；已登录时点击弹出退出确认。登录后重载页面让所有请求带上令牌。
+  (function () {
+    var btn = document.getElementById('auth-btn');
+    var label = document.getElementById('auth-label');
+    var modal = document.getElementById('modal-auth');
+    var email = document.getElementById('auth-email');
+    var pass = document.getElementById('auth-pass');
+    var err = document.getElementById('auth-err');
+    var submit = document.getElementById('auth-submit');
+    if (!btn || !modal || !window.AUTH) return;
+
+    function paint() {
+      if (window.AUTH.isLogin()) {
+        var mail = window.AUTH.email() || '已登录';
+        label.textContent = mail.length > 12 ? mail.slice(0, 11) + '…' : mail;
+        btn.classList.add('on');
+        btn.title = '当前账号：' + mail + '（点击退出登录）';
+      } else {
+        label.textContent = '登录';
+        btn.classList.remove('on');
+        btn.title = '登录后可保存个人交易数据；数据受行级权限保护';
+      }
+    }
+
+    function open() {
+      err.style.display = 'none';
+      err.textContent = '';
+      modal.hidden = false;
+      if (!window.AUTH.isLogin()) { try { email.focus(); } catch (e) {} }
+    }
+    function close() { modal.hidden = true; }
+
+    btn.addEventListener('click', function () {
+      if (window.AUTH.isLogin()) {
+        if (window.confirm('确定退出登录吗？退出后将无法读写个人数据。')) {
+          window.AUTH.signOut();
+          try { window.location.reload(); } catch (e) {}
+        }
+      } else {
+        open();
+      }
+    });
+
+    Array.prototype.forEach.call(modal.querySelectorAll('[data-close]'), function (x) {
+      x.addEventListener('click', close);
+    });
+    modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
+
+    function doLogin() {
+      err.style.display = 'none';
+      submit.disabled = true;
+      submit.textContent = '登录中…';
+      window.AUTH.signIn(email.value, pass.value).then(function () {
+        close();
+        try { window.location.reload(); } catch (e) {}
+      }).catch(function (e) {
+        err.textContent = '登录失败：' + (e && e.message ? e.message : '请检查邮箱和密码');
+        err.style.display = 'block';
+        submit.disabled = false;
+        submit.textContent = '登录';
+      });
+    }
+    submit.addEventListener('click', doLogin);
+    [email, pass].forEach(function (el) {
+      el.addEventListener('keydown', function (e) { if (e.key === 'Enter') doLogin(); });
+    });
+
+    window.addEventListener('auth:ready', paint);
+    paint();
   })();
 </script>
 <script>

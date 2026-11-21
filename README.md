@@ -167,3 +167,10 @@
 ### 盈亏汇总竖屏压缩（2026-11-21 十三轮，用户要求已取消）
 - 该轮把整表 925→738px、字号 11px、`--pgut` 7→6px 以将「序号～持仓成立」压进首屏；用户随后要求**取消**，代码已完整回退到十二轮结束状态（整表 925px、列宽 26/124/52/46/50/62/52/48/56/57×5/66/58、字号 12.5px、`--pgut` 7px），资源串递增到 `v=20261121o` 强制刷新缓存。
 - 首屏仍看全「净值日期～持仓收益」；横屏 836px / 桌面 1318px 不受影响。
+
+### 隐私安全加固：登录 + RLS + 公开底稿脱敏（2026-11-21，用户定稿 A+B）
+- **A 真登录（Supabase Auth）**：新增 `assets/auth.js`（邮箱+密码，`/auth/v1/token` 官方端点，无外部依赖），会话存 `wealth3.auth.session`；`store.js` 的 `headers()` 登录后用 `Bearer <access_token>`、未登录回退 anon key（**兼容模式**：RLS 开启前站点照常读写，开启后自动受保护）。`index.html` 加登录胶囊 `#auth-btn` 与弹层 `#modal-auth`，登录后自动重载让所有请求带令牌。
+- **B 公开底稿脱敏**：`assets/transactions.js` 只留 `id`+`pid`（后台 `nav_holdings_t1.py`/`nav_rotate.py` 仅依赖 pid 抓净值），去除金额/份额/净值/日期/渠道等全部明细；明细只在受 RLS 保护的 Supabase。`daily/pull_cloud.py` 每次拉取后自动脱敏写回，`asOf` 只升不降；`index.html` 在渲染前过滤无 `applyDate` 的占位行，`store.js` 的 `renderable()` 兜底。
+- **后台读全量**：`pull_cloud.py` 优先用环境变量 `SUPABASE_SERVICE_ROLE_KEY`（GitHub Secret），未配置回退 anon（`daily-fetch.yml` 已注入 Secret 环境变量）。RLS 开启后须配置该 Secret 才能每天抓净值。
+- **待用户控制台操作**：开 Email Auth、建账号、加 `owner` 列并回填、`set default auth.uid()`、建 RLS 策略（详见工作区 `隐私安全加固方案.html`）。**RLS 开启前 anon 仍能读全量，隐私尚未生效；开启后未登录不可读写。**
+- 校验：`check_ann.py` 15 只全通过；1440/393 视口 0 JS 错误、首次渲染由云端恢复 16 笔真实交易。守卫 `a7`→`a8`，资源串 `o`→`p`。
