@@ -1595,9 +1595,64 @@
   #sum-table tbody td.shares-col,#sum-table tbody td.nav-col{white-space:nowrap;font-variant-numeric:tabular-nums}
   /* 持仓金额用浅蓝（与盈亏汇总名称下的持仓金额同一色，2026-11-21 用户要求） */
   #sum-table tbody td.mv-col{color:var(--blue-soft)}
+
+  /* ===== 全屏登录墙 2026-11-22：未登录访客只能看到登录界面，全站内容隐藏 =====
+     锁状态由 <head> 内联脚本尽早判定，避免内容闪现；登录成功 reload 后自动解锁。
+     截图流程用 window.__GATE_BYPASS__ 在内存里放行，不影响公开站。 */
+  html.gate-locked,html.gate-locked body{height:100%;overflow:hidden}
+  html.gate-locked .page,html.gate-locked .to-top{visibility:hidden}
+  #gate{display:none;position:fixed;inset:0;z-index:99999;align-items:center;justify-content:center;
+    padding:24px;background:linear-gradient(150deg,#f3f7fa 0%,#eaf1f5 60%,#e3edf2 100%)}
+  html.gate-locked #gate{display:flex}
+  #gate .gate-card{width:100%;max-width:400px;background:#fff;border-radius:18px;
+    box-shadow:0 18px 60px rgba(9,46,60,.16);padding:34px 30px 30px;text-align:center}
+  #gate .gate-mark{width:52px;height:52px;margin:0 auto 14px;border-radius:14px;
+    background:linear-gradient(140deg,#B8860B,#d9a92a);display:flex;align-items:center;justify-content:center;
+    color:#fff;font-size:26px;box-shadow:0 6px 16px rgba(184,134,11,.28)}
+  #gate h2{margin:0 0 8px;font-size:21px;color:var(--ink);letter-spacing:.5px}
+  #gate .gate-sub{margin:0 0 22px;font-size:12.5px;line-height:1.7;color:var(--muted)}
+  #gate input{width:100%;font-size:16px;padding:11px 12px;border:1px solid var(--rule);border-radius:9px;
+    margin-bottom:12px;background:#fbfdfe;color:var(--ink);outline:none}
+  #gate input:focus{border-color:var(--blue-soft);box-shadow:0 0 0 3px rgba(40,120,175,.12)}
+  #gate .gate-btn{width:100%;font-size:15px;font-weight:700;color:#fff;padding:12px;border:0;border-radius:9px;
+    background:linear-gradient(120deg,#0e6a88,#0e5a73);cursor:pointer;margin-top:4px}
+  #gate .gate-btn:disabled{opacity:.6;cursor:default}
+  #gate .gate-err{display:none;font-size:12.5px;color:#b4232a;margin:12px 0 0}
+  #gate .gate-foot{margin:18px 0 0;font-size:11px;color:var(--muted)}
 </style>
+<script>
+  /* 登录墙判定（尽早执行，早于页面内容渲染，避免闪现）：
+     无有效会话 → 给 html 加 gate-locked，全站内容隐藏、只显示登录界面。
+     会话结构与 auth.js 保持一致：access_token 未过期才算登录。
+     截图流程在导航前注入 window.__GATE_BYPASS__=true 放行（仅内存，不动公开站）。 */
+  (function () {
+    if (window.__GATE_BYPASS__) return;
+    var ok = false;
+    try {
+      var s = JSON.parse(window.localStorage.getItem('wealth3.auth.session') || 'null');
+      if (s && s.access_token) {
+        var exp = Number(s.expires_at || 0);
+        ok = !exp || (Date.now() / 1000 < exp - 60);
+      }
+    } catch (e) {}
+    if (!ok) document.documentElement.classList.add('gate-locked');
+  })();
+</script>
 </head>
 <body>
+<!-- 全屏登录墙：未登录访客只看到此界面，全站内容由 html.gate-locked 隐藏 -->
+<div id="gate" role="dialog" aria-modal="true" aria-label="登录">
+  <div class="gate-card">
+    <div class="gate-mark">¥</div>
+    <h2>理财产品每日收益看板</h2>
+    <p class="gate-sub">本看板包含个人持仓与交易数据，请使用本人账号登录后查看。</p>
+    <input id="gate-email" type="email" autocomplete="username" inputmode="email" placeholder="邮箱" aria-label="邮箱">
+    <input id="gate-pass" type="password" autocomplete="current-password" placeholder="密码" aria-label="密码">
+    <button type="button" class="gate-btn" id="gate-submit">登录</button>
+    <p class="gate-err" id="gate-err"></p>
+    <p class="gate-foot">会话仅保存在本机浏览器 · 数据受行级权限保护</p>
+  </div>
+</div>
 <div class="page">
 
   <header class="hero">
@@ -2165,8 +2220,8 @@
 <script src="./assets/newproducts.js"></script>
 <script src="./assets/library.js"></script>
 <script src="./assets/supabase-config.js?v=20261113c"></script>
-<script src="./assets/auth.js?v=20261122b"></script>
-<script src="./assets/store.js?v=20261122b" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
+<script src="./assets/auth.js?v=20261122c"></script>
+<script src="./assets/store.js?v=20261122c" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
 <script>
   /* 先用本地缓存/内置底稿立即渲染，云端数据在后台取回后再重绘，避免等待网络白屏 */
   /* 前序脚本缺失或命中旧缓存时（STORE_READY 不存在）也照常加载看板，避免页面停在空白骨架 */
@@ -2175,7 +2230,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261122b';
+      s.src = './assets/dashboard.js?v=20261122c';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();
@@ -2237,6 +2292,34 @@
     var err = document.getElementById('auth-err');
     var submit = document.getElementById('auth-submit');
     if (!btn || !modal || !window.AUTH) return;
+
+    // 登录墙：未登录时全站只显示登录界面；登录成功后解锁并重载。
+    (function () {
+      var gate = document.getElementById('gate');
+      var gEmail = document.getElementById('gate-email');
+      var gPass = document.getElementById('gate-pass');
+      var gSubmit = document.getElementById('gate-submit');
+      var gErr = document.getElementById('gate-err');
+      if (!gate || !gSubmit) return;
+      function signIn() {
+        gErr.style.display = 'none';
+        gSubmit.disabled = true;
+        gSubmit.textContent = '登录中…';
+        window.AUTH.signIn(gEmail.value, gPass.value).then(function () {
+          document.documentElement.classList.remove('gate-locked');
+          try { window.location.reload(); } catch (e) {}
+        }).catch(function (e) {
+          gErr.textContent = '登录失败：' + (e && e.message ? e.message : '请检查邮箱和密码');
+          gErr.style.display = 'block';
+          gSubmit.disabled = false;
+          gSubmit.textContent = '登录';
+        });
+      }
+      gSubmit.addEventListener('click', signIn);
+      [gEmail, gPass].forEach(function (el) {
+        el.addEventListener('keydown', function (e) { if (e.key === 'Enter') signIn(); });
+      });
+    })();
 
     function paint() {
       if (window.AUTH.isLogin()) {

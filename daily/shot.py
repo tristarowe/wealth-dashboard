@@ -115,6 +115,9 @@ def main():
                     device_scale_factor=2,
                     accept_downloads=True,
                 )
+                # 页面新增全屏登录墙：未登录会锁住全站。截图是服务端无登录流程，
+                # 这里在导航前注入放行标记（仅当前浏览器内存，公开站不受影响）。
+                desk.add_init_script("window.__GATE_BYPASS__ = true;")
                 page = desk.new_page()
                 page.goto(index)
                 page.wait_for_timeout(1500)
@@ -129,6 +132,7 @@ def main():
                     is_mobile=True,
                     has_touch=True,
                 )
+                phone.add_init_script("window.__GATE_BYPASS__ = true;")
                 mp = phone.new_page()
                 mp.goto(index)
                 mp.wait_for_timeout(1500)
