@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <link rel="icon" href="data:,">
-<title>理财产品每日收益看板</title>
+<title>银行理财每日收益看板</title>
 <style>
   :root{
     --bg:#f3f5f7; --card:#fff; --soft:#F9FFFF;
@@ -1644,7 +1644,7 @@
 <div id="gate" role="dialog" aria-modal="true" aria-label="登录">
   <div class="gate-card">
     <div class="gate-mark">¥</div>
-    <h2>理财产品每日收益看板</h2>
+    <h2>银行理财每日收益看板</h2>
     <p class="gate-sub">本看板包含个人持仓与交易数据，请使用本人账号登录后查看。</p>
     <input id="gate-email" type="email" autocomplete="username" inputmode="email" placeholder="邮箱" aria-label="邮箱">
     <input id="gate-pass" type="password" autocomplete="current-password" placeholder="密码" aria-label="密码">
@@ -1658,7 +1658,7 @@
   <header class="hero">
     <div class="hero-top">
       <div>
-        <h1>理财产品每日收益看板</h1>
+        <h1>银行理财每日收益看板</h1>
         <div class="hero-subline">
           <button type="button" class="btn update-btn icon-only" id="refresh-data" aria-label="重新抓取最新数据" title="重新抓取全部产品的最新数据，并刷新所有模块">
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -2071,7 +2071,7 @@
 
 <div class="shot-modal" id="shot-modal" hidden>
   <div class="shot-tip">长按下方图片 → 选择「存储到照片」即可保存</div>
-  <div class="shot-scroll"><img id="shot-img" alt="理财产品每日收益看板"></div>
+  <div class="shot-scroll"><img id="shot-img" alt="银行理财每日收益看板"></div>
   <button type="button" class="shot-close" id="shot-close">关闭</button>
 </div>
 
@@ -2220,8 +2220,8 @@
 <script src="./assets/newproducts.js"></script>
 <script src="./assets/library.js"></script>
 <script src="./assets/supabase-config.js?v=20261113c"></script>
-<script src="./assets/auth.js?v=20261122c"></script>
-<script src="./assets/store.js?v=20261122c" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
+<script src="./assets/auth.js?v=20261122d"></script>
+<script src="./assets/store.js?v=20261122d" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
 <script>
   /* 先用本地缓存/内置底稿立即渲染，云端数据在后台取回后再重绘，避免等待网络白屏 */
   /* 前序脚本缺失或命中旧缓存时（STORE_READY 不存在）也照常加载看板，避免页面停在空白骨架 */
@@ -2230,7 +2230,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261122c';
+      s.src = './assets/dashboard.js?v=20261122d';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();
@@ -2418,7 +2418,7 @@
       } catch (e) {
         if (location.hash !== '#' + id) location.hash = id;
       }
-      document.title = '理财产品每日收益看板 · ' + ({ hold: '首页', trade: '交易', prod: '产品' }[id] || '');
+      document.title = '银行理财每日收益看板 · ' + ({ hold: '首页', trade: '交易', prod: '产品' }[id] || '');
       window.dispatchEvent(new Event('resize'));
     }
     tabs.forEach(function (t) {
@@ -2656,7 +2656,7 @@
       if (isIOS() && showShot(dataUrl)) return;
       var a = document.createElement('a');
       a.href = dataUrl;
-      a.download = '理财产品每日收益看板_' + stamp + '.png';
+      a.download = '银行理财每日收益看板_' + stamp + '.png';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

@@ -195,7 +195,7 @@ def draw_page(doc, page_no):
     page = doc.new_page(width=PAGE_W, height=PAGE_H)
     page.insert_font(fontname="SimHei", fontfile=FONT_FILE)
     if page_no > 1:
-        page.insert_text((MARGIN, 32), "理财产品每日收益看板 · 数据说明与口径（续）", fontname="SimHei", fontsize=10, color=(0.16, 0.38, 0.46))
+        page.insert_text((MARGIN, 32), "银行理财每日收益看板 · 数据说明与口径（续）", fontname="SimHei", fontsize=10, color=(0.16, 0.38, 0.46))
     return page
 
 
@@ -211,7 +211,7 @@ def main():
     page = draw_page(doc, 1)
     y = 46
 
-    page.insert_text((MARGIN, y), "理财产品每日收益看板 · 数据说明与口径", fontname="SimHei", fontsize=TITLE_FS, color=(0.1, 0.2, 0.24))
+    page.insert_text((MARGIN, y), "银行理财每日收益看板 · 数据说明与口径", fontname="SimHei", fontsize=TITLE_FS, color=(0.1, 0.2, 0.24))
     y += 20
     sub = "数据截至 %s（T-1） · 生成日期 %s · 金额单位：人民币元" % (aof, date.today().strftime("%Y-%m-%d"))
     page.insert_text((MARGIN, y), sub, fontname="SimHei", fontsize=8.6, color=(0.42, 0.48, 0.51))
