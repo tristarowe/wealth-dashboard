@@ -67,10 +67,15 @@ def sb_get(table, params):
         return []
     name = tx_table if table == "trades" else np_table
     try:
+        # 新版 sb_secret_ / sb_publishable_ 不是 JWT，只走 apikey 头
+        # （放 Authorization: Bearer 会被当 JWT 校验而 401）。旧版 eyJ... JWT 仍需 Bearer。
+        hdr = {"apikey": key}
+        if not key.startswith("sb_"):
+            hdr["Authorization"] = "Bearer " + key
         resp = requests.get(
             f"{url}/rest/v1/{name}",
             params=params,
-            headers={"apikey": key, "Authorization": "Bearer " + key},
+            headers=hdr,
             timeout=30,
         )
         resp.raise_for_status()
