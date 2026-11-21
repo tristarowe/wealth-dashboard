@@ -1096,28 +1096,23 @@
     #hold-table thead th:nth-child(3){padding-left:2px;padding-right:2px}
     #hold-table .th-select{width:100%;max-width:100%;font-size:11px;padding:1px 0}
     #hold-table tbody td:nth-child(2){min-width:0;max-width:none}
-    /* 持仓汇总竖屏 2026-11-21 十轮（用户要求「产品名称列 178→148，余量分给其他列」）：
-       总宽 826px 不变，产品名称让出的 30px 由其余 10 列各 +3px，整表列距仍保持均匀。
-       定宽原则沿用「本列最宽数字 + 固定间距」，所有数值列同幅加宽后小数点/数字右边缘
-       仍严格共线，不受名称列收窄影响。
-       合计 148+75+56+61+56+61+75+68+49+49+128 = 826px。 */
+    /* 持仓汇总竖屏 2026-11-21 十一轮（修正：名称 140、表头 44、数据行 48）：
+       总宽 826px 不变；产品名称由 148→140，让出的 8px 由其余 10 列各 +0.8px，
+       列与列的留白仍完全一致。列宽继续按「本列最宽内容 + 固定间距」定宽，贴合内容不虚占。
+       合计 140+75.8+56.8+61.8+56.8+61.8+75.8+68.8+49.8+49.8+128.8 = 826px。 */
     #sum-table{table-layout:fixed;width:826px;min-width:826px}
     #sum-table colgroup col{width:auto !important}
-    #sum-table col:nth-child(1){width:148px !important}
-    #sum-table col:nth-child(2){width:75px !important}
-    #sum-table col:nth-child(3){width:56px !important}
-    #sum-table col:nth-child(4){width:61px !important}
-    #sum-table col:nth-child(5){width:56px !important}
-    #sum-table col:nth-child(6){width:61px !important}
-    #sum-table col:nth-child(7){width:75px !important}
-    #sum-table col:nth-child(8){width:68px !important}
-    #sum-table col:nth-child(9){width:49px !important}
-    #sum-table col:nth-child(10){width:49px !important}
-    #sum-table col:nth-child(11){width:128px !important}
-    /* 十轮：持仓汇总所有行高 −2px（表头 44→42、数据行 52→50）。
-       表头两行文字的实际高度由纵向 padding 决定，故同步 6→5；数据行内容区保持
-       50−12=38px 与原来 52−14=38px 相同，长名称两行不被裁切。 */
-    #sum-table thead th{height:36px;padding-top:5px;padding-bottom:5px}
+    #sum-table col:nth-child(1){width:140px !important}
+    #sum-table col:nth-child(2){width:75.8px !important}
+    #sum-table col:nth-child(3){width:56.8px !important}
+    #sum-table col:nth-child(4){width:61.8px !important}
+    #sum-table col:nth-child(5){width:56.8px !important}
+    #sum-table col:nth-child(6){width:61.8px !important}
+    #sum-table col:nth-child(7){width:75.8px !important}
+    #sum-table col:nth-child(8){width:68.8px !important}
+    #sum-table col:nth-child(9){width:49.8px !important}
+    #sum-table col:nth-child(10){width:49.8px !important}
+    #sum-table col:nth-child(11){width:128.8px !important}
     /* 竖屏表头单行（2026-11-21 用户要求）：除「持仓天数/成立天数」保留两行，其余一律不换行 */
     #sum-table thead th{white-space:nowrap}
     #sum-table thead th br{display:none}
@@ -1408,15 +1403,12 @@
     #hold-table thead th,#sum-table thead th,#flow-table thead th,#prod-table thead th{
       height:38px;padding-top:6px;padding-bottom:6px;line-height:1.3;box-sizing:border-box
     }
-    /* 十轮：持仓汇总表头行高 −2px（38→36 的 box、实测内容高 44→42），只作用于 sum-table */
-    #sum-table thead th{height:36px;padding-top:5px;padding-bottom:5px}
     /* 盈亏汇总（hold-table）数据行统一 30px：表头 38px 不动，只收 tbody 行高与上下 padding；
        持仓汇总/流水仍 38px，避免带按钮与双行名称的行被挤 */
     #hold-table tbody tr{height:30px}
-    /* 手机竖屏持仓汇总（sum-table）行高统一 2026-11-20：长名称换行行自然高约 52px，单行行 38px，
-       同一表里高低不一；固定 52px（略高于换行行，兼容亚像素舍入）让竖屏与横屏一样视觉均匀。
-       与下方横屏 48px 规则并存：竖屏(非landscape)取 52px，横屏取 48px。 */
-    #sum-table tbody tr{height:50px}
+    /* 手机竖屏持仓汇总（sum-table）行高 2026-11-21 十一轮修正：表头恢复 44px 不动，
+       数据行固定 48px（单行/两行名称视觉均匀；与横屏 48px 规则一致）。 */
+    #sum-table tbody tr{height:48px}
     #flow-table tbody tr:not(.flow-month){height:38px}
     #flow-table tbody tr.flow-month{height:48px}
     #flow-table tbody tr.flow-month td{padding:5px 8px;line-height:1.5}
@@ -1430,8 +1422,9 @@
        与 30px 行高严格一致 */
     #hold-table tbody td.pwin,#hold-table tbody td.awin{line-height:1.4}
     #sum-table tbody td,#flow-table tbody td{padding-top:5px;padding-bottom:5px}
-    /* 竖屏持仓汇总行高固定 50px（十轮 −2px），td 上下 padding 6px：内容区仍为 38px，两行名称垂直居中不贴边 */
-    #sum-table tbody td{padding-top:6px;padding-bottom:6px}
+    /* 竖屏持仓汇总行高 48px：td 上下 padding 5px（两行名称内容 37px + 10px = 47px，
+       兼容亚像素舍入后仍落在 48px，不会再被内容撑到 50px），名称垂直居中不贴边 */
+    #sum-table tbody td{padding-top:5px;padding-bottom:5px}
     /* 持仓汇总操作按钮贴合文字 2026-11-20：与流水/产品库同款 2px 6px + line-height 1.2
        （原 4px 9px / normal 实测 44×26px，过宽过高；改后约 36×18px） */
     #sum-table tbody td:last-child .mini{padding:1px 5px;line-height:1.2}
@@ -1448,8 +1441,8 @@
      同一表里高低不一；这里把所有行固定到同一高度 48px（略高于换行行，兼容亚像素舍入），视觉均匀。
      放在竖屏 max-width:760 规则之后，故横屏 761–968 与 ≤760 两种宽度都生效。 */
   @media (orientation:landscape) and (max-height:520px){
-    #sum-table tbody tr{height:46px}
-    #sum-table tbody td{padding-top:5px;padding-bottom:5px}
+    #sum-table tbody tr{height:48px}
+    #sum-table tbody td{padding-top:6px;padding-bottom:6px}
   }
 
   /* ===== 数值单元格右对齐 2026-11-20（恢复 21:00 那版口径；表头保持原样：居中/名称左对齐） =====
@@ -2137,7 +2130,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261121k';
+      s.src = './assets/dashboard.js?v=20261121l';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();
