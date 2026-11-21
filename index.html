@@ -1097,23 +1097,27 @@
     #hold-table .th-select{width:100%;max-width:100%;font-size:11px;padding:1px 0}
     #hold-table tbody td:nth-child(2){min-width:0;max-width:none}
     /* 持仓汇总竖屏 2026-11-21 九轮（用户要求「三列间距不均匀，多余空间匀给产品名称列」）：
-       数据列不再一律 72px，改为「本列最宽内容 + 8px 内距」——最宽值 26,000.00 ≈62px、
-       表头四字 ≈48px，故金额/份额 72、净值日期/收益/年化/累计 58、产品净值 64；
-       这样相邻数字的视觉间距≈10px 且处处相等，省下的 62px 全部给产品名称（112→174，
-       约 13 字/行，常见产品名一行放得下）。合计 174+72+58×4+72+64+46+46+120 = 826px。 */
+       定宽原则＝「本列最宽数字 + 10px」，这样右对齐后每个数字与右侧相邻数字的
+       空白恒为 10px，不再忽宽忽窄。实测最宽内容：金额/份额 26,062.40=62、产品净值
+       1.002300=55、持仓收益 +192.73=48、累计收益 48、持仓年化 +13.56%=47、净值日期
+       11-19+滞后角标=43、天数 115天=36、操作三按钮=115。
+       表头四字 49px + 左右各 2px = 53 为下限，故净值日期/年化取 53 并把这两列表头
+       内边距收到 2px（其余列仍 4px），两列的数字间距也因此回到 10px。
+       产品名称列吃掉全部余量 170px（约 13 字/行，最长名称 162px 一行放得下）。
+       合计 178+72+53+58+53+58+72+65+46+46+125 = 826px。 */
     #sum-table{table-layout:fixed;width:826px;min-width:826px}
     #sum-table colgroup col{width:auto !important}
-    #sum-table col:nth-child(1){width:174px !important}
+    #sum-table col:nth-child(1){width:178px !important}
     #sum-table col:nth-child(2){width:72px !important}
-    #sum-table col:nth-child(3){width:58px !important}
+    #sum-table col:nth-child(3){width:53px !important}
     #sum-table col:nth-child(4){width:58px !important}
-    #sum-table col:nth-child(5){width:58px !important}
+    #sum-table col:nth-child(5){width:53px !important}
     #sum-table col:nth-child(6){width:58px !important}
     #sum-table col:nth-child(7){width:72px !important}
-    #sum-table col:nth-child(8){width:64px !important}
+    #sum-table col:nth-child(8){width:65px !important}
     #sum-table col:nth-child(9){width:46px !important}
     #sum-table col:nth-child(10){width:46px !important}
-    #sum-table col:nth-child(11){width:120px !important}
+    #sum-table col:nth-child(11){width:125px !important}
     /* 竖屏表头单行（2026-11-21 用户要求）：除「持仓天数/成立天数」保留两行，其余一律不换行 */
     #sum-table thead th{white-space:nowrap}
     #sum-table thead th br{display:none}
@@ -1121,6 +1125,9 @@
     /* 统一列间距：所有列左右各 4px，首列左内边距 8px 与卡片边距对齐 */
     #sum-table thead th,#sum-table tbody td{padding:8px 4px}
     #sum-table thead th:first-child,#sum-table tbody td:first-child{padding-left:8px;padding-right:4px}
+    /* 净值日期(3) / 持仓年化(5)：列宽受四字表头下限约束，表头内边距收到 2px 才能把
+       数字间距压回与其余列一致的 10px（2026-11-21 九轮） */
+    #sum-table thead th:nth-child(3),#sum-table thead th:nth-child(5){padding-left:2px;padding-right:2px}
     #sum-table tbody td:nth-child(1){min-width:0;max-width:none}
     /* 名称列收窄到 120px（约 9 字/行）后，代销渠道等副行不再撑宽单元格 */
     #sum-table tbody td:nth-child(1) .pname{white-space:normal;word-break:break-word;overflow-wrap:anywhere}

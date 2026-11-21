@@ -1,7 +1,7 @@
 {
   "_doc": "跨端代码守卫共用标记清单 —— 唯一权威来源。WorkBuddy 的 .githooks/pre-push 与 Trae 的 tools/sync_pages.py 都必须读取本文件，禁止在脚本里硬编码标记列表。新增功能后在此登记，两端自动生效。",
   "_maintainer": "任何一端修改本文件后，需在提交信息中说明原因；改动会同时影响两端的推送守卫。",
-  "version": "2026-11-21a1",
+  "version": "2026-11-21a2",
   "protected": {
     "_doc": "受『整批中止』保护的文件：远端内容被他人改过时，整批拒绝推送，必须先 pull 合并。markers 为该文件必须包含的字符串，缺失即判定为旧版/被回退，整批拒推。",
     "index.html": [
@@ -250,10 +250,11 @@
       "#hold-table col:nth-child(7){width:52px !important}",
       "#hold-table col:nth-child(14){width:57px !important}",
       "#sum-table{table-layout:fixed;width:826px",
-      "#sum-table col:nth-child(2){width:72px !important}",
+      "#sum-table col:nth-child(3){width:53px !important}",
+      "#sum-table col:nth-child(5){width:53px !important}",
       "#sum-table tbody td.shares-col",
-      "#sum-table col:nth-child(11){width:120px !important}",
-      "#sum-table col:nth-child(1){width:174px !important}",
+      "#sum-table col:nth-child(11){width:125px !important}",
+      "#sum-table col:nth-child(1){width:178px !important}",
       "#sum-table tbody td:nth-child(1){min-width:0;max-width:none}",
       "#sum-table thead th,#flow-table thead th,#prod-table thead th{white-space:nowrap}",
       "#sum-table thead th br,#flow-table thead th br,#prod-table thead th br{display:none}",
@@ -269,6 +270,7 @@
       "风险等级改名风险",
       "持仓汇总竖屏 2026-11-21 九轮",
       "三列间距不均匀，多余空间匀给产品名称列",
+      "#sum-table thead th:nth-child(3),#sum-table thead th:nth-child(5){padding-left:2px;padding-right:2px}",
       "#flow-table{table-layout:fixed;width:704px",
       ".thumb-under svg{width:12px;height:12px;display:inline-block",
       ".np-org-btn{display:none;margin-left:auto",
