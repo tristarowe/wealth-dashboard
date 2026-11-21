@@ -135,7 +135,7 @@
   .pname .pn-row>.plink{display:inline;min-width:0}
   /* 末字 + 角标同组、禁止内部换行：角标永远紧跟名称最后一个字 */
   .pname .pn-row>.pn-last{white-space:nowrap}
-  .pname .pn-row>.thumb-under{margin-left:2px;vertical-align:-1px}
+  .pname .pn-row>.thumb-under{margin-left:2px;vertical-align:1px}
   .pname .salech{display:block;font-size:10.5px;line-height:1.5;color:var(--muted);font-weight:400;letter-spacing:0;margin-top:1px}
   .pname .mv-under{display:block;font-size:10.5px;line-height:1.5;color:var(--blue-soft);font-weight:400;letter-spacing:0;margin-top:1px;font-family:var(--mono)}
   .plink{color:inherit;text-decoration:none;border-bottom:1px dashed #b9ccd4;cursor:pointer}
@@ -756,9 +756,11 @@
 
   .tabpane[hidden]{display:none}
   /* 手势角标 2026-11-21 四轮：改为内联 SVG（颜色写死在 CSS，跨端/导出图片一致）。
-     向上=品牌金 #d9a02a；向下=深灰 #4d5964（用户要求，电脑端不再变黄、手机端也更沉）。 */
-  .thumb-under{display:inline-block;font-size:11px;line-height:1;margin-left:4px;vertical-align:middle;color:#d9a02a}
-  .thumb-under svg{width:12px;height:12px;display:block}
+     向上=品牌金 #d9a02a；向下=深灰 #4d5964（用户要求，电脑端不再变黄、手机端也更沉）。
+     2026-11-21 九轮：svg 由 display:block 改回 inline-block —— 块级 svg 会在 span 里
+     另起一行，把角标撑成 23px 高、视觉上掉到名称基线下方；改行内后与文字同一水平线。 */
+  .thumb-under{display:inline-block;font-size:11px;line-height:1;margin-left:4px;vertical-align:1px;color:#d9a02a}
+  .thumb-under svg{width:12px;height:12px;display:inline-block;vertical-align:-2px}
   .thumb-under.thumb-down,
   .thumb.thumb-down{color:#4d5964;opacity:1;filter:none}
   .thumb{color:#d9a02a}
@@ -1094,25 +1096,24 @@
     #hold-table thead th:nth-child(3){padding-left:2px;padding-right:2px}
     #hold-table .th-select{width:100%;max-width:100%;font-size:11px;padding:1px 0}
     #hold-table tbody td:nth-child(2){min-width:0;max-width:none}
-    /* 持仓汇总竖屏 2026-11-21 五轮／八轮（用户要求「净值日期～持仓份额列宽列距统一」，
-       八轮再把产品净值单独成列、放持仓份额右侧）：
-       「产品名称｜持仓金额｜净值日期｜持仓收益｜持仓年化｜累计收益｜持仓份额｜产品净值｜
-       持仓天数｜成立天数｜操作」。数据列（第2~8列）一律 72px 等宽、左右内边距统一 4px，
-       列与列之间视觉间距完全一致；合计 112+72×7+46+46+118 = 826px。
-       操作 118（三个按钮不折行）；天数两列 46（四字表头仍可两行）。 */
+    /* 持仓汇总竖屏 2026-11-21 九轮（用户要求「三列间距不均匀，多余空间匀给产品名称列」）：
+       数据列不再一律 72px，改为「本列最宽内容 + 8px 内距」——最宽值 26,000.00 ≈62px、
+       表头四字 ≈48px，故金额/份额 72、净值日期/收益/年化/累计 58、产品净值 64；
+       这样相邻数字的视觉间距≈10px 且处处相等，省下的 62px 全部给产品名称（112→174，
+       约 13 字/行，常见产品名一行放得下）。合计 174+72+58×4+72+64+46+46+120 = 826px。 */
     #sum-table{table-layout:fixed;width:826px;min-width:826px}
     #sum-table colgroup col{width:auto !important}
-    #sum-table col:nth-child(1){width:112px !important}
+    #sum-table col:nth-child(1){width:174px !important}
     #sum-table col:nth-child(2){width:72px !important}
-    #sum-table col:nth-child(3){width:72px !important}
-    #sum-table col:nth-child(4){width:72px !important}
-    #sum-table col:nth-child(5){width:72px !important}
-    #sum-table col:nth-child(6){width:72px !important}
+    #sum-table col:nth-child(3){width:58px !important}
+    #sum-table col:nth-child(4){width:58px !important}
+    #sum-table col:nth-child(5){width:58px !important}
+    #sum-table col:nth-child(6){width:58px !important}
     #sum-table col:nth-child(7){width:72px !important}
-    #sum-table col:nth-child(8){width:72px !important}
+    #sum-table col:nth-child(8){width:64px !important}
     #sum-table col:nth-child(9){width:46px !important}
     #sum-table col:nth-child(10){width:46px !important}
-    #sum-table col:nth-child(11){width:118px !important}
+    #sum-table col:nth-child(11){width:120px !important}
     /* 竖屏表头单行（2026-11-21 用户要求）：除「持仓天数/成立天数」保留两行，其余一律不换行 */
     #sum-table thead th{white-space:nowrap}
     #sum-table thead th br{display:none}
@@ -1123,6 +1124,22 @@
     #sum-table tbody td:nth-child(1){min-width:0;max-width:none}
     /* 名称列收窄到 120px（约 9 字/行）后，代销渠道等副行不再撑宽单元格 */
     #sum-table tbody td:nth-child(1) .pname{white-space:normal;word-break:break-word;overflow-wrap:anywhere}
+    /* 交易流水竖屏 2026-11-21 九轮（用户要求「流水明细过宽，尽量压进 2 屏」）：
+       按每列最宽内容定宽——交易日期 2026-11-19 = 69px、长产品名 132px、确认份额 62px、
+       操作按钮 76px…，整表 704px ≈ 1.9 屏（原来 min-width:900px ≈ 2.45 屏），
+       横滑两次即可看全；表头筛选下拉仍按文字宽度收缩，不撑列。 */
+    #flow-table{table-layout:fixed;width:704px;min-width:704px}
+    #flow-table colgroup col{width:auto !important}
+    #flow-table col:nth-child(1){width:24px !important}
+    #flow-table col:nth-child(2){width:78px !important}
+    #flow-table col:nth-child(3){width:142px !important}
+    #flow-table col:nth-child(4){width:46px !important}
+    #flow-table col:nth-child(5){width:70px !important}
+    #flow-table col:nth-child(6){width:62px !important}
+    #flow-table col:nth-child(7){width:70px !important}
+    #flow-table col:nth-child(8){width:76px !important}
+    #flow-table col:nth-child(9){width:52px !important}
+    #flow-table col:nth-child(10){width:84px !important}
     /* 自适应列宽下产品名会把表头筛选下拉挤扁：按钮按文字宽度显示，列保留最小可读宽度 */
     #flow-table .th-select{width:auto;min-width:0;font-size:11px}
     #flow-table thead th:nth-child(4),#flow-table thead th:nth-child(9){min-width:56px}
@@ -2107,7 +2124,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261121i';
+      s.src = './assets/dashboard.js?v=20261121j';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();

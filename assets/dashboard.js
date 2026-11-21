@@ -2337,6 +2337,10 @@
     var width = trendChart.getWidth();
     var height = trendChart.getHeight();
     if (!isFinite(axisBottom) || !isFinite(axisTop) || !width || !height) return;
+    /* 2026-11-21 九轮：标注定位改为「稠密曲线采样 + 多方位候选 + 固定优先级」。
+       旧版把相邻点连成直线、每段只采样 10 次判碰撞，而趋势线是 smooth 0.45 的曲线，
+       最低点两侧曲线会明显拱出直线，于是标注看似压住趋势线；候选顺序固定且全部
+       失败时直接回落 top，标注还会在上方/侧面之间来回跳。 */
     var boxW = 58, boxH = 30, gap = 8;
     var pts = [];
     for (var i = 0; i < series.length; i++) {
@@ -2344,19 +2348,61 @@
       var pt = trendChart.convertToPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [dates[i], series[i]]);
       if (pt) pts.push(pt);
     }
-    function hit(x0, y0, x1, y1) {
-      for (var j = 0; j < pts.length - 1; j++) {
-        var a = pts[j], b = pts[j + 1];
-        for (var s = 0; s <= 10; s++) {
-          var x = a[0] + (b[0] - a[0]) * s / 10;
-          var y = a[1] + (b[1] - a[1]) * s / 10;
-          if (x >= x0 && x <= x1 && y >= y0 && y <= y1) return true;
+    /* 用 Catmull-Rom 稠密采样逼近 ECharts 的平滑曲线（每段 8 个采样点，两端补端点切线） */
+    var curve = [];
+    if (pts.length === 1) curve.push(pts[0]);
+    else if (pts.length > 1) {
+      var cpad = [pts[0]].concat(pts, [pts[pts.length - 1]]);
+      for (var ci = 1; ci < cpad.length - 2; ci++) {
+        var q0 = cpad[ci - 1], q1 = cpad[ci], q2 = cpad[ci + 1], q3 = cpad[ci + 2];
+        for (var si = 0; si < 8; si++) {
+          var t = si / 8, t2 = t * t, t3 = t2 * t;
+          curve.push([
+            0.5 * (2 * q1[0] + (-q0[0] + q2[0]) * t + (2 * q0[0] - 5 * q1[0] + 4 * q2[0] - q3[0]) * t2 + (-q0[0] + 3 * q1[0] - 3 * q2[0] + q3[0]) * t3),
+            0.5 * (2 * q1[1] + (-q0[1] + q2[1]) * t + (2 * q0[1] - 5 * q1[1] + 4 * q2[1] - q3[1]) * t2 + (-q0[1] + 3 * q1[1] - 3 * q2[1] + q3[1]) * t3)
+          ]);
         }
+      }
+      curve.push(pts[pts.length - 1]);
+    }
+    var margin = 4; /* 标注框四周再留 4px，曲线擦边也不算「没压住」 */
+    function hit(x0, y0, x1, y1) {
+      for (var j = 0; j < curve.length; j++) {
+        var p = curve[j];
+        if (p[0] >= x0 - margin && p[0] <= x1 + margin && p[1] >= y0 - margin && p[1] <= y1 + margin) return true;
       }
       return false;
     }
     function clash(a, b) {
       return !(a[2] < b[0] || a[0] > b[2] || a[3] < b[1] || a[1] > b[3]);
+    }
+    /* 候选方位：最低点优先「正下方」（谷底下方天然是空白），最高点优先正上方；
+       侧面再分「中 / 上 / 下」三档，给陡峭曲线留出逃生位。 */
+    var ORDER_BOTTOM = ['bottom', 'bRight', 'bLeft', 'right', 'left', 'top'];
+    var ORDER_TOP = ['top', 'tRight', 'tLeft', 'right', 'left', 'bottom'];
+    function boxFor(c, pos) {
+      var cx = c[0], cy = c[1], hw = boxW / 2, hh = boxH / 2;
+      if (pos === 'top') return [cx - hw, cy - gap - boxH, cx + hw, cy - gap];
+      if (pos === 'bottom') return [cx - hw, cy + gap, cx + hw, cy + gap + boxH];
+      if (pos === 'right') return [cx + gap, cy - hh, cx + gap + boxW, cy + hh];
+      if (pos === 'left') return [cx - gap - boxW, cy - hh, cx - gap, cy + hh];
+      if (pos === 'tRight') return [cx + gap, cy - gap - boxH, cx + gap + boxW, cy - gap];
+      if (pos === 'tLeft') return [cx - gap - boxW, cy - gap - boxH, cx - gap, cy - gap];
+      if (pos === 'bRight') return [cx + gap, cy + gap, cx + gap + boxW, cy + gap + boxH];
+      if (pos === 'bLeft') return [cx - gap - boxW, cy + gap, cx - gap, cy + gap + boxH];
+      return null;
+    }
+    function slotOf(pos) {
+      if (pos === 'top') return { p: 'top', ox: 0, oy: -gap, va: 'bottom' };
+      if (pos === 'bottom') return { p: 'bottom', ox: 0, oy: gap, va: 'top' };
+      if (pos === 'right') return { p: 'right', ox: gap, oy: 0, va: 'middle' };
+      if (pos === 'left') return { p: 'left', ox: -gap, oy: 0, va: 'middle' };
+      var hh = boxH / 2;
+      if (pos === 'tRight') return { p: 'right', ox: gap, oy: -(gap + hh), va: 'middle' };
+      if (pos === 'tLeft') return { p: 'left', ox: -gap, oy: -(gap + hh), va: 'middle' };
+      if (pos === 'bRight') return { p: 'right', ox: gap, oy: gap + hh, va: 'middle' };
+      if (pos === 'bLeft') return { p: 'left', ox: -gap, oy: gap + hh, va: 'middle' };
+      return { p: 'top', ox: 0, oy: -gap, va: 'bottom' };
     }
     var placed = [];
     var dashSpecs = [];
@@ -2368,19 +2414,15 @@
     marks.forEach(function (mk, mi) {
       var c = trendChart.convertToPixel({ xAxisIndex: 0, yAxisIndex: 0 }, mk.coord);
       if (!c) return;
-      var cands = [
-        { pos: 'top', box: [c[0] - boxW / 2, c[1] - gap - boxH, c[0] + boxW / 2, c[1] - gap] },
-        { pos: 'bottom', box: [c[0] - boxW / 2, c[1] + gap, c[0] + boxW / 2, c[1] + gap + boxH] },
-        { pos: 'right', box: [c[0] + gap, c[1] - boxH / 2, c[0] + gap + boxW, c[1] + boxH / 2] },
-        { pos: 'left', box: [c[0] - gap - boxW, c[1] - boxH / 2, c[0] - gap, c[1] + boxH / 2] }
-      ];
+      /* 偏好由颜色推出：绿=最低点走「正下方」，金/红=最高点与最新点走「正上方」，
+         顺序固定 → 同一份数据每次渲染结果完全一致，不会来回跳 */
+      var prefs = (mk.itemStyle && mk.itemStyle.color === '#1e8449') ? ORDER_BOTTOM : ORDER_TOP;
       var pick = null, offX = 0, box = null;
-      for (var j = 0; j < cands.length; j++) {
-        var cand = cands[j];
-        var b = cand.box.slice(0);
+      for (var j = 0; j < prefs.length; j++) {
+        var b = boxFor(c, prefs[j]).slice(0);
         var dx = 0;
         // 水平兜底收边：标注靠左右边缘时平移回画布内，避免文字溢出被裁切
-        if (cand.pos === 'top' || cand.pos === 'bottom') {
+        if (prefs[j] === 'top' || prefs[j] === 'bottom') {
           if (b[0] < 2 || b[2] > width - 2) {
             if (b[0] < 2 && b[2] > width - 2) dx = (2 - b[0] + (width - 2 - b[2])) / 2;
             else dx = b[0] < 2 ? 2 - b[0] : width - 2 - b[2];
@@ -2399,18 +2441,28 @@
         }
         for (var q = 0; !blocked && q < placed.length; q++) { if (clash(b, placed[q])) { blocked = true; break; } }
         if (blocked) continue;
-        pick = cand; offX = dx; box = b;
+        pick = prefs[j]; offX = dx; box = b;
         break;
       }
-      if (!pick) { pick = cands[0]; offX = 0; box = cands[0].box; }
+      if (!pick) {
+        /* 极端情况（点贴着右上角或谷底紧贴横轴）：退回偏好首位并夹进画布，
+           不再随机换方位 */
+        var fb = boxFor(c, prefs[0]).slice(0);
+        if (fb[3] > axisBottom - 2) {
+          var shift = fb[3] - (axisBottom - 2);
+          fb[1] -= shift; fb[3] -= shift;
+        }
+        if (fb[2] > width - 2) { var sx = fb[2] - (width - 2); fb[0] -= sx; fb[2] -= sx; }
+        if (fb[0] < 2) { var sx2 = 2 - fb[0]; fb[0] += sx2; fb[2] += sx2; }
+        pick = prefs[0]; offX = 0; box = fb;
+      }
       placed.push(box);
-      mk.label.position = pick.pos;
-      mk.label.offset = pick.pos === 'top' ? [offX, -gap] : pick.pos === 'bottom' ? [offX, gap] :
-        pick.pos === 'right' ? [gap, 0] : [-gap, 0];
-      var va = pick.pos === 'top' ? 'bottom' : (pick.pos === 'bottom' ? 'top' : 'middle');
-      mk.label.rich.v.verticalAlign = va;
-      mk.label.rich.a.verticalAlign = va;
-      dashSpecs.push({ date: mk.coord[0], value: mk.coord[1], color: mk.itemStyle.color, pos: pick.pos, box: box });
+      var sl = slotOf(pick);
+      mk.label.position = sl.p;
+      mk.label.offset = [sl.ox + offX, sl.oy];
+      mk.label.rich.v.verticalAlign = sl.va;
+      mk.label.rich.a.verticalAlign = sl.va;
+      dashSpecs.push({ date: mk.coord[0], value: mk.coord[1], color: mk.itemStyle.color, pos: pick, box: box });
     });
     // 竖向虚线仅连接「最低点/最高点/最新点」到横轴，不再向上穿过数据点顶部
     var toVal = function (py) {
@@ -2422,7 +2474,8 @@
     dashSpecs.forEach(function (o) {
       var c = dashColors[o.color] || 'rgba(192,57,43,.4)';
       // 标注在点下方时，线从标注下沿起画，避免穿过标签
-      var y0 = o.pos === 'bottom' ? Math.max(yMin, toVal(o.box[3])) : o.value;
+      /* 标注落在点下方（bottom / bRight / bLeft）时，虚线从标注下沿起画，避免穿过标签 */
+      var y0 = o.pos.charAt(0) === 'b' ? Math.max(yMin, toVal(o.box[3])) : o.value;
       var y1 = yMin;
       if (y0 - y1 <= 0) return;
       lineData.push([
