@@ -1,6 +1,6 @@
 {
   "asOf": "2026-11-21",
-  "fetchedAt": "2026-11-21 02:41",
+  "fetchedAt": "2026-11-21 00:15",
   "source": "六大行及股份制银行新品公告 · 销售文件要素表",
   "window": {
     "start": "2026-11-21",
@@ -109,7 +109,7 @@
     }
   ],
   "stats": {
-    "notices": 32,
+    "notices": 53,
     "candidates": 6,
     "kept": 3,
     "dropped": 3,

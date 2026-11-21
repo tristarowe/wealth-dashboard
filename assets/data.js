@@ -1,6 +1,6 @@
 window.REPORT_DATA = {
-  "asOf": "2026-11-20",
-  "fetchedAt": "2026-11-20 22:39",
+  "asOf": "2026-11-21",
+  "fetchedAt": "2026-11-21 08:07",
   "products": [
     {
       "id": "p2150",
@@ -77,7 +77,7 @@ window.REPORT_DATA = {
       "regCode": "Z7000726000157",
       "shareCode": "",
       "inception": "2026-03-03",
-      "latestDate": "2026-11-19",
+      "latestDate": "2026-11-20",
       "officialAnnual": null,
       "officialAsOf": null,
       "dates": [
@@ -342,7 +342,8 @@ window.REPORT_DATA = {
         "2026-11-16",
         "2026-11-17",
         "2026-11-18",
-        "2026-11-19"
+        "2026-11-19",
+        "2026-11-20"
       ],
       "nav": [
         1.0,
@@ -606,7 +607,8 @@ window.REPORT_DATA = {
         1.021967,
         1.022572,
         1.022609,
-        1.022671
+        1.022671,
+        1.022715
       ],
       "per10k": [
         null,
@@ -870,10 +872,11 @@ window.REPORT_DATA = {
         -1.91,
         6.05,
         0.37,
-        0.62
+        0.62,
+        0.44
       ],
       "sourceName": "建设银行代销净值",
-      "latestNav": 1.022671
+      "latestNav": 1.022715
     },
     {
       "id": "p2218",
@@ -1077,7 +1080,7 @@ window.REPORT_DATA = {
       "regCode": "Z7001926001090",
       "shareCode": "2601NB045A",
       "inception": "2026-08-26",
-      "latestDate": "2026-11-18",
+      "latestDate": "2026-11-19",
       "officialAnnual": null,
       "officialAsOf": null,
       "dates": [
@@ -1137,7 +1140,8 @@ window.REPORT_DATA = {
         "2026-11-13",
         "2026-11-16",
         "2026-11-17",
-        "2026-11-18"
+        "2026-11-18",
+        "2026-11-19"
       ],
       "nav": [
         1.0,
@@ -1196,7 +1200,8 @@ window.REPORT_DATA = {
         1.0035,
         1.0027,
         1.0023,
-        1.0023
+        1.0023,
+        1.0024
       ],
       "per10k": [
         null,
@@ -1255,7 +1260,8 @@ window.REPORT_DATA = {
         -7.0,
         -8.0,
         -4.0,
-        0.0
+        0.0,
+        1.0
       ],
       "sourceName": "中国理财网"
     }
