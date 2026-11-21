@@ -728,6 +728,9 @@
   .coverage:hover{border-color:var(--accent)}
   .coverage svg{width:12px;height:12px;flex:none}
   .coverage svg.cv-caret{width:9px;height:8px;opacity:.65;margin-left:1px}
+  /* 状态胶囊的 ✓ 用矢量勾（不依赖字体回退，勾形完整、长短臂均衡） */
+  .coverage .chk{display:inline-flex;align-items:center;justify-content:center;line-height:1}
+  .coverage .chk svg{width:13px;height:13px;display:block}
   .cloud-chip{gap:4px}
   .cloud-chip .cloud-ico{width:14px;height:14px;flex:none;color:#a9bac3}
   .cloud-chip.on{color:#1c7a5e;border-color:#bfe3d8;background:#f2fbf7}
@@ -2284,11 +2287,13 @@
     var label = document.getElementById('cloud-label');
     if (!chip || !window.STORE) return;
 
-    /* 已连接时胶囊内只显示 ✓（标题保留完整状态，hover 可看）；
+    /* 已连接时胶囊内只显示 ✓（矢量勾，标题保留完整状态，hover 可看）；
        连接中/未连接/降级等异常态仍显示文字，避免误判为正常。 */
+    var CHECK = '<span class="chk" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor"' +
+      ' stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.4 8.4 6.2 12.2 13.6 3.7"></path></svg></span>';
     function paint(txt, on) {
       var ok = (txt === '已连接');
-      label.textContent = ok ? '✓' : txt;
+      if (ok) label.innerHTML = CHECK; else label.textContent = txt;
       chip.classList.toggle('on', !!on);
       chip.title = '云端状态：' + (ok ? '已连接' : txt) + '（点击可刷新；登录后可读写个人数据）';
     }
@@ -2348,10 +2353,12 @@
       });
     })();
 
+    var CHECK = '<span class="chk" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor"' +
+      ' stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.4 8.4 6.2 12.2 13.6 3.7"></path></svg></span>';
     function paint() {
       if (window.AUTH.isLogin()) {
-        /* 已登录：胶囊内只显示 ✓，完整说明放 title（hover / 读屏可见） */
-        label.textContent = '✓';
+        /* 已登录：胶囊内只显示 ✓（矢量勾），完整说明放 title（hover / 读屏可见） */
+        label.innerHTML = CHECK;
         btn.classList.add('on');
         btn.title = '已登录（点击退出登录）';
       } else {
