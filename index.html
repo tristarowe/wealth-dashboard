@@ -1096,23 +1096,25 @@
     #hold-table thead th:nth-child(3){padding-left:2px;padding-right:2px}
     #hold-table .th-select{width:100%;max-width:100%;font-size:11px;padding:1px 0}
     #hold-table tbody td:nth-child(2){min-width:0;max-width:none}
-    /* 持仓汇总竖屏 2026-11-21 十一轮（修正：名称 140、表头 44、数据行 48）：
-       总宽 826px 不变；产品名称由 148→140，让出的 8px 由其余 10 列各 +0.8px，
-       列与列的留白仍完全一致。列宽继续按「本列最宽内容 + 固定间距」定宽，贴合内容不虚占。
-       合计 140+75.8+56.8+61.8+56.8+61.8+75.8+68.8+49.8+49.8+128.8 = 826px。 */
-    #sum-table{table-layout:fixed;width:826px;min-width:826px}
+    /* 持仓汇总竖屏 2026-11-21 十二轮（用户要求「整表列宽均匀压缩一点点，首屏看到产品名称～持仓年化」）：
+       393 视口内容宽 367px，原前 5 列 391.2px 超出 24.2px。整表每列同步小幅收窄，
+       产品名称列因最宽多让一点（140→126），其余 10 列按同一比例收 1.8~4px，
+       列间留白仍完全一致（左右 padding 4px 不变），表头文字仍单行不裁切。
+       前 5 列 126+71+53+59+57 = 366px ≤ 367px，首屏完整看到「产品名称～持仓年化」。
+       合计 126+71+53+59+57+60+74+67+48+48+127 = 790px。 */
+    #sum-table{table-layout:fixed;width:790px;min-width:790px}
     #sum-table colgroup col{width:auto !important}
-    #sum-table col:nth-child(1){width:140px !important}
-    #sum-table col:nth-child(2){width:75.8px !important}
-    #sum-table col:nth-child(3){width:56.8px !important}
-    #sum-table col:nth-child(4){width:61.8px !important}
-    #sum-table col:nth-child(5){width:56.8px !important}
-    #sum-table col:nth-child(6){width:61.8px !important}
-    #sum-table col:nth-child(7){width:75.8px !important}
-    #sum-table col:nth-child(8){width:68.8px !important}
-    #sum-table col:nth-child(9){width:49.8px !important}
-    #sum-table col:nth-child(10){width:49.8px !important}
-    #sum-table col:nth-child(11){width:128.8px !important}
+    #sum-table col:nth-child(1){width:126px !important}
+    #sum-table col:nth-child(2){width:71px !important}
+    #sum-table col:nth-child(3){width:53px !important}
+    #sum-table col:nth-child(4){width:59px !important}
+    #sum-table col:nth-child(5){width:57px !important}
+    #sum-table col:nth-child(6){width:60px !important}
+    #sum-table col:nth-child(7){width:74px !important}
+    #sum-table col:nth-child(8){width:67px !important}
+    #sum-table col:nth-child(9){width:48px !important}
+    #sum-table col:nth-child(10){width:48px !important}
+    #sum-table col:nth-child(11){width:127px !important}
     /* 竖屏表头单行（2026-11-21 用户要求）：除「持仓天数/成立天数」保留两行，其余一律不换行 */
     #sum-table thead th{white-space:nowrap}
     #sum-table thead th br{display:none}
@@ -1395,6 +1397,14 @@
     .cal-sum b{font-size:10px}
     .cal-sum .lead b{font-size:11px}
     .hero-actions{grid-template-columns:1fr}
+    /* 360 极窄屏内容宽 334px：表格字号降一档到既有阶梯 11px（不新增 0.5px 档），
+       再压缩前 5 列使 100+68+51+55+55 = 329px ≤ 334px；名称仍两行、行高维持 48px。 */
+    #sum-table{width:753px;min-width:753px;font-size:11px}
+    #sum-table col:nth-child(1){width:100px !important}
+    #sum-table col:nth-child(2){width:68px !important}
+    #sum-table col:nth-child(3){width:51px !important}
+    #sum-table col:nth-child(4){width:55px !important}
+    #sum-table col:nth-child(5){width:55px !important}
   }
   /* 审核稿 A4：手机表头统一 38px；数据行改「基准 44px / 双行 56px」两档
      方案C 2026-11-20：不缩字号/千分位/列宽，仅收紧行高与纵向 padding——
@@ -2130,7 +2140,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261121l';
+      s.src = './assets/dashboard.js?v=20261121m';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();
