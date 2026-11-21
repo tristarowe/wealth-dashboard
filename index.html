@@ -2264,7 +2264,7 @@
       // 隐私小眼睛：dashboard.js 就绪后再加载，才能包装 DASHBOARD_REFRESH 并在渲染后套用打码
       if (!window.PRIVACY) {
         var pv = document.createElement('script');
-        pv.src = './assets/privacy.js?v=20261122f';
+        pv.src = './assets/privacy.js?v=20261122g';
         document.body.appendChild(pv);
       }
       if (!window.STORE_REFRESH || typeof window.STORE_REFRESH.then !== 'function') return;
@@ -2284,9 +2284,13 @@
     var label = document.getElementById('cloud-label');
     if (!chip || !window.STORE) return;
 
+    /* 已连接时胶囊内只显示 ✓（标题保留完整状态，hover 可看）；
+       连接中/未连接/降级等异常态仍显示文字，避免误判为正常。 */
     function paint(txt, on) {
-      label.textContent = txt;
+      var ok = (txt === '已连接');
+      label.textContent = ok ? '✓' : txt;
       chip.classList.toggle('on', !!on);
+      chip.title = '云端状态：' + (ok ? '已连接' : txt) + '（点击可刷新；登录后可读写个人数据）';
     }
 
     function check() {
@@ -2346,7 +2350,8 @@
 
     function paint() {
       if (window.AUTH.isLogin()) {
-        label.textContent = '已登录';
+        /* 已登录：胶囊内只显示 ✓，完整说明放 title（hover / 读屏可见） */
+        label.textContent = '✓';
         btn.classList.add('on');
         btn.title = '已登录（点击退出登录）';
       } else {

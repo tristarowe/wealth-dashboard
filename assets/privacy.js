@@ -29,6 +29,8 @@
     { sel: '#flow-body .fm-meta,#flow-body tr.flow-detail td:nth-child(5),#flow-body tr.flow-detail td:nth-child(7)', mode: 'html' },
     // 盈亏日历：年度收益、月度收益、当月收益汇总
     { sel: '#year-body td.r.num,#month-list .month-item .v,#cal-summary .lead b', mode: 'html' },
+    // 盈亏日历右侧「每日收益」格子：.cell .vrow .v 是当日收益金额（元）；日期、年化 % 保持可见
+    { sel: '#cal .cell .v', mode: 'text' },
     // 趋势图区间日均收益（DOM 文本）
     { sel: '#trend-sub b', mode: 'text' }
   ];
@@ -145,8 +147,9 @@
         }
       }
     });
-    var roots = ['hold-body', 'sum-body', 'flow-body', 'year-body', 'month-list', 'cal-summary', 'trend-sub', 'chart', 'metrics'];
+    var roots = ['hold-body', 'sum-body', 'flow-body', 'year-body', 'month-list', 'cal', 'cal-summary', 'trend-sub', 'chart', 'metrics'];
     // 指标卡(id=metrics)是整块 innerHTML 重渲染，必须监听，否则闭眼刷新后云端异步回填的金额漏打码
+    // 日历格子(#cal)同样是整块重绘，切月/切年后新节点必须重新打码
     roots.forEach(function (id) {
       var el = document.getElementById(id);
       if (el) obs.observe(el, { childList: true, subtree: true });
