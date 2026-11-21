@@ -24,6 +24,34 @@ META = Path(__file__).resolve().parent / "shot_meta.json"
 KEEP = 7
 
 
+def inject_live_trades(page):
+    """RLS 开启后匿名打开页面读不到交易，截图会是空壳。
+
+    这里用 service_role 从 Supabase 拉全量交易，只在截图浏览器内存里注入
+    window.TRANSACTIONS，再调页面现成的 DASHBOARD_REFRESH() 重算并重绘。
+    公开底稿与 RLS 权限都不动——注入仅存在于无头浏览器的当前页面。
+    """
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from pull_cloud import supabase_trades
+        items = supabase_trades()
+    except Exception as exc:  # noqa: BLE001
+        print("截图前读取云端交易失败：", exc, flush=True)
+        items = []
+    if not items:
+        raise RuntimeError("未取到云端交易（检查 SUPABASE_SERVICE_ROLE_KEY）；拒绝生成空壳长图")
+
+    page.evaluate(
+        """items => {
+            window.TRANSACTIONS = { items: items };
+            if (window.DASHBOARD_REFRESH) window.DASHBOARD_REFRESH();
+        }""",
+        items,
+    )
+    page.wait_for_timeout(1500)
+    print("已注入云端交易", len(items), "笔用于截图", flush=True)
+
+
 def capture_home(page, date):
     today_income = page.inner_text("#metric-today").replace("元", "").strip()
     print("今日收益：", today_income, flush=True)
@@ -91,6 +119,7 @@ def main():
                 page.goto(index)
                 page.wait_for_timeout(1500)
                 date = page.evaluate("window.REPORT_DATA.asOf")
+                inject_live_trades(page)
                 _, income = capture_home(page, date)
                 desk.close()
 

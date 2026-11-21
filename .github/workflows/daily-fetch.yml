@@ -119,6 +119,8 @@ jobs:
         env:
           PYTHONIOENCODING: utf-8
           PW_CHANNEL: ""
+          # RLS 后匿名截图是空壳：shot.py 用这把密钥拉全量交易，只注入截图浏览器内存
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: python daily/shot.py || true
 
       - name: 微信推送
