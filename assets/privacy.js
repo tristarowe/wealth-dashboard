@@ -1,10 +1,10 @@
-/* 隐私小眼睛 2026-11-22：睁眼显示所有金额，闭眼把私密金额替换为 *（保留符号/千分位/小数点/单位）。
+/* 隐私小眼睛 2026-11-22：睁眼显示所有金额，闭眼把私密金额统一替换为 *****（不按位数堆星号，排版不变）。
  * 纯前端展示层开关，不改动数据本身，也不影响 RLS。html2canvas 导出抓取当前 DOM，
- * 因此闭眼状态下导出的图片同样自带 *。
+ * 因此闭眼状态下导出的图片同样自带 *****。
  *
  * 设计要点：
  *  - 只处理"个人资产"金额；公开行情（净值、万收、年化、评分、产品库数值）保持可见。
- *  - 打码只替换文本节点里的数字字符，保留 + - , . 与 <em>元</em> 等子元素，布局不塌。
+ *  - 每个金额一律 *****，符号/千分位/小数点/元单位等非数字字符原样保留，列宽与对齐不动。
  *  - 表格 tbody 会整体 innerHTML 重建，用 MutationObserver 在新节点出现后重新套用。
  *  - title 提示里也含金额，一并打码，避免 hover 泄露。
  */
@@ -33,9 +33,14 @@
     { sel: '#trend-sub b', mode: 'text' }
   ];
 
-  /* 把一段文本里的数字替换为 *，保留符号、千分位、小数点、百分号与其他字符。 */
+  var STAR = '*****';                       // 统一的打码串：每个金额一律 5 个星号
+  var NUMRE = /[-+]?\d[\d,]*(?:\.\d+)?/g;   // 一个完整数字串（含符号/千分位/小数）
+
+  /* 每个金额一律替换成统一的 *****（不再按位数堆星号），符号、单位、百分号等保留。
+     表格是 table-layout:fixed、指标卡是固定网格，星号串变短不会挤动列宽；
+     右对齐的金额列依然右对齐，排版保持原样。 */
   function maskNumbers(s) {
-    return String(s).replace(/[0-9]/g, '*');
+    return String(s).replace(NUMRE, STAR);
   }
 
   /* 递归遍历元素下的文本节点，把每个文本节点里的数字打码；保留 <em>元</em> 等标签结构。 */
@@ -163,12 +168,14 @@
   }
 
   var btn = null;
-  var EYE_OPEN = '<svg viewBox="0 0 20 16" width="18" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-    '<path d="M1.6 8S4.7 3 10 3s8.4 5 8.4 5-3.1 5-8.4 5S1.6 8 1.6 8Z"></path><circle cx="10" cy="8" r="2.3"></circle></svg>';
-  var EYE_SHUT = '<svg viewBox="0 0 20 16" width="18" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-    '<path d="M2 4.2C1 5.6 1.6 8 1.6 8S4.7 13 10 13c1.5 0 2.8-.4 3.9-1"></path>' +
-    '<path d="M6.2 3.4A8.6 8.6 0 0 1 10 3c5.3 0 8.4 5 8.4 5s-.9 1.4-2.5 2.7"></path>' +
-    '<path d="M3.2 3.2 16.8 12.8"></path></svg>';
+  var EYE_OPEN = '<svg viewBox="0 0 24 16" width="22" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M2 8S5.6 3 12 3s10 5 10 5-3.6 5-10 5S2 8 2 8Z"></path><circle cx="12" cy="8" r="2.5"></circle></svg>';
+  // 闭眼：一道下弯的睫毛弧 + 5 根向下张开的睫毛（对齐用户给的参考图）
+  var EYE_SHUT = '<svg viewBox="0 0 24 16" width="22" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M3 6.2C4.6 10 7.8 12.2 12 12.2S19.4 10 21 6.2"></path>' +
+    '<path d="M6.2 10 5.2 12.2"></path><path d="M9.2 11.9 8.8 14.2"></path>' +
+    '<path d="M12 12.2V14.8"></path>' +
+    '<path d="M14.8 11.9 15.2 14.2"></path><path d="M17.8 10 18.8 12.2"></path></svg>';
 
   function applyButton() {
     if (!btn) return;

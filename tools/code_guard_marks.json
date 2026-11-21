@@ -1,7 +1,7 @@
 {
   "_doc": "跨端代码守卫共用标记清单 —— 唯一权威来源。WorkBuddy 的 .githooks/pre-push 与 Trae 的 tools/sync_pages.py 都必须读取本文件，禁止在脚本里硬编码标记列表。新增功能后在此登记，两端自动生效。",
   "_maintainer": "任何一端修改本文件后，需在提交信息中说明原因；改动会同时影响两端的推送守卫。",
-  "version": "2026-11-21a15",
+  "version": "2026-11-21a16",
   "protected": {
     "_doc": "受『整批中止』保护的文件：远端内容被他人改过时，整批拒绝推送，必须先 pull 合并。markers 为该文件必须包含的字符串，缺失即判定为旧版/被回退，整批拒推。",
     "index.html": [
@@ -23,7 +23,7 @@
       "data-stamp",
       "B2/Q2：横屏全表由 11px 提到 11.5px",
       "Q1：手机年表/月表",
-      "v=20261122e",
+      "v=20261122f",
       "计息不足 7 天",
       "--blue-soft:#2878af",
       ".pname .mv-under",
@@ -298,7 +298,7 @@
       "公开底稿已脱敏",
       "T.items = T.items.filter(function (t) { return !!t.applyDate; })",
       "登录后可保存你的交易与手工产品数据",
-      "auth.js?v=20261122e",
+      "auth.js?v=20261122f",
       "退出后会清除本机交易缓存",
       "label.textContent = '已登录'",
       "btn.title = '已登录（点击退出登录）'",
@@ -307,8 +307,10 @@
       "window.__GATE_BYPASS__",
       "id=\"gate-submit\"",
       "id=\"privacy-eye\"",
-      "privacy.js?v=20261122e",
-      "window.PRIVACY.maskClone"
+      "privacy.js?v=20261122f",
+      "window.PRIVACY.maskClone",
+      ".hero-title-row",
+      "if (eye) eye.style.visibility"
     ],
     "assets/dashboard.js": [
       "PID_ALIAS",
@@ -628,7 +630,9 @@
       "function maskClone",
       "function applyOne",
       "getElementById('chart')",
-      "window.PRIVACY"
+      "window.PRIVACY",
+      "var STAR = '*****'",
+      "EYE_SHUT"
     ]
   },
   "min_counts": {

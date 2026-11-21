@@ -60,9 +60,13 @@
   .btn.icon-only{width:32px;height:32px;padding:0;justify-content:center;border-radius:50%;border:0;background:transparent;color:#7d939f}
   .btn.icon-only:hover{background:transparent;border:0;color:var(--accent)}
   .btn.icon-only svg{width:18px;height:18px}
-  /* 隐私小眼睛：睁眼为普通色，闭眼(金额打码)时高亮为蓝色，提示当前处于私密模式 */
-  #privacy-eye.on{color:var(--blue);background:#eaf4f8}
-  #privacy-eye.on:hover{background:#dcecf3;color:var(--blue)}
+  /* 标题行：小眼睛紧贴标题右侧（裸图标、无按钮底），闭眼时靠形状本身表达"金额已隐藏" */
+  .hero-title-row{display:flex;align-items:center;justify-content:center;gap:8px}
+  #privacy-eye{width:auto;height:auto;padding:0;border:0;border-radius:0;background:transparent;color:#9aadb9;flex:none}
+  #privacy-eye svg{width:22px;height:15px}
+  #privacy-eye:hover{background:transparent;border:0;color:var(--accent)}
+  #privacy-eye.on{color:#7f93a8;background:transparent}
+  #privacy-eye.on:hover{color:var(--accent)}
   .btn.done{background:var(--gold);border-color:var(--gold);color:#1a1200}
   .btn.error{color:var(--up);border-color:#f0c8c3;background:#fdf4f2}
   .update-btn.loading svg{animation:update-spin .9s linear infinite}
@@ -1172,6 +1176,9 @@
     .hero-asof{font-size:11.5px;line-height:1.55}
     .data-stamp{position:static;display:flex;justify-content:center;margin-top:8px;font-size:11px;line-height:1.6}
     h1{font-size:21px}
+    /* 手机竖屏：小眼睛随标题字号等比缩小，紧贴标题右侧不换行 */
+    .hero-title-row{gap:6px;flex-wrap:nowrap}
+    #privacy-eye svg{width:18px;height:12px}
     .sub{font-size:11.5px;line-height:1.55}
     .sub b{white-space:nowrap}
     .coverage{margin-left:0}
@@ -1661,7 +1668,14 @@
   <header class="hero">
     <div class="hero-top">
       <div>
-        <h1>银行理财每日收益看板</h1>
+        <div class="hero-title-row">
+          <h1>银行理财每日收益看板</h1>
+          <button type="button" class="btn privacy-btn icon-only" id="privacy-eye" aria-label="隐藏所有金额" title="当前：金额可见（点此隐藏）">
+            <svg viewBox="0 0 24 16" width="22" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M2 8S5.6 3 12 3s10 5 10 5-3.6 5-10 5S2 8 2 8Z"></path><circle cx="12" cy="8" r="2.5"></circle>
+            </svg>
+          </button>
+        </div>
         <div class="hero-subline">
           <button type="button" class="btn update-btn icon-only" id="refresh-data" aria-label="重新抓取最新数据" title="重新抓取全部产品的最新数据，并刷新所有模块">
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -1732,11 +1746,6 @@
       </div>
     </div>
     <div class="hero-actions">
-      <button type="button" class="btn privacy-btn icon-only" id="privacy-eye" aria-label="隐藏所有金额" title="当前：金额可见（点此隐藏）">
-        <svg viewBox="0 0 20 16" width="18" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M1.6 8S4.7 3 10 3s8.4 5 8.4 5-3.1 5-8.4 5S1.6 8 1.6 8Z"></path><circle cx="10" cy="8" r="2.3"></circle>
-        </svg>
-      </button>
       <button type="button" class="btn export-btn icon-only" id="export-shot" aria-label="把整个看板导出为图片" title="把整个看板导出为图片">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <rect x="2" y="3" width="12" height="10" rx="1.6"></rect>
@@ -2228,8 +2237,8 @@
 <script src="./assets/newproducts.js"></script>
 <script src="./assets/library.js"></script>
 <script src="./assets/supabase-config.js?v=20261113c"></script>
-<script src="./assets/auth.js?v=20261122e"></script>
-<script src="./assets/store.js?v=20261122e" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
+<script src="./assets/auth.js?v=20261122f"></script>
+<script src="./assets/store.js?v=20261122f" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
 <script>
   /* 先用本地缓存/内置底稿立即渲染，云端数据在后台取回后再重绘，避免等待网络白屏 */
   /* 前序脚本缺失或命中旧缓存时（STORE_READY 不存在）也照常加载看板，避免页面停在空白骨架 */
@@ -2238,7 +2247,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261122e';
+      s.src = './assets/dashboard.js?v=20261122f';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();
@@ -2255,7 +2264,7 @@
       // 隐私小眼睛：dashboard.js 就绪后再加载，才能包装 DASHBOARD_REFRESH 并在渲染后套用打码
       if (!window.PRIVACY) {
         var pv = document.createElement('script');
-        pv.src = './assets/privacy.js?v=20261122e';
+        pv.src = './assets/privacy.js?v=20261122f';
         document.body.appendChild(pv);
       }
       if (!window.STORE_REFRESH || typeof window.STORE_REFRESH.then !== 'function') return;
@@ -2685,8 +2694,11 @@
       if (!target) return;
 
       var actions = btn.closest('.hero-actions');
+      // 小眼睛现在紧贴标题，导出长图里同样不该出现这个控件（与右上按钮一起临时隐藏）
+      var eye = document.getElementById('privacy-eye');
       btn.disabled = true;
       if (actions) actions.style.visibility = 'hidden';
+      if (eye) eye.style.visibility = 'hidden';
       setLabel('生成中…');
       var scrollX = window.scrollX;
       var scrollY = window.scrollY;
@@ -2774,6 +2786,7 @@
         restoreLayout();
         window.scrollTo(scrollX, scrollY);
         if (actions) actions.style.visibility = '';
+        if (eye) eye.style.visibility = '';
         download(withPadding(trimCanvas(canvas)));
         btn.disabled = false;
         btn.classList.add('done');
@@ -2783,6 +2796,7 @@
         restoreLayout();
         window.scrollTo(scrollX, scrollY);
         if (actions) actions.style.visibility = '';
+        if (eye) eye.style.visibility = '';
         if (window.console && console.error) console.error('[图片导出失败]', err);
         btn.disabled = false;
         setLabel('导出失败');
