@@ -4,7 +4,7 @@
  * 净值与万收来自 assets/data.js，不在此文件重复存储。
  */
 window.TRANSACTIONS = {
-  "asOf": "2026-11-10",
+  "asOf": "2026-11-18",
   "items": [
     {
       "id": "TX20260724673",
