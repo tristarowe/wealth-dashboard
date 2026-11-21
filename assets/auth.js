@@ -27,6 +27,13 @@
   sess = normalize(sess);
   if (sess) persist();
 
+  /* 历史遗留：旧版本退出登录时没清交易缓存。这里在初始化阶段补一刀——
+     未登录（含会话已过期）就删掉本机残留的真实交易缓存，避免隐私数据长期滞留。 */
+  function hasSession() { return !!(sess && token()); }
+  if (!hasSession()) {
+    try { window.localStorage.removeItem('wealth3.trades.cache'); } catch (e) {}
+  }
+
   function expired(d) {
     return !!(d && d.expires_at && Date.now() / 1000 >= Number(d.expires_at) - 60);
   }
@@ -74,6 +81,10 @@
   function signOut() {
     sess = null;
     persist();
+    /* 退出即清除交易数据本地缓存：登录期从 Supabase 拉到的真实明细会写入
+       wealth3.trades.cache，若不清，重载后 store.load() 又把缓存渲染出来，
+       等于绕过 RLS —— 表现为「按钮已显示登录，却仍看得到全部金额」。 */
+    try { window.localStorage.removeItem('wealth3.trades.cache'); } catch (e) {}
   }
 
   /* 刷新令牌：access 过期但有 refresh_token 时续期，成功后重载页面让 store 用新令牌取数 */

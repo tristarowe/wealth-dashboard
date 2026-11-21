@@ -54,7 +54,15 @@
     return renderable(DRAFT);
   }
 
+  /* 登录态才读写交易缓存：缓存里是登录期从 Supabase 拉到的真实明细，
+     退出登录后若继续读取或回填，等于在浏览器本地绕过 RLS。
+     公开底稿本身已脱敏（无 applyDate），未登录时只需走底稿，不碰缓存。 */
+  function authOK() {
+    return !!(window.AUTH && window.AUTH.isLogin && window.AUTH.isLogin());
+  }
+
   function readCache() {
+    if (!authOK()) return null;
     try {
       var s = window.localStorage.getItem(CACHE_KEY);
       if (!s) return null;
@@ -64,6 +72,7 @@
   }
 
   function writeCache(items) {
+    if (!authOK()) return;
     try {
       window.localStorage.setItem(CACHE_KEY, JSON.stringify({ at: Date.now(), items: items }));
     } catch (e) { /* 隐私模式或超配额，忽略 */ }

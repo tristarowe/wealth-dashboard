@@ -2165,8 +2165,8 @@
 <script src="./assets/newproducts.js"></script>
 <script src="./assets/library.js"></script>
 <script src="./assets/supabase-config.js?v=20261113c"></script>
-<script src="./assets/auth.js?v=20261121p"></script>
-<script src="./assets/store.js?v=20261121p" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
+<script src="./assets/auth.js?v=20261122a"></script>
+<script src="./assets/store.js?v=20261122a" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
 <script>
   /* 先用本地缓存/内置底稿立即渲染，云端数据在后台取回后再重绘，避免等待网络白屏 */
   /* 前序脚本缺失或命中旧缓存时（STORE_READY 不存在）也照常加载看板，避免页面停在空白骨架 */
@@ -2175,7 +2175,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261121p';
+      s.src = './assets/dashboard.js?v=20261122a';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();
@@ -2261,7 +2261,7 @@
 
     btn.addEventListener('click', function () {
       if (window.AUTH.isLogin()) {
-        if (window.confirm('确定退出登录吗？退出后将无法读写个人数据。')) {
+        if (window.confirm('确定退出登录吗？退出后会清除本机交易缓存，无法再查看个人数据。')) {
           window.AUTH.signOut();
           try { window.location.reload(); } catch (e) {}
         }
