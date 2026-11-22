@@ -161,6 +161,10 @@ def main():
     ap.add_argument("--no-nlc", action="store_true", help="只用建信官网 chart，不补建行官网 T-1")
     ap.add_argument("--dry-run", action="store_true", help="只打印，不写文件")
     ap.add_argument("--gap", type=float, default=0.15, help="NLC165 分页间隔秒")
+    # 小时轮转用：建信官网 chart 免登录、不限频，可按「净值最落后优先」少量多轮补齐，
+    # 避免周末/节假日净值下午才发布时，整库一直停在 T-2 直到次日 08:00
+    ap.add_argument("--lag", action="store_true",
+                    help="配合 --limit：按 latestDate 升序取最落后的若干只（小时轮转用）")
     a = ap.parse_args()
 
     lib = promo.load_json(promo.LIB_JSON, {"items": []})
@@ -176,9 +180,11 @@ def main():
     todo = [x for x in items
             if (x.get("orgShort") or "").startswith("建信")
             and cmap.get(str(x.get("regCode") or ""))]
+    if a.lag:
+        todo.sort(key=lambda x: (x.get("latestDate") or "", str(x.get("regCode") or "")))
     if a.limit:
         todo = todo[: a.limit]
-    print("建信待刷新 %d 只" % len(todo), flush=True)
+    print("建信待刷新 %d 只%s" % (len(todo), "（最落后优先）" if a.lag else ""), flush=True)
 
     ok, fail, adv_nlc, tail_mismatch, lagging = 0, 0, 0, [], []
     t1 = (datetime.now(nlc.CN) - timedelta(days=1)).strftime("%Y-%m-%d")
