@@ -1,7 +1,7 @@
 {
   "_doc": "跨端代码守卫共用标记清单 —— 唯一权威来源。WorkBuddy 的 .githooks/pre-push 与 Trae 的 tools/sync_pages.py 都必须读取本文件，禁止在脚本里硬编码标记列表。新增功能后在此登记，两端自动生效。",
   "_maintainer": "任何一端修改本文件后，需在提交信息中说明原因；改动会同时影响两端的推送守卫。",
-  "version": "2026-11-22a21",
+  "version": "2026-11-22a22",
   "protected": {
     "_doc": "受『整批中止』保护的文件：远端内容被他人改过时，整批拒绝推送，必须先 pull 合并。markers 为该文件必须包含的字符串，缺失即判定为旧版/被回退，整批拒推。",
     "index.html": [
@@ -535,7 +535,19 @@
       "顶部指标卡",
       "建仓初期保护"
     ],
-    "daily/nav_rotate.py": [],
+    "daily/nav_rotate.py": [
+      "OFFICIAL_ORGS"
+    ],
+    "daily/nav_sites.py": [
+      "OP_LEGACY_SERVER_CONNECT",
+      "MIN_HITS = 3",
+      "def abc_series(",
+      "def citic_index(",
+      "def cib_series(",
+      "def pick_share(",
+      "def merge(",
+      "def last_workday("
+    ],
     "daily/nav_holdings_t1.py": [],
     "daily/sync_nav_data.py": [],
     "daily/backfill_byname.py": [],
@@ -556,7 +568,8 @@
       "poppler-utils",
       "SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}",
       "service_role 绕过 RLS 读取全量交易",
-      "shot.py 用这把密钥拉全量交易"
+      "shot.py 用这把密钥拉全量交易",
+      "python daily/nav_sites.py"
     ],
     "tools/sync_pages.py": [
       "def guard_marks"

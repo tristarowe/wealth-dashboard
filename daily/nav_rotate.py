@@ -90,6 +90,12 @@ def holding_codes():
     return codes
 
 
+# 已有官网直连源的机构：建信（nav_official）、中银（nav_boc）、
+# 农银/信银/兴银（nav_sites，2026-11-22 第一批接入）。
+# 这些产品不再占用中国理财网的限频额度，轮换把配额留给没有官网源的产品。
+OFFICIAL_ORGS = ("建信", "中银", "农银", "信银", "兴银")
+
+
 def main():
     ap = argparse.ArgumentParser(description="非建信产品净值轮换补抓")
     ap.add_argument("--limit", type=int, default=5)
@@ -110,7 +116,7 @@ def main():
     lib = promo.load_json(promo.LIB_JSON, {"items": []})
     items = lib.get("items") or []
     pool = [x for x in items
-            if not (x.get("orgShort") or "").startswith(("建信", "中银"))]
+            if not (x.get("orgShort") or "").startswith(OFFICIAL_ORGS)]
     # 以产品库整体最新净值日为基准：只补落后的，尚无净值的排最后，避免浪费限频额度
     asof = max((x.get("latestDate") or "") for x in items) or ""
     today = datetime.now().strftime("%Y-%m-%d")
@@ -174,7 +180,7 @@ def main():
         print("data.js 净值同步跳过：%s" % str(exc)[:120], flush=True)
     asof = max((x.get("latestDate") or "") for x in items) or ""
     left = sum(1 for x in items
-               if not (x.get("orgShort") or "").startswith(("建信", "中银"))
+               if not (x.get("orgShort") or "").startswith(OFFICIAL_ORGS)
                and (x.get("latestDate") or "") < asof)
     print("完成：更新 %d 只，整体最新 %s，仍落后 %d 只" % (ok, asof, left), flush=True)
     if ok or boc_ok:
