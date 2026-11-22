@@ -1,7 +1,7 @@
 {
   "_doc": "跨端代码守卫共用标记清单 —— 唯一权威来源。WorkBuddy 的 .githooks/pre-push 与 Trae 的 tools/sync_pages.py 都必须读取本文件，禁止在脚本里硬编码标记列表。新增功能后在此登记，两端自动生效。",
   "_maintainer": "任何一端修改本文件后，需在提交信息中说明原因；改动会同时影响两端的推送守卫。",
-  "version": "2026-11-21a19",
+  "version": "2026-11-21a20",
   "protected": {
     "_doc": "受『整批中止』保护的文件：远端内容被他人改过时，整批拒绝推送，必须先 pull 合并。markers 为该文件必须包含的字符串，缺失即判定为旧版/被回退，整批拒推。",
     "index.html": [
@@ -598,7 +598,10 @@
       "def label_dates(",
       "def own_detail_text(",
       "\"failed\": len(failed)",
-      "timedelta(days=7)"
+      "timedelta(days=7)",
+      "QUOTA_MIN_WAN, QUOTA_MAX_WAN = 100.0, 5000000.0",
+      "def sane_quota(",
+      "\"quotaRejected\""
     ],
     "assets/auth.js": [
       "wealth3.auth.session",

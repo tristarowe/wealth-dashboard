@@ -1,6 +1,6 @@
 window.NEW_PRODUCTS = {
   "asOf": "2026-11-22",
-  "fetchedAt": "2026-11-22 00:04",
+  "fetchedAt": "2026-11-22 13:56",
   "source": "六大行及股份制银行新品公告 · 销售文件要素表",
   "window": {
     "start": "2026-11-22",
@@ -48,7 +48,7 @@ window.NEW_PRODUCTS = {
       "raiseStart": "2026-11-23",
       "raiseEnd": "2026-11-23",
       "establish": "2026-11-24",
-      "quotaWan": 30000000.0,
+      "quotaWan": null,
       "risk": "R2",
       "riskRaw": "",
       "mode": "开放式净值型产品",
@@ -98,7 +98,7 @@ window.NEW_PRODUCTS = {
           "raiseStart": "2026-11-23",
           "raiseEnd": "2026-11-23",
           "establish": "2026-11-24",
-          "quotaWan": 30000000.0,
+          "quotaWan": null,
           "risk": "R2",
           "riskRaw": "",
           "mode": "开放式净值型产品",
@@ -113,6 +113,7 @@ window.NEW_PRODUCTS = {
     "candidates": 6,
     "kept": 3,
     "dropped": 3,
-    "failed": 0
+    "failed": 0,
+    "quotaRejected": 3
   }
 };

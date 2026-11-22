@@ -338,13 +338,43 @@ def clean_channels(raw):
     return "；".join(out)
 
 
+# 募集规模上限的合理区间（单位：万元），即 100 万 ~ 500 亿。
+# 2026-11-22 核实：中银理财同批三只说明书写「人民币【3000】亿元」（另两只写成「【3000 亿】元」），
+# 单只新品募集上限不可能到 3000 亿（中银理财整体管理规模也远小于此），判为源文件单位笔误。
+# 若照搬会直接在新品卡片上显示「3000亿」，故超出区间一律按「未披露」处理并留痕。
+QUOTA_MIN_WAN, QUOTA_MAX_WAN = 100.0, 5000000.0
+QUOTA_REJECT = []   # [(原文片段, 折算万)]，用于输出异常留痕
+
+
 def extract_quota(flat):
-    m = re.search(r"(?:发行额度|计划募集规模|募集规模上限|发行规模|产品规模上限)[^。；]{0,24}?"
-                  r"[\[【]?\s*([\d,\.]+)\s*[\]】]?\s*(亿元|万元)", flat)
+    """说明书「募集规模上限」→ 万元。先抹平空白与【】，再按合理区间校验。
+
+    抹平空白是必须的：同一批 PDF 里「【3000】亿元」与「【3000 亿】元」两种排版都有，
+    不归一会导致同批产品有的解析出额度、有的解析不出（随机性本身就是不可信信号）。
+    """
+    s = re.sub(r"[\s\u3000]+", "", flat or "").replace("【", "").replace("】", "")
+    m = re.search(r"(?:发行额度|计划募集规模|募集规模上限|发行规模|产品规模上限)"
+                  r"[^。；]{0,24}?([\d,\.]+)(亿元|万元)", s)
     if not m:
         return None
     v = float(m.group(1).replace(",", ""))
-    return round(v * 10000 if m.group(2) == "亿元" else v, 2)
+    wan = round(v * 10000 if m.group(2) == "亿元" else v, 2)
+    if not (QUOTA_MIN_WAN <= wan <= QUOTA_MAX_WAN):
+        QUOTA_REJECT.append((m.group(0)[-24:], wan))
+        print("  ! 募集规模异常：%s → %s万，按未披露处理" % (m.group(0)[-24:], wan))
+        return None
+    return wan
+
+
+def sane_quota(from_pdf, raw_text):
+    """PDF 额度优先，回退规则表「发行额度」，两条路径都要过合理区间。"""
+    for v in (from_pdf, quota_wan(raw_text)):
+        if v is None:
+            continue
+        if QUOTA_MIN_WAN <= v <= QUOTA_MAX_WAN:
+            return v
+        QUOTA_REJECT.append((str(raw_text or "")[:24], v))
+    return None
 
 
 def extract_manager(flat, R=None):
@@ -539,7 +569,7 @@ def build():
             "raiseStart": start,
             "raiseEnd": end,
             "establish": est,
-            "quotaWan": (extract_quota(flat) if flat else None) or quota_wan(r.get("发行额度")),
+            "quotaWan": sane_quota(extract_quota(flat) if flat else None, r.get("发行额度")),
             "risk": extract_risk(flat) or (r.get("风险等级_R级") or "").upper(),
             "riskRaw": r.get("风险等级原文") or "",
             "mode": mode,
@@ -579,7 +609,8 @@ def build():
         "items": items,
         "lanes": lanes,
         "stats": {"notices": len(notices), "candidates": len(cand), "kept": len(items),
-                  "dropped": dropped, "failed": len(failed)},
+                  "dropped": dropped, "failed": len(failed),
+                  "quotaRejected": len(QUOTA_REJECT)},
         "failed": failed[:20],
         "established": established,
     }
