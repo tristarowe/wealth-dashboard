@@ -1558,13 +1558,15 @@
 
   /* ===== 2026-11-21 五轮：横屏新品时间轴列变多后，压缩条目内的冗余信息 =====
      日期已由表头列呈现，条目里再写一遍「募集起始」会把产品名挤到只剩一个字；
-     横屏去掉条目内的起始日与「—」空额度，把宽度全部让给产品名与成立日。 */
+     横屏去掉条目内的起始日，把宽度让给产品名与成立日（额度位仍保留「—」，见下方 11-22 注）。 */
   @media (min-width:761px) and (max-width:968px){
-    .ts-lane .nchip{gap:5px;padding:0 6px}
+    .ts-lane .nchip{gap:4px;padding:0 6px}
     .ts-lane .nchip .nr{display:none}
-    /* 额度在横屏空间不足时让位给产品名（完整信息仍在该条目的 title 提示里） */
-    .ts-lane .nchip .na{display:none}
-    .ts-lane .nchip .nmid{gap:4px}
+    /* 2026-11-22：额度位统一显示「—」（用户定案「不显示额度，显示-即可」），
+       横屏不再隐藏，只把占宽压到最小，并把条目内两处 4px 间距各收 1px，
+       抵掉「—」占的宽度（实测最长名「中银悦享天添30号」仍需 3px，否则被截成 …）。 */
+    .ts-lane .nchip .na.na-none{padding:0 0 0 1px}
+    .ts-lane .nchip .nmid{gap:3px}
   }
 
   /* ===== 产品库筛选栏（手机横屏）统一规格 2026-11-21 =====
@@ -2250,7 +2252,7 @@
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
       var s = document.createElement('script');
-      s.src = './assets/dashboard.js?v=20261122f';
+      s.src = './assets/dashboard.js?v=20261122g';
       s.onerror = function () {
         var r = document.createElement('script');
         r.src = './assets/dashboard.js?t=' + Date.now();

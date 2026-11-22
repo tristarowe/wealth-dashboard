@@ -569,7 +569,10 @@ def build():
             "raiseStart": start,
             "raiseEnd": end,
             "establish": est,
-            "quotaWan": sane_quota(extract_quota(flat) if flat else None, r.get("发行额度")),
+            # 2026-11-22 用户定案：首发额度（≠募集规模）公开渠道无字段，一律不输出数值，
+            # 页面额度位固定显示「—」。说明书里的「发行额度」并非首发额度，且出现过
+            # 「【3000】亿元」这类单位笔误，故不再作为额度对外披露。
+            "quotaWan": None,
             "risk": extract_risk(flat) or (r.get("风险等级_R级") or "").upper(),
             "riskRaw": r.get("风险等级原文") or "",
             "mode": mode,

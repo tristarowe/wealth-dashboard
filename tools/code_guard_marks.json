@@ -1,7 +1,7 @@
 {
   "_doc": "跨端代码守卫共用标记清单 —— 唯一权威来源。WorkBuddy 的 .githooks/pre-push 与 Trae 的 tools/sync_pages.py 都必须读取本文件，禁止在脚本里硬编码标记列表。新增功能后在此登记，两端自动生效。",
   "_maintainer": "任何一端修改本文件后，需在提交信息中说明原因；改动会同时影响两端的推送守卫。",
-  "version": "2026-11-21a20",
+  "version": "2026-11-22a21",
   "protected": {
     "_doc": "受『整批中止』保护的文件：远端内容被他人改过时，整批拒绝推送，必须先 pull 合并。markers 为该文件必须包含的字符串，缺失即判定为旧版/被回退，整批拒推。",
     "index.html": [
@@ -23,7 +23,7 @@
       "data-stamp",
       "B2/Q2：横屏全表由 11px 提到 11.5px",
       "Q1：手机年表/月表",
-      "v=20261122f",
+      "v=20261122g",
       "计息不足 7 天",
       "--blue-soft:#2878af",
       ".pname .mv-under",
@@ -314,7 +314,8 @@
       "chip.title = '云端状态：'",
       "if (ok) label.innerHTML = CHECK; else label.textContent = txt",
       ".coverage .chk svg",
-      "stroke-width=\"2.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\""
+      "stroke-width=\"2.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"",
+      ".ts-lane .nchip .na.na-none{padding:0 0 0 1px}"
     ],
     "assets/dashboard.js": [
       "PID_ALIAS",
@@ -498,7 +499,9 @@
       "现金管理类产品|现金管理类",
       "np-org-sel-m",
       "mv-col",
-      "np-org-sel-m-lab"
+      "np-org-sel-m-lab",
+      "var NP_SHOW_QUOTA = false",
+      "额度位固定显示"
     ],
     "assets/store.js": [
       "sbTombstones",
@@ -601,7 +604,9 @@
       "timedelta(days=7)",
       "QUOTA_MIN_WAN, QUOTA_MAX_WAN = 100.0, 5000000.0",
       "def sane_quota(",
-      "\"quotaRejected\""
+      "\"quotaRejected\"",
+      "\"quotaWan\": None",
+      "首发额度（≠募集规模）公开渠道无字段"
     ],
     "assets/auth.js": [
       "wealth3.auth.session",

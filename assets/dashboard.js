@@ -5467,7 +5467,13 @@
     return s ? s.slice(5).replace('-', '.') : '';
   }
 
+  /* 2026-11-22 用户定案：首发额度（≠ 募集规模）公开渠道无字段——说明书只有「发行额度」，
+     且同批出现过「【3000】亿元」这类单位笔误，因此一律不显示额度，额度位固定显示「—」。
+     将来若接入渠道额度（如建行 App 截图对照表）或发行公告里的实际募集规模，把开关置 true 即可恢复。 */
+  var NP_SHOW_QUOTA = false;
+
   function quotaText(w) {
+    if (!NP_SHOW_QUOTA) return '';
     if (w === null || w === undefined || isNaN(w)) return '';
     w = Number(w);
     return w >= 10000 ? (Math.round(w / 100) / 100) + '亿' : w + '万';
@@ -5576,7 +5582,7 @@
           '募集 ' + (p.raiseStart ? mdText(p.raiseStart) : '—') + ' 至 ' + (p.raiseEnd ? mdText(p.raiseEnd) : '—'),
           '成立 ' + (p.establish ? mdText(p.establish) : '—'),
           rk ? rk : '风险等级未披露',
-          q ? '额度 ' + q + ' 元' : '额度未披露',
+          q ? '额度 ' + q + ' 元' : '',
           p.source ? '来源 ' + p.source : ''].filter(Boolean).join('｜');
         body += '<div class="nchip" style="grid-column:' + (ch.c1 + 2) + ' / span ' + (ch.c2 - ch.c1 + 1) +
           ';grid-row:' + (ch.row + 1) + '" title="' + tip.replace(/"/g, '&quot;') + '">' +
