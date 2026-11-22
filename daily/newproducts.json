@@ -1,6 +1,6 @@
 {
   "asOf": "2026-11-22",
-  "fetchedAt": "2026-11-22 13:56",
+  "fetchedAt": "2026-11-22 14:44",
   "source": "六大行及股份制银行新品公告 · 销售文件要素表",
   "window": {
     "start": "2026-11-22",
@@ -114,7 +114,7 @@
     "kept": 3,
     "dropped": 3,
     "failed": 0,
-    "quotaRejected": 3
+    "quotaRejected": 0
   },
   "failed": [],
   "established": []
