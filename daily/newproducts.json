@@ -1,6 +1,6 @@
 {
   "asOf": "2026-11-23",
-  "fetchedAt": "2026-11-23 17:26",
+  "fetchedAt": "2026-11-23 14:56",
   "source": "六大行及股份制银行新品公告 · 销售文件要素表",
   "window": {
     "start": "2026-11-23",
@@ -159,6 +159,36 @@
       "riskRaw": "",
       "mode": "开放式净值型",
       "saleChannel": "建设银行",
+      "source": "建行官网新品公告·销售文件要素表"
+    },
+    {
+      "name": "招银理财招睿鑫鼎14天持有期10号固定收益类理财计划",
+      "issuer": "招银理财有限责任公司",
+      "short": "招睿鑫鼎14天持有期10号理财计划",
+      "regCode": "Z7001626001164",
+      "raiseStart": "2026-11-26",
+      "raiseEnd": "2026-11-30",
+      "establish": "2026-12-01",
+      "quotaWan": null,
+      "risk": "R2",
+      "riskRaw": "PR2 中低风险",
+      "mode": "",
+      "saleChannel": "",
+      "source": "建行官网新品公告·销售文件要素表"
+    },
+    {
+      "name": "招银理财招睿添利日开30号固定收益类理财计划",
+      "issuer": "招银理财有限责任公司",
+      "short": "招睿添利日开30号理财计划",
+      "regCode": "Z7001626001160",
+      "raiseStart": "2026-11-26",
+      "raiseEnd": "2026-11-30",
+      "establish": "2026-12-01",
+      "quotaWan": null,
+      "risk": "R2",
+      "riskRaw": "PR2 中低风险",
+      "mode": "",
+      "saleChannel": "",
       "source": "建行官网新品公告·销售文件要素表"
     }
   ],
@@ -320,15 +350,45 @@
           "mode": "",
           "saleChannel": "",
           "source": "建行官网新品公告·销售文件要素表"
+        },
+        {
+          "name": "招银理财招睿鑫鼎14天持有期10号固定收益类理财计划",
+          "issuer": "招银理财有限责任公司",
+          "short": "招睿鑫鼎14天持有期10号理财计划",
+          "regCode": "Z7001626001164",
+          "raiseStart": "2026-11-26",
+          "raiseEnd": "2026-11-30",
+          "establish": "2026-12-01",
+          "quotaWan": null,
+          "risk": "R2",
+          "riskRaw": "PR2 中低风险",
+          "mode": "",
+          "saleChannel": "",
+          "source": "建行官网新品公告·销售文件要素表"
+        },
+        {
+          "name": "招银理财招睿添利日开30号固定收益类理财计划",
+          "issuer": "招银理财有限责任公司",
+          "short": "招睿添利日开30号理财计划",
+          "regCode": "Z7001626001160",
+          "raiseStart": "2026-11-26",
+          "raiseEnd": "2026-11-30",
+          "establish": "2026-12-01",
+          "quotaWan": null,
+          "risk": "R2",
+          "riskRaw": "PR2 中低风险",
+          "mode": "",
+          "saleChannel": "",
+          "source": "建行官网新品公告·销售文件要素表"
         }
       ]
     }
   ],
   "stats": {
-    "notices": 52,
+    "notices": 88,
     "candidates": 12,
-    "kept": 10,
-    "dropped": 1,
+    "kept": 12,
+    "dropped": 4,
     "failed": 0,
     "quotaRejected": 0
   },
