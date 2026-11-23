@@ -633,53 +633,53 @@
   #flow-table{min-width:900px}
   #flow-table td{white-space:nowrap}
 
-  /* 新品预告：发行机构 × 日期 时间轴 */
-  .timeline{border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:#fff}
-  .ts-grid,.ts-lane{display:grid;grid-template-columns:124px repeat(6,minmax(0,1fr))}
-  .ts-grid{border-bottom:1px solid var(--rule);background:#f7f9fa}
-  .ts-cell{padding:9px 2px;text-align:center;font-family:var(--mono);font-size:12px;color:var(--muted);line-height:1.45;white-space:nowrap;border-left:1px solid #eef2f5}
+  /* 新品预告 2026-11-23 方案C：日期泳道列（每天一列 · 卡片等宽 · 名称完整换行）
+     代销机构多选按钮置于表头上方工具栏，泳道内容随筛选联动。
+     保留 .ts-lane/.nchip/.nr/.nm/.na/.rk 类名以兼容 daily/shot.py 的截图元数据校验。 */
+  .np-tool-count{font-family:var(--mono);font-size:12px;font-weight:400;color:var(--muted);margin-left:10px}
+  .np-toolbar{display:flex;align-items:center;gap:9px;margin:0 0 12px;position:relative;z-index:5}
+  .np-toolbar .nt-lab{font-size:12px;color:var(--muted);flex:none}
+  .np-toolbar .nt-hint{font-size:11.5px;color:var(--muted);flex:none}
+  /* 工具栏多选：复用 .sel-pop 弹层，自绘按钮外壳（.filters 下的同名类不覆盖到这里） */
+  .np-toolbar .sel-wrap{position:relative;display:inline-flex;align-items:center;height:30px;min-width:132px;max-width:260px;border:1px solid #cfdde5;border-radius:7px;background:#fff;box-sizing:border-box}
+  .np-toolbar .sel-wrap select{position:absolute;inset:0;width:100%;height:100%;padding:0;border:0;background:transparent;opacity:0;cursor:pointer;font-size:12px;-webkit-appearance:none;appearance:none}
+  .np-toolbar .sel-label{font-family:var(--font);font-size:12px;color:#2a5563;padding:0 26px 0 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;max-width:258px}
+  .np-toolbar .sel-wrap::after{content:'';position:absolute;right:10px;top:50%;width:5px;height:5px;margin-top:-4px;border-right:1.4px solid #6f8b98;border-bottom:1.4px solid #6f8b98;transform:rotate(45deg);pointer-events:none}
+  .np-toolbar .sel-hit{position:absolute;inset:0;z-index:2;display:block;width:100%;height:100%;padding:0;border:0;background:transparent;cursor:pointer;font-size:0;color:transparent}
+  .np-toolbar .sel-label .mcount{color:var(--accent-deep);font-weight:700}
+  .timeline{border:1px solid var(--rule);border-radius:10px;background:#fff;overflow:hidden}
+  /* 日期表头：与泳道列同宽对齐，横向可滚动 */
+  .ts-grid{display:flex;gap:10px;padding:0 12px;background:#f7f9fa;border-bottom:1px solid var(--rule);min-width:max-content}
+  .ts-cell{width:184px;flex:none;padding:9px 2px;text-align:center;font-family:var(--mono);font-size:12px;color:var(--muted);line-height:1.45;white-space:nowrap}
   .ts-cell b{display:block;font-family:var(--mono);font-weight:700;font-size:13px;color:var(--muted)}
   .ts-cell.is-today b{color:#a2701f}
   .ts-cell.is-today em{font-style:normal;font-size:11px;color:#a2701f;margin-left:3px}
-  .ts-cell.gap{background:#f6f9fa;color:#b0bcc5;font-size:10px;padding:9px 0;overflow:hidden}
-  /* 审核稿 B0：字重 500 不在四档内，改为 400；#a3b1bb 保留为日历空格可视化专用色 */
-  .ts-cell.gap b{font-size:11px;font-weight:400;letter-spacing:0;color:#a3b1bb}
-  .ts-org{padding:5px 10px!important;text-align:left!important;display:flex;align-items:center;border-left:0!important}
-  .ts-org select{font-family:var(--font);font-size:12px;color:#2a5563;border:1px solid #d7e3e9;background:#fff;border-radius:5px;padding:3px 6px;outline:none;cursor:pointer;width:100%}
-  /* 手机端新品预告不再有表头（用户 2026-11-21 要求）：代销机构筛选挪到标题行右侧，
-     桌面/横屏仍用第一列表头里的下拉。
-     2026-11-21 七轮（用户反馈「手机竖屏代销银行按钮不显示」）：原生 <select> 在 iOS 上会被
-     系统重绘（白底细边框、箭头与文字贴近），在白底标题行上几乎看不见；改为
-     「透明原生 select（保留系统选单）+ 自绘文字/箭头」按钮，任何平台都清晰可见。 */
-  .np-org-btn{display:none;margin-left:auto;position:relative;align-items:center;height:30px;
-    border:1px solid #cfdde5;border-radius:7px;background:#fff;box-sizing:border-box;flex:none}
-  .np-org-btn-lab{font-family:var(--font);font-size:12px;font-weight:400;color:#2a5563;line-height:28px;
-    padding:0 24px 0 10px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .np-org-btn::after{content:'';position:absolute;right:10px;top:50%;width:5px;height:5px;margin-top:-4px;
-    border-right:1.4px solid #6f8b98;border-bottom:1.4px solid #6f8b98;transform:rotate(45deg);pointer-events:none}
-  .np-org-mini{position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;border:0;
-    opacity:0;cursor:pointer;font-size:12px;-webkit-appearance:none;appearance:none}
-  .ts-lane{position:relative;grid-template-rows:42px;align-items:center;border-bottom:1px solid #cfdae2;padding:4px 0}
-  .ts-lane:last-of-type{border-bottom:0}
-  .ts-lane .org{grid-column:1;grid-row:1/-1;padding-left:12px;font-size:13px;color:#44535f;display:flex;align-items:center;gap:7px;white-space:nowrap}
-  .ts-lane .org .dot{width:8px;height:8px;border-radius:50%;background:var(--c);flex:none}
-  .gapfill{background:#f7fafb;align-self:stretch;display:flex;align-items:center;justify-content:center;border-left:1px solid #eef2f5}
+  /* 泳道容器：每天一列，横向滚动 */
+  #np-lanes{display:flex;gap:10px;padding:12px;overflow-x:auto;align-items:flex-start}
+  .ts-lane{width:184px;flex:none;min-width:0}
+  .ts-lane .org{display:none}
+  .ts-lane .lane-day{display:none;font-family:var(--mono);font-size:13px;font-weight:700;color:var(--muted);padding:5px 2px 8px;border-bottom:2px solid var(--rule);margin-bottom:9px}
+  .ts-lane .lane-day em{font-style:normal;font-size:11px;color:#a2701f;margin-left:5px;font-family:var(--font)}
+  .gapfill{border:1px dashed var(--rule);border-radius:8px;min-height:74px;display:flex;align-items:center;justify-content:center;background:#fafcfd}
   .gapfill em{font-style:normal;font-size:11px;color:#b7c3cb;letter-spacing:.5px}
-  /* 手机竖屏：日期列改为卡片内逐条展示，表头为「代销机构筛选 + 日期列」；
-     2026-11-21 四轮按用户要求去掉右侧「募集期 · 产品名称 · 额度 · 风险 · 成立日」说明文字 */
   .n-legend{display:flex;gap:16px;align-items:center;font-size:12px;color:var(--muted);margin-top:10px;flex-wrap:wrap}
   .n-legend i{display:inline-block;width:22px;height:9px;border-radius:3px;background:#fff;border:1.5px solid #0e5a73;vertical-align:middle;margin-right:5px}
-  .nchip{height:32px;border-radius:6px;background:#fff;border:1px solid var(--c);box-shadow:0 1px 3px rgba(20,45,60,.05);display:flex;align-items:center;gap:7px;padding:0 8px;overflow:hidden;z-index:2;justify-self:stretch;margin:0 3px;cursor:pointer;transition:background .15s}
+  /* 卡片：等宽 184，顶部机构色条，名称两行完整不压缩 */
+  .nchip{border:1px solid var(--rule);border-top:3px solid var(--c);border-radius:8px;background:#fff;box-shadow:0 1px 3px rgba(20,45,60,.05);padding:10px 11px;margin-bottom:9px;cursor:pointer;transition:background .15s}
   .nchip:hover{background:#f7fbfc}
-  .nchip .nr{font-family:var(--mono);font-size:12px;color:var(--c);white-space:nowrap;flex:none}
-  .nmid{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;min-width:0}
-  .nmid .nm{font-size:12px;font-weight:400;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-  .nchip .na{font-family:var(--mono);font-size:11px;color:#3f6f56;background:#f1f7f3;border-radius:3px;padding:1px 4px;white-space:nowrap;flex:none}
+  .nchip .norg{font-size:11px;color:var(--c);font-weight:600;line-height:1.4;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .nchip .nm{font-size:12.5px;font-weight:600;color:var(--ink);line-height:1.45;min-height:36px;word-break:break-all}
+  .nchip .na{font-family:var(--mono);font-size:11px;color:#3f6f56;background:#f1f7f3;border-radius:3px;padding:1px 4px;white-space:nowrap}
   .nchip .na.na-none{color:#a9b6bf;background:transparent;padding:0}
-  .nchip .rk{font-family:var(--mono);font-size:11px;font-weight:600;color:#41606f;background:#eef4f7;border-radius:3px;padding:1px 4px;flex:none}
+  .nchip .rk{font-family:var(--mono);font-size:11px;font-weight:600;color:#41606f;background:#eef4f7;border-radius:3px;padding:1px 5px;white-space:nowrap;flex:none}
   .nchip .rk.r3{background:#fdf3e6;color:#a2701f}
   .nchip .rk.r4{background:#fbe9e6;color:#a4453a}
-  .nchip .ne{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap;flex:none}
+  .nchip .nr{font-family:var(--mono);font-size:11.5px;color:var(--c);white-space:nowrap}
+  .nchip .ne{font-family:var(--mono);font-size:11.5px;color:var(--muted);white-space:nowrap}
+  .nchip .nmeta{display:flex;flex-direction:column;gap:3px;margin-top:8px;padding-top:7px;border-top:1px dashed #e8eef1}
+  .nchip .nmeta .row{display:flex;align-items:center;gap:6px}
+  .nchip .nmeta .kl{font-size:10.5px;color:var(--muted);width:24px;flex:none}
+  .nchip .nmeta .row .rk{margin-left:auto}
 
   .year-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:12.5px}
   .year-table .yc1{width:55px}
@@ -1287,17 +1287,15 @@
     .trade-tool:has(#flow-del-sel:not([hidden])) #flow-del-sel{margin-left:auto;margin-right:4px}
     .trade-tool:has(#flow-del-sel:not([hidden])) #open-trade{margin-left:0}
     .timeline{overflow:visible;border:0;background:transparent;border-radius:0}
-    /* 手机竖屏 2026-11-21 五轮（用户要求）：新品预告直接去掉表头整条，
-       代销机构筛选挪到标题行右侧（#np-org-sel-m），日期已在卡片内逐条展示 */
+    /* 手机竖屏方案C：泳道改纵向日期分组（一天一组），保证长图截全所有新品；
+       代销机构多选按钮在表头上方工具栏保留；桌面日期表头隐藏，日期头改在 lane 内显示 */
     .ts-grid{display:none}
-    .np-org-btn{display:inline-flex}
-    .ts-lane{display:flex;flex-direction:column;align-items:stretch;gap:8px;border:1px solid var(--rule);border-radius:10px;background:#fff;padding:10px;margin-bottom:10px;min-width:0}
+    #np-lanes{display:block;overflow:visible;padding:0}
+    .ts-lane{width:auto;min-width:0;margin-bottom:14px}
     .ts-lane:last-of-type{margin-bottom:0}
-    .ts-lane .org{padding-left:2px;font-weight:700;justify-content:flex-start}
+    .ts-lane .lane-day{display:flex}
     .ts-lane .gapfill{display:none}
-    .ts-lane .nchip{width:100%;margin:0;height:auto;min-height:34px;flex-wrap:wrap;padding:6px 8px}
-    .ts-lane .nchip .nmid{justify-content:flex-start}
-    .ts-lane .nchip .nm{white-space:normal}
+    .ts-lane .nchip{width:100%;margin:0 0 9px}
     .n-legend{margin-top:4px}
     /* 手机端月度收益表：与年度表同一套百分比列宽，去掉左侧 2px 边框避免整体偏移 */
     /* 手机竖屏：月表行高同步压缩（上下 12→7、行高 1.6→1.5），与年表协调 */
@@ -1556,17 +1554,12 @@
     .month-list .month-item > span:nth-child(2),.month-list .month-row.mhead span:nth-child(2){padding-right:5px}
   }
 
-  /* ===== 2026-11-21 五轮：横屏新品时间轴列变多后，压缩条目内的冗余信息 =====
-     日期已由表头列呈现，条目里再写一遍「募集起始」会把产品名挤到只剩一个字；
-     横屏去掉条目内的起始日，把宽度让给产品名与成立日（额度位仍保留「—」，见下方 11-22 注）。 */
+  /* ===== 2026-11-23 方案C 横屏微调：日期泳道列卡片等宽，仅略收内边距 =====
+     新方案为竖向等宽卡片（名称换行完整、募集/成立两行齐全），不再隐藏起始日；
+     横屏仅把卡片内边距略收以容纳更多列，额度位仍固定「—」（11-22 定案）。 */
   @media (min-width:761px) and (max-width:968px){
-    .ts-lane .nchip{gap:4px;padding:0 6px}
-    .ts-lane .nchip .nr{display:none}
-    /* 2026-11-22：额度位统一显示「—」（用户定案「不显示额度，显示-即可」），
-       横屏不再隐藏，只把占宽压到最小，并把条目内两处 4px 间距各收 1px，
-       抵掉「—」占的宽度（实测最长名「中银悦享天添30号」仍需 3px，否则被截成 …）。 */
-    .ts-lane .nchip .na.na-none{padding:0 0 0 1px}
-    .ts-lane .nchip .nmid{gap:3px}
+    .ts-grid .ts-cell,.ts-lane{width:170px}
+    .ts-lane .nchip{padding:9px 10px}
   }
 
   /* ===== 产品库筛选栏（手机横屏）统一规格 2026-11-21 =====
@@ -1982,7 +1975,14 @@
   <!-- ================= 产品 ================= -->
   <div class="tabpane" id="pane-prod" hidden>
     <section>
-      <div class="sec-head"><span class="idx">01</span><h2>新品预告</h2><span class="np-org-btn" id="np-org-btn"><span class="np-org-btn-lab" id="np-org-sel-m-lab">代销机构</span><select class="np-org-mini" id="np-org-sel-m" aria-label="按代销机构筛选"><option value="">代销机构</option></select></span></div>
+      <div class="sec-head"><span class="idx">01</span><h2>新品预告</h2><span class="np-tool-count" id="np-tool-count"></span></div>
+
+      <!-- 2026-11-23 方案C：代销机构多选按钮移到表头上方，泳道内容随筛选联动 -->
+      <div class="np-toolbar" id="np-toolbar">
+        <span class="nt-lab">代销机构</span>
+        <select id="np-org-sel" multiple aria-label="按代销机构多选筛选"><option value="">代销机构</option></select>
+        <span class="nt-hint" id="np-org-hint"></span>
+      </div>
 
       <div class="timeline">
         <div class="ts-grid" id="np-head"></div>

@@ -5455,8 +5455,9 @@
     if (trigger) trigger.setAttribute('aria-expanded', 'false');
   }
 
-  var NP_UI = { channel: '' };
-  var NP_COLORS = ['#0e5a73', '#2f6f9f', '#8a5a2b', '#3f6f56', '#6b4c8a'];
+  /* 2026-11-23 方案C：代销机构多选（channels 为空数组＝全部） */
+  var NP_UI = { channels: [] };
+  var NP_COLORS = ['#0e5a73', '#2f6f9f', '#8a5a2b', '#3f6f56', '#6b4c8a', '#b5651d'];
 
   function ymd(d) {
     var m = d.getMonth() + 1, dd = d.getDate();
@@ -5485,23 +5486,66 @@
     return prodDispName(p);
   }
 
+  /* 方案C 辅助：代销机构显示名（空→待核实）、按发行机构取稳定色、多选按钮弹层绑定 */
+  function npChannelOf(p) {
+    return (p && p.saleChannel && String(p.saleChannel).trim()) ? String(p.saleChannel).trim() : '待核实';
+  }
+  function npColorOf(name) {
+    var s = String(name || ''), h = 0;
+    for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+    return NP_COLORS[h % NP_COLORS.length];
+  }
+  function npBindMultiSel(sel, onChange) {
+    if (!sel) return;
+    if (!sel.parentNode || !sel.parentNode.classList || !sel.parentNode.classList.contains('sel-wrap')) {
+      var wrap = document.createElement('span');
+      wrap.className = 'sel-wrap';
+      sel.parentNode.insertBefore(wrap, sel);
+      wrap.appendChild(sel);
+      var lab = document.createElement('span');
+      lab.className = 'sel-label';
+      wrap.appendChild(lab);
+      var hit = document.createElement('button');
+      hit.type = 'button';
+      hit.className = 'sel-hit';
+      hit.setAttribute('aria-haspopup', 'listbox');
+      hit.setAttribute('aria-label', sel.getAttribute('aria-label') || '筛选');
+      hit.addEventListener('click', function (e) {
+        e.preventDefault(); e.stopPropagation();
+        openSelPop(sel, wrap, {});
+      });
+      wrap.appendChild(hit);
+    }
+    if (typeof syncSelLabel === 'function') syncSelLabel(sel);
+    sel.onchange = function () { onChange(selValues(sel)); if (typeof syncSelLabel === 'function') syncSelLabel(sel); };
+  }
+
   function renderNewProds() {
     var head = document.getElementById('np-head');
     var box = document.getElementById('np-lanes');
     if (!head || !box) return;
 
     var NP = window.NEW_PRODUCTS || { lanes: [] };
-    var lanes = NP.lanes || [];
-    // 查漏补缺：成立日 <= 今天的产品已不算「新品预告」，直接在此拦截（云端/本地数据同口径）
     var _todayKey = ymd(new Date());
-    lanes = lanes.map(function (l) {
-      return {
-        channel: l.channel,
-        products: (l.products || []).filter(function (p) {
-          return !(p.establish && p.establish <= _todayKey);
-        })
-      };
-    }).filter(function (l) { return l.products.length; });
+    /* 拉平所有产品（附代销机构），过滤已成立（成立日<=今天不再算新品预告） */
+    var flat = [];
+    (NP.lanes || []).forEach(function (l) {
+      (l.products || []).forEach(function (p) {
+        if (p.establish && p.establish <= _todayKey) return;
+        flat.push({ p: p, channel: npChannelOf(p) });
+      });
+    });
+    /* 代销机构选项（去重，待核实排最后） */
+    var orgs = [];
+    flat.forEach(function (x) { if (orgs.indexOf(x.channel) < 0) orgs.push(x.channel); });
+    orgs.sort(function (a, b) {
+      if (a === '待核实') return 1;
+      if (b === '待核实') return -1;
+      return a.localeCompare(b, 'zh');
+    });
+    /* 数据刷新后已不存在的选择项清掉 */
+    NP_UI.channels = (NP_UI.channels || []).filter(function (c) { return orgs.indexOf(c) >= 0; });
+
     var winStart = (NP.window && NP.window.start) || DATA.asOf;
     var winEnd = (NP.window && NP.window.end) || winStart;
     var days = [];
@@ -5515,125 +5559,93 @@
     var last = N - 1;
     var wd = ['日', '一', '二', '三', '四', '五', '六'];
 
-    var opts = ['<option value="">代销机构</option>'];
-    lanes.forEach(function (l) {
-      opts.push('<option' + (NP_UI.channel === l.channel ? ' selected' : '') + '>' + l.channel + '</option>');
-    });
-    head.style.gridTemplateColumns = '124px repeat(' + N + ',minmax(0,1fr))';
-    head.innerHTML = '<div class="ts-cell ts-org"><select id="np-org-sel" aria-label="按代销机构筛选">' +
-      opts.join('') + '</select></div>' +
-      days.map(function (ds, idx) {
-        var dd = parseDate(ds);
-        return '<div class="ts-cell' + (idx === 0 ? ' is-today' : '') + '"><b>' + mdText(ds) +
-          (idx === 0 ? '<em>今天</em>' : '') + '</b><span>周' + wd[dd.getDay()] + '</span></div>';
-      }).join('');
-    /* 手机端没有表头（2026-11-21 用户要求），代销机构筛选改挂到标题行右侧，选项同源 */
-    var miniSel = document.getElementById('np-org-sel-m');
-    if (miniSel) miniSel.innerHTML = opts.join('');
-    /* 2026-11-21 七轮：手机竖屏标题行的代销机构按钮改为「透明 select + 自绘文字」，
-       自绘文字需跟随当前筛选值（无筛选时显示「代销机构」） */
-    var miniLab = document.getElementById('np-org-sel-m-lab');
-    if (miniLab) miniLab.textContent = NP_UI.channel || '代销机构';
+    /* 表头上方工具栏：代销机构多选（首项＝全部） */
+    var orgSel = document.getElementById('np-org-sel');
+    if (orgSel) {
+      var opts = ['<option value="">代销机构</option>'];
+      orgs.forEach(function (org) {
+        opts.push('<option value="' + org.replace(/"/g, '&quot;') + '"' +
+          (NP_UI.channels.indexOf(org) >= 0 ? ' selected' : '') + '>' + org + '</option>');
+      });
+      orgSel.innerHTML = opts.join('');
+      if (!NP_UI.channels.length && orgSel.options[0]) orgSel.options[0].selected = true;
+      npBindMultiSel(orgSel, function (vals) { NP_UI.channels = vals; renderNewProds(); });
+    }
 
-    var totalCnt = 0;
+    /* 表头：纯日期列（与泳道列同宽对齐） */
+    head.innerHTML = days.map(function (ds, idx) {
+      var dd = parseDate(ds);
+      return '<div class="ts-cell' + (idx === 0 ? ' is-today' : '') + '"><b>' + mdText(ds) +
+        (idx === 0 ? '<em>今天</em>' : '') + '</b><span>周' + wd[dd.getDay()] + '</span></div>';
+    }).join('');
+
+    /* 方案C：代销机构多选过滤 + 按募集起始日归入对应日期泳道列 */
+    var chosen = NP_UI.channels || [];
+    var visible = flat.filter(function (x) { return !chosen.length || chosen.indexOf(x.channel) >= 0; });
+    var totalCnt = visible.length;
+
+    /* 按日期列分桶：产品归入「首个 >= 募集起始」的日期列；跨日募集在卡片内注明跨度 */
+    var buckets = days.map(function () { return []; });
+    visible.forEach(function (x) {
+      var p = x.p;
+      var s = p.raiseStart || p.raiseEnd;
+      var e = p.raiseEnd || p.raiseStart;
+      if (!s) return;
+      var ci = -1;
+      days.forEach(function (ds, idx) { if (ci < 0 && ds >= s) ci = idx; });
+      if (ci < 0) ci = (e && e < days[0]) ? 0 : last;   // 早于窗口贴首列，晚于窗口贴尾列
+      buckets[ci].push(x);
+    });
+
     var out = [];
-    lanes.forEach(function (lane, li) {
-      if (NP_UI.channel && lane.channel !== NP_UI.channel) return;
-      var color = NP_COLORS[li % NP_COLORS.length];
-      var chips = [];
-      (lane.products || []).forEach(function (p) {
-        var s = p.raiseStart || p.raiseEnd;
-        var e = p.raiseEnd || p.raiseStart;
-        if (!s || !e || s > days[last]) return;
-        // 起始取「首个 ≥ 募集起始」的日期列，结束取「最后一个 ≤ 募集结束」的日期列；
-        // 募集期已结束（成立日在今天及以后）时整体贴到首列，避免被窗口裁掉
-        var c1 = -1, c2 = -1;
-        days.forEach(function (ds, idx) { if (c1 < 0 && ds >= s) c1 = idx; });
-        for (var k = last; k >= 0; k--) { if (days[k] <= e) { c2 = k; break; } }
-        if (c1 < 0) c1 = last;
-        if (c2 < 0) c2 = 0;
-        if (c2 < c1) { if (e < days[0]) { c1 = 0; c2 = 0; } else { c2 = c1; } }
-        // 单日募集也至少占两列，避免产品名被压缩成省略号；右侧贴边时整体左移
-        if (c2 - c1 + 1 < 2) {
-          if (c1 + 1 > last) { c1 = Math.max(0, last - 1); c2 = last; }
-          else { c2 = c1 + 1; }
-        }
-        chips.push({ p: p, c1: c1, c2: c2 });
-        totalCnt++;
-      });
-      chips.sort(function (a, b) { return a.c1 - b.c1 || a.c2 - b.c2; });
-
-      var rows = [];
-      chips.forEach(function (ch) {
-        var r = 0;
-        for (; ; r++) {
-          if (!rows[r]) rows[r] = [];
-          var free = rows[r].every(function (x) { return ch.c2 < x[0] || ch.c1 > x[1]; });
-          if (free) { rows[r].push([ch.c1, ch.c2]); ch.row = r; break; }
-        }
-      });
-
-      var body = '<div class="org"><span class="dot"></span>' + lane.channel + '</div>';
-      chips.forEach(function (ch) {
-        var p = ch.p;
-        var q = quotaText(p.quotaWan);
-        var rk = (p.risk || '').toUpperCase();
-        var tip = [p.name || p.short, p.regCode ? '登记编码 ' + p.regCode : '登记编码未披露',
-          '募集 ' + (p.raiseStart ? mdText(p.raiseStart) : '—') + ' 至 ' + (p.raiseEnd ? mdText(p.raiseEnd) : '—'),
-          '成立 ' + (p.establish ? mdText(p.establish) : '—'),
-          rk ? rk : '风险等级未披露',
-          q ? '额度 ' + q + ' 元' : '',
-          p.source ? '来源 ' + p.source : ''].filter(Boolean).join('｜');
-        body += '<div class="nchip" style="grid-column:' + (ch.c1 + 2) + ' / span ' + (ch.c2 - ch.c1 + 1) +
-          ';grid-row:' + (ch.row + 1) + '" title="' + tip.replace(/"/g, '&quot;') + '">' +
-          '<span class="nr">' + mdText(p.raiseStart) + (p.raiseEnd && p.raiseEnd !== p.raiseStart ? '-' + mdText(p.raiseEnd) : '') + '</span>' +
-          '<span class="nmid"><span class="nm">' + npShortName(p) + '</span>' +
-          (q ? '<span class="na">' + q + '</span>' : '<span class="na na-none">—</span>') +
-          (rk ? '<span class="rk' + (rk === 'R3' ? ' r3' : rk === 'R4' || rk === 'R5' ? ' r4' : '') + '">' + rk + '</span>' : '') +
-          '</span><span class="ne">' + (p.establish ? mdText(p.establish) : '') + '</span></div>';
-      });
-
-      // 无新品日期：整列灰底占位（跨全部行）
-      var covered = [];
-      chips.forEach(function (ch) { for (var c = ch.c1; c <= ch.c2; c++) covered[c] = 1; });
-      var g = 0;
-      while (g < N) {
-        if (covered[g]) { g++; continue; }
-        var h = g;
-        while (h + 1 < N && !covered[h + 1]) h++;
-        body += '<span class="gapfill" style="grid-column:' + (g + 2) + ' / span ' + (h - g + 1) +
-          ';grid-row:1/-1"><em>' + (chips.length ? '无新品' : '暂无已披露新品') + '</em></span>';
-        g = h + 1;
+    days.forEach(function (ds, di) {
+      var dd = parseDate(ds);
+      var dayLab = mdText(ds) + (di === 0 ? '<em>今天</em>' : '') + ' 周' + wd[dd.getDay()];
+      var body = '<div class="lane-day">' + dayLab + '</div>';
+      var items = buckets[di];
+      if (!items.length) {
+        body += '<div class="gapfill"><em>无新品</em></div>';
+      } else {
+        items.forEach(function (x) {
+          var p = x.p;
+          var q = quotaText(p.quotaWan);
+          var rk = (p.risk || '').toUpperCase();
+          var color = npColorOf(p.issuer || p.orgShort || p.name);
+          var span = p.raiseStart
+            ? (mdText(p.raiseStart) + (p.raiseEnd && p.raiseEnd !== p.raiseStart ? '→' + mdText(p.raiseEnd) : ''))
+            : '—';
+          var tip = [p.name || p.short, p.regCode ? '登记编码 ' + p.regCode : '登记编码未披露',
+            '募集 ' + (p.raiseStart ? mdText(p.raiseStart) : '—') + ' 至 ' + (p.raiseEnd ? mdText(p.raiseEnd) : '—'),
+            '成立 ' + (p.establish ? mdText(p.establish) : '—'),
+            rk ? rk : '风险等级未披露',
+            '代销 ' + x.channel,
+            q ? '额度 ' + q + ' 元' : '',
+            p.source ? '来源 ' + p.source : ''].filter(Boolean).join('｜');
+          body += '<div class="nchip" data-org="' + x.channel + '" style="--c:' + color +
+            '" title="' + tip.replace(/"/g, '&quot;') + '">' +
+            '<div class="norg">' + (p.issuer || p.orgShort || '').replace(/(理财|有限责任公司|股份有限公司|有限公司)+$/g, '') +
+            ' · ' + x.channel + '</div>' +
+            '<div class="nm">' + npShortName(p) + '</div>' +
+            '<div class="nmeta">' +
+              '<div class="row"><span class="kl">募集</span><span class="nr">' + span + '</span></div>' +
+              '<div class="row"><span class="kl">成立</span><span class="ne">' + (p.establish ? mdText(p.establish) : '—') + '</span>' +
+              (rk ? '<span class="rk' + (rk === 'R3' ? ' r3' : rk === 'R4' || rk === 'R5' ? ' r4' : '') + '">' + rk + '</span>' : '') +
+              (q ? '<span class="na">' + q + '</span>' : '') +
+            '</div></div></div>';
+        });
       }
-
-      var rowCount = Math.max(1, rows.length);
-      out.push('<div class="ts-lane' + (rowCount > 1 ? ' two' : '') + '" data-org="' + lane.channel +
-        '" style="--c:' + color + ';grid-template-columns:124px repeat(' + N + ',minmax(0,1fr))' +
-        (rowCount > 1 ? ';grid-template-rows:repeat(' + rowCount + ',42px)' : '') + '">' +
-        body + '</div>');
+      out.push('<div class="ts-lane" data-org="' + (items.length ? items[0].channel : '') + '">' + body + '</div>');
     });
 
-    box.innerHTML = out.join('') || '<div class="ts-lane" style="--c:#0e5a73"><div class="org"><span class="dot"></span>暂无</div>' +
-      '<span class="gapfill" style="grid-column:2/-1;grid-row:1/-1"><em>暂无已披露新品</em></span></div>';
+    box.innerHTML = out.join('') || '<div class="ts-lane" style="--c:#0e5a73"><div class="gapfill"><em>暂无已披露新品</em></div></div>';
 
-    var tEl = document.getElementById('np-total');
-    if (tEl) tEl.textContent = totalCnt;
-    var oEl = document.getElementById('np-orgs');
-    if (oEl) oEl.textContent = (NP_UI.channel ? 1 : lanes.length);
+    /* 标题行统计 + 工具栏提示 */
+    var tEl = document.getElementById('np-tool-count');
+    if (tEl) tEl.textContent = totalCnt + ' 只 · ' + (chosen.length || orgs.length) + '/' + orgs.length + ' 家';
+    var hEl = document.getElementById('np-org-hint');
+    if (hEl) hEl.textContent = chosen.length ? ('已选 ' + chosen.length + ' 家') : '全部';
     var sEl = document.getElementById('np-src');
     if (sEl && NP.source) sEl.textContent = '数据源：' + NP.source;
-
-    var sel = document.getElementById('np-org-sel');
-    if (sel) sel.onchange = function () { NP_UI.channel = this.value; renderNewProds(); };
-    var selM = document.getElementById('np-org-sel-m');
-    if (selM) selM.onchange = function () {
-      NP_UI.channel = this.value;
-      var lab = document.getElementById('np-org-sel-m-lab');
-      if (lab) lab.textContent = this.value || '代销机构';
-      renderNewProds();
-    };
-    /* 每次重绘都会新建这个 select，需要重新套一层「紧凑弹层」外壳 */
-    if (sel) attachCompactSelect(sel);
   }
 
   /* 产品身份一致性自检：同一登记编码只能有一个身份；持仓/交易必须能解析到产品库。

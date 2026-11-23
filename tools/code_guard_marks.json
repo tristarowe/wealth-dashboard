@@ -1,7 +1,7 @@
 {
   "_doc": "跨端代码守卫共用标记清单 —— 唯一权威来源。WorkBuddy 的 .githooks/pre-push 与 Trae 的 tools/sync_pages.py 都必须读取本文件，禁止在脚本里硬编码标记列表。新增功能后在此登记，两端自动生效。",
   "_maintainer": "任何一端修改本文件后，需在提交信息中说明原因；改动会同时影响两端的推送守卫。",
-  "version": "2026-11-23a28",
+  "version": "2026-11-23a29",
   "protected": {
     "_doc": "受『整批中止』保护的文件：远端内容被他人改过时，整批拒绝推送，必须先 pull 合并。markers 为该文件必须包含的字符串，缺失即判定为旧版/被回退，整批拒推。",
     "index.html": [
@@ -93,8 +93,6 @@
       ".sec-head h2,.sec-head .idx{font-size:17px}",
       "审核稿 B0/B5：数值强调统一 700",
       "font-weight:700;color:#3c5c67",
-      "审核稿 B0：字重 500 不在四档内",
-      "font-weight:400;letter-spacing:0;color:#a3b1bb",
       "审核稿 A4：手机表头统一 38px",
       "方案C 2026-11-20：不缩字号/千分位/列宽，仅收紧行高与纵向 padding",
       "#flow-table tbody tr:not(.flow-month){height:38px}",
@@ -239,7 +237,6 @@
       "#prod-table thead th:nth-child(11){white-space:nowrap}",
       "持有期放风险等级左侧",
       "lockIOSZoomOnInput",
-      "np-org-btn-lab",
       "#hold-table col:nth-child(8){width:5.5% !important}",
       "电脑端「持仓成立」表头单行",
       "#pane-prod .filters #prod-search::placeholder{font-size:11.5px}",
@@ -279,14 +276,11 @@
       "#flow-table col:nth-child(10){width:99px !important}",
       "padding-left:11.5px;padding-right:11.5px",
       ".thumb-under svg{width:12px;height:12px;display:inline-block",
-      ".np-org-btn{display:none;margin-left:auto",
-      ".ts-lane .nchip .nr{display:none}",
       "color:#4d5964",
       "par.classList.contains('sel-wrap')",
       "nav-under",
       "持仓金额紧跟产品名称",
       "info-pop",
-      "#np-org-sel-m",
       "#sum-table tbody td.mv-col{color:var(--blue-soft)}",
       ".ts-grid{display:none}",
       "#sum-table thead th{white-space:nowrap}",
@@ -315,7 +309,12 @@
       "if (ok) label.innerHTML = CHECK; else label.textContent = txt",
       ".coverage .chk svg",
       "stroke-width=\"2.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"",
-      ".ts-lane .nchip .na.na-none{padding:0 0 0 1px}"
+      "2026-11-23 方案C：代销机构多选按钮移到表头上方",
+      ".np-toolbar .sel-wrap",
+      "#np-lanes{display:flex;gap:10px",
+      ".ts-lane .lane-day",
+      ".nchip .nmeta",
+      "word-break:break-all"
     ],
     "assets/dashboard.js": [
       "PID_ALIAS",
@@ -484,7 +483,6 @@
       "openSelPop(sel, wrap, { single: true })",
       "pop.className = 'sel-pop' + (opts.single ? ' single' : '')",
       "var left = selPop.classList.contains('single')",
-      "if (sel) attachCompactSelect(sel);",
       "SHORT_ANN_DAYS",
       "assertHoldMath",
       "function annTipOf",
@@ -497,11 +495,16 @@
       "手机都是独立列",
       "shares-col",
       "现金管理类产品|现金管理类",
-      "np-org-sel-m",
       "mv-col",
-      "np-org-sel-m-lab",
       "var NP_SHOW_QUOTA = false",
-      "额度位固定显示"
+      "额度位固定显示",
+      "var NP_UI = { channels: [] }",
+      "function npChannelOf",
+      "function npColorOf",
+      "function npBindMultiSel",
+      "按募集起始日归入对应日期泳道列",
+      "var buckets = days.map",
+      "class=\"nchip\" data-org="
     ],
     "assets/store.js": [
       "sbTombstones",
@@ -675,7 +678,9 @@
       "LIB_MIN_ITEMS = 150",
       "def ensure_library_ready",
       "注入后持仓",
-      "拒绝生成残缺长图"
+      "拒绝生成残缺长图",
+      "方案C：.nr 现为",
+      "split(/[→"
     ],
     "assets/privacy.js": [
       "wealth3.privacy.closed",

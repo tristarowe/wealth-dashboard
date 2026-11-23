@@ -125,8 +125,10 @@ def capture_newprod(page, date):
             channel: lane.getAttribute('data-org') || '',
             items: Array.from(lane.querySelectorAll('.nchip')).map(el => {
                 const g = s => { const n = el.querySelector(s); return n ? n.innerText.trim() : ''; };
-                const d = g('.nr');
-                return {date: d.split('-')[0].trim(), name: g('.nm'), quota: g('.na'), risk: g('.rk')};
+                // 方案C：.nr 现为「11.23」或「11.23→11.26」，取箭头/连字符前的起始日，
+                // 供通知按日期排序与展示（newproducts.json 里已是 11.23 这类 md 格式）
+                const d = g('.nr').split(/[→\\-－]/)[0].trim();
+                return {date: d, name: g('.nm'), quota: g('.na'), risk: g('.rk')};
             })
         })).filter(lane => lane.items.length)"""
     )
