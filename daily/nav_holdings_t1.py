@@ -106,6 +106,12 @@ def fnum(v):
 
 _DROP = set(" \t\r\n（）()·•-—、`[]【】")
 
+# 建行代销网对部分产品会加"代销冠名前缀"（如 南极星稳富7天持有期7号 = 中银稳富7天持有期7号）。
+# 这些前缀不含数字编号，用它拼出候选全名再做"完整 key 命中"，可安全救回被前缀挡住的产品，
+# 不会像裸 contains 那样把"7号"错配到"27号"。仅用于 --all 全库扫描的兜底。
+NLC_SAFE_PREFIXES = ("南极星", "中银理财", "建信理财", "交银理财", "光大理财",
+                     "民生理财", "中邮理财", "农银理财", "信银理财", "兴银理财")
+
 
 def name_key(s):
     """产品名归一：去标点/空格/代销字样，用于精确匹配。"""
@@ -330,7 +336,8 @@ def main():
     ap.add_argument("--dry-run", action="store_true", help="只打印，不写文件")
     ap.add_argument("--all", action="store_true",
                     help="扩展到全库非持仓产品：用已抓取的 NLC165 索引补滞后净值。"
-                         "仅接受精确名称/ECD 命中 + 真实净值（跳过现金类 nav=1.0 占位）；"
+                         "接受精确名称/ECD 命中 + 安全代销前缀(南极星等)命中 + 真实净值"
+                         "（跳过现金类 nav=1.0 占位，前缀命中另过万份收益校验）；"
                          "默认关闭，仅处理持仓")
     ap.add_argument("--gap", type=float, default=0.15, help="分页间隔秒")
     ap.add_argument("--cw", action="store_true",
@@ -481,6 +488,22 @@ def main():
                 if key and key in nlc_by_name:
                     hit = nlc_by_name[key]
                     src = "建行官网"
+            # 安全前缀兜底：建行代销对部分产品加冠名前缀（如"南极星"+产品名），
+            # 精确匹配会漏掉。用"前缀+简称/全名"的完整 key 命中，不做裸 contains，
+            # 避免"7号"错配"27号"。命中后仍须通过下方净值量级 + 万份收益校验。
+            if hit is None:
+                sk = name_key(x.get("short") or "")
+                nk = name_key(x.get("name") or "")
+                cands = []
+                for _pfx in NLC_SAFE_PREFIXES:
+                    pk = name_key(_pfx)
+                    for _base, _label in ((sk, "简称"), (nk, "全名")):
+                        if _base and (pk + _base) in nlc_by_name:
+                            cands.append((nlc_by_name[pk + _base], _pfx, _label))
+                if cands:
+                    _best = max(cands, key=lambda c: c[0][0])
+                    hit = _best[0]
+                    src = "建行官网前缀(%s/%s)" % (_best[1], _best[2])
             if not hit or hit[0] <= cur:
                 continue
             # 真实净值校验：NLC165 对现金管理类给 1.0 占位（库内是 1.00x 折算净值），
@@ -496,6 +519,14 @@ def main():
                 print("  %-18s %-22s 跳过：净值量级异常 %s vs %s" %
                       (pid, (x.get("short") or "")[:22], nnav, curnav), flush=True)
                 continue
+            # 前缀兜底命中额外校验：隐含万份收益 (新nav-旧nav)*10000 须在 ±5 内。
+            # 正常日收益远小于此；若错配到别的份额/产品线，这里会拦截（宁可滞后不串份额）。
+            if "前缀" in src and curnav:
+                implied = (nnav - curnav) * 10000
+                if implied < -5 or implied > 5:
+                    print("  %-18s %-22s 跳过：前缀匹配万份收益异常 %.2f（疑似错配）" %
+                          (pid, (x.get("short") or "")[:22], implied), flush=True)
+                    continue
             if not a.dry_run:
                 if not apply_point(x, hit[0], nnav):
                     continue
