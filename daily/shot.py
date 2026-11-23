@@ -24,6 +24,29 @@ META = Path(__file__).resolve().parent / "shot_meta.json"
 KEEP = 7
 
 
+# 页面需要加载 assets/library.js（product 库 200+ 只）才能把持仓与产品库对上。
+# 2026-11-23 事故：某次长图里「覆盖产品」只剩 2 款、盈亏汇总只有 2 行，
+# 而云端交易 16 笔、持仓 15 只都完好——是页面自身只认到 data.js 的 4 只，
+# 即产品库没就绪。截图必须等到库齐再注入，宁可重载也不推残缺图。
+LIB_MIN_ITEMS = 150
+
+
+def ensure_library_ready(page, tries=3):
+    """等页面产品库加载完成；未就绪则重载重试，仍不就绪直接失败。"""
+    n = 0
+    for i in range(tries):
+        n = page.evaluate(
+            "() => ((window.PRODUCT_LIBRARY && window.PRODUCT_LIBRARY.items) || []).length"
+        )
+        if n >= LIB_MIN_ITEMS:
+            print("产品库已就绪", n, "只", flush=True)
+            return n
+        print(f"产品库未就绪（{n} 只），第 {i + 1} 次重载页面", flush=True)
+        page.reload()
+        page.wait_for_timeout(2500)
+    raise RuntimeError(f"产品库仅加载到 {n} 只（应 ≥{LIB_MIN_ITEMS}），拒绝生成残缺长图")
+
+
 def inject_live_trades(page):
     """RLS 开启后匿名打开页面读不到交易，截图会是空壳。
 
@@ -50,6 +73,19 @@ def inject_live_trades(page):
     )
     page.wait_for_timeout(1500)
     print("已注入云端交易", len(items), "笔用于截图", flush=True)
+
+    # 注入后校验：能对上产品的持仓数应与「去重后的申购产品数」一致。
+    # 少于此说明产品库/别名映射没把交易认全，此时长图会只剩少数几行，必须重试。
+    want = len({t.get("pid") for t in items if t.get("type") == "申购" and t.get("pid")})
+    got = page.evaluate(
+        "() => (window.DASHBOARD_HOLDINGS || []).filter(h => h.shares > 1e-6).length"
+    )
+    lib = page.evaluate("() => (window.DASHBOARD_LIBRARY || []).length")
+    print(f"注入后持仓 {got} 只（应为 {want} 只），产品库模型 {lib} 只", flush=True)
+    if want and got < max(1, want - 1):
+        raise RuntimeError(
+            f"持仓只认出 {got}/{want} 只（产品库模型 {lib} 只），长图会残缺；转重试"
+        )
 
 
 def capture_home(page, date):
@@ -121,6 +157,7 @@ def main():
                 page = desk.new_page()
                 page.goto(index)
                 page.wait_for_timeout(1500)
+                ensure_library_ready(page)
                 date = page.evaluate("window.REPORT_DATA.asOf")
                 inject_live_trades(page)
                 _, income = capture_home(page, date)
