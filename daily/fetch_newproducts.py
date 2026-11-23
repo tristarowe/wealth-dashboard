@@ -242,10 +242,23 @@ def extract_dates(flat):
     if not end:
         end = start
 
-    # ③ 成立日
-    seg, dd = label_dates(r"(?:理财产品成立日|产品成立日|产品成立日期|预计成立日|成立日期|成立日)", span=80)
-    if dd:
-        est = dd[0][1]
+    # ③ 成立日（2026-11-23 修复：优先精确标签 + 紧邻日期）
+    # 旧逻辑用泛化标签「成立日」+ span=80，会先命中正文「成立日后的2个工作日…2026-12-02」
+    # 这类说明文字里的日期，抢在要素表「产品成立日期 2026-12-01」之前 → 成立日多算一天。
+    # 改为先取精确标签且日期紧跟（span=26），只认要素表直读；再回退宽泛标签，最后认购登记日。
+    for lbl in (r"产品成立日期", r"理财产品成立日", r"产品成立日"):
+        for m in re.finditer(lbl + r"\s*[:：]?\s*", flat):
+            seg = flat[m.end():m.end() + 26]
+            dd = dates_in(seg)
+            if dd:
+                est = dd[0][1]
+                break
+        if est:
+            break
+    if not est:
+        seg, dd = label_dates(r"(?:理财产品成立日|产品成立日|产品成立日期|预计成立日|成立日期|成立日)", span=80)
+        if dd:
+            est = dd[0][1]
     # ③b 兜底：部分说明书（如招银）要素表标签被 PDF 断字成「产品成↵立日」而匹配不到，
     #     改取「认购登记日 / 产品登记日」的具体日期（等同成立/登记日）。label_dates 会
     #     跳过无日期的释义句，定位到真正带日期的行。
@@ -347,6 +360,28 @@ def clean_channels(raw):
         if short and short not in out:
             out.append(short)
     return "；".join(out)
+
+
+# 销售机构兜底（2026-11-23）：部分说明书无标准「产品销售机构」字段，但代销语境里明确写出。
+# 只认销售/代销语境，绝不取「托管人：指XX银行」（会误把托管行当销售行）。
+_SALE_PATTERNS = [
+    re.compile(r"合作销售机构信息[^。；]{0,50}?企业名称\s*[:：]?\s*[【\[]?\s*"
+               r"([\u4e00-\u9fa5]{2,12}银行(?:股份有限公司)?)"),
+    re.compile(r"代销机构(?:/销售机构)?基本信息\s*[:：]?\s*[【\[]?\s*"
+               r"([\u4e00-\u9fa5]{2,12}银行(?:股份有限公司)?)"),
+    re.compile(r"代销机构/销售机构\s*[:：]?指\s*([\u4e00-\u9fa5]{2,12}银行(?:股份有限公司)?)"),
+]
+
+
+def sale_channel_fallback(flat):
+    """标准字段缺失时，从代销语境兜底取销售机构全称；无明确证据返回空。"""
+    c = re.sub(r"\s+", " ", flat or "")
+    found = []
+    for pat in _SALE_PATTERNS:
+        for v in pat.findall(c):
+            if v not in found:
+                found.append(v)
+    return "；".join(found)
 
 
 # 募集规模上限的合理区间（单位：万元），即 100 万 ~ 500 亿。
@@ -609,7 +644,16 @@ def build():
         if key in seen:
             continue
         seen.add(key)
-        channel_raw = flat_field(flat, r"理财产品销售机构", 120) or (r.get("产品销售机构_简称") or "")
+        # 代销机构：三个来源按可信度取——解析器字段 > 说明书标准标签 > 代销语境兜底。
+        # flat_field 单独用会命中正文噪音（如「销售服务费支付给理财产品销售机构」），
+        # 故先各自 clean_channels，取第一个非空结果，避免噪音顶掉后面的有效来源。
+        channel_raw = ""
+        for cand in (r.get("产品销售机构_简称") or "",
+                     flat_field(flat, r"理财产品销售机构", 120),
+                     sale_channel_fallback(flat)):
+            if clean_channels(cand):
+                channel_raw = cand
+                break
         item = {
             "name": name,
             "issuer": issuer,
