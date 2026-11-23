@@ -8,10 +8,13 @@
          凭 reg_alias.json「登记编码 -> ECD」映射，跨渠道改名/加前后缀仍能精确命中；
          解决「南极星/（代销）/（数字人民币专享）」等名称写法不一致导致的匹配失败；
   路径 1b 建行官网 NLC165 产品全名归一匹配（含 contains 兜底）——覆盖大多数持仓；
+  路径 1c 建行官网 NLC165 身份核匹配（identity_key）——解决机构名前后缀/份额字母/
+         渠道专享写法不一致导致的"名称对不上"（贝莱德机构名后缀、光大 D/I 份额等）；
   路径 2  中邮理财官网列表（psbc-wm.com，返回 Z7 登记编码 + 最新净值 + 日期）——
          按需（--psbc-pages）补 NLC165 未命中的中邮产品；
   路径 3  建信理财官网 chart（wealthccb.com，凭 ccb_map.json 的 ecd）——
-         补建信系产品历史净值序列；
+         补建信系产品历史净值序列；全库扩展另含交银官网按 fundcode 单点兜底
+         （BOCOM_FUNDCODES，补 NLC165 未收录的灵动慧利132/133号等）；
   路径 4  中国理财网主源（nav_bulk，按 Z7 登记编码）——最后兜底，
          仅当上面官网渠道都取不到 T-1 时才用（默认关闭 --cw，限频防人机验证）。
 
@@ -117,6 +120,105 @@ def name_key(s):
     """产品名归一：去标点/空格/代销字样，用于精确匹配。"""
     out = "".join(ch for ch in str(s or "") if ch not in _DROP)
     return out.replace("代销", "")
+
+
+# ---------------------------------------------------------------------------
+# 身份核归一（2026-11-23）：解决"名称对不上导致抓不到最新净值"。
+# 建行代销网 NLC165 的产品名写法与产品库名存在系统性差异：
+#   - 机构名位置不同：库内"贝莱德建信理财贝淳金元100天…"，代销"贝淳金元100天…贝莱德建信理财"（后缀）
+#   - 份额字母后缀：代销"光大理财阳光金乐盈日开31号…D/I"（尾部单字母），库内无
+#   - 渠道专享后缀：代销"…21天最低持有D房贷专享"，库内无
+#   - 代销冠名前缀：代销"南极星稳富7天…"（旧规则已处理）
+# 身份核 = 剥离机构名(前/后) + 渠道专享字样 + 尾部份额字母后的稳定核心标识。
+# 用身份核做"精确等值"匹配（不是裸 contains，避免"7号"错配"27号"），
+# 命中后仍须通过原有 现金类占位/量级±5%/万份收益±5 校验，宁可滞后不串份额。
+# ---------------------------------------------------------------------------
+# 机构名 token：按长度降序，确保"贝莱德建信理财"先于"建信理财"被剥离，
+# 避免长机构名被短 token 截断后残留导致身份核不一致。
+ORG_TOKENS = tuple(sorted([
+    "贝莱德建信理财", "中银理财", "建信理财", "交银理财", "光大理财", "光银理财",
+    "中邮理财", "邮银理财", "农银理财", "信银理财", "兴银理财", "民生理财",
+    "浦银理财", "工银理财", "华夏理财", "招银理财", "平安理财", "南银理财",
+    "苏银理财", "北银理财", "上银理财", "徽银理财", "杭银理财", "宁银理财",
+    "青银理财", "南极星", "中银", "建信", "交银", "光大", "中邮", "农银",
+    "信银", "兴银", "民生", "浦银", "工银", "华夏", "招银", "平安",
+    "固定收益类", "理财产品", "理财", "股份", "有限公司", "责任", "银行",
+], key=len, reverse=True))
+# 渠道专享后缀：这类字样代销网有、产品库名没有，归一前统一剥离。
+CHANNEL_SUFFIX = ("数字人民币专享", "房贷专享", "私行专享", "代销", "专属", "尊享")
+# 尾部份额字母正则：代销网用单个大写字母标识份额（A/B/D/I/E…），库内名不带。
+_SHARE_TAIL_RE = re.compile(r"[A-Z]$")
+
+
+def identity_key(s):
+    """身份核：机构名(前/后)/渠道专享/尾部份额字母剥离后的稳定核心标识。"""
+    k = name_key(s)
+    if not k:
+        return ""
+    for tok in ORG_TOKENS:
+        tk = name_key(tok)
+        if not tk:
+            continue
+        # 反复剥离，覆盖"机构名+机构名"叠加写法；保留至少 4 字核心避免清空
+        while len(k) > len(tk) + 3 and k.startswith(tk):
+            k = k[len(tk):]
+        while len(k) > len(tk) + 3 and k.endswith(tk):
+            k = k[:-len(tk)]
+    for suf in CHANNEL_SUFFIX:
+        sk = name_key(suf)
+        if sk and len(k) > len(sk) + 3:
+            k = k.replace(sk, "")
+    k = _SHARE_TAIL_RE.sub("", k)
+    return k
+
+
+def build_identity_index(by_name):
+    """从 NLC 名称索引派生身份核索引：{身份核: [(date, nav, 代销全名), ...]}。
+
+    保留同身份核的所有候选（多份额/多写法），供 pick_identity 按净值连续性择优。
+    """
+    idx = {}
+    for nm, (d, v) in by_name.items():
+        ik = identity_key(nm)
+        if ik:
+            idx.setdefault(ik, []).append((d, v, nm))
+    return idx
+
+
+def pick_identity(identity_idx, name, cur_date="", cur_nav=None):
+    """按身份核精确匹配 NLC 产品，多候选时安全择优。
+
+    返回 (date, nav, 代销全名) 或 None。安全策略：
+      1. 身份核精确等值命中（非 contains）；
+      2. 只在日期比库内更新时才考虑推进；
+      3. 多候选先按隐含万份收益 (nav-cur_nav)*10000 ∈ [-5,5] 过滤错配份额，
+         再取日期最新、净值与库内最接近的一条；
+      4. 若同日候选彼此净值差异 >0.5%（疑似不同份额/产品线），整只放弃。
+    """
+    ik = identity_key(name)
+    if not ik:
+        return None
+    cands = list(identity_idx.get(ik) or [])
+    if not cands:
+        return None
+    cands = [c for c in cands if c[1] and c[1] > 0 and (not cur_date or c[0] > cur_date)]
+    if not cands:
+        return None
+    if cur_nav:
+        ok = [c for c in cands if -5 <= (c[1] - cur_nav) * 10000 <= 5]
+        if not ok:
+            return None
+        cands = ok
+    max_date = max(c[0] for c in cands)
+    same_day = [c for c in cands if c[0] == max_date]
+    # 同日多候选净值差异过大 → 疑似串到不同份额/产品线，放弃
+    if len(same_day) > 1:
+        vals = [c[1] for c in same_day]
+        if (max(vals) - min(vals)) / max(min(vals), 1e-9) > 0.005:
+            return None
+    if cur_nav:
+        return min(same_day, key=lambda c: abs(c[1] - cur_nav))
+    return min(same_day, key=lambda c: c[1])
 
 
 def lookup_nlc(nlc, name):
@@ -256,6 +358,84 @@ def pull_psbc(gap, max_pages=0):
     return idx
 
 
+# ---------------- 路径 2b：交银理财官网单点兜底 ----------------
+# 少数交银产品（如灵动慧利日开132/133号、固收精选日开12号）官网已披露 T-1，
+# 但建行代销 NLC165 未收录或持平，用官网 fundcode 直接抓最新点补上。
+# fundcode 由产品登记编码映射，避免按名称匹配（同名多期易串）。
+BOCOM_FUNDCODES = {
+    "LZ7000926001562": "5811226658",  # 稳享灵动慧利日开133号（7天持有期）
+    "LZ7000926001560": "5811226608",  # 稳享灵动慧利日开132号（7天持有期）
+    "LZ7000926001674": "5811226579",  # 稳享固收精选日日开12号
+}
+BOCOM_BASE = "https://www.bocommwm.com"
+BOCOM_LIST = "/SITE/queryJylcProductInfo.do"
+BOCOM_REF = (BOCOM_BASE + "/BankCommSite/shtml/jylc/cn/2503327/2503412/list.shtml"
+             "?channelId=2503327")
+
+
+def _bocom_post(path, body):
+    """交银官网 REQ_MESSAGE 包裹协议（需 legacy TLS + 绕代理）。"""
+    msg = json.dumps({"REQ_HEAD": {"TRAN_PROCESS": "", "TRAN_ID": ""},
+                      "REQ_BODY": body}, ensure_ascii=False, separators=(",", ":"))
+    import urllib.parse
+    data = urllib.parse.urlencode({"REQ_MESSAGE": msg}).encode()
+    req = urllib.request.Request(BOCOM_BASE + path, data=data, headers={
+        "User-Agent": DESKTOP_UA,
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        "X-Requested-With": "XMLHttpRequest", "Origin": BOCOM_BASE,
+        "Referer": BOCOM_REF, "Accept": "application/json, text/javascript, */*; q=0.01"})
+    ctx = _legacy_ctx()
+    opener = urllib.request.build_opener(
+        urllib.request.HTTPSHandler(context=ctx), urllib.request.ProxyHandler({}))
+    with opener.open(req, timeout=25) as r:
+        payload = json.loads(r.read().decode("utf-8"))
+    head = payload.get("RSP_HEAD") or {}
+    if head.get("TRAN_SUCCESS") != "1":
+        return []
+    result = (payload.get("RSP_BODY") or {}).get("result") or []
+    return result if isinstance(result, list) else []
+
+
+def pull_bocom_index(fundcodes):
+    """按 fundcode 批量取交银官网最新点：{fundcode: (date, nav)}。
+
+    全量列表只拉一次（keyWord 按所需产品名逐个查更慢且 name 易变），
+    用 fundcode 精确匹配，避免同名多期串数据。
+    """
+    out = {}
+    want = set(fundcodes)
+    if not want:
+        return out
+    # 一次拉全量（pageStart/pageEnd 是行号，这里取足够多覆盖交银全系）
+    try:
+        rows = _bocom_post(BOCOM_LIST, {
+            "pageStart": 1, "pageEnd": 400, "product": "personal", "keyWord": ""})
+    except Exception:
+        rows = []
+    for it in rows:
+        fc = str(it.get("c_fundcode") or "").strip()
+        if fc in want:
+            d = norm_date(it.get("d_cdate"))
+            nav = fnum(it.get("f_netvalue"))
+            if d and nav and nav > 0:
+                out[fc] = (d, nav)
+    # 全量未覆盖的，按 fundcode 精确查一次（官网列表支持代码检索）
+    for fc in want - set(out):
+        try:
+            hits = _bocom_post(BOCOM_LIST, {
+                "pageStart": 1, "pageEnd": 15, "product": "personal", "keyWord": fc})
+            for it in hits:
+                if str(it.get("c_fundcode") or "").strip() == fc:
+                    d = norm_date(it.get("d_cdate"))
+                    nav = fnum(it.get("f_netvalue"))
+                    if d and nav and nav > 0:
+                        out[fc] = (d, nav)
+                        break
+        except Exception:
+            continue
+    return out
+
+
 # ---------------- 路径 3：建信官网 chart ----------------
 CCB_CHART = "https://www.wealthccb.com/website/v1/api/product/chart?id={ecd}"
 
@@ -336,8 +516,9 @@ def main():
     ap.add_argument("--dry-run", action="store_true", help="只打印，不写文件")
     ap.add_argument("--all", action="store_true",
                     help="扩展到全库非持仓产品：用已抓取的 NLC165 索引补滞后净值。"
-                         "接受精确名称/ECD 命中 + 安全代销前缀(南极星等)命中 + 真实净值"
-                         "（跳过现金类 nav=1.0 占位，前缀命中另过万份收益校验）；"
+                         "接受精确名称/ECD 命中 + 安全代销前缀(南极星等)命中 + 身份核命中"
+                         "(机构名前后缀/份额字母/渠道专享归一) + 交银官网单点兜底 + 真实净值"
+                         "（跳过现金类 nav=1.0 占位，前缀/身份核命中另过万份收益与净值差校验）；"
                          "默认关闭，仅处理持仓")
     ap.add_argument("--gap", type=float, default=0.15, help="分页间隔秒")
     ap.add_argument("--cw", action="store_true",
@@ -379,8 +560,10 @@ def main():
 
     print("抓取建行官网 NLC165 全量...", flush=True)
     nlc_by_name, nlc_by_ecd = pull_nlc165(a.gap)
-    print("  NLC165 有效净值 %d 只（名称 %d / ECD %d）" %
-          (len(nlc_by_name), len(nlc_by_name), len(nlc_by_ecd)), flush=True)
+    # 身份核索引：解决机构名前后缀/份额字母/渠道专享写法不一致导致的名称对不上
+    nlc_identity = build_identity_index(nlc_by_name)
+    print("  NLC165 有效净值 %d 只（名称 %d / ECD %d / 身份核 %d）" %
+          (len(nlc_by_name), len(nlc_by_name), len(nlc_by_ecd), len(nlc_identity)), flush=True)
     psbc = {}
     if a.psbc_pages:
         print("抓取中邮理财官网列表（%d 页）..." % a.psbc_pages, flush=True)
@@ -410,6 +593,11 @@ def main():
         hit = lookup_nlc(nlc_by_name, prod.get("name"))
         if hit:
             candidates.append((hit[0], hit[1], "建行官网"))
+        # 路径 1c：身份核匹配（机构名前后缀/份额字母/渠道专享写法不一致时兜底）
+        ident = pick_identity(nlc_identity, prod.get("name"), before.get(pid, ""),
+                              prod.get("latestNav"))
+        if ident and not (hit and ident[0] <= hit[0]):
+            candidates.append((ident[0], ident[1], "建行官网身份核"))
         if reg in psbc:
             candidates.append((psbc[reg][0], psbc[reg][1], "中邮官网"))
         # 建信官网 chart（ccb_map 的 ecd，通常是 JX/JXJXB 前缀）
@@ -468,6 +656,10 @@ def main():
     if a.all:
         print("\n=== 全库扩展扫描（--all）：非持仓产品 NLC165 精确匹配 ===", flush=True)
         hold_pids = set(pid for pid, _, _ in holds)
+        # 交银官网兜底：NLC165 未收录/持平的产品（如灵动慧利132/133号）官网已披露更新
+        bocom_idx = pull_bocom_index(BOCOM_FUNDCODES.values())
+        if bocom_idx:
+            print("  交银官网兜底可用 %d 只" % len(bocom_idx), flush=True)
         for x in lib_items:
             pid = x.get("id")
             if not pid or pid in hold_pids or pid in data_pids:
@@ -504,6 +696,21 @@ def main():
                     _best = max(cands, key=lambda c: c[0][0])
                     hit = _best[0]
                     src = "建行官网前缀(%s/%s)" % (_best[1], _best[2])
+            # 身份核兜底：机构名后缀(贝莱德建信理财)/份额字母(光大 D/I)/渠道专享
+            # 等写法差异，精确名和固定前缀都覆盖不到时用身份核精确等值匹配。
+            # pick_identity 已内置"隐含万份收益±5 + 同日多候选净值差>0.5%放弃"防串校验。
+            if hit is None:
+                ident = pick_identity(nlc_identity, x.get("name"), cur, curnav)
+                if ident:
+                    hit = (ident[0], ident[1])
+                    src = "建行官网身份核"
+            # 交银官网单点兜底：按 pid 精确锁定 fundcode，官网已披露更新时采用。
+            # 必须过隐含万份收益 ±5 校验，防 fundcode 映射错配串份额。
+            if hit is None and pid in BOCOM_FUNDCODES:
+                bp = bocom_idx.get(BOCOM_FUNDCODES[pid])
+                if bp and curnav and -5 <= (bp[1] - curnav) * 10000 <= 5:
+                    hit = bp
+                    src = "交银理财官网"
             if not hit or hit[0] <= cur:
                 continue
             # 真实净值校验：NLC165 对现金管理类给 1.0 占位（库内是 1.00x 折算净值），

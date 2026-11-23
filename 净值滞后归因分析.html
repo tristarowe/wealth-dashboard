@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>三家理财子净值日期归因分析 · 2026-11-23</title>
+<style>
+  :root{
+    --bg:#f4f6f9; --card:#ffffff; --ink:#1f2733; --sub:#5d6b76; --line:#e3e8ef;
+    --red:#c0392b; --redbg:#fdeceb; --amber:#b9770e; --amberbg:#fdf4e3;
+    --blue:#1f6f8b; --bluebg:#e8f4f8; --green:#1e8449; --greenbg:#e9f7ef;
+    --mono:'SFMono-Regular',Consolas,'Roboto Mono',Menlo,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--font,-apple-system,'Segoe UI','Microsoft YaHei',sans-serif);
+    background:var(--bg);color:var(--ink);line-height:1.7;padding:28px 16px;font-size:14px}
+  .wrap{max-width:1080px;margin:0 auto}
+  header{background:linear-gradient(135deg,#1f3a5f,#2c5282);color:#fff;border-radius:14px;
+    padding:30px 34px;margin-bottom:22px;box-shadow:0 6px 20px rgba(31,58,95,.18)}
+  header h1{font-size:25px;font-weight:800;letter-spacing:.5px;margin-bottom:8px}
+  header .meta{font-size:13px;opacity:.9}
+  header .meta b{font-family:var(--mono);color:#ffe08a}
+  .baseline{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);
+    border-radius:8px;padding:10px 14px;margin-top:16px;font-size:12.5px}
+  .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px}
+  .scard{background:var(--card);border-radius:12px;padding:18px 20px;border-top:4px solid var(--line);
+    box-shadow:0 2px 10px rgba(20,40,70,.06)}
+  .scard.r{border-top-color:var(--red)} .scard.a{border-top-color:var(--amber)} .scard.b{border-top-color:var(--blue)}
+  .scard .org{font-size:13px;color:var(--sub);font-weight:600}
+  .scard .verdict{font-size:16px;font-weight:800;margin:6px 0}
+  .scard.r .verdict{color:var(--red)} .scard.a .verdict{color:var(--amber)} .scard.b .verdict{color:var(--blue)}
+  .scard .dist{font-family:var(--mono);font-size:12px;color:var(--sub)}
+  section{background:var(--card);border-radius:14px;padding:26px 30px;margin-bottom:22px;
+    box-shadow:0 2px 12px rgba(20,40,70,.06)}
+  .tag{display:inline-block;font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:20px;margin-right:8px;vertical-align:2px}
+  .tag.r{background:var(--redbg);color:var(--red)} .tag.a{background:var(--amberbg);color:var(--amber)}
+  .tag.b{background:var(--bluebg);color:var(--blue)} .tag.g{background:var(--greenbg);color:var(--green)}
+  h2{font-size:20px;font-weight:800;margin-bottom:4px;display:flex;align-items:center;flex-wrap:wrap;gap:4px}
+  .q{color:var(--sub);font-size:13px;margin:6px 0 18px;font-style:italic}
+  h3{font-size:15px;font-weight:700;margin:20px 0 10px;padding-left:11px;border-left:3px solid #2c5282}
+  p{margin:8px 0;color:#33404f}
+  .concl{background:#f7f9fc;border:1px solid var(--line);border-left:4px solid #2c5282;
+    border-radius:8px;padding:14px 18px;margin:14px 0;font-size:14px}
+  .concl b{color:#1f3a5f}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:12.5px}
+  th,td{padding:9px 11px;text-align:left;border-bottom:1px solid var(--line)}
+  th{background:#f0f4f9;font-weight:700;color:#33404f;font-size:12px}
+  td.mono,th.mono{font-family:var(--mono)}
+  tr:hover td{background:#fafbfd}
+  .bad{color:var(--red);font-weight:700} .warn{color:var(--amber);font-weight:700}
+  .ok{color:var(--green);font-weight:700}
+  code{font-family:var(--mono);background:#eef2f7;padding:1px 6px;border-radius:4px;font-size:12px;color:#b0392b}
+  .ev{background:#0f1b2d;color:#d6e4f0;border-radius:8px;padding:14px 18px;font-family:var(--mono);
+    font-size:12px;line-height:1.85;overflow-x:auto;margin:10px 0}
+  .ev .y{color:#7ee0a8} .ev .n{color:#ff9a8f} .ev .c{color:#7fb7e8} .ev .k{color:#ffd98a}
+  ul,ol{margin:8px 0 8px 22px} li{margin:6px 0;color:#33404f}
+  .steps{counter-reset:s;list-style:none;margin-left:0}
+  .steps li{position:relative;padding-left:38px;margin:12px 0}
+  .steps li::before{counter-increment:s;content:counter(s);position:absolute;left:0;top:0;
+    width:26px;height:26px;background:#2c5282;color:#fff;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:13px;font-weight:700}
+  .pill{display:inline-block;font-size:11px;font-family:var(--mono);padding:1px 8px;border-radius:5px;background:#eef2f7}
+  footer{text-align:center;color:var(--sub);font-size:12px;padding:14px 0 30px}
+  @media(max-width:720px){.summary{grid-template-columns:1fr}section{padding:20px}header{padding:22px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>三家理财子净值日期归因分析</h1>
+  <div class="meta">生成时间 <b>2026-11-23 16:15</b> ｜ 数据快照 <b>library.json @ 11-22</b> ｜ 分析对象：贝莱德建信 · 光大 · 交银</div>
+  <div class="baseline">
+    <b>基准口径：</b>今天为周一 11-23，最近一个已过去的工作日 T-1 = <b>11-20（周五）</b>。
+    日开/现金管理类的合理上限是 11-20；周末（11-21/22）多数固收类不披露。
+    所有"滞后"均按此基准判断。数据源实测：建行代销 NLC165（全量 7749 条）· 交银理财官网 · 中国理财网。
+  </div>
+</header>
+
+<div class="summary">
+  <div class="scard r">
+    <div class="org">贝莱德建信 · 20 只</div>
+    <div class="verdict">匹配漏洞，非源端缺数</div>
+    <div class="dist">11-10 ×1　11-19 ×18　11-20 ×1</div>
+  </div>
+  <div class="scard a">
+    <div class="org">光大理财 · 14 只</div>
+    <div class="verdict">代销有数，名称对不上</div>
+    <div class="dist">11-18 ×6　11-19 ×7　11-20 ×1</div>
+  </div>
+  <div class="scard b">
+    <div class="org">交银理财 · 20 只</div>
+    <div class="verdict">源端披露节奏为主</div>
+    <div class="dist">11-19 ×15　11-20 ×5</div>
+  </div>
+</div>
+
+<!-- ============ 贝莱德 ============ -->
+<section>
+  <h2><span class="tag r">可修复 · 优先级高</span>一、贝淳金元100天1期为何停在 11-10</h2>
+  <div class="q">"贝莱德建信贝淳金元100天1期，为啥是到11.10的？"</div>
+
+  <h3>现象</h3>
+  <p>该产品（登记码 <code>Z7005126000013</code>，成立 2026-09-17，R2，非持仓）净值序列从 09-17 连续披露到 <b class="bad">11-10</b> 后突然中断，
+  净值 1.0046。而同机构另外 18 只都到 11-19、1 只（持仓的添元45天2期）到 11-20。它是 20 只里唯一的"掉队者"。</p>
+
+  <h3>根因（实测源端）</h3>
+  <p>关键结论：<b>建行代销渠道其实有它到 11-20 的数据</b>，是名称匹配规则把它漏掉了，属于抓取链路漏洞，不是源端没披露。</p>
+  <div class="ev">
+<span class="c"># 建行代销 NLC165 全量索引里确实存在这只产品</span>
+名称: <span class="k">贝淳金元100天持有期固定收益类理财产品1期贝莱德建信理财</span>
+最新: <span class="y">2026-11-20　nav 1.0049</span>
+
+<span class="c"># 但产品库里的名称写法不同（机构名在开头，且无期限后缀拼接）</span>
+库内 name_key: <span class="n">贝莱德建信理财贝淳金元100天持有期固定收益类理财产品1期</span>
+匹配结果: <span class="n">精确名称 miss / ECD 别名 miss / 安全前缀 miss</span>
+
+<span class="c"># 为什么三条匹配路径全失败</span>
+1. 精确 ECD：reg_alias.json 未登记此登记码 → <span class="n">无 ECD</span>
+2. 精确名称：库内"贝莱德建信理财+产品名"，NLC 是"产品名+贝莱德建信理财"（机构名在尾部）→ <span class="n">不等</span>
+3. 安全前缀：NLC_SAFE_PREFIXES 只认前缀式冠名，此例机构名是<span class="n">后缀</span> → <span class="n">不覆盖</span>
+4. 兜底 中国理财网：实测触发<span class="n">人机验证/限频</span>（CaptchaRequired，search 返回 0）
+  </div>
+  <div class="concl">
+    <b>结论：</b>净值停在 11-10 是<b>代销渠道名称后缀写法未被匹配规则覆盖</b> + <b>中国理财网当日限频</b>叠加所致。
+    11-10→11-20 净值仅从 1.0046 到 1.0049（10 个日历日约 +0.3 元/万份），量级合理，确系同一只产品的连续净值，补入无串数据风险。
+  </div>
+
+  <h3>建议</h3>
+  <ol class="steps">
+    <li>在 <code>reg_alias.json</code> 为 <code>Z7005126000013</code> 登记建行代销 ECD（经 <code>IvsmPd_ECD</code> 精确锁定），一步到位，仿照已处理的添元45天2期。</li>
+    <li>或扩展匹配规则：对"产品名 + 机构后缀（贝莱德建信理财/光大理财等）"做尾部剥离归一，再叠加历史重叠点校验。</li>
+    <li>补刷后该只应到 <b class="ok">11-20 / nav 1.0049</b>，与同机构对齐。</li>
+  </ol>
+</section>
+
+<!-- ============ 光大 ============ -->
+<section>
+  <h2><span class="tag a">部分可修复 · 需防串份额</span>二、光大只有持仓到 20，其他能否到 20</h2>
+  <div class="q">"光大也只有持仓是到20，其他是否也能到20？"</div>
+
+  <h3>现象</h3>
+  <p>14 只中，仅持仓的<b>阳光金增利稳健乐享天天购89号</b>到 11-20；6 只停在 11-18、7 只停在 11-19。</p>
+
+  <h3>根因（实测源端）</h3>
+  <p>光大理财官网是<b>瑞数风控</b>（无头浏览器成功率约 1/5），不可稳定程序化抓取——这是官网这条路的天花板。
+  但<b>建行代销 NLC165 里有光大产品，且日期更靠前</b>；同样卡在名称匹配：</p>
+  <div class="ev">
+<span class="c"># 建行代销 NLC165 中，光大产品名带份额字母后缀 D / I</span>
+光大理财阳光金乐盈日开31号180天最低持有<span class="k">D</span> → <span class="y">11-19</span> nav 1.0003
+光大理财阳光金增利稳健乐享天天购89号14天最低持有<span class="k">D</span> → <span class="y">11-20</span> nav 1.0010
+光大理财阳光金增利稳健乐享日开102号<span class="k">D</span> → <span class="y">11-20</span> nav 1.0058
+光大理财阳光金增利稳健乐享天天购76号7天最低持有<span class="k">D</span> → <span class="y">11-20</span> nav 1.0042
+
+<span class="c"># 库内名称无份额后缀、无机构前缀</span>
+库内: <span class="n">阳光金乐盈日开31号（180天最低持有）</span>
+拼接 "光大理财"+全名 = <span class="n">光大理财阳光金乐盈日开31号180天最低持有</span> ≠ NLC（尾部还多 D/I）→ <span class="n">miss</span>
+
+<span class="c"># 份额 D / I 净值差约 0.0001，必须先做历史重叠点比对再决定能否写入</span>
+  </div>
+  <div class="concl">
+    <b>结论：</b>其他 13 只<b>多数能从建行代销渠道补到 11-19 / 11-20</b>——建行代销已有数据。
+    卡点是名称多了 <span class="pill">份额字母后缀</span>，安全前缀匹配没有覆盖"前缀 + 产品名 + 份额后缀"这种三段式写法。
+    注意部分产品（如"乐盈日开19号""乐盈18号""乐盈2号"）在 NLC 里对不上或串到了别的机构产品，<b>不能盲目补</b>。
+  </div>
+
+  <h3>建议</h3>
+  <ol class="steps">
+    <li>对光大产品扩展匹配：前缀 <code>光大理财</code> + 产品名 + 单个份额字母（D/I/A…）尾部剥离，候选须通过<b>历史重叠点 ≥3 且一致率 ≥80%</b> 才能写入。</li>
+    <li>优先只对已验证过的份额（如 89 号 D 份额与库内历史 6/6 一致）补数，其余逐个校验，宁可滞后不串份额。</li>
+    <li>补数后仍需人工复核隐含万份收益是否在合理区间（±5 元/万份）。</li>
+  </ol>
+</section>
+
+<!-- ============ 交银 ============ -->
+<section>
+  <h2><span class="tag b">源端为主 · 3 只可即时补</span>三、交银大部分为何是 19</h2>
+  <div class="q">"交银大部分也是19？"</div>
+
+  <h3>现象</h3>
+  <p>20 只中 15 只停在 11-19，5 只到 11-20。逐只直连交银理财官网核对后，情况分两类。</p>
+
+  <h3>根因（逐只实测官网 d_cdate）</h3>
+  <div class="ev">
+<span class="c"># 交银官网 d_cdate 与库内 latestDate 逐只比对（20 只）</span>
+<span class="y">15 只：官网本身即 11-19，库内也 11-19 → 披露节奏，非漏抓</span>
+  例：稳享慧选日开49号 官网 11-19 nav 1.0018 = 库内 11-19 ✓
+     稳享灵动慧利日开114号 官网 11-19 nav 1.0061 = 库内 11-19 ✓
+<span class="y"> 5 只：官网 11-20，库内 11-20 → 已同步 ✓</span>
+     稳享固收精选日日开19号 / 18号 / 17号 / 日开140号 / 日开136号
+<span class="n"> 3 只：官网已 11-20，库内仍 11-19 → 抓取滞后，可即时补</span>
+     稳享灵动慧利日开133号 官网 <span class="y">11-20</span> nav 1.0083 ｜ 库内 <span class="n">11-19</span> nav 1.0081
+     稳享灵动慧利日开132号 官网 <span class="y">11-20</span> nav 1.0069 ｜ 库内 <span class="n">11-19</span> nav 1.0068
+     稳享固收精选日日开12号 官网 <span class="y">11-20</span> nav 1.0085 ｜ 库内 <span class="n">11-19</span> nav 1.0080
+  </div>
+  <div class="concl">
+    <b>结论：</b>交银"大部分 19"<b>主要是源端披露节奏</b>——官网对这些产品本身只给到 11-19，
+    属于"T+1 次日上午才披露 T 日净值"的机构惯例，与中银/民生同类，<b>抓取无法提前</b>。
+    真正因抓取滞后的只有 <b>3 只</b>（133 / 132 / 12 号），官网已有 11-20 数据，可直接补齐。
+    另需注意：交银官网 adapter 虽已具备，但尚未纳入自动轮换（第三批待办），靠中国理财网兜底会更慢。
+  </div>
+
+  <h3>建议</h3>
+  <ol class="steps">
+    <li>将 133 / 132 / 12 号三只按官网 fundcode 走 <code>bocom</code> adapter 即时补刷到 11-20。</li>
+    <li>把交银官网源正式接入自动轮换（第三批），减少对中国理财网（T+2、限频）的依赖。</li>
+    <li>其余 12 只官网未披露的部分，在页面如实标注披露日，<b>不要伪造净值</b>。</li>
+  </ol>
+</section>
+
+<!-- ============ 汇总 ============ -->
+<section>
+  <h2>四、三机构横向对照</h2>
+  <table>
+    <thead><tr>
+      <th>机构</th><th>当前分布</th><th>瓶颈类型</th><th>源端是否已有更新数据</th><th>可修复性</th>
+    </tr></thead>
+    <tbody>
+      <tr>
+        <td><b>贝莱德建信</b></td>
+        <td class="mono">11-10×1 / 11-19×18 / 11-20×1</td>
+        <td class="bad">匹配漏洞 + 理财网限频</td>
+        <td class="ok">是（NLC 已到 11-20）</td>
+        <td class="ok">高 · 加 ECD 即可</td>
+      </tr>
+      <tr>
+        <td><b>光大理财</b></td>
+        <td class="mono">11-18×6 / 11-19×7 / 11-20×1</td>
+        <td class="warn">代销名带份额后缀，匹配失败</td>
+        <td class="warn">多数是（NLC 到 11-19/20）</td>
+        <td class="warn">中 · 须防份额串</td>
+      </tr>
+      <tr>
+        <td><b>交银理财</b></td>
+        <td class="mono">11-19×15 / 11-20×5</td>
+        <td>源端披露节奏（主）+ 3 只滞后</td>
+        <td class="warn">仅 3 只有更新</td>
+        <td>低 · 大部分等源端</td>
+      </tr>
+    </tbody>
+  </table>
+  <p style="margin-top:14px;color:var(--sub);font-size:12.5px">
+    一句话总结：<b>贝莱德是"能拿到却没对上"</b>；<b>光大是"能拿到但名称写法挡住了，且要防串份额"</b>；
+    <b>交银是"源端还没披露，只有 3 只属于漏抓"</b>。前两家属于可通过改进匹配规则解决的抓取侧问题，第三家主要是披露侧问题。
+  </p>
+</section>
+
+<footer>
+  本报告基于 2026-11-23 对建行代销 NLC165（7749 条）、交银理财官网、中国理财网的实时实测，及 library.json / transactions.js 数据快照生成。<br>
+  所有滞后判断均以"最近已过去工作日 11-20"为基准；源端未披露的净值不做任何推算或伪造。
+</footer>
+
+</div>
+</body>
+</html>
