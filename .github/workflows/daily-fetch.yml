@@ -48,12 +48,13 @@ jobs:
         # 否则当天新增的品会漏抓 T-1（2026-11-19 建信嘉鑫7天第63期即因此停在 T-2）
         run: python daily/pull_cloud.py || true
 
-      - name: 持仓产品 T-1 净值攻坚（持仓优先，建行官网 NLC165 + 建信官网）
+      - name: 净值攻坚（NLC165：持仓优先 + 全库精确补漏 + 建信官网）
         env:
           PYTHONIOENCODING: utf-8
           NAV_NO_COMMIT: "1"
-        # 先按交易记录的真实持仓清单，实时抓 T-1 净值写回；中国理财网兜底交给下方轮换步骤
-        run: python daily/nav_holdings_t1.py --gap 0.15
+        # 先按交易记录的真实持仓清单抓 T-1；--all 复用同一份 NLC165 索引精确补非持仓产品
+        # （只接受精确名称/ECD + 真实净值，跳过现金类 1.0 占位）。中国理财网兜底交给下方轮换步骤
+        run: python daily/nav_holdings_t1.py --all --gap 0.15
 
       - name: 抓取净值并更新数据
         env:

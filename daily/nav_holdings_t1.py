@@ -328,6 +328,10 @@ def save(data, lib, data_changed=False, lib_changed=False):
 def main():
     ap = argparse.ArgumentParser(description="持仓产品 T-1 净值攻坚")
     ap.add_argument("--dry-run", action="store_true", help="只打印，不写文件")
+    ap.add_argument("--all", action="store_true",
+                    help="扩展到全库非持仓产品：用已抓取的 NLC165 索引补滞后净值。"
+                         "仅接受精确名称/ECD 命中 + 真实净值（跳过现金类 nav=1.0 占位）；"
+                         "默认关闭，仅处理持仓")
     ap.add_argument("--gap", type=float, default=0.15, help="分页间隔秒")
     ap.add_argument("--cw", action="store_true",
                     help="启用中国理财网兜底（限频、慢，默认关闭；常规由 nav_rotate.py 轮换补）")
@@ -449,6 +453,61 @@ def main():
             changed_lib = True
         print("  %-18s %-28s %s -> %s  nav=%s  [%s]" %
               (pid, short, before[pid] or "-", date, nav, src), flush=True)
+
+    # ---- 全库扩展（--all）：用同一份 NLC165 索引补非持仓产品的滞后净值 ----
+    # 防护比持仓更严：只接受精确名称/ECD 命中（不用 contains 兜底，防"7号"错配"27号"），
+    # 只接受真实且同量级的净值（NLC165 对现金类给 nav=1.0 占位，直接写入会污染 per10k）。
+    all_changed = 0
+    if a.all:
+        print("\n=== 全库扩展扫描（--all）：非持仓产品 NLC165 精确匹配 ===", flush=True)
+        hold_pids = set(pid for pid, _, _ in holds)
+        for x in lib_items:
+            pid = x.get("id")
+            if not pid or pid in hold_pids or pid in data_pids:
+                continue  # 持仓已在上面处理；data.js 产品由 sync_nav_data 回填
+            reg = str(x.get("regCode") or "")
+            cur = x.get("latestDate") or ""
+            curnav = x.get("latestNav")
+            hit = None
+            src = ""
+            # 精确 ECD 优先
+            ecd = (alias.get(reg) or {}).get("ecd") or cmap.get(reg)
+            if ecd and ecd in nlc_by_ecd:
+                hit = nlc_by_ecd[ecd]
+                src = "建行官网ECD"
+            # 精确名称（不 contains）
+            if hit is None:
+                key = name_key(x.get("name") or x.get("short") or "")
+                if key and key in nlc_by_name:
+                    hit = nlc_by_name[key]
+                    src = "建行官网"
+            if not hit or hit[0] <= cur:
+                continue
+            # 真实净值校验：NLC165 对现金管理类给 1.0 占位（库内是 1.00x 折算净值），
+            # 直接写入会把 per10k 算成大负数 -> 跳过 nav=1.0 且与库内不同量级的项
+            nnav = hit[1]
+            if nnav is None or nnav <= 0:
+                continue
+            if nnav == 1.0 and curnav and abs(curnav - 1.0) > 1e-6:
+                print("  %-18s %-22s 跳过：现金类 nav=1.0 占位" %
+                      (pid, (x.get("short") or "")[:22]), flush=True)
+                continue
+            if curnav and (nnav < curnav * 0.95 or nnav > curnav * 1.05):
+                print("  %-18s %-22s 跳过：净值量级异常 %s vs %s" %
+                      (pid, (x.get("short") or "")[:22], nnav, curnav), flush=True)
+                continue
+            if not a.dry_run:
+                if not apply_point(x, hit[0], nnav):
+                    continue
+            all_changed += 1
+            changed_lib = True
+            print("  %-18s %-22s %s -> %s  nav=%s  [%s]" %
+                  (pid, (x.get("short") or "")[:22], cur or "-", hit[0], nnav, src),
+                  flush=True)
+        print("全库扩展：将更新 %d 只非持仓产品" % all_changed, flush=True)
+        changed += all_changed
+    else:
+        print("\n（未启用 --all，跳过全库非持仓产品；加 --all 扩展）", flush=True)
 
     # T-1 覆盖汇总：让"是否取到 T-1"一目了然
     reached = [r for r in t1_report if r[3]]
