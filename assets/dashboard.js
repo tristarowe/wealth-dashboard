@@ -1,4 +1,6 @@
 (function () {
+  /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
+  window.__NP_LAYOUT_VERSION = '20261123c';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -5458,6 +5460,15 @@
   /* 2026-11-23 方案C：代销机构多选（channels 为空数组＝全部） */
   var NP_UI = { channels: [] };
   var NP_COLORS = ['#0e5a73', '#2f6f9f', '#8a5a2b', '#3f6f56', '#6b4c8a', '#b5651d'];
+  /* 图稿配色：同一发行机构固定同色，不能靠名称哈希（会出现「中银遇棕、交银遇蓝」）。 */
+  var NP_ISSUER_COLORS = {
+    '贝莱德': '#0e5a73', '中银': '#0e5a73', '中邮': '#0e5a73',
+    '工银': '#2f6f9f', '建信': '#2f6f9f',
+    '招银': '#8a5a2b', '光大': '#b5651d',
+    '交银': '#3f6f56', '兴银': '#3f6f56', '民生': '#3f6f56',
+    '信银': '#6b4c8a', '浦银': '#6b4c8a', '平安': '#6b4c8a',
+    '农银': '#b5651d', '华夏': '#8a5a2b'
+  };
 
   function ymd(d) {
     var m = d.getMonth() + 1, dd = d.getDate();
@@ -5491,7 +5502,12 @@
     return (p && p.saleChannel && String(p.saleChannel).trim()) ? String(p.saleChannel).trim() : '待核实';
   }
   function npColorOf(name) {
-    var s = String(name || ''), h = 0;
+    var s = String(name || '');
+    var keys = Object.keys(NP_ISSUER_COLORS).sort(function (a, b) { return b.length - a.length; });
+    for (var k = 0; k < keys.length; k++) {
+      if (s.indexOf(keys[k]) >= 0) return NP_ISSUER_COLORS[keys[k]];
+    }
+    var h = 0;
     for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
     return NP_COLORS[h % NP_COLORS.length];
   }
@@ -5575,8 +5591,9 @@
     /* 表头：纯日期列（与泳道列同宽对齐） */
     head.innerHTML = days.map(function (ds, idx) {
       var dd = parseDate(ds);
+      /* 与图稿一致：日期独占一行，第二行今天高亮（其余显示星期） */
       return '<div class="ts-cell' + (idx === 0 ? ' is-today' : '') + '"><b>' + mdText(ds) +
-        (idx === 0 ? '<em>今天</em>' : '') + '</b><span>周' + wd[dd.getDay()] + '</span></div>';
+        '</b><span>' + (idx === 0 ? '<em>今天</em>' : '周' + wd[dd.getDay()]) + '</span></div>';
     }).join('');
 
     /* 方案C：代销机构多选过滤 + 按募集起始日归入对应日期泳道列 */
