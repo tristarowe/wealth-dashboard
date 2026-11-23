@@ -1,0 +1,70 @@
+name: probe-shot
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: 安装依赖
+        run: |
+          pip install -r daily/requirements.txt
+          python -m playwright install --with-deps chromium
+      - name: 复现截图流程并打印 DOM 诊断
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          python - <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, "daily")
+          from pull_cloud import supabase_trades
+          from playwright.sync_api import sync_playwright
+
+          BEFORE = """() => ({
+              pl: ((window.PRODUCT_LIBRARY||{}).items||[]).length,
+              lib_model: (window.DASHBOARD_LIBRARY||[]).length,
+              tx: ((window.TRANSACTIONS||{}).items||[]).length,
+              holds: (window.DASHBOARD_HOLDINGS||[]).length,
+              rows: document.querySelectorAll('#hold-body tr').length
+          })"""
+
+          AFTER = """() => ({
+              lib_model: (window.DASHBOARD_LIBRARY||[]).length,
+              holds: (window.DASHBOARD_HOLDINGS||[]).length,
+              alive: (window.DASHBOARD_HOLDINGS||[]).filter(h=>(h.shares||0)>1e-6).length,
+              rows: document.querySelectorAll('#hold-body tr').length,
+              names: [...document.querySelectorAll('#hold-body tr')].slice(0,20).map(r=>r.innerText.replace(/\\s+/g,' ').slice(0,30)),
+              today: (document.getElementById('metric-today')||{}).innerText
+          })"""
+
+          items = supabase_trades()
+          print("云端交易", len(items))
+          root = Path(".").resolve()
+          with sync_playwright() as p:
+              b = p.chromium.launch()
+              ctx = b.new_context(viewport={"width": 1440, "height": 1000}, device_scale_factor=2)
+              ctx.add_init_script("window.__GATE_BYPASS__ = true;")
+              pg = ctx.new_page()
+              logs = []
+              pg.on("console", lambda m: logs.append(m.type + ":" + m.text[:200]))
+              pg.on("pageerror", lambda e: logs.append("pageerror:" + str(e)[:300]))
+              pg.goto((root / "index.html").as_uri())
+              pg.wait_for_timeout(1500)
+              print("注入前", pg.evaluate(BEFORE))
+              pg.evaluate("""items => { window.TRANSACTIONS = { items: items };
+                  if (window.DASHBOARD_REFRESH) window.DASHBOARD_REFRESH(); }""", items)
+              pg.wait_for_timeout(1500)
+              print("注入后", pg.evaluate(AFTER))
+              print("console:", logs[:12])
+              b.close()
+          PY
