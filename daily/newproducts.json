@@ -1,13 +1,14 @@
 {
   "asOf": "2026-11-23",
-  "fetchedAt": "2026-11-23 06:01",
+  "fetchedAt": "2026-11-23 17:01",
   "source": "六大行及股份制银行新品公告 · 销售文件要素表",
   "window": {
     "start": "2026-11-23",
     "end": "2026-11-30"
   },
   "institutions": [
-    "建设银行"
+    "建设银行",
+    "待核实"
   ],
   "items": [
     {
@@ -52,6 +53,111 @@
       "risk": "R2",
       "riskRaw": "",
       "mode": "开放式净值型产品",
+      "saleChannel": "建设银行",
+      "source": "建行官网新品公告·销售文件要素表"
+    },
+    {
+      "name": "工银理财·添利宝现金管理类开放净值型理财产品158号",
+      "issuer": "工银理财有限责任公司",
+      "short": "添利宝现金管理类开放净值型158号",
+      "regCode": "Z7000826002155",
+      "raiseStart": "2026-11-24",
+      "raiseEnd": "2026-11-24",
+      "establish": "2026-11-25",
+      "quotaWan": null,
+      "risk": "R1",
+      "riskRaw": "PR1",
+      "mode": "开放式净值型",
+      "saleChannel": "",
+      "source": "建行官网新品公告·销售文件要素表"
+    },
+    {
+      "name": "招银理财招睿增鑫30天持有期4号增强型固收类理财计划",
+      "issuer": "招银理财有限责任公司",
+      "short": "招睿增鑫30天持有期4号增强型固收类理财计划",
+      "regCode": "Z7001626001126",
+      "raiseStart": "2026-11-24",
+      "raiseEnd": "2026-11-26",
+      "establish": "2026-11-27",
+      "quotaWan": null,
+      "risk": "R2",
+      "riskRaw": "PR2 中低风险",
+      "mode": "",
+      "saleChannel": "",
+      "source": "建行官网新品公告·销售文件要素表"
+    },
+    {
+      "name": "交银理财稳享灵动慧利日开147号（7天持有期）理财产品",
+      "issuer": "交银理财有限责任公司",
+      "short": "稳享灵动慧利日开147号",
+      "regCode": "Z7000926002191",
+      "raiseStart": "2026-11-25",
+      "raiseEnd": "2026-11-25",
+      "establish": "2026-11-26",
+      "quotaWan": null,
+      "risk": "",
+      "riskRaw": "",
+      "mode": "开放式",
+      "saleChannel": "",
+      "source": "建行官网新品公告·销售文件要素表"
+    },
+    {
+      "name": "信银理财安盈象固收稳利日开258号理财产品",
+      "issuer": "信银理财有限责任公司",
+      "short": "安盈象固收稳利日开258号",
+      "regCode": "Z7002626002745",
+      "raiseStart": "2026-11-26",
+      "raiseEnd": "2026-12-01",
+      "establish": "2026-12-02",
+      "quotaWan": null,
+      "risk": "R2",
+      "riskRaw": "PR2",
+      "mode": "开放式",
+      "saleChannel": "",
+      "source": "建行官网新品公告·销售文件要素表"
+    },
+    {
+      "name": "阳光金增利稳健乐享日开135号",
+      "issuer": "光大理财有限责任公司",
+      "short": "阳光金增利稳健乐享日开135号",
+      "regCode": "Z7001426003245",
+      "raiseStart": "2026-11-26",
+      "raiseEnd": "2026-11-30",
+      "establish": "2026-12-02",
+      "quotaWan": null,
+      "risk": "R2",
+      "riskRaw": "",
+      "mode": "开放式净值型",
+      "saleChannel": "建设银行",
+      "source": "建行官网新品公告·销售文件要素表"
+    },
+    {
+      "name": "阳光金增利稳健乐享天天购111号",
+      "issuer": "光大理财有限责任公司",
+      "short": "阳光金增利稳健乐享天天购111号",
+      "regCode": "Z7001426003238",
+      "raiseStart": "2026-11-26",
+      "raiseEnd": "2026-11-30",
+      "establish": "2026-12-02",
+      "quotaWan": null,
+      "risk": "R2",
+      "riskRaw": "",
+      "mode": "开放式净值型",
+      "saleChannel": "建设银行",
+      "source": "建行官网新品公告·销售文件要素表"
+    },
+    {
+      "name": "阳光金增利稳健乐享天天购109号",
+      "issuer": "光大理财有限责任公司",
+      "short": "阳光金增利稳健乐享天天购109号",
+      "regCode": "Z7001426003205",
+      "raiseStart": "2026-11-26",
+      "raiseEnd": "2026-11-30",
+      "establish": "2026-12-02",
+      "quotaWan": null,
+      "risk": "R2",
+      "riskRaw": "",
+      "mode": "开放式净值型",
       "saleChannel": "建设银行",
       "source": "建行官网新品公告·销售文件要素表"
     }
@@ -104,15 +210,125 @@
           "mode": "开放式净值型产品",
           "saleChannel": "建设银行",
           "source": "建行官网新品公告·销售文件要素表"
+        },
+        {
+          "name": "阳光金增利稳健乐享日开135号",
+          "issuer": "光大理财有限责任公司",
+          "short": "阳光金增利稳健乐享日开135号",
+          "regCode": "Z7001426003245",
+          "raiseStart": "2026-11-26",
+          "raiseEnd": "2026-11-30",
+          "establish": "2026-12-02",
+          "quotaWan": null,
+          "risk": "R2",
+          "riskRaw": "",
+          "mode": "开放式净值型",
+          "saleChannel": "建设银行",
+          "source": "建行官网新品公告·销售文件要素表"
+        },
+        {
+          "name": "阳光金增利稳健乐享天天购111号",
+          "issuer": "光大理财有限责任公司",
+          "short": "阳光金增利稳健乐享天天购111号",
+          "regCode": "Z7001426003238",
+          "raiseStart": "2026-11-26",
+          "raiseEnd": "2026-11-30",
+          "establish": "2026-12-02",
+          "quotaWan": null,
+          "risk": "R2",
+          "riskRaw": "",
+          "mode": "开放式净值型",
+          "saleChannel": "建设银行",
+          "source": "建行官网新品公告·销售文件要素表"
+        },
+        {
+          "name": "阳光金增利稳健乐享天天购109号",
+          "issuer": "光大理财有限责任公司",
+          "short": "阳光金增利稳健乐享天天购109号",
+          "regCode": "Z7001426003205",
+          "raiseStart": "2026-11-26",
+          "raiseEnd": "2026-11-30",
+          "establish": "2026-12-02",
+          "quotaWan": null,
+          "risk": "R2",
+          "riskRaw": "",
+          "mode": "开放式净值型",
+          "saleChannel": "建设银行",
+          "source": "建行官网新品公告·销售文件要素表"
+        }
+      ]
+    },
+    {
+      "channel": "待核实",
+      "products": [
+        {
+          "name": "工银理财·添利宝现金管理类开放净值型理财产品158号",
+          "issuer": "工银理财有限责任公司",
+          "short": "添利宝现金管理类开放净值型158号",
+          "regCode": "Z7000826002155",
+          "raiseStart": "2026-11-24",
+          "raiseEnd": "2026-11-24",
+          "establish": "2026-11-25",
+          "quotaWan": null,
+          "risk": "R1",
+          "riskRaw": "PR1",
+          "mode": "开放式净值型",
+          "saleChannel": "",
+          "source": "建行官网新品公告·销售文件要素表"
+        },
+        {
+          "name": "招银理财招睿增鑫30天持有期4号增强型固收类理财计划",
+          "issuer": "招银理财有限责任公司",
+          "short": "招睿增鑫30天持有期4号增强型固收类理财计划",
+          "regCode": "Z7001626001126",
+          "raiseStart": "2026-11-24",
+          "raiseEnd": "2026-11-26",
+          "establish": "2026-11-27",
+          "quotaWan": null,
+          "risk": "R2",
+          "riskRaw": "PR2 中低风险",
+          "mode": "",
+          "saleChannel": "",
+          "source": "建行官网新品公告·销售文件要素表"
+        },
+        {
+          "name": "交银理财稳享灵动慧利日开147号（7天持有期）理财产品",
+          "issuer": "交银理财有限责任公司",
+          "short": "稳享灵动慧利日开147号",
+          "regCode": "Z7000926002191",
+          "raiseStart": "2026-11-25",
+          "raiseEnd": "2026-11-25",
+          "establish": "2026-11-26",
+          "quotaWan": null,
+          "risk": "",
+          "riskRaw": "",
+          "mode": "开放式",
+          "saleChannel": "",
+          "source": "建行官网新品公告·销售文件要素表"
+        },
+        {
+          "name": "信银理财安盈象固收稳利日开258号理财产品",
+          "issuer": "信银理财有限责任公司",
+          "short": "安盈象固收稳利日开258号",
+          "regCode": "Z7002626002745",
+          "raiseStart": "2026-11-26",
+          "raiseEnd": "2026-12-01",
+          "establish": "2026-12-02",
+          "quotaWan": null,
+          "risk": "R2",
+          "riskRaw": "PR2",
+          "mode": "开放式",
+          "saleChannel": "",
+          "source": "建行官网新品公告·销售文件要素表"
         }
       ]
     }
   ],
   "stats": {
-    "notices": 53,
-    "candidates": 6,
-    "kept": 3,
-    "dropped": 3,
+    "notices": 46,
+    "candidates": 11,
+    "kept": 10,
+    "dropped": 1,
     "failed": 0,
     "quotaRejected": 0
   },

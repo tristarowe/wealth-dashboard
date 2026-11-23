@@ -208,7 +208,11 @@ def extract_dates(flat):
         return [(m, _d(m)) for m in re.finditer(DATE, seg)]
 
     def label_dates(label_re, span=160):
-        """遍历标签的所有出现位置，返回第一个「标签后 span 字内既有日期」的结果。"""
+        """遍历标签的所有出现位置，返回第一个「标签后 span 字内既有日期」的结果。
+
+        2026-11-23：旧版只检查第一个标签位置，若为释义句（如「认购登记日：指…」）无日期
+        就直接返回空，不再看后面真正带日期的要素表行。改为继续遍历到第一个带日期的标签。
+        """
         for m in re.finditer(label_re + r"\s*[:：]?\s*", flat):
             seg = flat[m.end():m.end() + span]
             dd = dates_in(seg)
@@ -242,6 +246,13 @@ def extract_dates(flat):
     seg, dd = label_dates(r"(?:理财产品成立日|产品成立日|产品成立日期|预计成立日|成立日期|成立日)", span=80)
     if dd:
         est = dd[0][1]
+    # ③b 兜底：部分说明书（如招银）要素表标签被 PDF 断字成「产品成↵立日」而匹配不到，
+    #     改取「认购登记日 / 产品登记日」的具体日期（等同成立/登记日）。label_dates 会
+    #     跳过无日期的释义句，定位到真正带日期的行。
+    if not est:
+        seg, dd = label_dates(r"(?:认购登记日|产品登记日|认申购登记日)", span=60)
+        if dd:
+            est = dd[0][1]
     return start, end, est
 
 
@@ -468,6 +479,44 @@ def flat_reg_code(flat):
     return m.group(1).upper() if m else ""
 
 
+# 产品全称抽取（2026-11-23 修复）：
+# 旧逻辑用 flat_field(flat, "理财产品名称") 取标签后取值，但两类版式会取错：
+#   ① 招银/交银等说明书正文先出现「在同一理财产品名称下设置…」释义句 → 被当成取值；
+#   ② 要素表真实标签是「产品名称」（无「理财」二字），「理财产品名称」匹配不到。
+# 新逻辑：去空白愈合被 PDF 拆断的标签（「理财产 品名称」），收集所有「(理财)产品名称」候选，
+# 遇下一字段名截断 + 取值形态校验（排除释义句），取第一个像产品名的。
+_NAME_BAD = re.compile(r"下设置|指本|区分不同|销售名称|资产净值|产品销售代码|本说明书|"
+                       r"以下简称|投资者|风险揭示|第\d+页|查询产品信息|登记编码项下")
+_NAME_STOP = ["理财信息登记系统", "产品登记编码", "登记编码", "产品代码", "份额代码", "销售代码",
+              "产品销售名称", "产品简称", "产品类型", "发行机构名称", "产品概况", "理财币种",
+              "产品运作模式", "募集方式", "产品成立日", "理财产品成立日", "成立日", "存续期限",
+              "开放日", "份额净值", "确认日", "认购起点", "投资目标", "投资策略"]
+_NAME_LABEL = re.compile(r"(?:理财)?产品名称\s*[:：]?\s*")
+
+
+def extract_product_name(flat, fallback=""):
+    """从说明书抽取产品全称：要素表标签优先 + 形态校验，跳过释义句。"""
+    c = re.sub(r"\s+", "", flat or "")  # 去空白，愈合「理财产 品名称」「147 号」等
+    for m in _NAME_LABEL.finditer(c):
+        seg = c[m.end():m.end() + 90]
+        cut = len(seg)
+        for lb in _NAME_STOP:
+            i = seg.find(lb)
+            if 0 < i < cut:
+                cut = i
+        val = seg[:cut].strip("【[:：]】")
+        val = re.sub(r"^为", "", val).strip()
+        if not val or len(val) < 6 or len(val) > 46 or _NAME_BAD.search(val):
+            continue
+        if not re.search(r"理财|号|日开|天天|持有期|现金管理|鸿运|安盈象|添利宝|悦享|稳富|稳享|"
+                         r"阳光金|固收|增鑫|招睿", val):
+            continue
+        # 去尾部括号内容（产品代码等），如 158号（26GS0764）→ 158号；残留的孤立「（」也去掉
+        val = re.sub(r"[（(][^）)]*[）)]?\s*$", "", val).strip()
+        return val
+    return fallback
+
+
 def build():
     ap = argparse.ArgumentParser(description="新品预告抓取")
     ap.add_argument("--days", type=int, default=10)
@@ -528,8 +577,8 @@ def build():
             end = ""
 
         issuer = extract_manager(flat, R) or (r.get("产品管理人") or "").strip()
-        # 名称优先取要素表原文（说明书「理财产品名称」），其次解析器字段，最后退回公告标题
-        name = (flat_field(flat, r"理财产品名称", 60) if flat else "") or (r.get("产品名称") or "")
+        # 名称优先取要素表原文（说明书「(理财)产品名称」），其次解析器字段，最后退回公告标题
+        name = (extract_product_name(flat) if flat else "") or (r.get("产品名称") or "")
         name = re.sub(r"^[（(][^）)]{2,12}[）)]", "", name.strip())
         # 说明书写法「产品名称为【…】」会把前缀和书名号带进名称
         name = name.lstrip("为").lstrip("【[").rstrip("】]").strip()
