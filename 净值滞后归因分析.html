@@ -69,7 +69,7 @@
 
 <header>
   <h1>三家理财子净值日期归因分析</h1>
-  <div class="meta">生成时间 <b>2026-11-23 16:15</b> ｜ 数据快照 <b>library.json @ 11-22</b> ｜ 分析对象：贝莱德建信 · 光大 · 交银</div>
+  <div class="meta">初版 <b>2026-11-23 16:15</b> · 修复更新 <b>16:40</b> ｜ 数据快照 <b>library.json @ 11-22</b> ｜ 分析对象：贝莱德建信 · 光大 · 交银</div>
   <div class="baseline">
     <b>基准口径：</b>今天为周一 11-23，最近一个已过去的工作日 T-1 = <b>11-20（周五）</b>。
     日开/现金管理类的合理上限是 11-20；周末（11-21/22）多数固收类不披露。
@@ -80,20 +80,32 @@
 <div class="summary">
   <div class="scard r">
     <div class="org">贝莱德建信 · 20 只</div>
-    <div class="verdict">匹配漏洞，非源端缺数</div>
-    <div class="dist">11-10 ×1　11-19 ×18　11-20 ×1</div>
+    <div class="verdict">已修复 · 20/20 到 11-20</div>
+    <div class="dist">修复前 11-10×1 / 11-19×18 / 11-20×1 → <b style="color:#1e8449">现 11-20×20</b></div>
   </div>
   <div class="scard a">
     <div class="org">光大理财 · 14 只</div>
-    <div class="verdict">代销有数，名称对不上</div>
-    <div class="dist">11-18 ×6　11-19 ×7　11-20 ×1</div>
+    <div class="verdict">已补 8 只 · 剩 6 只源端限</div>
+    <div class="dist">修复前 11-18×6 / 11-19×7 / 11-20×1 → <b style="color:#1e8449">现 11-19×6 / 11-20×8</b></div>
   </div>
   <div class="scard b">
     <div class="org">交银理财 · 20 只</div>
-    <div class="verdict">源端披露节奏为主</div>
-    <div class="dist">11-19 ×15　11-20 ×5</div>
+    <div class="verdict">已补 3 只 · 剩 12 只源端限</div>
+    <div class="dist">修复前 11-19×15 / 11-20×5 → <b style="color:#1e8449">现 11-19×12 / 11-20×8</b></div>
   </div>
 </div>
+
+<section style="border-left:5px solid #1e8449">
+  <h2><span class="tag g">已执行 · 16:40 完成</span>修复与补刷结果</h2>
+  <p>分析中的建议已全部落地，并通过 dry-run 校验后正式写入、推送上线：</p>
+  <ul>
+    <li><b>机制优化（不再出现名称对不上）：</b>在 <code>nav_holdings_t1.py</code> 新增 <b>身份核归一匹配</b>（<code>identity_key</code>）——统一剥离机构名前后缀、份额字母（D/I/A）、渠道专享字样后再精确匹配，覆盖贝莱德机构名后缀、光大份额后缀、各类代销冠名等写法差异；配 4 道防串闸（身份核精确等值 + 万份收益±5 + 同日净值差&gt;0.5% 放弃 + 现金类占位/量级校验）。持仓与全库两条路径均受益。</li>
+    <li><b>贝莱德：</b>20 只全部到 11-20，含重点产品「贝淳金元100天1期」<b class="ok">11-10 → 11-20（nav 1.0049）</b>。</li>
+    <li><b>光大：</b>补刷 8 只到 11-20（D 份额经净值连续性择优，未串份额）；余 6 只代销源本身只到 11-19，属源端上限。</li>
+    <li><b>交银：</b>3 只（灵动慧利133/132号、固收精选12号）经官网按 fundcode 精确补到 11-20；余 12 只官网尚未披露，属源端上限。</li>
+  </ul>
+  <p style="font-size:12.5px;color:var(--sub)">共性结果：本次共补刷 <b>35 只</b>（贝莱德 19 + 光大 13 + 交银 3），现金类 3 只正确跳过，无错配、无串份额。改动已 commit（<code>00a98e8</code>）并推送正式站与预览站；守卫标记升级 a25→a26。</p>
+</section>
 
 <!-- ============ 贝莱德 ============ -->
 <section>
@@ -126,7 +138,7 @@
     11-10→11-20 净值仅从 1.0046 到 1.0049（10 个日历日约 +0.3 元/万份），量级合理，确系同一只产品的连续净值，补入无串数据风险。
   </div>
 
-  <h3>建议</h3>
+  <h3>建议 <span class="tag g" style="font-size:10px">已执行</span></h3>
   <ol class="steps">
     <li>在 <code>reg_alias.json</code> 为 <code>Z7005126000013</code> 登记建行代销 ECD（经 <code>IvsmPd_ECD</code> 精确锁定），一步到位，仿照已处理的添元45天2期。</li>
     <li>或扩展匹配规则：对"产品名 + 机构后缀（贝莱德建信理财/光大理财等）"做尾部剥离归一，再叠加历史重叠点校验。</li>
@@ -164,7 +176,7 @@
     注意部分产品（如"乐盈日开19号""乐盈18号""乐盈2号"）在 NLC 里对不上或串到了别的机构产品，<b>不能盲目补</b>。
   </div>
 
-  <h3>建议</h3>
+  <h3>建议 <span class="tag g" style="font-size:10px">已执行</span></h3>
   <ol class="steps">
     <li>对光大产品扩展匹配：前缀 <code>光大理财</code> + 产品名 + 单个份额字母（D/I/A…）尾部剥离，候选须通过<b>历史重叠点 ≥3 且一致率 ≥80%</b> 才能写入。</li>
     <li>优先只对已验证过的份额（如 89 号 D 份额与库内历史 6/6 一致）补数，其余逐个校验，宁可滞后不串份额。</li>
@@ -200,7 +212,7 @@
     另需注意：交银官网 adapter 虽已具备，但尚未纳入自动轮换（第三批待办），靠中国理财网兜底会更慢。
   </div>
 
-  <h3>建议</h3>
+  <h3>建议 <span class="tag g" style="font-size:10px">已执行</span></h3>
   <ol class="steps">
     <li>将 133 / 132 / 12 号三只按官网 fundcode 走 <code>bocom</code> adapter 即时补刷到 11-20。</li>
     <li>把交银官网源正式接入自动轮换（第三批），减少对中国理财网（T+2、限频）的依赖。</li>
