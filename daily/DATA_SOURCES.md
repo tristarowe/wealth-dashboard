@@ -128,6 +128,18 @@ T 日净值，周日的合理上限就是 11-19（周五净值要等周一）。
 - 兴银现金类存在 `dataDt` 与 `netvalDt` 双写，统一取 `dataDt` 当净值日，避免把次日点当 T 日净值；
 - 兴银只有单位净值、没有万份收益字段，合并时对「净值恒 1.0」的序列**保护库内万份收益**，不让 apply() 按净值差重算成 0.00；
 - 达标率口径从「自然日 T-1」改为「最近一个已过去的工作日」——周日跑批时自然日 T-1 是周六，永远不可能达标；
-- 已接入官网源的机构（建信/中银/农银/信银/兴银）从 `nav_rotate.py` 的中国理财网轮换中排除（常量 `OFFICIAL_ORGS`），限频额度留给没有官网源的产品。
+- 已接入官网源的机构（建信/中银/农银/信银/兴银/民生）从 `nav_rotate.py` 的中国理财网轮换中排除（常量 `OFFICIAL_ORGS`），限频额度留给没有官网源的产品。
 
-待办（第二、三批）：浦银、民生（第二批）；平安（SM4+限频）、工银、交银（第三批）。
+## 七、第二批接入实现记录（2026-11-23，民生理财）
+
+接口（均无需鉴权，`trust_env=False` 绕代理）：
+- 列表 `POST https://www.cmbcwm.com.cn/gw/po_web/BTAProductQry`，body `{prd_type:"0",pageNo,pageSize,code_or_name}`；`code_or_name` 按代码/名称搜索有效（截图两只 FBAE60315A/FBAE0122A 精确命中，NAV/NAV_DATE 与官网展示一致），返回 `list[{REAL_PRD_CODE,PRD_NAME,NAV,NAV_DATE,…}]`。
+- 历史 `POST https://www.cmbcwm.com.cn/gw/po_web/BTADailyQry`，body `{chart_type:1,real_prd_code:"FBAE…",begin_date:"",end_date:"",pageNo,pageSize}`；返回 `list[{ISS_DATE,NAV,…}]`，按日期倒序。
+- 接口前缀来自详情页 JS `/uiFramework/commonResource/zip/cmbc_wm/skin/js/main.js` 的 `queryData()`（`/gw/po_web/` + 接口名）。
+
+实测要点：
+- 民生同产品多份额（A/E/Q/S/B），如 FBAE60315A → 28天15号 A 份额 NAV 1.0410，而库内 28天15号是 **E 份额** FBAE34315E NAV 1.0035，两者是不同产品线（**纯债 vs 固收**），名称包含匹配可区分；7 只在库民生实测全部为 E 份额。
+- 官网历史给 6 位小数（现金类如 1.002377），库内是 4 位小数；`cmbc_series()` 统一 `round(nav,4)` 再比对/合并，避免精度差误判串份额。
+- 首批结果：7 只全部匹配并推进（历史重叠 18/18～70/70 精确一致；现金类天天盈 21/23 过 80% 阈值），2 只贵竹固收添益官网本身只到 11-19（披露慢），其余到 11-20。
+
+待办（第三批）：平安（SM4+限频，密钥已破解见本文第一节）、工银、交银（REQ_MESSAGE 包裹 + 两套净值表）；第二批的浦银尚未接入。

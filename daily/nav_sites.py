@@ -1,15 +1,15 @@
-"""农银 / 信银 / 兴银 理财子公司官网直连净值（2026-11-22 第一批接入）。
+"""农银 / 信银 / 兴银 / 民生 理财子公司官网直连净值（前 three 家 2026-11-22 第一批，民生 2026-11-23 第二批接入）。
 
 用法
 ----
-    python daily/nav_sites.py                       # 刷新产品库里这三家的全部产品
+    python daily/nav_sites.py                       # 刷新产品库里这四家的全部产品
     python daily/nav_sites.py --dry-run             # 只打印不写文件
-    python daily/nav_sites.py --org 农银,兴银        # 只跑指定机构
+    python daily/nav_sites.py --org 农银,民生        # 只跑指定机构
     python daily/nav_sites.py --only-reg Z7001126000969
 
 为什么单独一个脚本
 ------------------
-nav_official.py 只服务建信（官网 chart + 建行 NLC165 双源）；这三家接口结构完全不同，
+nav_official.py 只服务建信（官网 chart + 建行 NLC165 双源）；这四家接口结构完全不同，
 共性是「一条列表接口自带最新净值、一条历史接口给序列」，但字段名、分页上限、份额命名
 各异，所以按 adapter 拆开，共用同一套合并口径与防串份额规则。
 
@@ -22,7 +22,7 @@ nav_official.py 只服务建信（官网 chart + 建行 NLC165 双源）；这�
 4) 只刷新 orgShort 命中的产品，其余一律不动；
 5) 老 TLS 站点（农银、信银）必须放开 unsafe legacy renegotiation 且 `trust_env=False`。
 
-三家实测要点（2026-11-22）
+各家实测要点（2026-11-22 起）
 -------------------------
 农银：`findNetDiscProdList` 按整名搜索命中唯一（列表不带登记编码），
       `findNetOr7DaysList?type=NET|7DAYS` 给序列，15 条/页；净值型看 vluUnitNet，
@@ -31,6 +31,10 @@ nav_official.py 只服务建信（官网 chart + 建行 NLC165 双源）；这�
       全量索引一次；份额靠 `getTAProductNav` 的 productNavPic 与库内历史比对。
 兴银：`productInfo/search` 自带 registerCode（登记编码精确匹配）+ `productVal/page` 给序列，
       100 条/页；现金类存在 dataDt 与 netvalDt 双写，一律取 dataDt 当净值日，避免虚报。
+民生（2026-11-23 第二批）：`BTAProductQry` 按代码/名称搜索自带最新 NAV + NAV_DATE，
+      `BTADailyQry` 按 FBAE… 份额代码给历史序列；同产品多份额（A/E/Q/S/B）净值微差，
+      靠历史重叠点精确一致判定。库内民生 7 只实测均为 E 份额，其中现金类（天天盈）
+      官网为 6 位小数且与库内口径不同，历史不匹配时按规则跳过，宁可滞后不串净值。
 """
 import argparse
 import json
@@ -87,7 +91,7 @@ def _session(legacy):
 
 
 S_LEGACY = _session(True)     # 农银、信银
-S_PLAIN = _session(False)     # 兴银
+S_PLAIN = _session(False)     # 兴银、民生
 
 
 def _head(referer="", json_body=True):
@@ -286,10 +290,67 @@ def cib_cands(x):
     return out, len(pool)
 
 
+# ---------------- 民生理财 ----------------
+# 官网列表 BTAProductQry 按代码/名称搜索自带最新 NAV + NAV_DATE；
+# 详情页 BTADailyQry 给历史序列（按 real_prd_code 即 FBAE… 份额代码）。
+# 民生同一产品常有多个份额（A/E/Q/S/B…），净值微差，必须用历史重叠点精确判定份额。
+# 库内民生 7 只实测均为 E 份额，用 short 名搜索即可精确命中唯一份额。
+CMBC_QRY = "https://www.cmbcwm.com.cn/gw/po_web/BTAProductQry"
+CMBC_DAILY = "https://www.cmbcwm.com.cn/gw/po_web/BTADailyQry"
+CMBC_REF = "https://www.cmbcwm.com.cn/cmbcwm/grlc/index.html"
+
+
+def cmbc_search(name):
+    r = S_PLAIN.post(CMBC_QRY,
+                     json={"prd_type": "0", "pageNo": 1, "pageSize": 50,
+                           "code_or_name": name},
+                     headers=_head(CMBC_REF), timeout=40, verify=False)
+    r.raise_for_status()
+    return ((r.json() or {}).get("list") or [])
+
+
+def cmbc_series(code):
+    r = S_PLAIN.post(CMBC_DAILY,
+                     json={"chart_type": 1, "real_prd_code": code,
+                           "begin_date": "", "end_date": "",
+                           "pageNo": 1, "pageSize": 400},
+                     headers=_head(CMBC_REF), timeout=40, verify=False)
+    r.raise_for_status()
+    rows = []
+    for it in ((r.json() or {}).get("list") or []):
+        d = d8(it.get("ISS_DATE"))
+        nav = fnum(it.get("NAV"))
+        if not d or nav is None:
+            continue
+        # 官网给 6 位小数（现金类如 1.002377），库内是 4 位小数（1.0022）。
+        # 统一 round 到 4 位再并入/比对，避免精度差触发「份额不一致」误判；
+        # 现金类历史重叠 21/23 一致，仍按现有 ≥80% 阈值由 pick_share 判定。
+        rows.append({"date": d, "nav": round(nav, 4), "per10k": None})
+    rows.sort(key=lambda x: x["date"])
+    return rows
+
+
+def cmbc_cands(x):
+    core = str(x.get("short") or x.get("name") or "")
+    hits = cmbc_search(core)
+    # 名称归一严格匹配：库内「富竹固收28天持有期15号」→ 官网「…理财产品E」，
+    # 用包含判断（官网名 = 简称 + 「理财产品」+ 份额后缀），并排除产品线不同的（纯债/固收）。
+    same = [h for h in hits if key(core) and key(core) in key(h.get("PRD_NAME"))]
+    pool = same or hits
+    codes = []
+    for h in pool:
+        c = h.get("REAL_PRD_CODE")
+        if c and c not in codes:
+            codes.append(c)
+    out = [{"tag": "民生官网:%s" % c, "rows": cmbc_series(c)} for c in codes[:8]]
+    return out, len(pool)
+
+
 SITES = [
     ("农银理财", abc_cands),
     ("信银理财", citic_cands),
     ("兴银理财", cib_cands),
+    ("民生理财", cmbc_cands),
 ]
 
 
@@ -381,7 +442,7 @@ def last_workday(now):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="农银/信银/兴银 官网净值刷新产品库")
+    ap = argparse.ArgumentParser(description="农银/信银/兴银/民生 官网净值刷新产品库")
     ap.add_argument("--org", default="", help="只跑这些机构，逗号分隔，如 农银,兴银")
     ap.add_argument("--only-reg", default="", help="只跑指定登记编码，逗号分隔")
     ap.add_argument("--limit", type=int, default=0, help="最多处理多少只")
@@ -411,7 +472,7 @@ def main():
     if a.limit:
         todo = todo[: a.limit]
     if not todo:
-        print("没有待刷新的产品（三家在库 %d 只）" % sum(
+        print("没有待刷新的产品（四家在库 %d 只）" % sum(
             1 for x in items if any((x.get("orgShort") or "").startswith(s[0].rstrip("理财"))
                                     for s in SITES)), flush=True)
         return 0
@@ -471,7 +532,7 @@ def main():
     promo.save(items)
     print("完成：产品库最新净值日 %s" % asof, flush=True)
     off.commit([promo.LIB_JS, promo.LIB_JSON],
-               "data: 农银/信银/兴银官网刷新产品库净值 %s" % asof)
+               "data: 农银/信银/兴银/民生官网刷新产品库净值 %s" % asof)
     return 0
 
 
