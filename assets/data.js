@@ -77,7 +77,7 @@ window.REPORT_DATA = {
       "regCode": "Z7000726000157",
       "shareCode": "",
       "inception": "2026-03-03",
-      "latestDate": "2026-11-21",
+      "latestDate": "2026-11-22",
       "officialAnnual": null,
       "officialAsOf": null,
       "dates": [
@@ -344,7 +344,8 @@ window.REPORT_DATA = {
         "2026-11-18",
         "2026-11-19",
         "2026-11-20",
-        "2026-11-21"
+        "2026-11-21",
+        "2026-11-22"
       ],
       "nav": [
         1.0,
@@ -610,7 +611,8 @@ window.REPORT_DATA = {
         1.022609,
         1.022671,
         1.022715,
-        1.022761
+        1.022761,
+        1.022808
       ],
       "per10k": [
         null,
@@ -876,7 +878,8 @@ window.REPORT_DATA = {
         0.37,
         0.62,
         0.44,
-        0.46
+        0.46,
+        0.47
       ],
       "sourceName": "建设银行代销净值",
       "latestNav": 1.022715
