@@ -1,6 +1,6 @@
 window.REPORT_DATA = {
-  "asOf": "2026-11-22",
-  "fetchedAt": "2026-11-22 22:33",
+  "asOf": "2026-11-23",
+  "fetchedAt": "2026-11-23 13:49",
   "products": [
     {
       "id": "p2150",
@@ -10,7 +10,7 @@ window.REPORT_DATA = {
       "regCode": "Z7000926002150",
       "shareCode": "5811226799",
       "inception": "2026-10-29",
-      "latestDate": "2026-11-19",
+      "latestDate": "2026-11-20",
       "officialAnnual": null,
       "officialAsOf": null,
       "dates": [
@@ -29,7 +29,8 @@ window.REPORT_DATA = {
         "2026-11-16",
         "2026-11-17",
         "2026-11-18",
-        "2026-11-19"
+        "2026-11-19",
+        "2026-11-20"
       ],
       "nav": [
         1.0,
@@ -47,6 +48,7 @@ window.REPORT_DATA = {
         1.0005,
         1.0005,
         1.0006,
+        1.001,
         1.001
       ],
       "per10k": [
@@ -65,7 +67,8 @@ window.REPORT_DATA = {
         0.0,
         0.0,
         1.0,
-        4.0
+        4.0,
+        0.0
       ],
       "sourceName": "交银理财官网"
     },
