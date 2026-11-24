@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261124j';
+  window.__NP_LAYOUT_VERSION = '20261124k';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -504,6 +504,12 @@
 
   function canonicalPidById(pid) {
     var id = pid, guard = 0;
+    /* 2026-11-24 新品预告产品以 np:Z7 作临时 id；次日入库后Z7有了正式 id，
+       旧交易里的 np:Z7 必须自动指向正式产品，避免交易记录变成孤儿。 */
+    if (typeof id === 'string' && id.indexOf('np:') === 0) {
+      var npReg = id.slice(3);
+      if (npReg && REG_CANONICAL[npReg]) return REG_CANONICAL[npReg].id;
+    }
     while (PID_ALIAS[id] && guard++ < 8) id = PID_ALIAS[id];
     return id;
   }
@@ -600,13 +606,51 @@
   }
   mergeManualProducts();
 
-  // 产品数据源：与「产品库」一致（持仓产品 + 产品库扩容产品）
+  /* 2026-11-24：新品预告里的「今日新品」转成可交易产品原型。
+     净值尚未披露，dates/nav 留空，录入时可走「净值待确认」流程；
+     次日产品库入库后，canonicalPidById() 会把 np:Z7 自动指向正式 id。 */
+  function tradeNewProductId(x) { return 'np:' + String((x && x.regCode) || x.name || ''); }
+  function tradeNewProducts() {
+    var list = (window.NEW_PRODUCTS && window.NEW_PRODUCTS.items) || [];
+    if (!list.length) return [];
+    var seen = Object.create(null);
+    DATA.products.concat((window.PRODUCT_LIBRARY && window.PRODUCT_LIBRARY.items) || []).forEach(function (p) {
+      if (!p) return;
+      if (p.regCode) seen['R:' + String(p.regCode)] = 1;
+      if (p.name) seen['N:' + String(p.name)] = 1;
+    });
+    return list.filter(function (x) {
+      if (!x || (!x.regCode && !x.name)) return false;
+      return !(x.regCode && seen['R:' + String(x.regCode)]) && !(x.name && seen['N:' + String(x.name)]);
+    }).map(function (x) {
+      return {
+        id: tradeNewProductId(x),
+        name: x.name || x.short || '',
+        short: x.short || x.name || '',
+        org: x.issuer || x.org || '',
+        orgShort: x.issuer || x.orgShort || '',
+        regCode: x.regCode || '',
+        risk: x.risk || '',
+        saleChannel: x.saleChannel || '',
+        inception: x.establish || '',
+        raiseStart: x.raiseStart || '', raiseEnd: x.raiseEnd || '',
+        dates: [], nav: [], per10k: [],
+        latestDate: '', latestNav: null,
+        newProduct: true
+      };
+    });
+  }
+
+  // 产品数据源：持仓产品 + 产品库扩容产品 + 今日新品（仅交易录入使用，不改产品库表格）
   function tradeProducts() {
     var out = DATA.products.slice();
     var seen = {};
     out.forEach(function (p) { seen[p.id] = 1; });
     LIB_MODEL.forEach(function (x) {
       var p = x.product;
+      if (p && !seen[p.id]) { seen[p.id] = 1; out.push(p); }
+    });
+    tradeNewProducts().forEach(function (p) {
       if (p && !seen[p.id]) { seen[p.id] = 1; out.push(p); }
     });
     return out;
@@ -4221,7 +4265,9 @@
       return;
     }
     list.hidden = false;
-    var items = sortBySearch(allUniqueProducts().filter(function (p) {
+    /* 2026-11-24：候选池 = 产品库去重清单 + 今日新品（新品尚未入库，但可直接录入申购） */
+    var pool = allUniqueProducts().concat(tradeNewProducts());
+    var items = sortBySearch(pool.filter(function (p) {
       return (p.short || '').toLowerCase().indexOf(kw) !== -1 ||
         (p.name || '').toLowerCase().indexOf(kw) !== -1 ||
         prodDispName(p).toLowerCase().indexOf(kw) !== -1 ||
@@ -4231,7 +4277,7 @@
     var cur = hid ? hid.value : '';
     list.innerHTML = items.map(function (p) {
       return '<div class="sr-row' + (p.id === cur ? ' on' : '') + '" data-pid="' + p.id + '" title="' + (p.name || '') + '"><span>' +
-        prodDispName(p) + '</span></div>';
+        prodDispName(p) + '</span>' + (p.newProduct ? '<em class="np-tag">今日新品</em>' : '') + '</div>';
     }).join('') || '<div class="sr-row" style="cursor:default"><span class="muted">未找到匹配产品</span></div>';
   }
 

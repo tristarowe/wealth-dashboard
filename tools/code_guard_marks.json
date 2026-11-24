@@ -1,7 +1,7 @@
 {
   "_doc": "跨端代码守卫共用标记清单 —— 唯一权威来源。WorkBuddy 的 .githooks/pre-push 与 Trae 的 tools/sync_pages.py 都必须读取本文件，禁止在脚本里硬编码标记列表。新增功能后在此登记，两端自动生效。",
   "_maintainer": "任何一端修改本文件后，需在提交信息中说明原因；改动会同时影响两端的推送守卫。",
-  "version": "2026-11-24a43",
+  "version": "2026-11-24a44",
   "protected": {
     "_doc": "受『整批中止』保护的文件：远端内容被他人改过时，整批拒绝推送，必须先 pull 合并。markers 为该文件必须包含的字符串，缺失即判定为旧版/被回退，整批拒推。",
     "index.html": [
@@ -22,7 +22,7 @@
       "data-stamp",
       "B2/Q2：横屏全表由 11px 提到 11.5px",
       "Q1：手机年表/月表",
-      "v=20261124j",
+      "v=20261124k",
       "计息不足 7 天",
       "--blue-soft:#2878af",
       ".pname .mv-under",
@@ -164,7 +164,7 @@
       "状态小字标识（2026-11-20）：删除记录不单独成行，名称右侧标「已入库」(绿)/「已删除」(灰)",
       ".add-hist-list .ah-stored{font-style:normal;font-size:11px;font-weight:400;color:var(--down);margin-left:5px}",
       "id=\"trade-confirm\" type=\"text\" readonly inputmode=\"none\"",
-      "input,textarea{-webkit-touch-callout:none}",
+      "input,textarea{-webkit-touch-callout:none;caret-color:var(--caret)}",
       ".add-hist-list .ah-deleted",
       "手机新增交易页文本框/筛选框行高调高",
       "#modal-trade .field input,#modal-trade .field select{height:42px",
@@ -296,7 +296,7 @@
       "公开底稿已脱敏",
       "T.items = T.items.filter(function (t) { return !!t.applyDate; })",
       "登录后可保存你的交易与手工产品数据",
-      "auth.js?v=20261124j",
+      "auth.js?v=20261124k",
       "退出后会清除本机交易缓存",
       "label.innerHTML = CHECK",
       "btn.title = '已登录（点击退出登录）'",
@@ -305,7 +305,7 @@
       "window.__GATE_BYPASS__",
       "id=\"gate-submit\"",
       "id=\"privacy-eye\"",
-      "privacy.js?v=20261124j",
+      "privacy.js?v=20261124k",
       "window.PRIVACY.maskClone",
       ".hero-title-row",
       "if (eye) eye.style.visibility",
@@ -324,7 +324,7 @@
       "multiple size=\"1\"",
       ".ts-cell span{display:block}",
       ".ts-lane{width:176px",
-      "var NP_BUILD = '20261124j'",
+      "var NP_BUILD = '20261124k'",
       "window.__NP_LAYOUT_VERSION !== NP_BUILD",
       ".ts-cell{width:176px;flex:none;padding:6px 2px",
       "2026-11-24 三行版",
@@ -341,7 +341,11 @@
       "原生多选从首帧就藏在",
       "2026-11-24 浅色机构条：--cl 为 --c 与白底混合的浅色；名称取消加粗 600→400",
       "border-top:3px solid var(--cl,var(--c))",
-      "font-size:12.5px;font-weight:400;color:var(--ink)"
+      "font-size:12.5px;font-weight:400;color:var(--ink)",
+      "--caret:#2f80ed; --check-blue:#4a9fe0",
+      "input[type=checkbox]:checked::after",
+      "sr-row em.np-tag",
+      "含今日新品"
     ],
     "assets/dashboard.js": [
       "PID_ALIAS",
@@ -539,7 +543,7 @@
       "2026-11-24 卡片改版：三行呈现",
       "'<div class=\"nhead\">' +",
       "class=\"kl kl-e\">成立",
-      "window.__NP_LAYOUT_VERSION = '20261124j'",
+      "window.__NP_LAYOUT_VERSION = '20261124k'",
       "hit.__npBound",
       "replace(/人民币/g, '')",
       "' is-empty'",
@@ -552,7 +556,12 @@
       "'贝莱德': '#0e5a73'",
       "'</b><span>' + (idx === 0 ? '<em>今天</em>'",
       "function npSoftColor(hex)",
-      "';--cl:' + npSoftColor(color)"
+      "';--cl:' + npSoftColor(color)",
+      "function tradeNewProductId(x)",
+      "function tradeNewProducts()",
+      "allUniqueProducts().concat(tradeNewProducts())",
+      "'<em class=\"np-tag\">今日新品</em>'",
+      "npReg && REG_CANONICAL[npReg]"
     ],
     "assets/store.js": [
       "sbTombstones",
