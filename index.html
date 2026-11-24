@@ -1768,15 +1768,19 @@
     font-feature-settings:'tnum' 1,'lnum' 1!important;
     text-align:right!important;text-indent:0!important;white-space:nowrap!important}
 
+  /* 2026-11-24 r：金额小数点彩色抗锯齿残影修复，改用系统数字字体 + 灰度抗锯齿 */
   /* ===== 金额小数点绝对同列（2026-11-24 第三次修复，长期保持）=====
      金额单元格由 fmtMoneyCell() 输出「整数 / 点 / 两位小数」三段，用 inline-grid 锁定：
      整数段占满可用宽度且右对齐，点和小数段紧跟其后。这样无论字体是否等宽、
      千分位逗号宽度如何、iOS 是否缓存旧 CSS，小数点都落在同一竖线。
      （前两次只靠 tabular-nums + 右对齐，iOS 旧缓存下仍左对齐，故改结构性方案） */
   .mcell{display:inline-grid;grid-template-columns:1fr auto auto;width:100%;
-    font-family:var(--mono)!important;font-variant-numeric:tabular-nums lining-nums!important;
-    font-feature-settings:'tnum' 1,'lnum' 1!important;white-space:nowrap}
-  .mci{text-align:right;overflow:hidden}
+    font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','PingFang SC','Microsoft YaHei',sans-serif!important;
+    font-variant-numeric:tabular-nums lining-nums!important;
+    font-feature-settings:'tnum' 1,'lnum' 1!important;
+    -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+    text-rendering:geometricPrecision;white-space:nowrap}
+  .mci{text-align:right}
   .mcd{text-align:center}
   .mcf{text-align:left}
 
@@ -2407,11 +2411,11 @@
 <!-- 代码类脚本带版本号，改动后同步更新，避免手机端命中旧缓存；数据类脚本不带版本号，保证每日更新能取到 -->
 <!-- 2026-11-23 统一缓存戳：前端改动必须同步 bump，避免浏览器命中旧 JS 造成
      「新 HTML + 旧渲染」的错位（表现为新品预告仍是拉伸甘特卡片 + 巨大原生多选框）。 -->
-<script src="./_shared/js/echarts.min.js?v=20261124q" onerror="this.onerror=null;this.src='./_shared/js/echarts.min.js?t='+Date.now()"></script>
-<script src="./assets/html2canvas.min.js?v=20261124q"></script>
-<script src="./assets/data.js?v=20261124q" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
-<script src="./assets/risk_levels.js?v=20261124q"></script>
-<script src="./assets/transactions.js?v=20261124q"></script>
+<script src="./_shared/js/echarts.min.js?v=20261124r" onerror="this.onerror=null;this.src='./_shared/js/echarts.min.js?t='+Date.now()"></script>
+<script src="./assets/html2canvas.min.js?v=20261124r"></script>
+<script src="./assets/data.js?v=20261124r" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
+<script src="./assets/risk_levels.js?v=20261124r"></script>
+<script src="./assets/transactions.js?v=20261124r"></script>
 <script>
   /* 公开底稿已脱敏：只含 id+pid 的占位行供后台抓净值，不含 applyDate 等明细。
      前端渲染前剔除这类行，真实交易明细由登录后从 Supabase 云端拉取。 */
@@ -2420,16 +2424,16 @@
     if (T && T.items) T.items = T.items.filter(function (t) { return !!t.applyDate; });
   })();
 </script>
-<script src="./assets/newproducts.js?v=20261124q"></script>
-<script src="./assets/library.js?v=20261124q"></script>
-<script src="./assets/supabase-config.js?v=20261124q"></script>
-<script src="./assets/auth.js?v=20261124q"></script>
-<script src="./assets/store.js?v=20261124q" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
+<script src="./assets/newproducts.js?v=20261124r"></script>
+<script src="./assets/library.js?v=20261124r"></script>
+<script src="./assets/supabase-config.js?v=20261124r"></script>
+<script src="./assets/auth.js?v=20261124r"></script>
+<script src="./assets/store.js?v=20261124r" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
 <script>
   /* 先用本地缓存/内置底稿立即渲染，云端数据在后台取回后再重绘，避免等待网络白屏 */
   /* 前序脚本缺失或命中旧缓存时（STORE_READY 不存在）也照常加载看板，避免页面停在空白骨架 */
   (function () {
-    var NP_BUILD = '20261124q';
+    var NP_BUILD = '20261124r';
     function boot(msg, forced) {
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
@@ -2456,7 +2460,7 @@
       // 隐私小眼睛：dashboard.js 就绪后再加载，才能包装 DASHBOARD_REFRESH 并在渲染后套用打码
       if (!window.PRIVACY) {
         var pv = document.createElement('script');
-        pv.src = './assets/privacy.js?v=20261124q';
+        pv.src = './assets/privacy.js?v=20261124r';
         document.body.appendChild(pv);
       }
       if (!window.STORE_REFRESH || typeof window.STORE_REFRESH.then !== 'function') return;

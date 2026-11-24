@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261124q';
+  window.__NP_LAYOUT_VERSION = '20261124r';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
