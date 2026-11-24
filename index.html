@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <link rel="icon" href="data:,">
 <title>银行理财每日收益看板</title>
+<!-- 2026-11-24 u 首屏优化：看板脚本提前并行下载，云端域名提前握手；
+     两者都不阻塞 HTML 解析，避免旧版「大库先下载完才开始拉 dashboard.js」的串行等待。 -->
+<link rel="preconnect" href="https://asqaxvrovorqfqwpgjkb.supabase.co" crossorigin>
+<link rel="preload" as="script" href="./assets/dashboard.js?v=20261124u" fetchpriority="low">
 <style>
   :root{
     --bg:#f3f5f7; --card:#fff; --soft:#F9FFFF;
@@ -1293,7 +1297,7 @@
     .filters .fl-sep{display:none}
     .filters .chip{flex:0 0 auto;width:auto;min-width:0;font-size:11.5px;padding:4px 10px}
     .filters input{flex:1 1 0;min-width:0;width:auto}
-    /* 手机端：成立月份、收藏、重置、搜索框同一行；筛选按钮（胶囊）统一 60×32、间距 5px */
+    /* 手机端：成立期、收藏、重置、搜索框同一行；筛选按钮（胶囊）统一 60×32、间距 5px */
     .filters .filter-tail{flex:1 1 0;min-width:0;gap:5px}
     .filters .filter-tail .chip{flex:0 0 60px;width:60px;height:32px;padding:0;font-size:11.5px;
       white-space:nowrap;justify-content:center}
@@ -1840,6 +1844,56 @@
   .sel-pop.ms-pop{max-width:min(44vw,132px)!important;min-width:0!important;width:max-content!important;padding:3px!important}
   .sel-pop.ms-pop .sel-opt{font-size:12px!important;line-height:1.25!important;
     min-height:0!important;padding:5px 9px!important;text-align:center!important}
+
+  /* ===== 2026-11-24 u：年度 / 月度收益选中态 = 蓝色方框，数据行无填充 =====
+     用户已两次强调：不要整行浅蓝底、不要左侧粗竖条；选中行要用闭合的蓝色方框。 */
+  .year-table tbody tr:hover td,.month-item:hover{background:transparent!important}
+  .year-table tr.on td{background:transparent!important;
+    box-shadow:inset 0 2px 0 var(--blue),inset 0 -2px 0 var(--blue)!important}
+  .year-table tr.on td:first-child{
+    box-shadow:inset 2px 0 0 var(--blue),inset 0 2px 0 var(--blue),inset 0 -2px 0 var(--blue)!important;
+    border-radius:3px 0 0 3px}
+  .year-table tr.on td:last-child{
+    box-shadow:inset -2px 0 0 var(--blue),inset 0 2px 0 var(--blue),inset 0 -2px 0 var(--blue)!important;
+    border-radius:0 3px 3px 0}
+  .year-table tr.on td.ym{color:var(--blue)!important}
+  .month-item.on{background:transparent!important;border-color:transparent!important;
+    outline:2px solid var(--blue)!important;outline-offset:-2px;border-radius:3px!important;
+    box-shadow:none!important}
+
+  /* ===== 2026-11-24 u：产品库「成立期」年 + 月融合月历 =====
+     一年 12 个月一次看全，左右箭头切年；有成立产品的月份可选，选中蓝框无填充。 */
+  .sel-pop.inc-pop{width:244px!important;max-width:calc(100vw - 16px)!important;
+    max-height:none!important;padding:10px!important;overflow:visible!important}
+  .inc-head{display:flex;align-items:center;justify-content:space-between;gap:6px;
+    padding-bottom:8px;border-bottom:1px solid var(--rule)}
+  .inc-title{font-size:12.5px;font-weight:700;color:var(--blue)}
+  .inc-year-nav{display:inline-flex;align-items:center;gap:4px}
+  .inc-year{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--ink);min-width:44px;text-align:center}
+  .inc-nav{width:24px;height:24px;padding:0;border:1px solid var(--blue-line);border-radius:4px;
+    background:transparent;color:var(--blue);font-size:15px;line-height:20px;cursor:pointer}
+  .inc-nav:disabled{opacity:.3;cursor:default}
+  .inc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:9px}
+  .inc-m{height:30px;padding:0;border:1px solid var(--blue-line);border-radius:4px;
+    background:transparent;color:var(--muted);font-family:var(--font);font-size:12px;
+    font-weight:500;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  .inc-m.on{border-color:var(--blue)!important;color:var(--blue)!important;
+    font-weight:700!important;background:transparent!important}
+  .inc-m:disabled{opacity:.3;cursor:default}
+  .inc-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;
+    margin-top:9px;padding-top:8px;border-top:1px solid var(--rule)}
+  .inc-all{height:24px;padding:0 9px;border:1px solid var(--blue-line);border-radius:4px;
+    background:transparent;color:var(--blue);font-family:var(--font);font-size:11.5px;cursor:pointer}
+  .inc-all.on{border-color:var(--blue);font-weight:700}
+  .inc-count{font-size:11.5px;color:var(--muted)}
+
+  /* ===== 2026-11-24 u：图1推荐方案 B —— 数值色与标题蓝分层 =====
+     只改 3 处数值选择器：累计指标值、盈亏汇总金额、产品名称下持仓金额；
+     标题/按钮/选中交互蓝继续锁 #2878AF，不受影响。 */
+  :root{--data-ink:#31566A}
+  #metric-value{color:var(--data-ink)!important}
+  #sum-table tbody td.mv-col{color:var(--data-ink)!important}
+  .pname .mv-under{color:var(--data-ink)!important}
 </style>
 <script>
   /* 登录墙判定（尽早执行，早于页面内容渲染，避免闪现）：
@@ -2243,8 +2297,8 @@
           <option value="per10k">万收</option>
           <option value="ann">年化</option>
         </select>
-        <select id="incep-sel" aria-label="按成立月份筛选" multiple>
-          <option value="">成立月份</option>
+        <select id="incep-sel" aria-label="按成立期筛选" multiple>
+          <option value="">成立期</option>
         </select>
         <span class="filter-tail">
           <!-- 「★ 收藏」筛选按钮 2026-11-21 按用户要求移除（收藏数据与逻辑保留，不再有入口） -->
@@ -2452,11 +2506,11 @@
 <!-- 代码类脚本带版本号，改动后同步更新，避免手机端命中旧缓存；数据类脚本不带版本号，保证每日更新能取到 -->
 <!-- 2026-11-23 统一缓存戳：前端改动必须同步 bump，避免浏览器命中旧 JS 造成
      「新 HTML + 旧渲染」的错位（表现为新品预告仍是拉伸甘特卡片 + 巨大原生多选框）。 -->
-<script src="./_shared/js/echarts.min.js?v=20261124t" onerror="this.onerror=null;this.src='./_shared/js/echarts.min.js?t='+Date.now()"></script>
-<script src="./assets/html2canvas.min.js?v=20261124t"></script>
-<script src="./assets/data.js?v=20261124t" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
-<script src="./assets/risk_levels.js?v=20261124t"></script>
-<script src="./assets/transactions.js?v=20261124t"></script>
+<!-- 2026-11-24 u：ECharts / html2canvas 改按需加载（趋势图、导出长图才拉），
+     不再让 338KB + 47KB 的库阻塞首屏；加载器分别在 dashboard.js 与本页导出逻辑内。 -->
+<script src="./assets/data.js?v=20261124u" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
+<script src="./assets/risk_levels.js?v=20261124u"></script>
+<script src="./assets/transactions.js?v=20261124u"></script>
 <script>
   /* 公开底稿已脱敏：只含 id+pid 的占位行供后台抓净值，不含 applyDate 等明细。
      前端渲染前剔除这类行，真实交易明细由登录后从 Supabase 云端拉取。 */
@@ -2465,16 +2519,16 @@
     if (T && T.items) T.items = T.items.filter(function (t) { return !!t.applyDate; });
   })();
 </script>
-<script src="./assets/newproducts.js?v=20261124t"></script>
-<script src="./assets/library.js?v=20261124t"></script>
-<script src="./assets/supabase-config.js?v=20261124t"></script>
-<script src="./assets/auth.js?v=20261124t"></script>
-<script src="./assets/store.js?v=20261124t" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
+<script src="./assets/newproducts.js?v=20261124u"></script>
+<script src="./assets/library.js?v=20261124u"></script>
+<script src="./assets/supabase-config.js?v=20261124u"></script>
+<script src="./assets/auth.js?v=20261124u"></script>
+<script src="./assets/store.js?v=20261124u" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
 <script>
   /* 先用本地缓存/内置底稿立即渲染，云端数据在后台取回后再重绘，避免等待网络白屏 */
   /* 前序脚本缺失或命中旧缓存时（STORE_READY 不存在）也照常加载看板，避免页面停在空白骨架 */
   (function () {
-    var NP_BUILD = '20261124t';
+    var NP_BUILD = '20261124u';
     function boot(msg, forced) {
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
@@ -2501,7 +2555,7 @@
       // 隐私小眼睛：dashboard.js 就绪后再加载，才能包装 DASHBOARD_REFRESH 并在渲染后套用打码
       if (!window.PRIVACY) {
         var pv = document.createElement('script');
-        pv.src = './assets/privacy.js?v=20261124t';
+        pv.src = './assets/privacy.js?v=20261124u';
         document.body.appendChild(pv);
       }
       if (!window.STORE_REFRESH || typeof window.STORE_REFRESH.then !== 'function') return;
@@ -2690,6 +2744,7 @@
       document.title = '银行理财每日收益看板 · ' + ({ hold: '首页', trade: '交易', prod: '产品' }[id] || '');
       /* 2026-11-24：只让趋势图重取尺寸，不再广播 resize 触发全站监听（含日历重绘） */
       if (window.__DASH_CHART_RESIZE__) window.__DASH_CHART_RESIZE__();
+      if (id === 'hold' && window.__DASH_TREND_SHOW__) window.__DASH_TREND_SHOW__();
     }
     tabs.forEach(function (t) {
       t.addEventListener('click', function () { show(t.dataset.tab); });
@@ -2744,6 +2799,7 @@
       /* 子页显示状态变化后只重算趋势图尺寸，不广播 resize（避免连带重绘日历/弹层） */
       requestAnimationFrame(function () {
         if (window.__DASH_CHART_RESIZE__) window.__DASH_CHART_RESIZE__();
+        if (target.id === 'sec-hold-trend' && window.__DASH_TREND_SHOW__) window.__DASH_TREND_SHOW__();
         syncTopBtn();
       });
     }
@@ -2935,6 +2991,20 @@
 
     var EXPORT_WIDTH = 1320;
     var EXPORT_WINDOW_WIDTH = EXPORT_WIDTH + 40;
+    /* 2026-11-24 u：html2canvas 只在点「导出长图」时加载，首屏少一个 47KB 请求 */
+    var h2cLoading = null;
+    function loadHtml2canvas() {
+      if (window.html2canvas) return Promise.resolve();
+      if (h2cLoading) return h2cLoading;
+      h2cLoading = new Promise(function (resolve, reject) {
+        var s = document.createElement('script');
+        s.src = './assets/html2canvas.min.js?v=20261124u';
+        s.onload = resolve;
+        s.onerror = function () { h2cLoading = null; reject(new Error('截图组件加载失败')); };
+        document.head.appendChild(s);
+      });
+      return h2cLoading;
+    }
 
     btn.addEventListener('click', function () {
       if (btn.disabled) return;
@@ -2958,6 +3028,8 @@
          导出前临时展开所有子页让 ECharts 按 1320px 重绘，导出后恢复原状。 */
       var hiddenSubs = [].slice.call(target.querySelectorAll('.subpage.subpage-off'));
       hiddenSubs.forEach(function (s) { s.classList.remove('subpage-off'); });
+      /* 手机端趋势子页平时隐藏、ECharts 未加载；导出展开后补渲染，避免长图里图表空白 */
+      if (window.__DASH_TREND_SHOW__) window.__DASH_TREND_SHOW__();
       if (widened) {
         target.classList.add('is-exporting');
         target.style.width = EXPORT_WIDTH + 'px';
@@ -3019,7 +3091,7 @@
 
       var fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
 
-      Promise.all([fontsReady, framesReady]).then(function () {
+      Promise.all([fontsReady, framesReady, loadHtml2canvas()]).then(function () {
         return html2canvas(target, {
           backgroundColor: '#f3f5f7',
           scale: SCALE,

@@ -1,7 +1,7 @@
 {
   "_doc": "跨端代码守卫共用标记清单 —— 唯一权威来源。WorkBuddy 的 .githooks/pre-push 与 Trae 的 tools/sync_pages.py 都必须读取本文件，禁止在脚本里硬编码标记列表。新增功能后在此登记，两端自动生效。",
   "_maintainer": "任何一端修改本文件后，需在提交信息中说明原因；改动会同时影响两端的推送守卫。",
-  "version": "2026-11-24a53",
+  "version": "2026-11-24a54",
   "protected": {
     "_doc": "受『整批中止』保护的文件：远端内容被他人改过时，整批拒绝推送，必须先 pull 合并。markers 为该文件必须包含的字符串，缺失即判定为旧版/被回退，整批拒推。",
     "index.html": [
@@ -22,7 +22,7 @@
       "data-stamp",
       "B2/Q2：横屏全表由 11px 提到 11.5px",
       "Q1：手机年表/月表",
-      "v=20261124t",
+      "v=20261124u",
       "计息不足 7 天",
       "--blue-soft:#2878af",
       ".pname .mv-under",
@@ -296,7 +296,7 @@
       "公开底稿已脱敏",
       "T.items = T.items.filter(function (t) { return !!t.applyDate; })",
       "登录后可保存你的交易与手工产品数据",
-      "auth.js?v=20261124t",
+      "auth.js?v=20261124u",
       "退出后会清除本机交易缓存",
       "label.innerHTML = CHECK",
       "btn.title = '已登录（点击退出登录）'",
@@ -305,7 +305,7 @@
       "window.__GATE_BYPASS__",
       "id=\"gate-submit\"",
       "id=\"privacy-eye\"",
-      "privacy.js?v=20261124t",
+      "privacy.js?v=20261124u",
       "window.PRIVACY.maskClone",
       ".hero-title-row",
       "if (eye) eye.style.visibility",
@@ -324,7 +324,7 @@
       "multiple size=\"1\"",
       ".ts-cell span{display:block}",
       ".ts-lane{width:176px",
-      "var NP_BUILD = '20261124t'",
+      "var NP_BUILD = '20261124u'",
       "window.__NP_LAYOUT_VERSION !== NP_BUILD",
       ".ts-cell{width:176px;flex:none;padding:6px 2px",
       "2026-11-24 三行版",
@@ -378,7 +378,14 @@
       ".month-switch{height:26px!important;border:1px solid var(--blue-line)!important",
       ".ms-select-wrap{position:relative;display:inline-flex;align-items:center;justify-content:center;height:24px}",
       ".ms-sel-hit{position:absolute;inset:0;z-index:2;width:100%;height:100%;padding:0;border:0;",
-      ".sel-pop.ms-pop{max-width:min(44vw,132px)!important"
+      ".sel-pop.ms-pop{max-width:min(44vw,132px)!important",
+      "成立期",
+      ".sel-pop.inc-pop{width:244px!important",
+      "year-table tr.on td:last-child",
+      "loadHtml2canvas()",
+      "__DASH_TREND_SHOW__",
+      "fetchpriority=\"low\"",
+      "--data-ink:#31566A"
     ],
     "assets/dashboard.js": [
       "PID_ALIAS",
@@ -576,7 +583,7 @@
       "2026-11-24 卡片改版：三行呈现",
       "'<div class=\"nhead\">' +",
       "class=\"kl kl-e\">成立",
-      "window.__NP_LAYOUT_VERSION = '20261124t'",
+      "window.__NP_LAYOUT_VERSION = '20261124u'",
       "hit.__npBound",
       "replace(/人民币/g, '')",
       "' is-empty'",
@@ -604,7 +611,12 @@
       "var sw = s.closest ? s.closest('.month-switch') : s.parentElement;",
       "hit.className = 'ms-sel-hit';",
       "sel.closest('.month-switch') ? ' ms-pop' : ''",
-      "2026-11-24 q：年化数据条取消大拇指角标，只保留渐变条与数值"
+      "2026-11-24 q：年化数据条取消大拇指角标，只保留渐变条与数值",
+      "function openIncepPop(sel, anchor)",
+      "function withEcharts(cb)",
+      "window.__DASH_TREND_SHOW__ = function () { renderTrend(); };",
+      "y === String(calState.y)",
+      "if (sel.id === 'incep-sel') openIncepPop(sel, wrap);"
     ],
     "assets/store.js": [
       "sbTombstones",

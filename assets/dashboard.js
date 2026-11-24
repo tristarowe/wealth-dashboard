@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261124t';
+  window.__NP_LAYOUT_VERSION = '20261124u';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -1867,9 +1867,9 @@
     if (yv) yv.hidden = false;
     if (mv) mv.hidden = false;
     if (mwrap) mwrap.style.display = '';
-    renderYearView();
     var p = AGG;
     if (!p || !p.dates.length) {
+      renderYearView();
       wrap.innerHTML = '';
       var sumEl = document.getElementById('cal-summary');
       if (sumEl) sumEl.innerHTML = '<span class="lead">当月收益<b>—</b><i>元</i></span>';
@@ -1880,6 +1880,8 @@
     if (years.indexOf(calState.y) === -1) calState.y = years[years.length - 1];
     var months = monthsOf(p, calState.y);
     if (months.indexOf(calState.m) === -1) calState.m = months[months.length - 1];
+    /* 年度表跟随当前选中年份（而非固定最新年），否则切到历史年后边框停在旧行 */
+    renderYearView();
 
     var perMap = perMapOf(p);
     var annMap = annMapOf(p);
@@ -2065,7 +2067,7 @@
       var annTitle = annFormula + '｜' + y + ' 年度，计 ' + s.cnt + ' 个披露点，收益 ' + fmtSigned(s.sum) + ' 元' +
         (ann === null ? '（现金流不足，无法求解）' : '');
 
-      return '<tr data-year="' + y + '" class="' + (y === latestYear ? 'on' : '') + '">' +
+      return '<tr data-year="' + y + '" class="' + (y === String(calState.y) ? 'on' : '') + '">' +
         '<td class="ym">' + y + '</td>' +
         '<td class="r num ' + colorBy(s.sum) + '">' + (s.sum > 0 ? '+' : '') + fmtMoney(s.sum) + '</td>' +
         '<td class="r num cnt" title="日均万收 = 区间收益 ÷ 期初市值 ÷ 自然日数 × 10000；每日赚钱速度，时间加权">'
@@ -2132,6 +2134,17 @@
       renderCalendar();
     });
 
+    /* 年度收益行也可点选：点哪年就切到哪年，蓝框跟着选中行走（2026-11-24 用户要求） */
+    var ybody = document.getElementById('year-body');
+    if (ybody) ybody.addEventListener('click', function (e) {
+      var row = e.target.closest ? e.target.closest('tr[data-year]') : null;
+      if (!row || !AGG) return;
+      calState.y = +row.dataset.year;
+      var ms = monthsOf(AGG, calState.y);
+      if (ms.length && ms.indexOf(calState.m) === -1) calState.m = ms[ms.length - 1];
+      renderCalendar();
+    });
+
     var list = document.getElementById('month-list');
     if (list) list.addEventListener('click', function (e) {
       var item = e.target.closest ? e.target.closest('.month-item') : null;
@@ -2153,9 +2166,33 @@
   /* ---------------- 模块 03：盈亏趋势 ---------------- */
   var trendState = { range: 30 };
   var trendChart = null;
+  /* 2026-11-24 u：ECharts 按需加载。趋势图子页首次渲染时才拉 338KB 库，
+     首屏不再被图表库串行阻塞；加载中重复触发只保留一次回调队列。 */
+  function withEcharts(cb) {
+    if (window.echarts) { cb(); return; }
+    if (!window.__ECHARTS_LOADING__) {
+      window.__ECHARTS_LOADING__ = true;
+      var s = document.createElement('script');
+      s.src = './_shared/js/echarts.min.js?v=20261124u';
+      s.onerror = function () {
+        window.__ECHARTS_LOADING__ = false;
+        var tip = document.getElementById('boot-tip');
+        if (tip) { tip.textContent = '图表加载失败，请刷新重试'; tip.hidden = false; }
+      };
+      s.onload = function () {
+        var q = window.__ECHARTS_QUEUE__ || [];
+        window.__ECHARTS_QUEUE__ = [];
+        q.forEach(function (fn) { fn(); });
+      };
+      document.head.appendChild(s);
+    }
+    (window.__ECHARTS_QUEUE__ = window.__ECHARTS_QUEUE__ || []).push(cb);
+  }
   /* 2026-11-24：标签/子页切换只需让趋势图重取尺寸，不必广播 window resize
      （广播会连带触发 renderCalendar、关闭弹层等无关重活，手机上造成点击卡顿）。 */
   window.__DASH_CHART_RESIZE__ = function () { if (trendChart) trendChart.resize(); };
+  /* 手机端切到「盈亏趋势」子页时才真正加载 ECharts 并首次绘制 */
+  window.__DASH_TREND_SHOW__ = function () { renderTrend(); };
 
   function trendStart(p, range) {
     var n = p.dates.length;
@@ -2183,6 +2220,12 @@
   function renderTrend() {
     var el = document.getElementById('chart');
     if (!el) return;
+    if (!window.echarts) {
+      /* 手机端趋势子页未显示（宽 0）时不拉库；切到该子页时由 __DASH_TREND_SHOW__ 补渲染 */
+      if (!el.getBoundingClientRect().width) return;
+      withEcharts(renderTrend);
+      return;
+    }
     if (!trendChart) trendChart = echarts.init(el, null, { renderer: 'svg' });
     if (!AGG) {
       trendChart.clear();
@@ -3037,12 +3080,17 @@
   var selPopSel = null;
   var selPopAnchor = null;
   var selPopAt = 0;
+  var incPop = null;          /* 产品库「成立期」年月融合月历弹层 */
+  var incPopAnchor = null;
 
   function closeSelPop() {
     if (selPop && selPop.parentNode) selPop.parentNode.removeChild(selPop);
+    if (incPop && incPop.parentNode) incPop.parentNode.removeChild(incPop);
     selPop = null;
     selPopSel = null;
     selPopAnchor = null;
+    incPop = null;
+    incPopAnchor = null;
   }
 
   /* 跟随锚点重新定位；锚点滚出视口时关闭 */
@@ -3087,7 +3135,9 @@
   function openSelPop(sel, anchor, opts) {
     opts = opts || {};
     var anchorEl = anchor || sel;
-    if (selPopSel === sel && selPopAnchor === anchorEl) { closeSelPop(); return; }
+    /* 成立期月历与同名普通弹层互切：同一锚点再点一次才收起；从月历切普通列表要直接换层 */
+    if (selPopSel === sel && selPopAnchor === anchorEl &&
+        !(selPop && selPop.classList.contains('inc-pop'))) { closeSelPop(); return; }
     closeSelPop();
     var pop = document.createElement('div');
     /* 2026-11-24 t：年月筛选走同一弹层但用 .ms-pop 收紧行高，避免 iOS 原生整屏列表 */
@@ -3193,6 +3243,116 @@
     var r = anchorEl.getBoundingClientRect();
     /* 单列弹层宽度由 CSS width:max-content 贴合文字，这里只约束多选筛选的最小宽度 */
     if (!single) pop.style.minWidth = Math.max(r.width, 132) + 'px';
+    placeSelPop();
+  }
+
+  /* 产品库「成立期」：年份 + 12 个月融合月历，替代旧的 ZYYY-MM 平铺复选列表。
+     底层仍用 #incep-sel 存多选值，保证筛选口径、重置与计数逻辑不变。 */
+  function openIncepPop(sel, anchor) {
+    var anchorEl = anchor || sel;
+    if (incPop && incPopAnchor === anchorEl) { closeSelPop(); return; }
+    closeSelPop();
+
+    var vals = [];
+    Array.prototype.forEach.call(sel.options, function (o, i) {
+      if (i && o.value) vals.push(o.value);
+    });
+    var years = [];
+    vals.forEach(function (v) {
+      var y = v.slice(0, 4);
+      if (years.indexOf(y) === -1) years.push(y);
+    });
+    years.sort().reverse();
+    if (!years.length) return;
+
+    var selected = selValues(sel);
+    var showYear = (selected[0] || vals[0]).slice(0, 4);
+    var pop = document.createElement('div');
+    pop.className = 'sel-pop inc-pop';
+    pop.setAttribute('role', 'listbox');
+
+    var head = document.createElement('div');
+    head.className = 'inc-head';
+    head.innerHTML = '<span class="inc-title">成立期</span><span class="inc-year-nav">' +
+      '<button type="button" class="inc-nav inc-prev" aria-label="上一年">‹</button>' +
+      '<span class="inc-year"></span>' +
+      '<button type="button" class="inc-nav inc-next" aria-label="下一年">›</button></span>';
+    pop.appendChild(head);
+    var grid = document.createElement('div');
+    grid.className = 'inc-grid';
+    pop.appendChild(grid);
+    var foot = document.createElement('div');
+    foot.className = 'inc-foot';
+    foot.innerHTML = '<button type="button" class="inc-all">全部</button><span class="inc-count"></span>';
+    pop.appendChild(foot);
+
+    function paint() {
+      var yi = years.indexOf(showYear);
+      var yEl = pop.querySelector('.inc-year');
+      if (yEl) yEl.textContent = showYear + ' 年';
+      var prev = pop.querySelector('.inc-prev');
+      var next = pop.querySelector('.inc-next');
+      if (prev) prev.disabled = yi <= 0;
+      if (next) next.disabled = yi >= years.length - 1;
+      grid.innerHTML = '';
+      for (var m = 1; m <= 12; m++) {
+        var key = showYear + '-' + String(m).padStart(2, '0');
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'inc-m' + (selected.indexOf(key) !== -1 ? ' on' : '');
+        btn.textContent = m + '月';
+        btn.dataset.key = key;
+        btn.disabled = vals.indexOf(key) === -1;
+        btn.title = btn.disabled ? '该月暂无成立产品' : key;
+        grid.appendChild(btn);
+      }
+      var cnt = pop.querySelector('.inc-count');
+      if (cnt) cnt.textContent = selected.length ? ('已选 ' + selected.length + ' 期') : '全部成立期';
+      var all = pop.querySelector('.inc-all');
+      if (all) all.classList.toggle('on', selected.length === 0);
+    }
+    function commit() {
+      selected = selValues(sel);
+      paint();
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    pop.addEventListener('click', function (e) {
+      var nav = e.target.closest ? e.target.closest('.inc-nav') : null;
+      if (nav && !nav.disabled) {
+        e.preventDefault();
+        e.stopPropagation();
+        var i = years.indexOf(showYear) + (nav.classList.contains('inc-next') ? 1 : -1);
+        if (i >= 0 && i < years.length) { showYear = years[i]; paint(); }
+        return;
+      }
+      if (e.target.closest && e.target.closest('.inc-all')) {
+        e.preventDefault();
+        e.stopPropagation();
+        Array.prototype.forEach.call(sel.options, function (o, j) { o.selected = (j === 0); });
+        commit();
+        return;
+      }
+      var mb = e.target.closest ? e.target.closest('.inc-m') : null;
+      if (!mb || mb.disabled) return;
+      e.preventDefault();
+      e.stopPropagation();
+      var key = mb.dataset.key;
+      Array.prototype.forEach.call(sel.options, function (o, j) {
+        if (j && o.value === key) o.selected = !o.selected;
+      });
+      sel.options[0].selected = selValues(sel).length === 0;
+      commit();
+    });
+
+    document.body.appendChild(pop);
+    selPop = pop;
+    selPopSel = sel;
+    selPopAnchor = anchorEl;
+    incPop = pop;
+    incPopAnchor = anchorEl;
+    selPopAt = Date.now();
+    paint();
     placeSelPop();
   }
 
@@ -3311,7 +3471,9 @@
       hit.addEventListener('click', function (e) {
         e.preventDefault();
         e.stopPropagation();
-        openSelPop(sel);
+        /* 2026-11-24 u：成立期改年 + 月融合月历，其余筛选仍走通用多选列表 */
+        if (sel.id === 'incep-sel') openIncepPop(sel, wrap);
+        else openSelPop(sel);
       });
       wrap.appendChild(hit);
       sizeSelWrap(sel);
@@ -3499,6 +3661,7 @@
   function populateIncepSelect() {
     var sel = document.getElementById('incep-sel');
     if (!sel) return;
+    if (incPop) closeSelPop();   /* 选项变更后关闭月历，避免显示过期年月 */
     var months = [];
     MODEL.concat(LIB_MODEL).forEach(function (item) {
       var m = String(item.product.inception || '').slice(0, 7);
@@ -3506,7 +3669,7 @@
     });
     months.sort().reverse();
     var current = sel.value;
-    sel.innerHTML = '<option value="">成立月份</option>' + months.map(function (m) {
+    sel.innerHTML = '<option value="">成立期</option>' + months.map(function (m) {
       return '<option value="' + m + '">' + m + '</option>';
     }).join('');
     sel.value = months.indexOf(current) !== -1 ? current : '';
