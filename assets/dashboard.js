@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261124z';
+  window.__NP_LAYOUT_VERSION = '20261125a';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -32,7 +32,11 @@
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   }
 
-  /* 交易状态按确认日期判定：确认日未到，或确认日净值尚未披露，均为「在途」，不计入持仓 */
+  /* 交易状态按确认日期判定：确认日未到，或成交净值尚未披露，均为「在途」，不计入持仓。
+     2026-11-25：新品（如招睿增鑫30天4号，成立日晚于申购日）尚未披露任何净值，
+     旧逻辑只看 p.latestDate（空串）会把 confirmNav=0 的交易误判「已确认」，
+     交易流水成交净值列随即把占位 0 渲染成 0.000000。这里补一条：没有任何净值
+     且交易自身也没记成交净值时，一律在途，显示「待确认」。 */
   function txStatus(t) {
     var d = t && (t.confirmDate || t.applyDate);
     if (!d) return (t && t.status) || '已确认';
@@ -41,6 +45,10 @@
     /* 成交净值按申购日（T 日）：T 日净值已披露即可确认，不要求确认日净值披露 */
     var navDay = t.applyDate || d;
     if (p && p.latestDate && navDay > p.latestDate) return '在途';
+    /* 净值未披露：交易无 confirmNav、产品也无任何净值点 → 待确认，不能按 0 计 */
+    var hasOwnNav = Number(t.confirmNav) > 0;
+    var hasProdNav = !!(p && p.nav && p.nav.length);
+    if (!hasOwnNav && !hasProdNav) return '在途';
     return '已确认';
   }
 
@@ -1115,8 +1123,10 @@
     return (badge || '') + fmt2(v);
   }
 
+  /* 2026-11-25：0 是「净值未披露」的占位哨兵（confirmNav: 0），银行理财净值不会为 0。
+     旧版 fmtNav(0) 直接输出 0.000000，看起来像真实净值，极易误读。统一回退为 —。 */
   function fmtNav(v) {
-    return v === null || v === undefined || isNaN(v) ? '—' : v.toFixed(6);
+    return !(Number(v) > 0) ? '—' : Number(v).toFixed(6);
   }
 
   // 评分参数：市场利率基准（%，一年期定存参考），可自行调整
@@ -1851,7 +1861,9 @@
   }
 
   function resetCalendarMonth() {
-    var latest = AGG ? AGG.latestDate : DATA.asOf;
+    /* 2026-11-25：新品在途申购可能让 AGG 暂无任何收益日（latestDate 为空），
+       旧版直接 parseDate(undefined) 抛错、整页渲染中断。回退到数据快照日。 */
+    var latest = (AGG && AGG.latestDate) || DATA.asOf || isoDate(new Date());
     var d = parseDate(latest);
     calState.y = d.getFullYear();
     calState.m = d.getMonth();
@@ -2173,7 +2185,7 @@
         markPoint/markLine + SVG 渲染器（约 500KB，gzip 173KB），并在首屏 init 后
         立即用 fetch 预热 HTTP 缓存、load 完成后空闲注入脚本——用户读首屏这几秒里
         图库已就绪，切到趋势页几乎不再等待。 */
-  var CHART_URL = './_shared/js/echarts.slim.js?v=20261124z';
+  var CHART_URL = './_shared/js/echarts.slim.js?v=20261125a';
   function injectEcharts() {
     if (window.echarts || window.__ECHARTS_INJECTED__) return;
     window.__ECHARTS_INJECTED__ = true;
@@ -2223,6 +2235,9 @@
 
   function trendStart(p, range) {
     var n = p.dates.length;
+    /* 2026-11-25：全部持仓都是尚未披露净值的新品时，AGG.dates 为空，
+       旧版 parseDate(undefined) 抛错并中断图表回调链。 */
+    if (!n) return 0;
     var latest = parseDate(p.dates[n - 1]);
     var cutoff = latest.getTime() - range * DAY;
     var start = 0;
@@ -2265,10 +2280,11 @@
     var phOld = el.querySelector('.chart-loading');
     if (phOld && phOld.parentNode) phOld.parentNode.removeChild(phOld);
     if (!trendChart) trendChart = echarts.init(el, null, { renderer: 'svg' });
-    if (!AGG) {
+    if (!AGG || !AGG.dates || !AGG.dates.length) {
       trendChart.clear();
       var emptySub = document.getElementById('trend-sub');
-      if (emptySub) emptySub.textContent = '未选择产品，暂无趋势数据';
+      if (emptySub) emptySub.textContent = (AGG && !AGG.dates.length)
+        ? '持仓产品净值尚未披露，暂无趋势数据' : '未选择产品，暂无趋势数据';
       return;
     }
     var p = AGG;
@@ -5122,9 +5138,11 @@
       var p = findProductById(t.pid);
       if (!p) return;
       var latestNav = p.nav[p.nav.length - 1];
-      var nav = Number(t.confirmNav) || navForConfirm(p, t.applyDate || t.confirmDate) || latestNav || 1;
+      var nav = Number(t.confirmNav) || navForConfirm(p, t.applyDate || t.confirmDate) || latestNav || 0;
       var sh = Number(t.shares);
-      if (!(sh > 0)) sh = (Number(t.amount) || 0) / nav;
+      /* 2026-11-25：净值未披露（nav=0）时不能拿占位净值折算份额，
+         否则新品会显示 10 万份这种凭空造出的份额；保留 0，表格显示 —。 */
+      if (!(sh > 0) && nav > 0) sh = (Number(t.amount) || 0) / nav;
       var rec = pend[p.id];
       if (!rec) {
         rec = pend[p.id] = {

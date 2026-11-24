@@ -8,7 +8,7 @@
 <!-- 2026-11-24 u 首屏优化：看板脚本提前并行下载，云端域名提前握手；
      两者都不阻塞 HTML 解析，避免旧版「大库先下载完才开始拉 dashboard.js」的串行等待。 -->
 <link rel="preconnect" href="https://asqaxvrovorqfqwpgjkb.supabase.co" crossorigin>
-<link rel="preload" as="script" href="./assets/dashboard.js?v=20261124z" fetchpriority="low">
+<link rel="preload" as="script" href="./assets/dashboard.js?v=20261125a" fetchpriority="low">
 <style>
   :root{
     --bg:#f3f5f7; --card:#fff; --soft:#F9FFFF;
@@ -1256,7 +1256,7 @@
     /* 手机端年度收益表：与月度表共用百分比列宽，列边界逐列重合、间距均匀 */
     /* Q1：手机年表/月表由 10~10.5 提到 11 档 */
     .year-table{min-width:0;font-size:11px}
-    .year-table thead th{font-size:11px;white-space:nowrap;line-height:1.35}
+    .year-table thead th{font-size:11px;font-weight:500;white-space:nowrap;line-height:1.35}
     .year-table thead th:nth-child(3){white-space:normal}
     .year-table td{font-size:11px}
     .year-table td.cnt{font-size:11px}
@@ -1275,19 +1275,21 @@
     .cal{grid-template-columns:repeat(7,minmax(0,1fr));gap:2px}
     .cal .wd{font-size:11px;padding:4px 0}
     .cell{min-height:46px;padding:2px 3px}
-    .cell .d{font-size:10px;line-height:1.25}
-    .cell .v{font-size:11.5px;line-height:1.25;margin-top:1px}
-    .cell .a{font-size:9.5px;color:var(--muted);line-height:1.25;margin-top:0}
+    /* 2026-11-25：竖屏日历字号统一到既定三档 11/12/12.5、字重 400/500/700。
+       此前一格内挤了 10/11.5/9.5 三档、汇总行 10/10.5/11/12 四档，视觉上大小不一。 */
+    .cell .d{font-size:11px;font-weight:400;line-height:1.25}
+    .cell .v{font-size:12px;font-weight:700;line-height:1.25;margin-top:1px}
+    .cell .a{font-size:11px;font-weight:400;color:var(--muted);line-height:1.25;margin-top:0}
     .cell .thumb{display:none}
     .month-item .thumb{display:none}
     .cal-head{margin-bottom:8px}
     /* 日历汇总四项一行呈现：不换行、收紧间距与字号，保证 342px 内容宽内完整显示（2026-11-20） */
-    .cal-sum{margin-top:7px;padding-top:6px;flex-wrap:nowrap;gap:1px 4px;white-space:nowrap;font-size:10.5px;justify-content:space-between}
+    .cal-sum{margin-top:7px;padding-top:6px;flex-wrap:nowrap;gap:1px 4px;white-space:nowrap;font-size:11px;font-weight:400;justify-content:space-between}
     .cal-sum .lead,.cal-sum .st{padding:0 2px;border-right:0;gap:2px}
     .cal-sum .lead{padding-left:0}
-    .cal-sum i{font-size:10px}
-    .cal-sum b{font-size:11px}
-    .cal-sum .lead b{font-size:12px}
+    .cal-sum i{font-size:11px;font-weight:400}
+    .cal-sum b{font-size:12px;font-weight:700}
+    .cal-sum .lead b{font-size:12.5px;font-weight:700}
     .seg button{white-space:nowrap;padding:6px 10px}
     .filters{padding:8px;gap:5px}
     .filters select{flex:1 1 calc(33.333% - 5px);width:auto;min-width:0;font-size:12px}
@@ -1341,7 +1343,7 @@
     /* 手机端月度收益表：与年度表同一套百分比列宽，去掉左侧 2px 边框避免整体偏移 */
     /* 手机竖屏：月表行高同步压缩（上下 12→7、行高 1.6→1.5），与年表协调 */
     .month-row,.month-item{grid-template-columns:11% 20% 18.5% 13% 12% 10.5% 15%;gap:0;padding:7px 0;font-size:11px;line-height:1.5}
-    .month-row.mhead{padding:6px 0;font-size:11px;border-left:0}
+    .month-row.mhead{padding:6px 0;font-size:11px;font-weight:500;border-left:0}
     .month-item{border-left:0}
     .month-item.on{box-shadow:inset 2px 0 0 var(--accent)}
     .rate-cell{height:20px;font-size:11px;padding-left:3px}
@@ -1450,12 +1452,11 @@
     /* 极窄屏指标副行再收一档字号：保证「持仓收益率 +0.43%」仍单行不裁切 */
     .metric .m-sub{font-size:9.5px;letter-spacing:-.2px}
     .metric .m-sub b{font-size:10.5px;letter-spacing:-.2px}
-    /* 极窄屏日历汇总再收一档，避免「挂0」被裁切 */
-    .cal-sum{font-size:10px;gap:1px 2px}
-    .cal-sum .lead,.cal-sum .st{padding:0 1px;gap:1px}
-    .cal-sum i{font-size:9.5px}
-    .cal-sum b{font-size:10px}
-    .cal-sum .lead b{font-size:11px}
+    /* 极窄屏维持竖屏统一三档，仅收紧间距避免「挂0」被裁切（2026-11-25 字号统一） */
+    .cal-sum{font-size:11px;gap:0}
+    .cal-sum .lead,.cal-sum .st{padding:0;gap:0}
+    .cal-sum i{font-size:11px}
+    .cal-sum b,.cal-sum .lead b{font-size:12px}
     .hero-actions{grid-template-columns:1fr}
     /* 360 极窄屏内容宽 334px：表格字号降一档到既有阶梯 11px（不新增 0.5px 档），
        再压缩前 5 列使 100+68+51+55+55 = 329px ≤ 334px；名称仍两行、行高维持 48px。 */
@@ -2512,9 +2513,9 @@
      「新 HTML + 旧渲染」的错位（表现为新品预告仍是拉伸甘特卡片 + 巨大原生多选框）。 -->
 <!-- 2026-11-24 u：ECharts / html2canvas 改按需加载（趋势图、导出长图才拉），
      不再让 338KB + 47KB 的库阻塞首屏；加载器分别在 dashboard.js 与本页导出逻辑内。 -->
-<script src="./assets/data.js?v=20261124z" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
-<script src="./assets/risk_levels.js?v=20261124z"></script>
-<script src="./assets/transactions.js?v=20261124z"></script>
+<script src="./assets/data.js?v=20261125a" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
+<script src="./assets/risk_levels.js?v=20261125a"></script>
+<script src="./assets/transactions.js?v=20261125a"></script>
 <script>
   /* 公开底稿已脱敏：只含 id+pid 的占位行供后台抓净值，不含 applyDate 等明细。
      前端渲染前剔除这类行，真实交易明细由登录后从 Supabase 云端拉取。 */
@@ -2523,16 +2524,16 @@
     if (T && T.items) T.items = T.items.filter(function (t) { return !!t.applyDate; });
   })();
 </script>
-<script src="./assets/newproducts.js?v=20261124z"></script>
-<script src="./assets/library.js?v=20261124z"></script>
-<script src="./assets/supabase-config.js?v=20261124z"></script>
-<script src="./assets/auth.js?v=20261124z"></script>
-<script src="./assets/store.js?v=20261124z" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
+<script src="./assets/newproducts.js?v=20261125a"></script>
+<script src="./assets/library.js?v=20261125a"></script>
+<script src="./assets/supabase-config.js?v=20261125a"></script>
+<script src="./assets/auth.js?v=20261125a"></script>
+<script src="./assets/store.js?v=20261125a" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
 <script>
   /* 先用本地缓存/内置底稿立即渲染，云端数据在后台取回后再重绘，避免等待网络白屏 */
   /* 前序脚本缺失或命中旧缓存时（STORE_READY 不存在）也照常加载看板，避免页面停在空白骨架 */
   (function () {
-    var NP_BUILD = '20261124z';
+    var NP_BUILD = '20261125a';
     function boot(msg, forced) {
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
@@ -2559,7 +2560,7 @@
       // 隐私小眼睛：dashboard.js 就绪后再加载，才能包装 DASHBOARD_REFRESH 并在渲染后套用打码
       if (!window.PRIVACY) {
         var pv = document.createElement('script');
-        pv.src = './assets/privacy.js?v=20261124z';
+        pv.src = './assets/privacy.js?v=20261125a';
         document.body.appendChild(pv);
       }
       if (!window.STORE_REFRESH || typeof window.STORE_REFRESH.then !== 'function') return;
@@ -3002,7 +3003,7 @@
       if (h2cLoading) return h2cLoading;
       h2cLoading = new Promise(function (resolve, reject) {
         var s = document.createElement('script');
-        s.src = './assets/html2canvas.min.js?v=20261124z';
+        s.src = './assets/html2canvas.min.js?v=20261125a';
         s.onload = resolve;
         s.onerror = function () { h2cLoading = null; reject(new Error('截图组件加载失败')); };
         document.head.appendChild(s);
