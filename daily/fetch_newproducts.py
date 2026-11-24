@@ -654,6 +654,13 @@ def build():
             if clean_channels(cand):
                 channel_raw = cand
                 break
+        # 2026-11-24 修复「未匹配代销机构」：本脚本全部数据来自建行官网「新品公告」，
+        # 说明书里产品即通过建设银行代销。招银/工银等部分销售文件要素表未写明确的
+        # 代销语境标签，导致 saleChannel 为空、卡片显示「待核实」。既然来源确定是
+        # 建行公告渠道，三来源都取不到时统一回填「建设银行」，与交银147/信银258
+        # 之前的补法一致；不臆造其它渠道，只认本脚本的建行来源事实。
+        if not clean_channels(channel_raw):
+            channel_raw = "建设银行"
         item = {
             "name": name,
             "issuer": issuer,

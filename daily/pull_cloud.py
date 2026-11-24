@@ -5,6 +5,7 @@
 """
 import json
 import sys
+from datetime import date
 from pathlib import Path
 
 import requests
@@ -115,13 +116,32 @@ def supabase_newproducts():
 
 
 def merge_newproducts(rows, current):
-    """云端条目按登记编码覆盖页面底稿，其余保留；再按机构重建泳道。"""
+    """云端条目按登记编码覆盖页面底稿，其余保留；再按机构重建泳道。
+
+    2026-11-24 修复三处新品预告污染：
+    ① 已成立产品不再算新品——云端 newproducts 表混入了「成立后并入产品库」的
+       历史条目（establish <= 今天），前端虽二次过滤但 window/机构列表已被污染。
+    ② 无募集起始日的手工产品不算新品预告——这类条目来自云端手工登记（如悦享天添24号），
+       已经在产品库里，不应出现在待募集时间轴。
+    ③ window 只按保留下来的有效新品计算，不再被历史产品把 start 拉到过去。
+    """
+    today = date.today().isoformat()
     merged = {}
     order = []
+
+    def is_live_new(item):
+        """仅保留「仍未成立 + 有明确募集起始日」的待募集新品。"""
+        est = str(item.get("establish") or "").strip()
+        if est and est <= today:
+            return False
+        rs = str(item.get("raiseStart") or "").strip()
+        return bool(rs)
 
     def put(item):
         k = item.get("regCode") or item.get("name") or ""
         if not k:
+            return
+        if not is_live_new(item):
             return
         if k not in merged:
             order.append(k)
@@ -148,10 +168,15 @@ def merge_newproducts(rows, current):
     starters = [p.get("raiseStart") for p in items if p.get("raiseStart")]
     enders = [(p.get("raiseEnd") or p.get("establish")) for p in items if (p.get("raiseEnd") or p.get("establish"))]
     window = dict(current.get("window") or {})
+    # 2026-11-24：只按有效新品算窗口，且 start 不早于今天，杜绝历史日期列混入。
     if starters:
-        window["start"] = min(starters)
+        window["start"] = max(today, min(starters))
+    else:
+        window["start"] = today
     if enders:
-        window["end"] = max(enders)
+        window["end"] = max(max(enders), window["start"])
+    else:
+        window["end"] = window["start"]
 
     out = dict(current)
     out["items"] = items

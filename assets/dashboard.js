@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261123d';
+  window.__NP_LAYOUT_VERSION = '20261124a';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -5457,8 +5457,8 @@
     if (trigger) trigger.setAttribute('aria-expanded', 'false');
   }
 
-  /* 2026-11-23 方案C：代销机构多选（channels 为空数组＝全部） */
-  var NP_UI = { channels: [] };
+  /* 2026-11-24：代销机构 + 发行机构双多选（空数组＝全部） */
+  var NP_UI = { channels: [], issuers: [] };
   var NP_COLORS = ['#0e5a73', '#2f6f9f', '#8a5a2b', '#3f6f56', '#6b4c8a', '#b5651d'];
   /* 图稿配色：同一发行机构固定同色，不能靠名称哈希（会出现「中银遇棕、交银遇蓝」）。 */
   var NP_ISSUER_COLORS = {
@@ -5500,6 +5500,13 @@
   /* 方案C 辅助：代销机构显示名（空→待核实）、按发行机构取稳定色、多选按钮弹层绑定 */
   function npChannelOf(p) {
     return (p && p.saleChannel && String(p.saleChannel).trim()) ? String(p.saleChannel).trim() : '待核实';
+  }
+  /* 2026-11-24 发行机构显示名：图稿用两字简称（工银/交银/信银/招银…），
+     去掉「理财」「有限责任公司」等后缀；与代销机构按钮区分开，空值归「待核实」兜底。 */
+  function npIssuerOf(p) {
+    var s = orgShort(p && (p.issuer || p.orgShort));
+    s = String(s || '').replace(/理财$/g, '').trim();
+    return s || '待核实';
   }
   function npColorOf(name) {
     var s = String(name || '');
@@ -5543,12 +5550,12 @@
 
     var NP = window.NEW_PRODUCTS || { lanes: [] };
     var _todayKey = ymd(new Date());
-    /* 拉平所有产品（附代销机构），过滤已成立（成立日<=今天不再算新品预告） */
+    /* 拉平所有产品（附代销机构 + 发行机构），过滤已成立（成立日<=今天不再算新品预告） */
     var flat = [];
     (NP.lanes || []).forEach(function (l) {
       (l.products || []).forEach(function (p) {
         if (p.establish && p.establish <= _todayKey) return;
-        flat.push({ p: p, channel: npChannelOf(p) });
+        flat.push({ p: p, channel: npChannelOf(p), issuer: npIssuerOf(p) });
       });
     });
     /* 代销机构选项（去重，待核实排最后） */
@@ -5559,8 +5566,17 @@
       if (b === '待核实') return -1;
       return a.localeCompare(b, 'zh');
     });
+    /* 发行机构选项（去重，待核实排最后，按中文名排序） */
+    var issuers = [];
+    flat.forEach(function (x) { if (issuers.indexOf(x.issuer) < 0) issuers.push(x.issuer); });
+    issuers.sort(function (a, b) {
+      if (a === '待核实') return 1;
+      if (b === '待核实') return -1;
+      return a.localeCompare(b, 'zh');
+    });
     /* 数据刷新后已不存在的选择项清掉 */
     NP_UI.channels = (NP_UI.channels || []).filter(function (c) { return orgs.indexOf(c) >= 0; });
+    NP_UI.issuers = (NP_UI.issuers || []).filter(function (c) { return issuers.indexOf(c) >= 0; });
 
     var winStart = (NP.window && NP.window.start) || DATA.asOf;
     var winEnd = (NP.window && NP.window.end) || winStart;
@@ -5575,7 +5591,7 @@
     var last = N - 1;
     var wd = ['日', '一', '二', '三', '四', '五', '六'];
 
-    /* 表头上方工具栏：代销机构多选（首项＝全部） */
+    /* 表头上方工具栏：代销机构 + 发行机构两个多选（首项＝全部） */
     var orgSel = document.getElementById('np-org-sel');
     if (orgSel) {
       var opts = ['<option value="">代销机构</option>'];
@@ -5587,6 +5603,17 @@
       if (!NP_UI.channels.length && orgSel.options[0]) orgSel.options[0].selected = true;
       npBindMultiSel(orgSel, function (vals) { NP_UI.channels = vals; renderNewProds(); });
     }
+    var issuerSel = document.getElementById('np-issuer-sel');
+    if (issuerSel) {
+      var iOpts = ['<option value="">发行机构</option>'];
+      issuers.forEach(function (iss) {
+        iOpts.push('<option value="' + iss.replace(/"/g, '&quot;') + '"' +
+          (NP_UI.issuers.indexOf(iss) >= 0 ? ' selected' : '') + '>' + iss + '</option>');
+      });
+      issuerSel.innerHTML = iOpts.join('');
+      if (!NP_UI.issuers.length && issuerSel.options[0]) issuerSel.options[0].selected = true;
+      npBindMultiSel(issuerSel, function (vals) { NP_UI.issuers = vals; renderNewProds(); });
+    }
 
     /* 表头：纯日期列（与泳道列同宽对齐） */
     head.innerHTML = days.map(function (ds, idx) {
@@ -5596,10 +5623,13 @@
         '</b><span>' + (idx === 0 ? '<em>今天</em>' : '周' + wd[dd.getDay()]) + '</span></div>';
     }).join('');
 
-    /* 方案C：代销机构多选过滤 + 按募集起始日归入对应日期泳道列 */
+    /* 方案C：代销机构 AND 发行机构双多选过滤 + 按募集起始日归入对应日期泳道列 */
     var chosen = NP_UI.channels || [];
-    var visible = flat.filter(function (x) { return !chosen.length || chosen.indexOf(x.channel) >= 0; });
-    var totalCnt = visible.length;
+    var chosenIss = NP_UI.issuers || [];
+    var visible = flat.filter(function (x) {
+      return (!chosen.length || chosen.indexOf(x.channel) >= 0) &&
+             (!chosenIss.length || chosenIss.indexOf(x.issuer) >= 0);
+    });
 
     /* 按日期列分桶：产品归入「首个 >= 募集起始」的日期列；跨日募集在卡片内注明跨度 */
     var buckets = days.map(function () { return []; });
@@ -5640,8 +5670,7 @@
             p.source ? '来源 ' + p.source : ''].filter(Boolean).join('｜');
           body += '<div class="nchip" data-org="' + x.channel + '" style="--c:' + color +
             '" title="' + tip.replace(/"/g, '&quot;') + '">' +
-            '<div class="norg">' + (p.issuer || p.orgShort || '').replace(/(理财|有限责任公司|股份有限公司|有限公司)+$/g, '') +
-            ' · ' + x.channel + '</div>' +
+            '<div class="norg">' + x.issuer + '</div>' +
             '<div class="nm">' + npShortName(p) + '</div>' +
             '<div class="nmeta">' +
               '<div class="row"><span class="kl">募集</span><span class="nr">' + span + '</span></div>' +
@@ -5656,13 +5685,7 @@
 
     box.innerHTML = out.join('') || '<div class="ts-lane" style="--c:#0e5a73"><div class="gapfill"><em>暂无已披露新品</em></div></div>';
 
-    /* 标题行统计 + 工具栏提示 */
-    var tEl = document.getElementById('np-tool-count');
-    if (tEl) tEl.textContent = totalCnt + ' 只 · ' + (chosen.length || orgs.length) + '/' + orgs.length + ' 家';
-    var hEl = document.getElementById('np-org-hint');
-    if (hEl) hEl.textContent = chosen.length ? ('已选 ' + chosen.length + ' 家') : '全部';
-    var sEl = document.getElementById('np-src');
-    if (sEl && NP.source) sEl.textContent = '数据源：' + NP.source;
+    /* 2026-11-24：按用户要求去掉「X只·X家」统计与「已选X家」提示文字 */
   }
 
   /* 产品身份一致性自检：同一登记编码只能有一个身份；持仓/交易必须能解析到产品库。

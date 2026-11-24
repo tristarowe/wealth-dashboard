@@ -633,13 +633,11 @@
   #flow-table{min-width:900px}
   #flow-table td{white-space:nowrap}
 
-  /* 新品预告 2026-11-23 方案C：日期泳道列（每天一列 · 卡片等宽 · 名称完整换行）
-     代销机构多选按钮置于表头上方工具栏，泳道内容随筛选联动。
+  /* 新品预告 2026-11-24：日期泳道列（每天一列 · 卡片等宽 · 名称完整换行）
+     代销机构 + 发行机构两个多选按钮置于表头上方工具栏，泳道内容随筛选联动。
+     已按用户要求去掉统计文字「X只·X家」与「代销机构」标签文字，仅保留按钮。
      保留 .ts-lane/.nchip/.nr/.nm/.na/.rk 类名以兼容 daily/shot.py 的截图元数据校验。 */
-  .np-tool-count{font-family:var(--mono);font-size:12px;font-weight:400;color:var(--muted);margin-left:10px}
   .np-toolbar{display:flex;align-items:center;gap:9px;margin:0 0 8px;position:relative;z-index:5}
-  .np-toolbar .nt-lab{font-size:12px;color:var(--muted);flex:none}
-  .np-toolbar .nt-hint{font-size:11.5px;color:var(--muted);flex:none}
   /* 工具栏多选：复用 .sel-pop 弹层，自绘按钮外壳（.filters 下的同名类不覆盖到这里） */
   .np-toolbar .sel-wrap{position:relative;display:inline-flex;align-items:center;height:28px;min-width:132px;max-width:260px;border:1px solid #cfdde5;border-radius:7px;background:#fff;box-sizing:border-box}
   .np-toolbar .sel-wrap select{position:absolute;inset:0;width:100%;height:100%;padding:0;border:0;background:transparent;opacity:0;cursor:pointer;font-size:12px;-webkit-appearance:none;appearance:none}
@@ -1977,13 +1975,12 @@
   <!-- ================= 产品 ================= -->
   <div class="tabpane" id="pane-prod" hidden>
     <section>
-      <div class="sec-head"><span class="idx">01</span><h2>新品预告</h2><span class="np-tool-count" id="np-tool-count"></span></div>
+      <div class="sec-head"><span class="idx">01</span><h2>新品预告</h2></div>
 
-      <!-- 2026-11-23 方案C：代销机构多选按钮移到表头上方，泳道内容随筛选联动 -->
+      <!-- 2026-11-24：代销机构 + 发行机构两个多选按钮并排，泳道内容随筛选联动 -->
       <div class="np-toolbar" id="np-toolbar">
-        <span class="nt-lab">代销机构</span>
         <select id="np-org-sel" multiple size="1" aria-label="按代销机构多选筛选"><option value="">代销机构</option></select>
-        <span class="nt-hint" id="np-org-hint"></span>
+        <select id="np-issuer-sel" multiple size="1" aria-label="按发行机构多选筛选"><option value="">发行机构</option></select>
       </div>
 
       <div class="timeline">
@@ -2230,11 +2227,11 @@
 <!-- 代码类脚本带版本号，改动后同步更新，避免手机端命中旧缓存；数据类脚本不带版本号，保证每日更新能取到 -->
 <!-- 2026-11-23 统一缓存戳：前端改动必须同步 bump，避免浏览器命中旧 JS 造成
      「新 HTML + 旧渲染」的错位（表现为新品预告仍是拉伸甘特卡片 + 巨大原生多选框）。 -->
-<script src="./_shared/js/echarts.min.js?v=20261123d" onerror="this.onerror=null;this.src='./_shared/js/echarts.min.js?t='+Date.now()"></script>
-<script src="./assets/html2canvas.min.js?v=20261123d"></script>
-<script src="./assets/data.js?v=20261123d" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
-<script src="./assets/risk_levels.js?v=20261123d"></script>
-<script src="./assets/transactions.js?v=20261123d"></script>
+<script src="./_shared/js/echarts.min.js?v=20261124a" onerror="this.onerror=null;this.src='./_shared/js/echarts.min.js?t='+Date.now()"></script>
+<script src="./assets/html2canvas.min.js?v=20261124a"></script>
+<script src="./assets/data.js?v=20261124a" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
+<script src="./assets/risk_levels.js?v=20261124a"></script>
+<script src="./assets/transactions.js?v=20261124a"></script>
 <script>
   /* 公开底稿已脱敏：只含 id+pid 的占位行供后台抓净值，不含 applyDate 等明细。
      前端渲染前剔除这类行，真实交易明细由登录后从 Supabase 云端拉取。 */
@@ -2243,16 +2240,16 @@
     if (T && T.items) T.items = T.items.filter(function (t) { return !!t.applyDate; });
   })();
 </script>
-<script src="./assets/newproducts.js?v=20261123d"></script>
-<script src="./assets/library.js?v=20261123d"></script>
-<script src="./assets/supabase-config.js?v=20261123d"></script>
-<script src="./assets/auth.js?v=20261123d"></script>
-<script src="./assets/store.js?v=20261123d" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
+<script src="./assets/newproducts.js?v=20261124a"></script>
+<script src="./assets/library.js?v=20261124a"></script>
+<script src="./assets/supabase-config.js?v=20261124a"></script>
+<script src="./assets/auth.js?v=20261124a"></script>
+<script src="./assets/store.js?v=20261124a" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
 <script>
   /* 先用本地缓存/内置底稿立即渲染，云端数据在后台取回后再重绘，避免等待网络白屏 */
   /* 前序脚本缺失或命中旧缓存时（STORE_READY 不存在）也照常加载看板，避免页面停在空白骨架 */
   (function () {
-    var NP_BUILD = '20261123d';
+    var NP_BUILD = '20261124a';
     function boot(msg, forced) {
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
@@ -2279,7 +2276,7 @@
       // 隐私小眼睛：dashboard.js 就绪后再加载，才能包装 DASHBOARD_REFRESH 并在渲染后套用打码
       if (!window.PRIVACY) {
         var pv = document.createElement('script');
-        pv.src = './assets/privacy.js?v=20261123d';
+        pv.src = './assets/privacy.js?v=20261124a';
         document.body.appendChild(pv);
       }
       if (!window.STORE_REFRESH || typeof window.STORE_REFRESH.then !== 'function') return;
