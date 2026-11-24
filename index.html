@@ -637,11 +637,11 @@
      代销机构多选按钮置于表头上方工具栏，泳道内容随筛选联动。
      保留 .ts-lane/.nchip/.nr/.nm/.na/.rk 类名以兼容 daily/shot.py 的截图元数据校验。 */
   .np-tool-count{font-family:var(--mono);font-size:12px;font-weight:400;color:var(--muted);margin-left:10px}
-  .np-toolbar{display:flex;align-items:center;gap:9px;margin:0 0 12px;position:relative;z-index:5}
+  .np-toolbar{display:flex;align-items:center;gap:9px;margin:0 0 8px;position:relative;z-index:5}
   .np-toolbar .nt-lab{font-size:12px;color:var(--muted);flex:none}
   .np-toolbar .nt-hint{font-size:11.5px;color:var(--muted);flex:none}
   /* 工具栏多选：复用 .sel-pop 弹层，自绘按钮外壳（.filters 下的同名类不覆盖到这里） */
-  .np-toolbar .sel-wrap{position:relative;display:inline-flex;align-items:center;height:30px;min-width:132px;max-width:260px;border:1px solid #cfdde5;border-radius:7px;background:#fff;box-sizing:border-box}
+  .np-toolbar .sel-wrap{position:relative;display:inline-flex;align-items:center;height:28px;min-width:132px;max-width:260px;border:1px solid #cfdde5;border-radius:7px;background:#fff;box-sizing:border-box}
   .np-toolbar .sel-wrap select{position:absolute;inset:0;width:100%;height:100%;padding:0;border:0;background:transparent;opacity:0;cursor:pointer;font-size:12px;-webkit-appearance:none;appearance:none}
   .np-toolbar .sel-label{font-family:var(--font);font-size:12px;color:#2a5563;padding:0 26px 0 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;max-width:258px}
   .np-toolbar .sel-wrap::after{content:'';position:absolute;right:10px;top:50%;width:5px;height:5px;margin-top:-4px;border-right:1.4px solid #6f8b98;border-bottom:1.4px solid #6f8b98;transform:rotate(45deg);pointer-events:none}
@@ -650,26 +650,27 @@
   .timeline{border:1px solid var(--rule);border-radius:10px;background:#fff;overflow:hidden}
   /* 日期表头：与泳道列同宽对齐，横向可滚动 */
   .ts-grid{display:flex;gap:10px;padding:0 12px;background:#f7f9fa;border-bottom:1px solid var(--rule);min-width:max-content}
-  .ts-cell{width:176px;flex:none;padding:9px 2px;text-align:center;font-family:var(--mono);font-size:12px;color:var(--muted);line-height:1.45;white-space:nowrap}
+  .ts-cell{width:176px;flex:none;padding:6px 2px;text-align:center;font-family:var(--mono);font-size:12px;color:var(--muted);line-height:1.35;white-space:nowrap}
   .ts-cell b{display:block;font-family:var(--mono);font-weight:700;font-size:13px;color:var(--muted)}
   .ts-cell span{display:block}
   .ts-cell.is-today b,.ts-cell.is-today em{color:#a2701f}
   .ts-cell em{font-style:normal;font-size:11px;color:#a2701f}
   /* 泳道容器：每天一列，横向滚动 */
-  #np-lanes{display:flex;gap:10px;padding:12px;overflow-x:auto;align-items:flex-start}
+  #np-lanes{display:flex;gap:10px;padding:9px 12px;overflow-x:auto;align-items:flex-start}
   .ts-lane{width:176px;flex:none;min-width:0}
   .ts-lane .org{display:none}
   .ts-lane .lane-day{display:none;font-family:var(--mono);font-size:13px;font-weight:700;color:var(--muted);padding:5px 2px 8px;border-bottom:2px solid var(--rule);margin-bottom:9px}
   .ts-lane .lane-day em{font-style:normal;font-size:11px;color:#a2701f;margin-left:5px;font-family:var(--font)}
-  .gapfill{border:1px dashed var(--rule);border-radius:8px;min-height:74px;display:flex;align-items:center;justify-content:center;background:#fafcfd}
+  .gapfill{border:1px dashed var(--rule);border-radius:8px;min-height:56px;display:flex;align-items:center;justify-content:center;background:#fafcfd}
   .gapfill em{font-style:normal;font-size:11px;color:#b7c3cb;letter-spacing:.5px}
   .n-legend{display:flex;gap:16px;align-items:center;font-size:12px;color:var(--muted);margin-top:10px;flex-wrap:wrap}
   .n-legend i{display:inline-block;width:22px;height:9px;border-radius:3px;background:#fff;border:1.5px solid #0e5a73;vertical-align:middle;margin-right:5px}
-  /* 卡片：等宽 184，顶部机构色条，名称两行完整不压缩 */
-  .nchip{border:1px solid var(--rule);border-top:3px solid var(--c);border-radius:8px;background:#fff;box-shadow:0 1px 3px rgba(20,45,60,.05);padding:10px 11px;margin-bottom:9px;cursor:pointer;transition:background .15s}
+  /* 卡片：等宽 176，顶部机构色条；2026-11-23 紧凑版只收纵向留白，
+     字号仍沿用 11/12/13 阶梯，名称保持两行完整换行，不靠压缩字号省高度。 */
+  .nchip{border:1px solid var(--rule);border-top:3px solid var(--c);border-radius:8px;background:#fff;box-shadow:0 1px 3px rgba(20,45,60,.05);padding:7px 10px;margin-bottom:7px;cursor:pointer;transition:background .15s}
   .nchip:hover{background:#f7fbfc}
-  .nchip .norg{font-size:11px;color:var(--c);font-weight:600;line-height:1.4;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .nchip .nm{font-size:12.5px;font-weight:600;color:var(--ink);line-height:1.45;min-height:36px;word-break:break-all}
+  .nchip .norg{font-size:11px;color:var(--c);font-weight:600;line-height:1.3;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .nchip .nm{font-size:12.5px;font-weight:600;color:var(--ink);line-height:1.35;min-height:34px;word-break:break-all}
   .nchip .na{font-family:var(--mono);font-size:11px;color:#3f6f56;background:#f1f7f3;border-radius:3px;padding:1px 4px;white-space:nowrap}
   .nchip .na.na-none{color:#a9b6bf;background:transparent;padding:0}
   .nchip .rk{font-family:var(--mono);font-size:11px;font-weight:600;color:#41606f;background:#eef4f7;border-radius:3px;padding:1px 5px;white-space:nowrap;flex:none}
@@ -677,8 +678,8 @@
   .nchip .rk.r4{background:#fbe9e6;color:#a4453a}
   .nchip .nr{font-family:var(--mono);font-size:11.5px;color:var(--c);white-space:nowrap}
   .nchip .ne{font-family:var(--mono);font-size:11.5px;color:var(--muted);white-space:nowrap}
-  .nchip .nmeta{display:flex;flex-direction:column;gap:3px;margin-top:8px;padding-top:7px;border-top:1px dashed #e8eef1}
-  .nchip .nmeta .row{display:flex;align-items:center;gap:6px}
+  .nchip .nmeta{display:flex;flex-direction:column;gap:2px;margin-top:5px;padding-top:5px;border-top:1px dashed #e8eef1}
+  .nchip .nmeta .row{display:flex;align-items:center;gap:5px;line-height:1.3}
   .nchip .nmeta .kl{font-size:10.5px;color:var(--muted);width:24px;flex:none}
   .nchip .nmeta .row .rk{margin-left:auto}
 
@@ -1292,11 +1293,11 @@
        代销机构多选按钮在表头上方工具栏保留；桌面日期表头隐藏，日期头改在 lane 内显示 */
     .ts-grid{display:none}
     #np-lanes{display:block;overflow:visible;padding:0}
-    .ts-lane{width:auto;min-width:0;margin-bottom:14px}
+    .ts-lane{width:auto;min-width:0;margin-bottom:10px}
     .ts-lane:last-of-type{margin-bottom:0}
-    .ts-lane .lane-day{display:flex}
+    .ts-lane .lane-day{display:flex;padding:4px 2px 6px;margin-bottom:6px}
     .ts-lane .gapfill{display:none}
-    .ts-lane .nchip{width:100%;margin:0 0 9px}
+    .ts-lane .nchip{width:100%;margin:0 0 7px}
     .n-legend{margin-top:4px}
     /* 手机端月度收益表：与年度表同一套百分比列宽，去掉左侧 2px 边框避免整体偏移 */
     /* 手机竖屏：月表行高同步压缩（上下 12→7、行高 1.6→1.5），与年表协调 */
@@ -1560,7 +1561,7 @@
      横屏仅把卡片内边距略收以容纳更多列，额度位仍固定「—」（11-22 定案）。 */
   @media (min-width:761px) and (max-width:968px){
     .ts-grid .ts-cell,.ts-lane{width:170px}
-    .ts-lane .nchip{padding:9px 10px}
+    .ts-lane .nchip{padding:6px 9px}
   }
 
   /* ===== 产品库筛选栏（手机横屏）统一规格 2026-11-21 =====
@@ -2229,11 +2230,11 @@
 <!-- 代码类脚本带版本号，改动后同步更新，避免手机端命中旧缓存；数据类脚本不带版本号，保证每日更新能取到 -->
 <!-- 2026-11-23 统一缓存戳：前端改动必须同步 bump，避免浏览器命中旧 JS 造成
      「新 HTML + 旧渲染」的错位（表现为新品预告仍是拉伸甘特卡片 + 巨大原生多选框）。 -->
-<script src="./_shared/js/echarts.min.js?v=20261123c" onerror="this.onerror=null;this.src='./_shared/js/echarts.min.js?t='+Date.now()"></script>
-<script src="./assets/html2canvas.min.js?v=20261123c"></script>
-<script src="./assets/data.js?v=20261123c" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
-<script src="./assets/risk_levels.js?v=20261123c"></script>
-<script src="./assets/transactions.js?v=20261123c"></script>
+<script src="./_shared/js/echarts.min.js?v=20261123d" onerror="this.onerror=null;this.src='./_shared/js/echarts.min.js?t='+Date.now()"></script>
+<script src="./assets/html2canvas.min.js?v=20261123d"></script>
+<script src="./assets/data.js?v=20261123d" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
+<script src="./assets/risk_levels.js?v=20261123d"></script>
+<script src="./assets/transactions.js?v=20261123d"></script>
 <script>
   /* 公开底稿已脱敏：只含 id+pid 的占位行供后台抓净值，不含 applyDate 等明细。
      前端渲染前剔除这类行，真实交易明细由登录后从 Supabase 云端拉取。 */
@@ -2242,16 +2243,16 @@
     if (T && T.items) T.items = T.items.filter(function (t) { return !!t.applyDate; });
   })();
 </script>
-<script src="./assets/newproducts.js?v=20261123c"></script>
-<script src="./assets/library.js?v=20261123c"></script>
-<script src="./assets/supabase-config.js?v=20261123c"></script>
-<script src="./assets/auth.js?v=20261123c"></script>
-<script src="./assets/store.js?v=20261123c" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
+<script src="./assets/newproducts.js?v=20261123d"></script>
+<script src="./assets/library.js?v=20261123d"></script>
+<script src="./assets/supabase-config.js?v=20261123d"></script>
+<script src="./assets/auth.js?v=20261123d"></script>
+<script src="./assets/store.js?v=20261123d" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
 <script>
   /* 先用本地缓存/内置底稿立即渲染，云端数据在后台取回后再重绘，避免等待网络白屏 */
   /* 前序脚本缺失或命中旧缓存时（STORE_READY 不存在）也照常加载看板，避免页面停在空白骨架 */
   (function () {
-    var NP_BUILD = '20261123c';
+    var NP_BUILD = '20261123d';
     function boot(msg, forced) {
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
@@ -2278,7 +2279,7 @@
       // 隐私小眼睛：dashboard.js 就绪后再加载，才能包装 DASHBOARD_REFRESH 并在渲染后套用打码
       if (!window.PRIVACY) {
         var pv = document.createElement('script');
-        pv.src = './assets/privacy.js?v=20261123c';
+        pv.src = './assets/privacy.js?v=20261123d';
         document.body.appendChild(pv);
       }
       if (!window.STORE_REFRESH || typeof window.STORE_REFRESH.then !== 'function') return;
