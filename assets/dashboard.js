@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261124e';
+  window.__NP_LAYOUT_VERSION = '20261124f';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -5558,6 +5558,29 @@
     sel.onchange = function () { onChange(selValues(sel)); if (typeof syncSelLabel === 'function') syncSelLabel(sel); };
   }
 
+  /* 2026-11-24：筛选变更只切卡片可见性，不重建整条时间轴。
+     原实现每次勾选都调用 renderNewProds()，会重算日期、重建全部卡片与两个下拉选项，
+     手机上表现为弹层/选中明显卡顿。卡片带 data-org/data-iss，这里按两个维度直接隐藏。 */
+  function applyNewProdFilter() {
+    var box = document.getElementById('np-lanes');
+    if (!box) return;
+    var ch = NP_UI.channels || [];
+    var iss = NP_UI.issuers || [];
+    Array.prototype.forEach.call(box.querySelectorAll('.ts-lane'), function (lane) {
+      var shown = 0;
+      Array.prototype.forEach.call(lane.querySelectorAll('.nchip'), function (chip) {
+        var ok = (!ch.length || ch.indexOf(chip.getAttribute('data-org')) >= 0) &&
+          (!iss.length || iss.indexOf(chip.getAttribute('data-iss')) >= 0);
+        chip.style.display = ok ? '' : 'none';
+        if (ok) shown++;
+      });
+      var empty = (shown === 0);
+      lane.classList.toggle('is-empty', empty);
+      var gap = lane.querySelector('.gapfill');
+      if (gap) gap.style.display = empty ? '' : 'none';
+    });
+  }
+
   function renderNewProds() {
     var head = document.getElementById('np-head');
     var box = document.getElementById('np-lanes');
@@ -5616,7 +5639,7 @@
       });
       orgSel.innerHTML = opts.join('');
       if (!NP_UI.channels.length && orgSel.options[0]) orgSel.options[0].selected = true;
-      npBindMultiSel(orgSel, function (vals) { NP_UI.channels = vals; renderNewProds(); });
+      npBindMultiSel(orgSel, function (vals) { NP_UI.channels = vals; applyNewProdFilter(); });
     }
     var issuerSel = document.getElementById('np-issuer-sel');
     if (issuerSel) {
@@ -5627,7 +5650,7 @@
       });
       issuerSel.innerHTML = iOpts.join('');
       if (!NP_UI.issuers.length && issuerSel.options[0]) issuerSel.options[0].selected = true;
-      npBindMultiSel(issuerSel, function (vals) { NP_UI.issuers = vals; renderNewProds(); });
+      npBindMultiSel(issuerSel, function (vals) { NP_UI.issuers = vals; applyNewProdFilter(); });
     }
 
     /* 表头：纯日期列（与泳道列同宽对齐） */
@@ -5685,7 +5708,8 @@
             p.source ? '来源 ' + p.source : ''].filter(Boolean).join('｜');
           /* 2026-11-24 卡片改版：三行呈现——名称块（含右对齐风险角标）+ 募集/成立单行。
              发行机构行按用户要求去掉；.nm/.nr/.rk/.na 类名保留供 daily/shot.py 校验。 */
-          body += '<div class="nchip" data-org="' + x.channel + '" style="--c:' + color +
+          body += '<div class="nchip" data-org="' + x.channel + '" data-iss="' +
+            String(x.issuer || '').replace(/"/g, '&quot;') + '" style="--c:' + color +
             '" title="' + tip.replace(/"/g, '&quot;') + '">' +
             '<div class="nhead">' +
               '<div class="nm">' + npShortName(p) + '</div>' +
