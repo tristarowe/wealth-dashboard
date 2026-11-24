@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261124u';
+  window.__NP_LAYOUT_VERSION = '20261124v';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -2172,19 +2172,28 @@
     if (window.echarts) { cb(); return; }
     if (!window.__ECHARTS_LOADING__) {
       window.__ECHARTS_LOADING__ = true;
-      var s = document.createElement('script');
-      s.src = './_shared/js/echarts.min.js?v=20261124u';
-      s.onerror = function () {
-        window.__ECHARTS_LOADING__ = false;
-        var tip = document.getElementById('boot-tip');
-        if (tip) { tip.textContent = '图表加载失败，请刷新重试'; tip.hidden = false; }
-      };
-      s.onload = function () {
-        var q = window.__ECHARTS_QUEUE__ || [];
-        window.__ECHARTS_QUEUE__ = [];
-        q.forEach(function (fn) { fn(); });
-      };
-      document.head.appendChild(s);
+      var started = false;
+      /* 图库在首屏 load 之后再拉：页面/USP 已完成时再占带宽，浏览器标签的
+         「加载中」不会被 338KB 图库拖住；期间图表位置先给文字占位。 */
+      function start() {
+        if (started) return;
+        started = true;
+        var s = document.createElement('script');
+        s.src = './_shared/js/echarts.min.js?v=20261124v';
+        s.onerror = function () {
+          window.__ECHARTS_LOADING__ = false;
+          var tip = document.getElementById('boot-tip');
+          if (tip) { tip.textContent = '图表加载失败，请刷新重试'; tip.hidden = false; }
+        };
+        s.onload = function () {
+          var q = window.__ECHARTS_QUEUE__ || [];
+          window.__ECHARTS_QUEUE__ = [];
+          q.forEach(function (fn) { fn(); });
+        };
+        document.head.appendChild(s);
+      }
+      if (document.readyState === 'complete') start();
+      else window.addEventListener('load', start, { once: true });
     }
     (window.__ECHARTS_QUEUE__ = window.__ECHARTS_QUEUE__ || []).push(cb);
   }
@@ -2223,6 +2232,7 @@
     if (!window.echarts) {
       /* 手机端趋势子页未显示（宽 0）时不拉库；切到该子页时由 __DASH_TREND_SHOW__ 补渲染 */
       if (!el.getBoundingClientRect().width) return;
+      if (!el.childElementCount) el.textContent = '图表加载中…';
       withEcharts(renderTrend);
       return;
     }
