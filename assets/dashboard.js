@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261124d';
+  window.__NP_LAYOUT_VERSION = '20261124e';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -5494,7 +5494,9 @@
   // 统一简称规则：与全站共用 prodDispName（发行机构简称 + 产品系列 + 持有期 + 期数）
   // 代销机构（如建设银行）不参与产品名拼接
   function npShortName(p) {
-    return prodDispName(p);
+    /* 2026-11-24：新品卡片简称不显示「人民币」（如「中邮鸿运14天16号人民币」→「中邮鸿运14天16号」）。
+       只改新品展示，产品库/持仓全称仍走 prodDispName 原值。 */
+    return String(prodDispName(p) || '').replace(/人民币/g, '').trim();
   }
 
   /* 方案C 辅助：代销机构显示名（空→待核实）、按发行机构取稳定色、多选按钮弹层绑定 */
@@ -5696,7 +5698,10 @@
             '</div></div>';
         });
       }
-      out.push('<div class="ts-lane" data-org="' + (items.length ? items[0].channel : '') + '">' + body + '</div>');
+      /* 空泳道加 is-empty：手机竖屏直接隐藏整条日期分组，不再显示「11.27 周五」等无新品日期；
+         桌面/横屏保留虚线「无新品」占位，列宽与日期表头继续对齐。 */
+      out.push('<div class="ts-lane' + (items.length ? '' : ' is-empty') + '" data-org="' +
+        (items.length ? items[0].channel : '') + '">' + body + '</div>');
     });
 
     box.innerHTML = out.join('') || '<div class="ts-lane" style="--c:#0e5a73"><div class="gapfill"><em>暂无已披露新品</em></div></div>';
