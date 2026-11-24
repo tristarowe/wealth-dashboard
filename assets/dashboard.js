@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261124f';
+  window.__NP_LAYOUT_VERSION = '20261124g';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -1600,10 +1600,8 @@
       tbl.classList.toggle('only-p10k', holdMetric === 'per10k');
     }
 
-    sel.addEventListener('change', function () {
-      apply();
-      renderProfitTable();
-    });
+    /* 2026-11-24：这里只是切换两列 CSS 显隐，不需要整表重绘（手机点击会明显卡一下） */
+    sel.addEventListener('change', apply);
     apply();
   }
 
@@ -2104,6 +2102,9 @@
   /* ---------------- 模块 03：盈亏趋势 ---------------- */
   var trendState = { range: 30 };
   var trendChart = null;
+  /* 2026-11-24：标签/子页切换只需让趋势图重取尺寸，不必广播 window resize
+     （广播会连带触发 renderCalendar、关闭弹层等无关重活，手机上造成点击卡顿）。 */
+  window.__DASH_CHART_RESIZE__ = function () { if (trendChart) trendChart.resize(); };
 
   function trendStart(p, range) {
     var n = p.dates.length;
@@ -3452,6 +3453,7 @@
     prodUi.mAnn = mv.length === 0 || mv.indexOf('ann') !== -1;
   }
 
+  var prodSearchTimer = null;
   function bindProductFilters() {
     var ids = ['sale-sel', 'org-sel', 'risk-sel', 'term-sel', 'incep-sel', 'hold-sel', 'm-sel'];
     ids.forEach(function (id) {
@@ -3480,13 +3482,17 @@
     if (search) search.addEventListener('input', function () {
       prodUi.q = search.value;
       prodUi.page = 1;
-      renderProductTable();
+      /* 2026-11-24：搜索框每次击键原本全量重建产品表，手机上输入明显卡顿；
+         候选层仍由 bindProdSearchSuggest() 即时更新，表格延迟 180ms 合并连续击键。 */
+      if (prodSearchTimer) clearTimeout(prodSearchTimer);
+      prodSearchTimer = setTimeout(function () { prodSearchTimer = null; renderProductTable(); }, 180);
     });
 
     /* 一键重置：清空搜索、下拉筛选、标签与数据展示模式 */
     var resetBtn = document.getElementById('prod-reset');
     if (resetBtn) resetBtn.addEventListener('click', function () {
       if (search) search.value = '';
+      if (prodSearchTimer) { clearTimeout(prodSearchTimer); prodSearchTimer = null; }
       closeProdSug();
       ['sale-sel', 'org-sel', 'risk-sel', 'term-sel', 'incep-sel', 'hold-sel', 'm-sel'].forEach(function (id) {
         var el = document.getElementById(id);

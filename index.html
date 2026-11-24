@@ -1638,6 +1638,12 @@
   #gate .gate-btn:disabled{opacity:.6;cursor:default}
   #gate .gate-err{display:none;font-size:12.5px;color:#b4232a;margin:12px 0 0}
   #gate .gate-foot{margin:18px 0 0;font-size:11px;color:var(--muted)}
+
+  /* ===== 全站轻触响应 2026-11-24 =====
+     所有可点控件统一禁双击缩放（消除旧 WebView 的 ~300ms 点击延迟）与蓝色高亮闪块；
+     弹层内部仍需 pan-y 滚动，故只作用于交互元素本身，不改 input/textarea 的文案选择行为。 */
+  button,.btn,.tab,.jumpbar .j,.chip,.mini,.pager button,.sel-hit,.sel-opt,
+  select,a,label,[role="button"]{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 </style>
 <script>
   /* 登录墙判定（尽早执行，早于页面内容渲染，避免闪现）：
@@ -2241,11 +2247,11 @@
 <!-- 代码类脚本带版本号，改动后同步更新，避免手机端命中旧缓存；数据类脚本不带版本号，保证每日更新能取到 -->
 <!-- 2026-11-23 统一缓存戳：前端改动必须同步 bump，避免浏览器命中旧 JS 造成
      「新 HTML + 旧渲染」的错位（表现为新品预告仍是拉伸甘特卡片 + 巨大原生多选框）。 -->
-<script src="./_shared/js/echarts.min.js?v=20261124f" onerror="this.onerror=null;this.src='./_shared/js/echarts.min.js?t='+Date.now()"></script>
-<script src="./assets/html2canvas.min.js?v=20261124f"></script>
-<script src="./assets/data.js?v=20261124f" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
-<script src="./assets/risk_levels.js?v=20261124f"></script>
-<script src="./assets/transactions.js?v=20261124f"></script>
+<script src="./_shared/js/echarts.min.js?v=20261124g" onerror="this.onerror=null;this.src='./_shared/js/echarts.min.js?t='+Date.now()"></script>
+<script src="./assets/html2canvas.min.js?v=20261124g"></script>
+<script src="./assets/data.js?v=20261124g" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
+<script src="./assets/risk_levels.js?v=20261124g"></script>
+<script src="./assets/transactions.js?v=20261124g"></script>
 <script>
   /* 公开底稿已脱敏：只含 id+pid 的占位行供后台抓净值，不含 applyDate 等明细。
      前端渲染前剔除这类行，真实交易明细由登录后从 Supabase 云端拉取。 */
@@ -2254,16 +2260,16 @@
     if (T && T.items) T.items = T.items.filter(function (t) { return !!t.applyDate; });
   })();
 </script>
-<script src="./assets/newproducts.js?v=20261124f"></script>
-<script src="./assets/library.js?v=20261124f"></script>
-<script src="./assets/supabase-config.js?v=20261124f"></script>
-<script src="./assets/auth.js?v=20261124f"></script>
-<script src="./assets/store.js?v=20261124f" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
+<script src="./assets/newproducts.js?v=20261124g"></script>
+<script src="./assets/library.js?v=20261124g"></script>
+<script src="./assets/supabase-config.js?v=20261124g"></script>
+<script src="./assets/auth.js?v=20261124g"></script>
+<script src="./assets/store.js?v=20261124g" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
 <script>
   /* 先用本地缓存/内置底稿立即渲染，云端数据在后台取回后再重绘，避免等待网络白屏 */
   /* 前序脚本缺失或命中旧缓存时（STORE_READY 不存在）也照常加载看板，避免页面停在空白骨架 */
   (function () {
-    var NP_BUILD = '20261124f';
+    var NP_BUILD = '20261124g';
     function boot(msg, forced) {
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
@@ -2290,7 +2296,7 @@
       // 隐私小眼睛：dashboard.js 就绪后再加载，才能包装 DASHBOARD_REFRESH 并在渲染后套用打码
       if (!window.PRIVACY) {
         var pv = document.createElement('script');
-        pv.src = './assets/privacy.js?v=20261124f';
+        pv.src = './assets/privacy.js?v=20261124g';
         document.body.appendChild(pv);
       }
       if (!window.STORE_REFRESH || typeof window.STORE_REFRESH.then !== 'function') return;
@@ -2477,7 +2483,8 @@
         if (location.hash !== '#' + id) location.hash = id;
       }
       document.title = '银行理财每日收益看板 · ' + ({ hold: '首页', trade: '交易', prod: '产品' }[id] || '');
-      window.dispatchEvent(new Event('resize'));
+      /* 2026-11-24：只让趋势图重取尺寸，不再广播 resize 触发全站监听（含日历重绘） */
+      if (window.__DASH_CHART_RESIZE__) window.__DASH_CHART_RESIZE__();
     }
     tabs.forEach(function (t) {
       t.addEventListener('click', function () { show(t.dataset.tab); });
@@ -2528,9 +2535,9 @@
       group.btns.forEach(function (b) { b.classList.toggle('on', b.dataset.jump === id); });
       try { window.scrollTo({ top: 0, behavior: 'auto' }); }
       catch (e) { window.scrollTo(0, 0); }
-      /* 子页显示状态变化后，趋势图(ECharts)需重新取尺寸；沿用 window resize 事件链(dashboard.js 内 trendChart.resize) */
+      /* 子页显示状态变化后只重算趋势图尺寸，不广播 resize（避免连带重绘日历/弹层） */
       requestAnimationFrame(function () {
-        window.dispatchEvent(new Event('resize'));
+        if (window.__DASH_CHART_RESIZE__) window.__DASH_CHART_RESIZE__();
         syncTopBtn();
       });
     }
