@@ -8,7 +8,7 @@
 <!-- 2026-11-24 u 首屏优化：看板脚本提前并行下载，云端域名提前握手；
      两者都不阻塞 HTML 解析，避免旧版「大库先下载完才开始拉 dashboard.js」的串行等待。 -->
 <link rel="preconnect" href="https://asqaxvrovorqfqwpgjkb.supabase.co" crossorigin>
-<link rel="preload" as="script" href="./assets/dashboard.js?v=20261125c" fetchpriority="low">
+<link rel="preload" as="script" href="./assets/dashboard.js?v=20261125d" fetchpriority="low">
 <style>
   :root{
     --bg:#f3f5f7; --card:#fff; --soft:#F9FFFF;
@@ -33,12 +33,18 @@
   /* 2026-11-24 桌面输入框光标原为黑色，统一为手机端蓝色 caret；select 跟随继承 */
   select{caret-color:var(--caret)}
   .modal-card input,.modal-card select,.modal-card textarea{-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
-  /* 2026-11-24 全站复选框：不要实心填充，只留浅灰描边 + 浅蓝色勾（含全选半选态） */
+  /* 2026-11-24 全站复选框：不要实心填充，只留浅灰描边 + 浅蓝色勾（含全选半选态）
+     2026-11-25：✓ 长臂末端改为精确落在方框右上角圆弧上的点并与之相连。
+     原 border + rotate(45deg) 写法的右臂端点停在框内，与右上角的小点断开；
+     改用内嵌 SVG（base64 编码，兼容长图导出的 html2canvas），末端坐标 (11.6,2.4)
+     正好落在 14×14 方框右上角 3px 圆角弧上，并以同色小圆点封口，视觉上与角点连成一体。
+     颜色与 --check-blue 同为 #4a9fe0；若日后改色需同步更新这段 base64。 */
   input[type=checkbox]{-webkit-appearance:none;appearance:none;position:relative;flex:none;width:14px;height:14px;
     margin:0;vertical-align:middle;border:1.5px solid #9db4c2;border-radius:3px;background:#fff;cursor:pointer}
   input[type=checkbox]:checked{border-color:var(--check-blue)}
-  input[type=checkbox]:checked::after{content:'';position:absolute;left:3px;top:0;
-    width:5px;height:9px;border:solid var(--check-blue);border-width:0 2px 2px 0;transform:rotate(45deg)}
+  input[type=checkbox]:checked::after{content:'';position:absolute;inset:0;
+    background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxNCAxNCc+PHBhdGggZD0nTTIuNiA3LjEgTDUuMyA5LjkgTDExLjYgMi40JyBmaWxsPSdub25lJyBzdHJva2U9JyM0YTlmZTAnIHN0cm9rZS13aWR0aD0nMS44JyBzdHJva2UtbGluZWNhcD0ncm91bmQnIHN0cm9rZS1saW5lam9pbj0ncm91bmQnLz48Y2lyY2xlIGN4PScxMS42JyBjeT0nMi40JyByPScuOScgZmlsbD0nIzRhOWZlMCcvPjwvc3ZnPg==");
+    background-position:center;background-size:100% 100%;background-repeat:no-repeat}
   input[type=checkbox]:indeterminate{border-color:var(--check-blue)}
   input[type=checkbox]:indeterminate::after{content:'';position:absolute;left:2px;top:5px;width:7px;height:0;border-top:2px solid var(--check-blue)}
   input[type=checkbox]:focus-visible{outline:2px solid rgba(47,128,237,.25);outline-offset:1px}
@@ -2552,9 +2558,9 @@
      「新 HTML + 旧渲染」的错位（表现为新品预告仍是拉伸甘特卡片 + 巨大原生多选框）。 -->
 <!-- 2026-11-24 u：ECharts / html2canvas 改按需加载（趋势图、导出长图才拉），
      不再让 338KB + 47KB 的库阻塞首屏；加载器分别在 dashboard.js 与本页导出逻辑内。 -->
-<script src="./assets/data.js?v=20261125c" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
-<script src="./assets/risk_levels.js?v=20261125c"></script>
-<script src="./assets/transactions.js?v=20261125c"></script>
+<script src="./assets/data.js?v=20261125d" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
+<script src="./assets/risk_levels.js?v=20261125d"></script>
+<script src="./assets/transactions.js?v=20261125d"></script>
 <script>
   /* 公开底稿已脱敏：只含 id+pid 的占位行供后台抓净值，不含 applyDate 等明细。
      前端渲染前剔除这类行，真实交易明细由登录后从 Supabase 云端拉取。 */
@@ -2563,16 +2569,16 @@
     if (T && T.items) T.items = T.items.filter(function (t) { return !!t.applyDate; });
   })();
 </script>
-<script src="./assets/newproducts.js?v=20261125c"></script>
-<script src="./assets/library.js?v=20261125c"></script>
-<script src="./assets/supabase-config.js?v=20261125c"></script>
-<script src="./assets/auth.js?v=20261125c"></script>
-<script src="./assets/store.js?v=20261125c" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
+<script src="./assets/newproducts.js?v=20261125d"></script>
+<script src="./assets/library.js?v=20261125d"></script>
+<script src="./assets/supabase-config.js?v=20261125d"></script>
+<script src="./assets/auth.js?v=20261125d"></script>
+<script src="./assets/store.js?v=20261125d" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
 <script>
   /* 先用本地缓存/内置底稿立即渲染，云端数据在后台取回后再重绘，避免等待网络白屏 */
   /* 前序脚本缺失或命中旧缓存时（STORE_READY 不存在）也照常加载看板，避免页面停在空白骨架 */
   (function () {
-    var NP_BUILD = '20261125c';
+    var NP_BUILD = '20261125d';
     function boot(msg, forced) {
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
@@ -2599,7 +2605,7 @@
       // 隐私小眼睛：dashboard.js 就绪后再加载，才能包装 DASHBOARD_REFRESH 并在渲染后套用打码
       if (!window.PRIVACY) {
         var pv = document.createElement('script');
-        pv.src = './assets/privacy.js?v=20261125c';
+        pv.src = './assets/privacy.js?v=20261125d';
         document.body.appendChild(pv);
       }
       if (!window.STORE_REFRESH || typeof window.STORE_REFRESH.then !== 'function') return;
@@ -3042,7 +3048,7 @@
       if (h2cLoading) return h2cLoading;
       h2cLoading = new Promise(function (resolve, reject) {
         var s = document.createElement('script');
-        s.src = './assets/html2canvas.min.js?v=20261125c';
+        s.src = './assets/html2canvas.min.js?v=20261125d';
         s.onload = resolve;
         s.onerror = function () { h2cLoading = null; reject(new Error('截图组件加载失败')); };
         document.head.appendChild(s);
