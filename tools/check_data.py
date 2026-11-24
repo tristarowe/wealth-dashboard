@@ -125,11 +125,25 @@ def check_structure(d, problems, warns):
             except Exception:
                 pass
     # 新鲜度（告警，非致命）
+    lw = last_workday(date.today())
     if asof_d:
-        lw = last_workday(date.today())
         gap = (lw - asof_d).days
         if gap > STALE_DAYS:
             warns.append(f"数据基准日 asOf={asOf} 落后最近工作日 {lw} 共 {gap} 天（> {STALE_DAYS}，请核查源端披露）")
+    # 数据更新时间戳新鲜度（A1 事故第二道防线）：fetchedAt 长期停住说明 CI 提交链路可能静默失败。
+    # 隔夜静默丢弃（净值新但时间戳停滞）主要靠每日排查核对 CI run 状态捕捉，此处只拦长期停住。
+    fetched_at = d.get("fetchedAt")
+    if fetched_at:
+        try:
+            fetch_d = parse_d(str(fetched_at)[:10])
+            fgap = (lw - fetch_d).days
+            if fgap > STALE_DAYS:
+                warns.append(
+                    f"数据更新时间戳 fetchedAt={fetched_at} 落后最近工作日 {lw} 共 {fgap} 天"
+                    f"（> {STALE_DAYS}，疑似 CI 提交链路静默失败，请核对 Actions 运行状态）"
+                )
+        except Exception:
+            problems.append(f"fetchedAt 非法：{fetched_at!r}")
     return n
 
 

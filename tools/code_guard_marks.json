@@ -1,7 +1,7 @@
 {
   "_doc": "跨端代码守卫共用标记清单 —— 唯一权威来源。WorkBuddy 的 .githooks/pre-push 与 Trae 的 tools/sync_pages.py 都必须读取本文件，禁止在脚本里硬编码标记列表。新增功能后在此登记，两端自动生效。",
   "_maintainer": "任何一端修改本文件后，需在提交信息中说明原因；改动会同时影响两端的推送守卫。",
-  "version": "2026-11-24a57",
+  "version": "2026-11-24a58",
   "protected": {
     "_doc": "受『整批中止』保护的文件：远端内容被他人改过时，整批拒绝推送，必须先 pull 合并。markers 为该文件必须包含的字符串，缺失即判定为旧版/被回退，整批拒推。",
     "index.html": [
@@ -22,7 +22,7 @@
       "data-stamp",
       "B2/Q2：横屏全表由 11px 提到 11.5px",
       "Q1：手机年表/月表",
-      "v=20261124x",
+      "v=20261124y",
       "计息不足 7 天",
       "--blue-soft:#2878af",
       ".pname .mv-under",
@@ -84,14 +84,13 @@
       "#hold-table col:nth-child(16){width:5.8% !important}",
       "评分列手机端 2026-11-20：横屏52/竖屏54",
       "#hold-table col:nth-child(16){width:52px !important}",
-      "#hold-table col:nth-child(16){width:52px !important}",
       "审核稿 B4：h1 改为断点固定整数",
       "h1{font-size:36px",
       "h1{font-size:27px}",
       "审核稿 B3：页签 14→15px",
       ".sec-head h2,.sec-head .idx{font-size:17px}",
       "审核稿 B0/B5：数值强调统一 700",
-      "font-size:12px;font-weight:700;color:#31566A",
+      "font-size:12px;font-weight:700;color:#4A8DB8",
       "审核稿 A4：手机表头统一 38px",
       "方案C 2026-11-20：不缩字号/千分位/列宽，仅收紧行高与纵向 padding",
       "#flow-table tbody tr:not(.flow-month){height:38px}",
@@ -271,7 +270,6 @@
       "#hold-table th.navdate-th .csel-wrap{position:absolute;inset:0;width:auto}",
       "#sum-table tbody td.nav-col{white-space:nowrap",
       "#prod-table thead th:nth-child(11) br{display:none}",
-      "风险等级改名风险",
       "持仓汇总竖屏 2026-11-21 十二轮",
       "产品名称列因最宽多让一点（140→126）",
       "#sum-table thead th:nth-child(3),#sum-table thead th:nth-child(5){padding-left:2px;padding-right:2px}",
@@ -296,7 +294,7 @@
       "公开底稿已脱敏",
       "T.items = T.items.filter(function (t) { return !!t.applyDate; })",
       "登录后可保存你的交易与手工产品数据",
-      "auth.js?v=20261124x",
+      "auth.js?v=20261124y",
       "退出后会清除本机交易缓存",
       "label.innerHTML = CHECK",
       "btn.title = '已登录（点击退出登录）'",
@@ -305,7 +303,7 @@
       "window.__GATE_BYPASS__",
       "id=\"gate-submit\"",
       "id=\"privacy-eye\"",
-      "privacy.js?v=20261124x",
+      "privacy.js?v=20261124y",
       "window.PRIVACY.maskClone",
       ".hero-title-row",
       "if (eye) eye.style.visibility",
@@ -324,7 +322,7 @@
       "multiple size=\"1\"",
       ".ts-cell span{display:block}",
       ".ts-lane{width:176px",
-      "var NP_BUILD = '20261124x'",
+      "var NP_BUILD = '20261124y'",
       "window.__NP_LAYOUT_VERSION !== NP_BUILD",
       ".ts-cell{width:176px;flex:none;padding:6px 2px",
       "2026-11-24 三行版",
@@ -365,12 +363,12 @@
       "cloud-chip.on,.auth-chip.on{background:#fff!important;font-weight:500!important}",
       "2026-11-24 q 末尾统一：按钮/选项 500，选中 700 + 蓝填充；年化条鲜明蓝渐变",
       "background-size:var(--w,0%) 100%!important",
-      "--bar-a:#e4f2fa;--bar-b:#cfe7f4;color:#31566A",
+      "--bar-a:#e4f2fa;--bar-b:#cfe7f4;color:#4A8DB8",
       "2026-11-24 r：金额小数点彩色抗锯齿残影修复",
       "font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text'",
       "-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale",
       "2026-11-24 s：年化百分比统一贴数据条左端、全档同色；渐变整体调浅",
-      "color:#31566A!important;justify-content:flex-start!important",
+      "color:#4A8DB8!important;justify-content:flex-start!important",
       ".month-switch.on{border-color:var(--blue)!important}",
       "font-weight:700!important;background:transparent!important}",
       "id=\"np-empty\" class=\"np-empty\" hidden",
@@ -387,7 +385,8 @@
       "loadHtml2canvas()",
       "__DASH_TREND_SHOW__",
       "fetchpriority=\"low\"",
-      "--data-ink:#31566A"
+      "--data-ink:#4A8DB8",
+      "#chart .chart-loading{margin-top:8px;font-size:12px;color:var(--muted)}"
     ],
     "assets/dashboard.js": [
       "PID_ALIAS",
@@ -546,7 +545,6 @@
       "pn-last",
       "&#8288;",
       "var host = prodSugPop.parentNode;",
-      "pop.addEventListener('touchmove', function (e) {",
       "var host = document.querySelector('#pane-prod .filters') || document.body;",
       "function navDateAt(",
       "var accrualStart = (rec.lots && rec.lots[0] && rec.lots[0].navDate)",
@@ -585,7 +583,7 @@
       "2026-11-24 卡片改版：三行呈现",
       "'<div class=\"nhead\">' +",
       "class=\"kl kl-e\">成立",
-      "window.__NP_LAYOUT_VERSION = '20261124x'",
+      "window.__NP_LAYOUT_VERSION = '20261124y'",
       "hit.__npBound",
       "replace(/人民币/g, '')",
       "' is-empty'",
@@ -620,7 +618,10 @@
       "图表加载中…",
       "window.__DASH_TREND_SHOW__ = function () { renderTrend(); };",
       "y === String(calState.y)",
-      "if (sel.id === 'incep-sel') openIncepPop(sel, wrap);"
+      "if (sel.id === 'incep-sel') openIncepPop(sel, wrap);",
+      "var chartUrl = './_shared/js/echarts.min.js?v=20261124y'",
+      "if (!el.querySelector('.chart-loading'))",
+      "var phOld = el.querySelector('.chart-loading');"
     ],
     "assets/store.js": [
       "sbTombstones",
@@ -733,7 +734,9 @@
       "def check_structure(d, problems, warns)",
       "def check_consistency(d, problems)",
       "REG_CODE_RE = re.compile",
-      "RECENT_POINTS = 5"
+      "RECENT_POINTS = 5",
+      "数据更新时间戳 fetchedAt=",
+      "fetch_d = parse_d(str(fetched_at)[:10])"
     ],
     "tools/code_guard_marks.json": [
       "min_counts",
@@ -858,6 +861,11 @@
       "workflow_dispatch",
       "notify_report.py",
       "secrets.SERVERCHAN_SENDKEY"
+    ],
+    "tools/BUG_REGRESSION.md": [
+      "# 历史 Bug 回归清单（每日 06:00 全站排查必读）",
+      "三个 workflow 并发写 data.js",
+      "占位文本节点未在渲染后清除"
     ]
   },
   "min_counts": {

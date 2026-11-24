@@ -8,7 +8,7 @@
 <!-- 2026-11-24 u 首屏优化：看板脚本提前并行下载，云端域名提前握手；
      两者都不阻塞 HTML 解析，避免旧版「大库先下载完才开始拉 dashboard.js」的串行等待。 -->
 <link rel="preconnect" href="https://asqaxvrovorqfqwpgjkb.supabase.co" crossorigin>
-<link rel="preload" as="script" href="./assets/dashboard.js?v=20261124x" fetchpriority="low">
+<link rel="preload" as="script" href="./assets/dashboard.js?v=20261124y" fetchpriority="low">
 <style>
   :root{
     --bg:#f3f5f7; --card:#fff; --soft:#F9FFFF;
@@ -384,14 +384,14 @@
   /* 审核稿 B0/B5：数值强调统一 700、辅助色统一 var(--muted)；#3c5c67 保留为日历进度可视化专用色 */
   /* 2026-11-24 s：年化百分比统一贴数据条左端、全档同色；渐变整体调浅（文字始终深色可读） */
   .rate-cell{position:relative;display:flex;align-items:center;justify-content:flex-start;padding-left:6px;
-    height:22px;border-radius:5px;font-family:var(--mono);font-size:12px;font-weight:700;color:#31566A;
+    height:22px;border-radius:5px;font-family:var(--mono);font-size:12px;font-weight:700;color:#4A8DB8;
     overflow:hidden;background:#f2f8fb;background-image:linear-gradient(90deg,var(--bar-a,#e4f2fa),var(--bar-b,#cfe7f4));
     background-repeat:no-repeat;background-size:var(--w,0%) 100%}
-  .rate-cell.lv1{--bar-a:#e4f2fa;--bar-b:#cfe7f4;color:#31566A}
-  .rate-cell.lv2{--bar-a:#d4ecf7;--bar-b:#bfe0f1;color:#31566A}
-  .rate-cell.lv3{--bar-a:#c6e6f4;--bar-b:#a9d6ec;color:#31566A}
-  .rate-cell.lv4{--bar-a:#b6def0;--bar-b:#99cbe6;color:#31566A}
-  .rate-cell.lv5{--bar-a:#a4d5ec;--bar-b:#86bfdf;color:#31566A}
+  .rate-cell.lv1{--bar-a:#e4f2fa;--bar-b:#cfe7f4;color:#4A8DB8}
+  .rate-cell.lv2{--bar-a:#d4ecf7;--bar-b:#bfe0f1;color:#4A8DB8}
+  .rate-cell.lv3{--bar-a:#c6e6f4;--bar-b:#a9d6ec;color:#4A8DB8}
+  .rate-cell.lv4{--bar-a:#b6def0;--bar-b:#99cbe6;color:#4A8DB8}
+  .rate-cell.lv5{--bar-a:#a4d5ec;--bar-b:#86bfdf;color:#4A8DB8}
   .cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;flex:1;align-content:start}
   .cal .wd{text-align:center;font-size:12.5px;font-weight:600;color:var(--accent);padding:6px 0}
   .cell{background:#fff;border:1px solid #e8eef1;border-radius:7px;min-height:58px;padding:5px 7px}
@@ -418,6 +418,8 @@
   .seg button{border:0;background:transparent;font-family:var(--font);font-size:12px;padding:5px 13px;cursor:pointer;color:var(--muted)}
   .seg button.on{background:#e4f0f5;color:var(--accent-deep);font-weight:700}
   #chart{width:100%;height:360px;display:block;min-width:0}
+  /* 2026-11-24 y：图表加载占位文字（渲染成功后由 JS 移除，杜绝与 SVG 并存） */
+  #chart .chart-loading{margin-top:8px;font-size:12px;color:var(--muted)}
   .trend-sub{font-size:12px;color:var(--muted);margin:10px 0 0;padding-top:8px;border-top:1px dashed #e8eef1;text-align:left}
   .trend-sub b{font-family:var(--mono);color:var(--ink);white-space:nowrap}
   .trend-sub b.up{color:var(--up)}
@@ -1813,7 +1815,7 @@
     background:transparent!important;border-color:var(--blue-line)!important}
   .cloud-chip.on,.auth-chip.on{background:#fff!important;font-weight:500!important}
   /* 2026-11-24 s：年化条百分比统一左对齐、全档同色；渐变覆盖填充宽度，未填充区保留更浅底 */
-  .rate-cell{font-weight:700!important;color:#31566A!important;justify-content:flex-start!important;
+  .rate-cell{font-weight:700!important;color:#4A8DB8!important;justify-content:flex-start!important;
     background-color:#f7fbfd!important;
     background-image:linear-gradient(90deg,var(--bar-a,#e4f2fa),var(--bar-b,#cfe7f4))!important;
     background-repeat:no-repeat!important;background-size:var(--w,0%) 100%!important}
@@ -1856,7 +1858,7 @@
     border-top:1px solid var(--blue);border-bottom:1px solid var(--blue)}
   .year-table tr.on td:first-child::after{border-left:1px solid var(--blue);border-radius:3px 0 0 3px}
   .year-table tr.on td:last-child::after{border-right:1px solid var(--blue);border-radius:0 3px 3px 0}
-  .year-table tr.on td.ym{color:var(--blue)!important}
+  .year-table tr.on td.ym{color:var(--data-ink)!important}
   .month-item.on{background:transparent!important;border-color:transparent!important;
     outline:none!important;box-shadow:none!important;border-radius:3px!important;position:relative}
   .month-item.on::after{content:'';position:absolute;inset:0;z-index:2;pointer-events:none;
@@ -1891,7 +1893,7 @@
   /* ===== 2026-11-24 u：图1推荐方案 B —— 数值色与标题蓝分层 =====
      只改 3 处数值选择器：累计指标值、盈亏汇总金额、产品名称下持仓金额；
      标题/按钮/选中交互蓝继续锁 #2878AF，不受影响。 */
-  :root{--data-ink:#31566A}
+  :root{--data-ink:#4A8DB8}
   #metric-value{color:var(--data-ink)!important}
   #sum-table tbody td.mv-col{color:var(--data-ink)!important}
   .pname .mv-under{color:var(--data-ink)!important}
@@ -2509,9 +2511,9 @@
      「新 HTML + 旧渲染」的错位（表现为新品预告仍是拉伸甘特卡片 + 巨大原生多选框）。 -->
 <!-- 2026-11-24 u：ECharts / html2canvas 改按需加载（趋势图、导出长图才拉），
      不再让 338KB + 47KB 的库阻塞首屏；加载器分别在 dashboard.js 与本页导出逻辑内。 -->
-<script src="./assets/data.js?v=20261124x" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
-<script src="./assets/risk_levels.js?v=20261124x"></script>
-<script src="./assets/transactions.js?v=20261124x"></script>
+<script src="./assets/data.js?v=20261124y" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
+<script src="./assets/risk_levels.js?v=20261124y"></script>
+<script src="./assets/transactions.js?v=20261124y"></script>
 <script>
   /* 公开底稿已脱敏：只含 id+pid 的占位行供后台抓净值，不含 applyDate 等明细。
      前端渲染前剔除这类行，真实交易明细由登录后从 Supabase 云端拉取。 */
@@ -2520,16 +2522,16 @@
     if (T && T.items) T.items = T.items.filter(function (t) { return !!t.applyDate; });
   })();
 </script>
-<script src="./assets/newproducts.js?v=20261124x"></script>
-<script src="./assets/library.js?v=20261124x"></script>
-<script src="./assets/supabase-config.js?v=20261124x"></script>
-<script src="./assets/auth.js?v=20261124x"></script>
-<script src="./assets/store.js?v=20261124x" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
+<script src="./assets/newproducts.js?v=20261124y"></script>
+<script src="./assets/library.js?v=20261124y"></script>
+<script src="./assets/supabase-config.js?v=20261124y"></script>
+<script src="./assets/auth.js?v=20261124y"></script>
+<script src="./assets/store.js?v=20261124y" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
 <script>
   /* 先用本地缓存/内置底稿立即渲染，云端数据在后台取回后再重绘，避免等待网络白屏 */
   /* 前序脚本缺失或命中旧缓存时（STORE_READY 不存在）也照常加载看板，避免页面停在空白骨架 */
   (function () {
-    var NP_BUILD = '20261124x';
+    var NP_BUILD = '20261124y';
     function boot(msg, forced) {
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
@@ -2556,7 +2558,7 @@
       // 隐私小眼睛：dashboard.js 就绪后再加载，才能包装 DASHBOARD_REFRESH 并在渲染后套用打码
       if (!window.PRIVACY) {
         var pv = document.createElement('script');
-        pv.src = './assets/privacy.js?v=20261124x';
+        pv.src = './assets/privacy.js?v=20261124y';
         document.body.appendChild(pv);
       }
       if (!window.STORE_REFRESH || typeof window.STORE_REFRESH.then !== 'function') return;
@@ -2999,7 +3001,7 @@
       if (h2cLoading) return h2cLoading;
       h2cLoading = new Promise(function (resolve, reject) {
         var s = document.createElement('script');
-        s.src = './assets/html2canvas.min.js?v=20261124x';
+        s.src = './assets/html2canvas.min.js?v=20261124y';
         s.onload = resolve;
         s.onerror = function () { h2cLoading = null; reject(new Error('截图组件加载失败')); };
         document.head.appendChild(s);
