@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261124c';
+  window.__NP_LAYOUT_VERSION = '20261124d';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -5520,24 +5520,37 @@
   }
   function npBindMultiSel(sel, onChange) {
     if (!sel) return;
-    if (!sel.parentNode || !sel.parentNode.classList || !sel.parentNode.classList.contains('sel-wrap')) {
-      var wrap = document.createElement('span');
+    var wrap = sel.parentNode;
+    if (!wrap || !wrap.classList || !wrap.classList.contains('sel-wrap')) {
+      wrap = document.createElement('span');
       wrap.className = 'sel-wrap';
       sel.parentNode.insertBefore(wrap, sel);
       wrap.appendChild(sel);
-      var lab = document.createElement('span');
+    }
+    /* 2026-11-24：自绘外壳已写在 HTML 中，这里只补齐缺失部分并幂等绑定，
+       避免刷新时先渲染原生多选「选择了0项」再被 JS 替换的闪烁。 */
+    var lab = wrap.querySelector('.sel-label');
+    if (!lab) {
+      lab = document.createElement('span');
       lab.className = 'sel-label';
       wrap.appendChild(lab);
-      var hit = document.createElement('button');
+    }
+    if (!lab.textContent && sel.options[0]) lab.textContent = sel.options[0].text;
+    var hit = wrap.querySelector('.sel-hit');
+    if (!hit) {
+      hit = document.createElement('button');
       hit.type = 'button';
       hit.className = 'sel-hit';
       hit.setAttribute('aria-haspopup', 'listbox');
       hit.setAttribute('aria-label', sel.getAttribute('aria-label') || '筛选');
+      wrap.appendChild(hit);
+    }
+    if (!hit.__npBound) {
       hit.addEventListener('click', function (e) {
         e.preventDefault(); e.stopPropagation();
         openSelPop(sel, wrap, {});
       });
-      wrap.appendChild(hit);
+      hit.__npBound = true;
     }
     if (typeof syncSelLabel === 'function') syncSelLabel(sel);
     sel.onchange = function () { onChange(selValues(sel)); if (typeof syncSelLabel === 'function') syncSelLabel(sel); };
