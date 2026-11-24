@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261124k';
+  window.__NP_LAYOUT_VERSION = '20261124l';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -2768,7 +2768,7 @@
     var base = String(p.short || p.name || '—')
       .replace(/[（(][^）)]*[）)]/g, '')                 // 去所有括号修饰
       .replace(/[\u4e00-\u9fa5]{2,6}[·•\-－—]/, '')     // 去系列子名前缀（优盛·等）
-      .replace(/最短持有|最低持有|持有期|固定收益类|固收类|理财产品|理财计划/g, '')
+      .replace(/最短持有|最低持有|持有期|固定收益类|固收类|增强型|增强类|理财产品|理财计划/g, '')
       /* 去风险收益定位词（非产品系列名）：固收稳利/增利稳健/固收增利等，系列名（安盈象/阳光金/稳富等）保留 */
       .replace(/固收稳利|增利稳健|固收增利|固收增强|固收精选|固收添益|固收/g, '')
       .replace(/产品(?=第\d+期|$)/g, '')                 // 去「产品」字样（如 添利产品第2期 → 添利第2期）

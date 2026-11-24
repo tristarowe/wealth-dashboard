@@ -1662,6 +1662,27 @@
      弹层内部仍需 pan-y 滚动，故只作用于交互元素本身，不改 input/textarea 的文案选择行为。 */
   button,.btn,.tab,.jumpbar .j,.chip,.mini,.pager button,.sel-hit,.sel-opt,
   select,a,label,[role="button"]{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+
+  /* ===== 2026-11-24 统一蓝色 + 操作按钮无填充（末尾覆盖历史散落色值）=====
+     蓝色文字唯一色调 --blue，蓝色填充唯一色调 --blue-fill，蓝色描边唯一色调 --blue-line。
+     操作类按钮一律透明底 + 描边/文字表意，不再使用各自不同的浅色填充。 */
+  :root{--blue:#2878af;--blue-soft:#2878af;--caret:#2878af;
+    --accent:#2878af;--accent-deep:#2878af;
+    --blue-fill:#eaf4f8;--blue-line:#cbe0e8}
+  .field input:focus,.field select:focus,.field textarea:focus,.modal-card input:focus,
+  .modal-card select:focus,.modal-card textarea:focus{outline:none;border-color:var(--blue)!important;
+    box-shadow:0 0 0 3px rgba(40,120,175,.12)!important}
+  .btn,.btn.primary,.btn.danger,.mini,.mini.buy,.mini.sell,.mini.warn,.seg,.seg-group .seg,
+  .seg button.on,.pager button,.pager button.on,.pg-pop button,.pg-pop button.on,
+  .dp-nav,.dp-foot button,.dp-grid button,.dp-grid button.on,.dp-mgrid button,.dp-mgrid button.on,
+  .ai-upload,.ai-run,.ai-run.has-img,#gate .gate-btn{background:transparent!important;box-shadow:none!important}
+  .btn.primary,.seg-group .seg.on,.seg button.on,.pager button.on,.pg-pop button.on,
+  .chip.on,.tab.on,.dp-grid button.on,.dp-mgrid button.on{
+    border-color:var(--blue)!important;color:var(--blue)!important;font-weight:700}
+  #gate .gate-btn{border:1px solid var(--blue)!important;color:var(--blue)!important;font-weight:700}
+  .sel-opt.on,.sel-pop.single .sel-opt.on,.prod-sug .sel-opt.on,.month-item.on,.active-filter,
+  .recog,.banner,.empty-ico,.ai-msg.busy,.drop.on{background:var(--blue-fill)!important;
+    border-color:var(--blue-line)!important;color:var(--blue)!important}
 </style>
 <script>
   /* 登录墙判定（尽早执行，早于页面内容渲染，避免闪现）：
@@ -2269,11 +2290,11 @@
 <!-- 代码类脚本带版本号，改动后同步更新，避免手机端命中旧缓存；数据类脚本不带版本号，保证每日更新能取到 -->
 <!-- 2026-11-23 统一缓存戳：前端改动必须同步 bump，避免浏览器命中旧 JS 造成
      「新 HTML + 旧渲染」的错位（表现为新品预告仍是拉伸甘特卡片 + 巨大原生多选框）。 -->
-<script src="./_shared/js/echarts.min.js?v=20261124k" onerror="this.onerror=null;this.src='./_shared/js/echarts.min.js?t='+Date.now()"></script>
-<script src="./assets/html2canvas.min.js?v=20261124k"></script>
-<script src="./assets/data.js?v=20261124k" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
-<script src="./assets/risk_levels.js?v=20261124k"></script>
-<script src="./assets/transactions.js?v=20261124k"></script>
+<script src="./_shared/js/echarts.min.js?v=20261124l" onerror="this.onerror=null;this.src='./_shared/js/echarts.min.js?t='+Date.now()"></script>
+<script src="./assets/html2canvas.min.js?v=20261124l"></script>
+<script src="./assets/data.js?v=20261124l" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
+<script src="./assets/risk_levels.js?v=20261124l"></script>
+<script src="./assets/transactions.js?v=20261124l"></script>
 <script>
   /* 公开底稿已脱敏：只含 id+pid 的占位行供后台抓净值，不含 applyDate 等明细。
      前端渲染前剔除这类行，真实交易明细由登录后从 Supabase 云端拉取。 */
@@ -2282,16 +2303,16 @@
     if (T && T.items) T.items = T.items.filter(function (t) { return !!t.applyDate; });
   })();
 </script>
-<script src="./assets/newproducts.js?v=20261124k"></script>
-<script src="./assets/library.js?v=20261124k"></script>
-<script src="./assets/supabase-config.js?v=20261124k"></script>
-<script src="./assets/auth.js?v=20261124k"></script>
-<script src="./assets/store.js?v=20261124k" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
+<script src="./assets/newproducts.js?v=20261124l"></script>
+<script src="./assets/library.js?v=20261124l"></script>
+<script src="./assets/supabase-config.js?v=20261124l"></script>
+<script src="./assets/auth.js?v=20261124l"></script>
+<script src="./assets/store.js?v=20261124l" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
 <script>
   /* 先用本地缓存/内置底稿立即渲染，云端数据在后台取回后再重绘，避免等待网络白屏 */
   /* 前序脚本缺失或命中旧缓存时（STORE_READY 不存在）也照常加载看板，避免页面停在空白骨架 */
   (function () {
-    var NP_BUILD = '20261124k';
+    var NP_BUILD = '20261124l';
     function boot(msg, forced) {
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
@@ -2318,7 +2339,7 @@
       // 隐私小眼睛：dashboard.js 就绪后再加载，才能包装 DASHBOARD_REFRESH 并在渲染后套用打码
       if (!window.PRIVACY) {
         var pv = document.createElement('script');
-        pv.src = './assets/privacy.js?v=20261124k';
+        pv.src = './assets/privacy.js?v=20261124l';
         document.body.appendChild(pv);
       }
       if (!window.STORE_REFRESH || typeof window.STORE_REFRESH.then !== 'function') return;
