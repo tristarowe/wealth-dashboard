@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261124o';
+  window.__NP_LAYOUT_VERSION = '20261124p';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -1206,6 +1206,18 @@
   function fmtMoney(v) {
     if (v === null || v === undefined || isNaN(v)) return '—';
     return v.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  /* 表格金额单元格专用：把金额拆成「整数 / 小数点 / 两位小数」三段，
+     整数段右对齐占固定宽度、小数段左对齐，小数点由 CSS grid 锁死在同一竖线。
+     这样即使 iOS 上字体回退成非等宽字体、千分位逗号宽度不一，也不会让小数点错位。
+     （2026-11-24 小数点第三次修复：前两次只加 tabular-nums/右对齐，iOS 缓存旧 CSS 时仍失效） */
+  function fmtMoneyCell(v) {
+    if (v === null || v === undefined || isNaN(v)) return '—';
+    var s = v.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    var dot = s.indexOf('.');
+    if (dot < 0) return s;
+    return '<span class="mcell"><span class="mci">' + s.slice(0, dot) +
+      '</span><span class="mcd">.</span><span class="mcf">' + s.slice(dot + 1) + '</span></span>';
   }
 
   function holdingsOf(models) {
@@ -4974,13 +4986,13 @@
             (h.tx && h.tx.confirmDate ? h.tx.confirmDate.slice(5).replace('-', '.') : '') + ' 清仓</span>' : '') +
           '</span>' +
           '</div></td>' +
-        '<td class="r num mv-col">' + fmtMoney(h.mv) + '</td>' +
+        '<td class="r num mv-col">' + fmtMoneyCell(h.mv) + '</td>' +
         '<td class="c num">' + (h.latestDate ? withBadge(mmdd(h.latestDate), navLagBadge(h.product)) : '—') + '</td>' +
         '<td class="r num ' + colorBy(h.holdProfit) + '" title="持仓收益（仅当前持仓份额）= 市值 − 剩余成本">' + fmtSigned(h.holdProfit) + '</td>' +
         '<td class="r num ' + (h.annShort ? 'muted' : colorBy(h.ann)) + '" title="' + annTipOf(h) + '">' +
           fmtAnnCell(h.ann, h.annShort ? '<sup class="dag" title="计息不足 ' + SHORT_ANN_DAYS + ' 天，年化为短样本折算，仅供参考">*</sup>' : '') + '</td>' +
         '<td class="r num ' + colorBy(h.profit) + '" title="累计收益 = 持仓收益 + 已赎回部分已实现">' + fmtSigned(h.profit) + '</td>' +
-        '<td class="r num shares-col">' + fmtMoney(h.shares) + '</td>' +
+        '<td class="r num shares-col">' + fmtMoneyCell(h.shares) + '</td>' +
         '<td class="r num nav-col">' + fmtNav(h.latestNav) + '</td>' +
         '<td class="c num dcell" title="持仓天数 ' + h.days + ' 天 = 今天 − 起息日 ' + (h.effStartDate || '') +
           '；年化按计息 ' + (h.accrualDays || h.days) + ' 天（至最新净值日 ' + (h.latestDate || '') + '）折算">' +
@@ -5223,9 +5235,9 @@
           '<td class="num">' + t.applyDate + '</td>' +
           '<td><div class="pname">' + (p ? prodDispName(p) : t.pid) + '</div></td>' +
           '<td class="c"><span class="tag' + (t.type === '赎回' || t.type === '清仓' ? ' new' : '') + '">' + t.type + '</span></td>' +
-          '<td class="r num">' + fmtMoney(txShares(t, p)) + '</td>' +
+          '<td class="r num">' + fmtMoneyCell(txShares(t, p)) + '</td>' +
           '<td class="r num">' + (st === '在途' ? '<span class="pending-nav">待确认</span>' : fmtNav(txConfirmNav(t, p))) + '</td>' +
-          '<td class="r num">' + (txAmount(t, p) === null ? '<span class="pending-nav">待确认</span>' : fmtMoney(txAmount(t, p))) + '</td>' +
+          '<td class="r num">' + (txAmount(t, p) === null ? '<span class="pending-nav">待确认</span>' : fmtMoneyCell(txAmount(t, p))) + '</td>' +
           '<td class="c num">' + t.confirmDate + '</td>' +
           '<td class="c"><span class="tag' + (st === '在途' ? ' np' : '') + '" title="' +
             (st === '在途' ? '在途：' + txPendingReason(t) + '，暂不计入持仓；净值披露后自动转为已确认' : '已确认并计入持仓') + '">' + st + '</span></td>' +
@@ -5252,6 +5264,7 @@
     }
     updateFlowArrows();
     syncFlowSelBar();
+    syncMonthSelState();
   }
 
   /* 勾选计数 → 全选态、按月勾选态、批量删除按钮显隐 */
@@ -5285,7 +5298,23 @@
     return Object.keys(flowSel).filter(function (id) { return flowSel[id]; });
   }
 
+  /* 年月筛选按钮选中态：选了具体年份/月份 → 蓝字；空值（「年份」「月份」）→ 灰字。
+     用 change 事件委托到 document，覆盖交易流水与盈亏日历的全部 .month-switch select，
+     箭头切换时程序赋值不会触发 change，故在每次渲染后再调用 sync 一次。 */
+  function syncMonthSelState() {
+    var sels = document.querySelectorAll('.month-switch select');
+    for (var i = 0; i < sels.length; i++) {
+      var s = sels[i];
+      var on = !!(s.value && s.value !== '');
+      s.classList.toggle('on', on);
+      s.parentElement.classList.toggle('on', on);
+    }
+  }
+
   function bindTrade() {
+    document.addEventListener('change', function (e) {
+      if (e.target && e.target.matches && e.target.matches('.month-switch select')) syncMonthSelState();
+    });
     var ys = document.getElementById('flow-year');
     if (ys) ys.addEventListener('change', function () {
       flowState.year = ys.value;
