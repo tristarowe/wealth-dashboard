@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261124a';
+  window.__NP_LAYOUT_VERSION = '20261124b';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -5668,16 +5668,19 @@
             '代销 ' + x.channel,
             q ? '额度 ' + q + ' 元' : '',
             p.source ? '来源 ' + p.source : ''].filter(Boolean).join('｜');
+          /* 2026-11-24 卡片改版：三行呈现——名称块（含右对齐风险角标）+ 募集/成立单行。
+             发行机构行按用户要求去掉；.nm/.nr/.rk/.na 类名保留供 daily/shot.py 校验。 */
           body += '<div class="nchip" data-org="' + x.channel + '" style="--c:' + color +
             '" title="' + tip.replace(/"/g, '&quot;') + '">' +
-            '<div class="norg">' + x.issuer + '</div>' +
-            '<div class="nm">' + npShortName(p) + '</div>' +
-            '<div class="nmeta">' +
-              '<div class="row"><span class="kl">募集</span><span class="nr">' + span + '</span></div>' +
-              '<div class="row"><span class="kl">成立</span><span class="ne">' + (p.establish ? mdText(p.establish) : '—') + '</span>' +
+            '<div class="nhead">' +
+              '<div class="nm">' + npShortName(p) + '</div>' +
               (rk ? '<span class="rk' + (rk === 'R3' ? ' r3' : rk === 'R4' || rk === 'R5' ? ' r4' : '') + '">' + rk + '</span>' : '') +
+            '</div>' +
+            '<div class="nmeta">' +
+              '<span class="kl">募集</span><span class="nr">' + span + '</span>' +
+              '<span class="kl kl-e">成立</span><span class="ne">' + (p.establish ? mdText(p.establish) : '—') + '</span>' +
               (q ? '<span class="na">' + q + '</span>' : '') +
-            '</div></div></div>';
+            '</div></div>';
         });
       }
       out.push('<div class="ts-lane" data-org="' + (items.length ? items[0].channel : '') + '">' + body + '</div>');

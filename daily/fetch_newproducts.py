@@ -194,6 +194,19 @@ def _d(m, i=0):
     return "%s-%02d-%02d" % (m.group(1 + i), int(m.group(2 + i)), int(m.group(3 + i)))
 
 
+def enable_date_of(flat):
+    """说明书/风险揭示书「启用日期」——再版说明书的有效日期锚点。
+
+    2026-11-24 修复「中邮鸿运14天16号漏抓」：该品是 2025-06 已成立的老产品，
+    2026-11-23 建行发的是**再版说明书**（启用日期 2026-11-25），正文认购期/成立日
+    仍是 2025-06 的旧值。旧逻辑只认正文成立日 → plausible() 判过期 → 整条 drop。
+    再版说明书当新品上架时，应以「启用日期」为本轮募集/成立锚点，才不会漏抓，
+    也不会把一年前的历史日期画到新品时间轴上。
+    """
+    m = re.search(r"(?:说明书|风险揭示书)启用日期为?\s*" + DATE, flat or "")
+    return _d(m) if m else ""
+
+
 def extract_dates(flat):
     """从说明书正文抽取募集起止与成立日。
 
@@ -292,6 +305,15 @@ def extract_risk(flat):
     m = re.search(r"([一二三四五])\s*星级", flat)          # 光大：二星级（中低风险）
     if m:
         return "R" + STAR[m.group(1)]
+    # 2026-11-24 兜底：①信银要素表写「风险评级为【PR2】」，标签与等级间夹「为【」；
+    # ②交银写「产品风险评级↵较低风险产品（R2）」，等级在括号里。两者前两个正则都取不到。
+    # 括号内必须显式带 R/PR 前缀（不能只写数字），否则会误命中页码「（3）」。
+    m = re.search(r"风险(?:等级|级别|评级)\s*为?\s*[【\[]\s*(?:PR|R)\s*([1-5])\s*[】\]]", flat)
+    if m:
+        return "R" + m.group(1)
+    m = re.search(r"风险(?:等级|级别|评级)[^\n]{0,40}?[（(]\s*(?:PR|R)\s*([1-5])\s*[）)]", flat)
+    if m:
+        return "R" + m.group(1)
     return ""
 
 
@@ -603,6 +625,13 @@ def build():
         start = start or norm_date(r.get("募集起始日期"))
         end = end or norm_date(r.get("募集结束日期"))
         est = est or norm_date(r.get("成立日"))
+        # 2026-11-24 再版说明书兜底：正文认购/成立日是老产品首次发行的旧日期（如中邮
+        # 鸿运14天16号=2025-06），但启用日期在本期窗口内，说明这是再版上架的新品。
+        # 用启用日期作为本轮募集/成立锚点，既避免 plausible() 误判过期漏抓，也不会
+        # 把一年前的历史日期画到时间轴上；无启用日期的普通新品不受影响。
+        enable = enable_date_of(flat)
+        if enable and plausible(enable, ref) and (not plausible(est, ref) or est < enable):
+            start = end = est = enable
         if not plausible(est, ref):
             dropped += 1
             continue

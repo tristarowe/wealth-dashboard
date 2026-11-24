@@ -1,9 +1,11 @@
-"""新品成立后自动并入产品库（幂等）。
+"""新品并入产品库（幂等）。
 
-规则：
+规则（2026-11-24 改为募集起始日 T+1 口径）：
 - 来源：daily/newproducts.json 的 items + established（已成立清单）
-- 触发：成立日 <= 今天，且登记编码不在 daily/library.json 中
-- 净值：中国理财网按登记编码补抓；当天成立的通常尚无净值，先占位入库，
+- 触发：募集起始日 + 1 天 <= 今天（T+1 即可入库，无需等成立日），且登记编码不在
+        daily/library.json 中；无募集起始日的老数据回退用成立日 + 1 天。
+        这样再版说明书/成立日滞后的产品也能及时入库，不再卡在「等成立」。
+- 净值：中国理财网按登记编码补抓；刚过 T+1 的通常尚无净值，先占位入库，
         后续每日运行本脚本会自动为「净值不足 2 条」的记录补抓
 - 输出：daily/library.json 与 assets/library.js（结构与 build_library 一致）
 """
@@ -157,19 +159,29 @@ def main():
     have = {str(x.get("regCode") or "") for x in items}
     pool = list(np.get("items") or []) + list(np.get("established") or [])
 
+    def eligible_day(p):
+        """入库锚点：募集起始日 + 1 天（T+1），无募集日则回退成立日 + 1 天。"""
+        base = p.get("raiseStart") or p.get("establish") or ""
+        if not base:
+            return ""
+        try:
+            return (datetime.strptime(base, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
+        except ValueError:
+            return ""
+
     cand, seen = [], set()
     for p in pool:
         reg = str(p.get("regCode") or "").strip()
-        est = p.get("establish") or ""
+        day = eligible_day(p)  # T+1 生效日
         if not reg or reg in have or reg in seen:
             continue
-        if not est or est > a.today or est < LIB_START:
+        if not day or day > a.today or (p.get("raiseStart") or p.get("establish") or "") < LIB_START:
             continue
         seen.add(reg)
         cand.append(p)
-    cand.sort(key=lambda p: p.get("establish") or "")
+    cand.sort(key=lambda p: eligible_day(p))
     cand = cand[: a.max_new]
-    print("待并入产品库 %d 只（成立日 <= %s）" % (len(cand), a.today), flush=True)
+    print("待并入产品库 %d 只（募集起始日 T+1 <= %s）" % (len(cand), a.today), flush=True)
 
     added = 0
     for i, p in enumerate(cand, 1):

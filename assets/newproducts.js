@@ -1,6 +1,6 @@
 window.NEW_PRODUCTS = {
   "asOf": "2026-11-24",
-  "fetchedAt": "2026-11-24 11:56",
+  "fetchedAt": "2026-11-24 12:51",
   "source": "六大行及股份制银行新品公告 · 销售文件要素表",
   "window": {
     "start": "2026-11-24",
@@ -41,6 +41,21 @@ window.NEW_PRODUCTS = {
       "source": "建行官网新品公告·销售文件要素表"
     },
     {
+      "name": "中邮理财灵活·鸿运最短持有14天16号人民币理财产品",
+      "issuer": "中邮理财有限责任公司",
+      "short": "灵活·鸿运最短持有14天16号人民币",
+      "regCode": "Z7001925000012",
+      "raiseStart": "2026-11-25",
+      "raiseEnd": "2026-11-25",
+      "establish": "2026-11-25",
+      "quotaWan": null,
+      "risk": "R2",
+      "riskRaw": "PR2 中低风险",
+      "mode": "开放式净值型 产品风险等级 PR2 中低风险 以上评定结果为中邮理财有限责任公司",
+      "saleChannel": "建设银行",
+      "source": "建行官网新品公告·销售文件要素表"
+    },
+    {
       "name": "交银理财稳享灵动慧利日开147号（7天持有期）理财产品",
       "issuer": "交银理财有限责任公司",
       "short": "稳享灵动慧利日开147号",
@@ -49,7 +64,7 @@ window.NEW_PRODUCTS = {
       "raiseEnd": "2026-11-25",
       "establish": "2026-11-26",
       "quotaWan": null,
-      "risk": "",
+      "risk": "R2",
       "riskRaw": "",
       "mode": "开放式",
       "saleChannel": "建设银行",
@@ -181,6 +196,21 @@ window.NEW_PRODUCTS = {
           "source": "建行官网新品公告·销售文件要素表"
         },
         {
+          "name": "中邮理财灵活·鸿运最短持有14天16号人民币理财产品",
+          "issuer": "中邮理财有限责任公司",
+          "short": "灵活·鸿运最短持有14天16号人民币",
+          "regCode": "Z7001925000012",
+          "raiseStart": "2026-11-25",
+          "raiseEnd": "2026-11-25",
+          "establish": "2026-11-25",
+          "quotaWan": null,
+          "risk": "R2",
+          "riskRaw": "PR2 中低风险",
+          "mode": "开放式净值型 产品风险等级 PR2 中低风险 以上评定结果为中邮理财有限责任公司",
+          "saleChannel": "建设银行",
+          "source": "建行官网新品公告·销售文件要素表"
+        },
+        {
           "name": "交银理财稳享灵动慧利日开147号（7天持有期）理财产品",
           "issuer": "交银理财有限责任公司",
           "short": "稳享灵动慧利日开147号",
@@ -189,7 +219,7 @@ window.NEW_PRODUCTS = {
           "raiseEnd": "2026-11-25",
           "establish": "2026-11-26",
           "quotaWan": null,
-          "risk": "",
+          "risk": "R2",
           "riskRaw": "",
           "mode": "开放式",
           "saleChannel": "建设银行",
@@ -291,8 +321,8 @@ window.NEW_PRODUCTS = {
   "stats": {
     "notices": 79,
     "candidates": 12,
-    "kept": 9,
-    "dropped": 4,
+    "kept": 10,
+    "dropped": 3,
     "failed": 0,
     "quotaRejected": 0
   }
