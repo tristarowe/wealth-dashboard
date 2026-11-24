@@ -747,12 +747,11 @@
   .ms-panel{position:fixed;z-index:130;width:248px;max-width:calc(100vw - 32px);background:#fff;border:1px solid var(--rule);border-radius:12px;box-shadow:0 18px 40px rgba(9,46,60,.18);padding:10px 10px 10px 12px;color:var(--ink)}
   .ms-panel[hidden]{display:none}
   .ms-head{display:flex;align-items:center;gap:8px;padding-bottom:8px;border-bottom:1px solid var(--rule)}
-  .ms-search{flex:1 1 auto;width:auto;min-width:0;font-family:var(--font);font-size:12px;padding:5px 8px;border:1px solid var(--rule);border-radius:6px}
+  .ms-search{flex:1 1 auto;width:auto;min-width:0;font-family:var(--font);font-size:12.5px;padding:5px 8px;border:1px solid var(--rule);border-radius:6px}
   .ms-search:focus{outline:none;border-color:var(--accent)}
   .ms-actions{display:flex;gap:4px;margin-left:0;flex:none}
   .ms-actions button{font-family:var(--font);font-size:11px;padding:3px 7px;border:1px solid #dbe7ed;border-radius:6px;background:#f6fafc;cursor:pointer;color:var(--accent-deep);white-space:nowrap}
   .ms-list{max-height:264px;overflow:auto;padding-top:6px}
-  .ms-tip{font-size:11.5px;line-height:1.5;color:var(--muted);padding:5px 2px 0}
   .ms-item{display:flex;align-items:center;gap:8px;padding:6px;border-radius:7px;font-size:12.5px;cursor:pointer}
   .ms-item:hover{background:#f7f9fa}
   .ms-item input{accent-color:var(--accent);flex:none;cursor:pointer}
@@ -904,11 +903,12 @@
     #prod-table tbody td:nth-child(1) .pname>.salech,
     #sum-table tbody td:nth-child(1) .pname>.salech{flex:0 0 100%}
     /* 移动端输入框 16px 仅为防 iOS 聚焦放大；产品库搜索框例外（2026-11-21 五轮用户要求：
-       与表头同字号 12px，放大改由 JS 锁 viewport 兜底），故此处不再纳入 #prod-search */
-    .ms-search{font-size:16px;width:auto;padding:5px 8px}
+       与表头同字号，放大改由 JS 锁 viewport 兜底），故此处不再纳入 #prod-search。
+       2026-11-24：多选筛选搜索框字号与选项 (.ms-item 12.5px) 保持一致，不再用 16px。 */
+    .ms-search{font-size:12.5px;width:auto;padding:5px 8px}
     .ms-panel{width:min(276px,calc(100vw - 24px))}
     #trade-prod-q{font-size:16px}
-    html.is-ios .ms-search,html.is-ios #trade-prod-q{font-size:16px}
+    html.is-ios #trade-prod-q{font-size:16px}
   }
   /* 横屏：表头超 2 字自动分两行，列宽压到数据宽度，尽量一屏看全 */
   @media (min-width:761px) and (max-width:968px){
@@ -1404,6 +1404,9 @@
        手机端所有文本类 input/textarea 统一抬到 16px；select 不触发缩放、复选框/文件框排除，表头下拉字号不受影响。 */
     input:not([type="hidden"]):not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]),
     textarea{font-size:16px !important;-webkit-text-size-adjust:100%}
+    /* 2026-11-24：多选筛选搜索框按用户要求与选项 (.ms-item 12.5px) 同字号。
+       覆盖上面的 16px !important 全站规则；iOS 聚焦放大改由 JS lockIOSZoomOnInput 锁 viewport 兜底。 */
+    #ms-search.ms-search{font-size:12.5px !important}
     /* 新增交易弹窗：申购日期与申购金额并列一行（交易类型、确认日期仍整行） */
     #modal-trade .form-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:0 10px}
     #modal-trade .form-grid>.field-wide{grid-column:1/-1}
@@ -2106,7 +2109,6 @@
       <button type="button" data-act="toggle">全选</button>
     </div>
   </div>
-  <div class="ms-tip">点名称＝只看这一只 · 勾选框＝多选</div>
   <div class="ms-list" id="ms-list"></div>
 </div>
 
@@ -2247,11 +2249,11 @@
 <!-- 代码类脚本带版本号，改动后同步更新，避免手机端命中旧缓存；数据类脚本不带版本号，保证每日更新能取到 -->
 <!-- 2026-11-23 统一缓存戳：前端改动必须同步 bump，避免浏览器命中旧 JS 造成
      「新 HTML + 旧渲染」的错位（表现为新品预告仍是拉伸甘特卡片 + 巨大原生多选框）。 -->
-<script src="./_shared/js/echarts.min.js?v=20261124g" onerror="this.onerror=null;this.src='./_shared/js/echarts.min.js?t='+Date.now()"></script>
-<script src="./assets/html2canvas.min.js?v=20261124g"></script>
-<script src="./assets/data.js?v=20261124g" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
-<script src="./assets/risk_levels.js?v=20261124g"></script>
-<script src="./assets/transactions.js?v=20261124g"></script>
+<script src="./_shared/js/echarts.min.js?v=20261124h" onerror="this.onerror=null;this.src='./_shared/js/echarts.min.js?t='+Date.now()"></script>
+<script src="./assets/html2canvas.min.js?v=20261124h"></script>
+<script src="./assets/data.js?v=20261124h" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
+<script src="./assets/risk_levels.js?v=20261124h"></script>
+<script src="./assets/transactions.js?v=20261124h"></script>
 <script>
   /* 公开底稿已脱敏：只含 id+pid 的占位行供后台抓净值，不含 applyDate 等明细。
      前端渲染前剔除这类行，真实交易明细由登录后从 Supabase 云端拉取。 */
@@ -2260,16 +2262,16 @@
     if (T && T.items) T.items = T.items.filter(function (t) { return !!t.applyDate; });
   })();
 </script>
-<script src="./assets/newproducts.js?v=20261124g"></script>
-<script src="./assets/library.js?v=20261124g"></script>
-<script src="./assets/supabase-config.js?v=20261124g"></script>
-<script src="./assets/auth.js?v=20261124g"></script>
-<script src="./assets/store.js?v=20261124g" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
+<script src="./assets/newproducts.js?v=20261124h"></script>
+<script src="./assets/library.js?v=20261124h"></script>
+<script src="./assets/supabase-config.js?v=20261124h"></script>
+<script src="./assets/auth.js?v=20261124h"></script>
+<script src="./assets/store.js?v=20261124h" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
 <script>
   /* 先用本地缓存/内置底稿立即渲染，云端数据在后台取回后再重绘，避免等待网络白屏 */
   /* 前序脚本缺失或命中旧缓存时（STORE_READY 不存在）也照常加载看板，避免页面停在空白骨架 */
   (function () {
-    var NP_BUILD = '20261124g';
+    var NP_BUILD = '20261124h';
     function boot(msg, forced) {
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
@@ -2296,7 +2298,7 @@
       // 隐私小眼睛：dashboard.js 就绪后再加载，才能包装 DASHBOARD_REFRESH 并在渲染后套用打码
       if (!window.PRIVACY) {
         var pv = document.createElement('script');
-        pv.src = './assets/privacy.js?v=20261124g';
+        pv.src = './assets/privacy.js?v=20261124h';
         document.body.appendChild(pv);
       }
       if (!window.STORE_REFRESH || typeof window.STORE_REFRESH.then !== 'function') return;
