@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261124r';
+  window.__NP_LAYOUT_VERSION = '20261124s';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -5664,6 +5664,7 @@
     if (!box) return;
     var ch = NP_UI.channels || [];
     var iss = NP_UI.issuers || [];
+    var total = 0;
     Array.prototype.forEach.call(box.querySelectorAll('.ts-lane'), function (lane) {
       var shown = 0;
       Array.prototype.forEach.call(lane.querySelectorAll('.nchip'), function (chip) {
@@ -5672,11 +5673,16 @@
         chip.style.display = ok ? '' : 'none';
         if (ok) shown++;
       });
+      total += shown;
+      /* 2026-11-24 s：筛选后空泳道不再直接隐藏整条（手机端 .is-empty 隐藏整条），
+         仅在「整页零匹配」时由下方空态统一提示；有匹配的泳道保留日期标题，避免误判为筛选失效。 */
       var empty = (shown === 0);
       lane.classList.toggle('is-empty', empty);
       var gap = lane.querySelector('.gapfill');
       if (gap) gap.style.display = empty ? '' : 'none';
     });
+    var npEmpty = document.getElementById('np-empty');
+    if (npEmpty) npEmpty.hidden = total > 0;
   }
 
   function renderNewProds() {
@@ -5827,6 +5833,9 @@
     });
 
     box.innerHTML = out.join('') || '<div class="ts-lane" style="--c:#0e5a73"><div class="gapfill"><em>暂无已披露新品</em></div></div>';
+
+    /* 2026-11-24 s：每次重绘后同步一次筛选空态，避免数据刷新后筛选态与提示不一致 */
+    applyNewProdFilter();
 
     /* 2026-11-24：按用户要求去掉「X只·X家」统计与「已选X家」提示文字 */
   }

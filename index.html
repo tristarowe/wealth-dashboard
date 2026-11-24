@@ -378,12 +378,16 @@
   .month-item .thumb{margin-left:3px;font-size:10px;line-height:1}
   /* 年化数据条：浅蓝底 + 按数值比例的蓝色渐变填充（5% 年化满格），渐变只覆盖填充宽度，不再灰调 */
   /* 审核稿 B0/B5：数值强调统一 700、辅助色统一 var(--muted)；#3c5c67 保留为日历进度可视化专用色 */
-  .rate-cell{position:relative;display:flex;align-items:center;justify-content:center;height:22px;border-radius:5px;font-family:var(--mono);font-size:13px;font-weight:700;color:#3c5c67;overflow:hidden;background:#eef6fb;background-image:linear-gradient(90deg,var(--bar-a,#a9d8ee),var(--bar-b,#6fb9dc));background-repeat:no-repeat;background-size:var(--w,0%) 100%}
-  .rate-cell.lv1{--bar-a:#a9d8ee;--bar-b:#6fb9dc;color:#185776}
-  .rate-cell.lv2{--bar-a:#7fc4e5;--bar-b:#3d9fcd;color:#124c69}
-  .rate-cell.lv3{--bar-a:#2878af;--bar-b:#1f6a9c;color:#fff}
-  .rate-cell.lv4{--bar-a:#1f6a9c;--bar-b:#15567f;color:#fff}
-  .rate-cell.lv5{--bar-a:#15567f;--bar-b:#0c4267;color:#fff}
+  /* 2026-11-24 s：年化百分比统一贴数据条左端、全档同色；渐变整体调浅（文字始终深色可读） */
+  .rate-cell{position:relative;display:flex;align-items:center;justify-content:flex-start;padding-left:6px;
+    height:22px;border-radius:5px;font-family:var(--mono);font-size:12px;font-weight:700;color:#31566A;
+    overflow:hidden;background:#f2f8fb;background-image:linear-gradient(90deg,var(--bar-a,#e4f2fa),var(--bar-b,#cfe7f4));
+    background-repeat:no-repeat;background-size:var(--w,0%) 100%}
+  .rate-cell.lv1{--bar-a:#e4f2fa;--bar-b:#cfe7f4;color:#31566A}
+  .rate-cell.lv2{--bar-a:#d4ecf7;--bar-b:#bfe0f1;color:#31566A}
+  .rate-cell.lv3{--bar-a:#c6e6f4;--bar-b:#a9d6ec;color:#31566A}
+  .rate-cell.lv4{--bar-a:#b6def0;--bar-b:#99cbe6;color:#31566A}
+  .rate-cell.lv5{--bar-a:#a4d5ec;--bar-b:#86bfdf;color:#31566A}
   .cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;flex:1;align-content:start}
   .cal .wd{text-align:center;font-size:12.5px;font-weight:600;color:var(--accent);padding:6px 0}
   .cell{background:#fff;border:1px solid #e8eef1;border-radius:7px;min-height:58px;padding:5px 7px}
@@ -1041,7 +1045,7 @@
     .year-table{font-size:11.5px}
     .year-table thead th{font-size:11.5px}
     .year-table td{font-size:12px}
-    .rate-cell{font-size:12px}
+    .rate-cell{font-size:11px;padding-left:4px}
     .seg button{font-size:11.5px}
     /* 横屏表头单行 2026-11-21（用户要求）：交易页（持仓汇总/交易流水）与产品库
        的表头一律不换行、单行呈现；覆盖上方 761–968 的 white-space:normal 与 br:inline */
@@ -1334,7 +1338,7 @@
     .month-row.mhead{padding:6px 0;font-size:11px;border-left:0}
     .month-item{border-left:0}
     .month-item.on{box-shadow:inset 2px 0 0 var(--accent)}
-    .rate-cell{height:20px;font-size:13px}
+    .rate-cell{height:20px;font-size:11px;padding-left:3px}
     .pager{flex-wrap:wrap;justify-content:center}
     #chart{height:300px}
     .banner{flex-wrap:wrap;font-size:12px;padding:9px 12px}
@@ -1696,13 +1700,14 @@
      统一 32px 高、12px/600 字、1px 蓝描边、圆角 7px、透明底、蓝字。 */
   .month-switch{height:32px!important;border:1px solid var(--blue-line)!important;
     border-radius:7px!important;background:transparent!important;overflow:hidden}
+  .month-switch.on{border-color:var(--blue)!important}
   .month-switch .mini-select,.month-switch .ms-sel{border:0!important;border-radius:0!important;
     height:30px!important;min-width:64px!important;padding:0 8px!important;text-align:center!important;
     font-family:var(--font)!important;font-size:12px!important;font-weight:500!important;color:var(--muted)!important;
     background:transparent!important;line-height:30px!important;outline:none!important}
-  /* 年月筛选：默认灰字 500，选中蓝字 700 + 蓝填充（2026-11-24 q） */
+  /* 2026-11-24 s：年月切换选中后不再填充，改为蓝色数据框（外框蓝 + 蓝字） */
   .month-switch .mini-select.on,.month-switch .ms-sel.on{color:var(--blue)!important;
-    font-weight:700!important;background:var(--blue-fill)!important}
+    font-weight:700!important;background:transparent!important}
   .ms-arrow{width:26px!important;height:30px!important;background:transparent!important;
     color:var(--blue)!important;font-size:14px!important;font-weight:500!important}
   .ms-arrow:hover{background:transparent!important}
@@ -1734,9 +1739,13 @@
   .dp-grid button,.dp-mgrid button,.dp-nav,.dp-foot button,
   .month-item,.month-item > span:not(.rate-cell),.th-select{color:var(--muted)!important;font-weight:500!important}
   .btn.primary{color:var(--blue)!important;font-weight:500!important}
+  /* 2026-11-24 s：只有图一的主导航 .tab.on 与产品页内导航 .jumpbar .j.on 保留蓝填充；
+     其余筛选按钮/下拉选项/年月切换选中一律无填充，仅蓝字 + 蓝描边。 */
   .chip.on,.filter-tail .chip.on,.sel-opt.on,.sel-pop.single .sel-opt.on,.prod-sug .sel-opt.on,
   .month-item.on,.dp-grid button.on,.dp-mgrid button.on,.active-filter,
-  .seg-group .seg.on,.seg button.on,.pager button.on,.pg-pop button.on,
+  .seg-group .seg.on,.seg button.on,.pager button.on,.pg-pop button.on{
+    color:var(--blue)!important;border-color:var(--blue-line)!important;
+    background:transparent!important;box-shadow:none!important;font-weight:700!important}
   .tab.on{
     color:var(--blue)!important;border-color:var(--blue-line)!important;
     background:var(--blue-fill)!important;box-shadow:none!important;font-weight:700!important}
@@ -1745,11 +1754,11 @@
     border-color:var(--blue-line)!important;font-weight:500!important}
   .cloud-chip.on .cloud-ico,.auth-chip.on .auth-ico{color:var(--blue)!important;fill:none!important}
   /* 选中值显示在表头按钮/下拉里：蓝字 700 + 蓝填充 */
-  .sel-wrap.on,.np-toolbar .sel-wrap.on{background:var(--blue-fill)!important;border-color:var(--blue-line)!important}
+  .sel-wrap.on,.np-toolbar .sel-wrap.on{background:transparent!important;border-color:var(--blue)!important}
   .sel-wrap.on .sel-label,.sel-wrap.on .sel-label .mcount,
   .sel-opt.on,.sel-pop.single .sel-opt.on,.prod-sug .sel-opt.on,
   .mcount,.th-select.on{color:var(--blue)!important;font-weight:700!important}
-  .th-select.on{background:var(--blue-fill)!important}
+  .th-select.on{background:transparent!important}
 
   /* 2026-11-24 角标去填充/按钮区白底/去粗/日历表头对齐 */
   /* 盈亏日历：表头与数值同列右对齐（年度表第 2~6 列、月度表第 2~6 列），
@@ -1789,17 +1798,24 @@
   .month-switch .mini-select,.month-switch .ms-sel,.ms-arrow,.th-select,
   .dp-grid button,.dp-mgrid button,.dp-nav,.dp-foot button,.month-item{
     font-weight:500!important}
-  .tab.on,.jumpbar .j.on,.chip.on,.filter-tail .chip.on,.sel-opt.on,.sel-pop.single .sel-opt.on,
+  .tab.on,.jumpbar .j.on{
+    font-weight:700!important;color:var(--blue)!important;
+    background:var(--blue-fill)!important;border-color:var(--blue-line)!important}
+  .chip.on,.filter-tail .chip.on,.sel-opt.on,.sel-pop.single .sel-opt.on,
   .prod-sug .sel-opt.on,.month-item.on,.dp-grid button.on,.dp-mgrid button.on,
   .pager button.on,.pg-pop button.on,.seg-group .seg.on,.seg button.on,.active-filter,
   .sel-wrap.on .sel-label,.th-select.on{
     font-weight:700!important;color:var(--blue)!important;
-    background:var(--blue-fill)!important;border-color:var(--blue-line)!important}
+    background:transparent!important;border-color:var(--blue-line)!important}
   .cloud-chip.on,.auth-chip.on{background:#fff!important;font-weight:500!important}
-  /* 年化条：渐变只覆盖填充宽度，未填充区保留浅蓝底；数值保持 700 不被月份行 500 继承覆盖 */
-  .rate-cell{font-weight:700!important;background-color:#eef6fb!important;
-    background-image:linear-gradient(90deg,var(--bar-a,#a9d8ee),var(--bar-b,#6fb9dc))!important;
+  /* 2026-11-24 s：年化条百分比统一左对齐、全档同色；渐变覆盖填充宽度，未填充区保留更浅底 */
+  .rate-cell{font-weight:700!important;color:#31566A!important;justify-content:flex-start!important;
+    background-color:#f7fbfd!important;
+    background-image:linear-gradient(90deg,var(--bar-a,#e4f2fa),var(--bar-b,#cfe7f4))!important;
     background-repeat:no-repeat!important;background-size:var(--w,0%) 100%!important}
+  /* 新品筛选无匹配时给出明确空态，避免所有泳道被隐藏后整页空白 */
+  .np-empty{text-align:center;padding:26px 12px;font-size:12px;color:var(--muted)}
+  .np-empty[hidden]{display:none}
 </style>
 <script>
   /* 登录墙判定（尽早执行，早于页面内容渲染，避免闪现）：
@@ -2168,6 +2184,7 @@
       <div class="timeline">
         <div class="ts-grid" id="np-head"></div>
         <div id="np-lanes"></div>
+        <div id="np-empty" class="np-empty" hidden>当前筛选条件下暂无新品，请调整筛选条件</div>
       </div>
     </section>
 
@@ -2411,11 +2428,11 @@
 <!-- 代码类脚本带版本号，改动后同步更新，避免手机端命中旧缓存；数据类脚本不带版本号，保证每日更新能取到 -->
 <!-- 2026-11-23 统一缓存戳：前端改动必须同步 bump，避免浏览器命中旧 JS 造成
      「新 HTML + 旧渲染」的错位（表现为新品预告仍是拉伸甘特卡片 + 巨大原生多选框）。 -->
-<script src="./_shared/js/echarts.min.js?v=20261124r" onerror="this.onerror=null;this.src='./_shared/js/echarts.min.js?t='+Date.now()"></script>
-<script src="./assets/html2canvas.min.js?v=20261124r"></script>
-<script src="./assets/data.js?v=20261124r" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
-<script src="./assets/risk_levels.js?v=20261124r"></script>
-<script src="./assets/transactions.js?v=20261124r"></script>
+<script src="./_shared/js/echarts.min.js?v=20261124s" onerror="this.onerror=null;this.src='./_shared/js/echarts.min.js?t='+Date.now()"></script>
+<script src="./assets/html2canvas.min.js?v=20261124s"></script>
+<script src="./assets/data.js?v=20261124s" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
+<script src="./assets/risk_levels.js?v=20261124s"></script>
+<script src="./assets/transactions.js?v=20261124s"></script>
 <script>
   /* 公开底稿已脱敏：只含 id+pid 的占位行供后台抓净值，不含 applyDate 等明细。
      前端渲染前剔除这类行，真实交易明细由登录后从 Supabase 云端拉取。 */
@@ -2424,16 +2441,16 @@
     if (T && T.items) T.items = T.items.filter(function (t) { return !!t.applyDate; });
   })();
 </script>
-<script src="./assets/newproducts.js?v=20261124r"></script>
-<script src="./assets/library.js?v=20261124r"></script>
-<script src="./assets/supabase-config.js?v=20261124r"></script>
-<script src="./assets/auth.js?v=20261124r"></script>
-<script src="./assets/store.js?v=20261124r" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
+<script src="./assets/newproducts.js?v=20261124s"></script>
+<script src="./assets/library.js?v=20261124s"></script>
+<script src="./assets/supabase-config.js?v=20261124s"></script>
+<script src="./assets/auth.js?v=20261124s"></script>
+<script src="./assets/store.js?v=20261124s" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
 <script>
   /* 先用本地缓存/内置底稿立即渲染，云端数据在后台取回后再重绘，避免等待网络白屏 */
   /* 前序脚本缺失或命中旧缓存时（STORE_READY 不存在）也照常加载看板，避免页面停在空白骨架 */
   (function () {
-    var NP_BUILD = '20261124r';
+    var NP_BUILD = '20261124s';
     function boot(msg, forced) {
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
@@ -2460,7 +2477,7 @@
       // 隐私小眼睛：dashboard.js 就绪后再加载，才能包装 DASHBOARD_REFRESH 并在渲染后套用打码
       if (!window.PRIVACY) {
         var pv = document.createElement('script');
-        pv.src = './assets/privacy.js?v=20261124r';
+        pv.src = './assets/privacy.js?v=20261124s';
         document.body.appendChild(pv);
       }
       if (!window.STORE_REFRESH || typeof window.STORE_REFRESH.then !== 'function') return;
