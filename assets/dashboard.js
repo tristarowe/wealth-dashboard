@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261124y';
+  window.__NP_LAYOUT_VERSION = '20261124z';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -2166,44 +2166,53 @@
   /* ---------------- 模块 03：盈亏趋势 ---------------- */
   var trendState = { range: 30 };
   var trendChart = null;
-  /* 2026-11-24 u：ECharts 按需加载。趋势图子页首次渲染时才拉 338KB 库，
-     首屏不再被图表库串行阻塞；加载中重复触发只保留一次回调队列。 */
+  /* 2026-11-24 z：ECharts 精简包 + 首屏空闲预取。
+     旧版有两处导致手机「图表加载中…」长时间停留：① 用 1MB 全量包；
+     ② 只有点开趋势子页才触发下载（renderTrend 在隐藏态 width=0 时提前 return，
+        根本没调用 withEcharts）。现改为：只打进曲线真正用到的 line/grid/tooltip/
+        markPoint/markLine + SVG 渲染器（约 500KB，gzip 173KB），并在首屏 init 后
+        立即用 fetch 预热 HTTP 缓存、load 完成后空闲注入脚本——用户读首屏这几秒里
+        图库已就绪，切到趋势页几乎不再等待。 */
+  var CHART_URL = './_shared/js/echarts.slim.js?v=20261124z';
+  function injectEcharts() {
+    if (window.echarts || window.__ECHARTS_INJECTED__) return;
+    window.__ECHARTS_INJECTED__ = true;
+    var s = document.createElement('script');
+    s.src = CHART_URL;
+    s.onerror = function () {
+      window.__ECHARTS_LOADING__ = false;
+      var tip = document.getElementById('boot-tip');
+      if (tip) { tip.textContent = '图表加载失败，请刷新重试'; tip.hidden = false; }
+      var el = document.getElementById('chart');
+      if (el) el.textContent = '图表加载失败，请刷新重试';
+    };
+    s.onload = function () {
+      var q = window.__ECHARTS_QUEUE__ || [];
+      window.__ECHARTS_QUEUE__ = [];
+      q.forEach(function (fn) { fn(); });
+    };
+    document.head.appendChild(s);
+  }
+  /* 首屏预热：用 rel=preload 只下载、不执行、不阻塞渲染，且与随后的 <script>
+     同 URL 自动去重（只下载一次）；真正执行延后到 load 之后，避免动态脚本
+     推迟「加载完成」状态。 */
+  function warmEcharts() {
+    if (window.echarts) return;
+    if (document.readyState === 'complete') { injectEcharts(); return; }
+    try {
+      if (!document.querySelector('link[rel="preload"][href="' + CHART_URL + '"]')) {
+        var pre = document.createElement('link');
+        pre.rel = 'preload';
+        pre.as = 'script';
+        pre.href = CHART_URL;
+        document.head.appendChild(pre);
+      }
+    } catch (e) {}
+    window.addEventListener('load', injectEcharts, { once: true });
+  }
   function withEcharts(cb) {
     if (window.echarts) { cb(); return; }
-    if (!window.__ECHARTS_LOADING__) {
-      window.__ECHARTS_LOADING__ = true;
-      var started = false;
-      /* 图库在首屏 load 之后再拉：页面/USP 已完成时再占带宽，浏览器标签的
-         「加载中」不会被 338KB 图库拖住；期间图表位置先给文字占位。 */
-      /* 2026-11-24 y：动态 <script> 会推迟 load，故仍在 load 后才插入；
-         但用 fetch 提前把图库放进 HTTP 缓存，load 后 script 秒命中，
-         切到趋势页不再长时间停「图表加载中…」。 */
-      var chartUrl = './_shared/js/echarts.min.js?v=20261124y';
-      function start() {
-        if (started) return;
-        started = true;
-        var s = document.createElement('script');
-        s.src = chartUrl;
-        s.onerror = function () {
-          window.__ECHARTS_LOADING__ = false;
-          var tip = document.getElementById('boot-tip');
-          if (tip) { tip.textContent = '图表加载失败，请刷新重试'; tip.hidden = false; }
-          var el = document.getElementById('chart');
-          if (el) el.textContent = '图表加载失败，请刷新重试';
-        };
-        s.onload = function () {
-          var q = window.__ECHARTS_QUEUE__ || [];
-          window.__ECHARTS_QUEUE__ = [];
-          q.forEach(function (fn) { fn(); });
-        };
-        document.head.appendChild(s);
-      }
-      if (document.readyState === 'complete') start();
-      else {
-        try { fetch(chartUrl, { mode: 'same-origin' }).catch(function () {}); } catch (e) {}
-        window.addEventListener('load', start, { once: true });
-      }
-    }
+    warmEcharts();
     (window.__ECHARTS_QUEUE__ = window.__ECHARTS_QUEUE__ || []).push(cb);
   }
   /* 2026-11-24：标签/子页切换只需让趋势图重取尺寸，不必广播 window resize
@@ -6594,6 +6603,8 @@
     bindTableScrollChain();
     initFloatHeads();
     renderAll();
+    /* 2026-11-24 z：首屏渲染完立即预热精简图库，用户还没滚到趋势页就已缓存/就绪 */
+    warmEcharts();
     var identityAudit = auditProductIdentity();
     if (!identityAudit.ok) console.warn('[产品身份自检]', identityAudit.issues);
 
