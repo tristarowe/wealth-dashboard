@@ -8,7 +8,7 @@
 <!-- 2026-11-24 u 首屏优化：看板脚本提前并行下载，云端域名提前握手；
      两者都不阻塞 HTML 解析，避免旧版「大库先下载完才开始拉 dashboard.js」的串行等待。 -->
 <link rel="preconnect" href="https://asqaxvrovorqfqwpgjkb.supabase.co" crossorigin>
-<link rel="preload" as="script" href="./assets/dashboard.js?v=20261124v" fetchpriority="low">
+<link rel="preload" as="script" href="./assets/dashboard.js?v=20261124w" fetchpriority="low">
 <style>
   :root{
     --bg:#f3f5f7; --card:#fff; --soft:#F9FFFF;
@@ -1845,21 +1845,22 @@
   .sel-pop.ms-pop .sel-opt{font-size:12px!important;line-height:1.25!important;
     min-height:0!important;padding:5px 9px!important;text-align:center!important}
 
-  /* ===== 2026-11-24 u：年度 / 月度收益选中态 = 蓝色方框，数据行无填充 =====
-     用户已两次强调：不要整行浅蓝底、不要左侧粗竖条；选中行要用闭合的蓝色方框。 */
+  /* ===== 2026-11-24 w：年度 / 月度收益选中态 = 1px 细线闭合蓝框，数据行无填充 =====
+     用户反馈 2px 蓝框过粗，且与年月切换框/卡片描边的 1px 不一致，全站线条粗细统一为 1px。
+     原 outline/inset box-shadow 会被 position:relative 的年化数据条 .rate-cell 盖住，
+     手机竖屏看起来像数据条溢出蓝框；改用 ::after 覆盖层画框（z-index 高于数据条），
+     框线完整闭合、数据条不再压线，无填充、无左侧粗竖条。 */
   .year-table tbody tr:hover td,.month-item:hover{background:transparent!important}
-  .year-table tr.on td{background:transparent!important;
-    box-shadow:inset 0 2px 0 var(--blue),inset 0 -2px 0 var(--blue)!important}
-  .year-table tr.on td:first-child{
-    box-shadow:inset 2px 0 0 var(--blue),inset 0 2px 0 var(--blue),inset 0 -2px 0 var(--blue)!important;
-    border-radius:3px 0 0 3px}
-  .year-table tr.on td:last-child{
-    box-shadow:inset -2px 0 0 var(--blue),inset 0 2px 0 var(--blue),inset 0 -2px 0 var(--blue)!important;
-    border-radius:0 3px 3px 0}
+  .year-table tr.on td{background:transparent!important;position:relative;box-shadow:none!important}
+  .year-table tr.on td::after{content:'';position:absolute;inset:0;z-index:2;pointer-events:none;
+    border-top:1px solid var(--blue);border-bottom:1px solid var(--blue)}
+  .year-table tr.on td:first-child::after{border-left:1px solid var(--blue);border-radius:3px 0 0 3px}
+  .year-table tr.on td:last-child::after{border-right:1px solid var(--blue);border-radius:0 3px 3px 0}
   .year-table tr.on td.ym{color:var(--blue)!important}
   .month-item.on{background:transparent!important;border-color:transparent!important;
-    outline:2px solid var(--blue)!important;outline-offset:-2px;border-radius:3px!important;
-    box-shadow:none!important}
+    outline:none!important;box-shadow:none!important;border-radius:3px!important;position:relative}
+  .month-item.on::after{content:'';position:absolute;inset:0;z-index:2;pointer-events:none;
+    border:1px solid var(--blue);border-radius:3px}
 
   /* ===== 2026-11-24 u：产品库「成立期」年 + 月融合月历 =====
      一年 12 个月一次看全，左右箭头切年；有成立产品的月份可选，选中蓝框无填充。 */
@@ -2508,9 +2509,9 @@
      「新 HTML + 旧渲染」的错位（表现为新品预告仍是拉伸甘特卡片 + 巨大原生多选框）。 -->
 <!-- 2026-11-24 u：ECharts / html2canvas 改按需加载（趋势图、导出长图才拉），
      不再让 338KB + 47KB 的库阻塞首屏；加载器分别在 dashboard.js 与本页导出逻辑内。 -->
-<script src="./assets/data.js?v=20261124v" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
-<script src="./assets/risk_levels.js?v=20261124v"></script>
-<script src="./assets/transactions.js?v=20261124v"></script>
+<script src="./assets/data.js?v=20261124w" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
+<script src="./assets/risk_levels.js?v=20261124w"></script>
+<script src="./assets/transactions.js?v=20261124w"></script>
 <script>
   /* 公开底稿已脱敏：只含 id+pid 的占位行供后台抓净值，不含 applyDate 等明细。
      前端渲染前剔除这类行，真实交易明细由登录后从 Supabase 云端拉取。 */
@@ -2519,16 +2520,16 @@
     if (T && T.items) T.items = T.items.filter(function (t) { return !!t.applyDate; });
   })();
 </script>
-<script src="./assets/newproducts.js?v=20261124v"></script>
-<script src="./assets/library.js?v=20261124v"></script>
-<script src="./assets/supabase-config.js?v=20261124v"></script>
-<script src="./assets/auth.js?v=20261124v"></script>
-<script src="./assets/store.js?v=20261124v" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
+<script src="./assets/newproducts.js?v=20261124w"></script>
+<script src="./assets/library.js?v=20261124w"></script>
+<script src="./assets/supabase-config.js?v=20261124w"></script>
+<script src="./assets/auth.js?v=20261124w"></script>
+<script src="./assets/store.js?v=20261124w" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
 <script>
   /* 先用本地缓存/内置底稿立即渲染，云端数据在后台取回后再重绘，避免等待网络白屏 */
   /* 前序脚本缺失或命中旧缓存时（STORE_READY 不存在）也照常加载看板，避免页面停在空白骨架 */
   (function () {
-    var NP_BUILD = '20261124v';
+    var NP_BUILD = '20261124w';
     function boot(msg, forced) {
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
@@ -2555,7 +2556,7 @@
       // 隐私小眼睛：dashboard.js 就绪后再加载，才能包装 DASHBOARD_REFRESH 并在渲染后套用打码
       if (!window.PRIVACY) {
         var pv = document.createElement('script');
-        pv.src = './assets/privacy.js?v=20261124v';
+        pv.src = './assets/privacy.js?v=20261124w';
         document.body.appendChild(pv);
       }
       if (!window.STORE_REFRESH || typeof window.STORE_REFRESH.then !== 'function') return;
@@ -2998,7 +2999,7 @@
       if (h2cLoading) return h2cLoading;
       h2cLoading = new Promise(function (resolve, reject) {
         var s = document.createElement('script');
-        s.src = './assets/html2canvas.min.js?v=20261124v';
+        s.src = './assets/html2canvas.min.js?v=20261124w';
         s.onload = resolve;
         s.onerror = function () { h2cLoading = null; reject(new Error('截图组件加载失败')); };
         document.head.appendChild(s);
