@@ -1,0 +1,45 @@
+name: bugcheck-report
+
+# WorkBuddy「每日全站排查」自动化在本地完成排查/修复后，通过本工作流的 workflow_dispatch
+# 把报告正文交给 Server酱推送到微信。Server酱 sendkey 只作为 GitHub Actions Secret 保存，
+# 本地不落盘，故用「本地触发 workflow_dispatch → Actions 内用 secret 推送」这条桥。
+#
+# 触发示例（本地 token 需含 workflow scope）：
+#   POST https://api.github.com/repos/tristarowe/wealth-dashboard/actions/workflows/bugcheck-report.yml/dispatches
+#   {"ref":"main","inputs":{"title":"全站排查报告 2026-11-25","report":"..."}}
+
+on:
+  workflow_dispatch:
+    inputs:
+      title:
+        description: "推送标题"
+        required: true
+        default: "全站排查报告"
+      report:
+        description: "报告正文（Markdown，建议 < 3000 字）"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 安装依赖
+        run: pip install -r daily/requirements.txt
+
+      - name: 微信推送排查报告
+        env:
+          PYTHONIOENCODING: utf-8
+          SERVERCHAN_SENDKEY: ${{ secrets.SERVERCHAN_SENDKEY }}
+          PUSH_TITLE: ${{ inputs.title }}
+          PUSH_REPORT: ${{ inputs.report }}
+        run: python daily/notify_report.py

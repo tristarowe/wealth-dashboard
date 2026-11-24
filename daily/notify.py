@@ -3,6 +3,7 @@ import json
 import os
 import sys
 import time
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import requests
@@ -20,6 +21,23 @@ if not KEY and KEY_FILE.exists():
 
 # 实线分隔符：直接用文字线，颜色随正文字体，和正文一致
 DIVIDER = "─" * 22
+
+# 2026-11-24：用户要求取消「夜间新品预告推送」。
+# nightly 这一轮（北京 21:50 GitHub cron / 22:00 Gitee dispatch）保留了看板长图与当日收益，
+# 只不再发「新品预告」那条；早间那轮（07:20/07:30）照常发新品预告。
+# 用北京时间判断而非 event.schedule，因 Gitee 走 workflow_dispatch 无 schedule 字段。
+NIGHT_SKIP_NEWPROD = True
+BJ_TZ = timezone(timedelta(hours=8))
+
+
+def is_night_run():
+    """是否夜间轮次：北京时间 20:00–23:59。可设 NP_FORCE_NEWPROD=1 强制发、=0 强制跳过。"""
+    force = os.environ.get("NP_FORCE_NEWPROD", "").strip()
+    if force == "1":
+        return False
+    if force == "0":
+        return True
+    return 20 <= datetime.now(BJ_TZ).hour <= 23
 
 
 def compose(stats, img_url, income, img_link=None):
@@ -150,6 +168,11 @@ def main():
     if "--test" in sys.argv:
         title = "【测试】" + title
     send(title, desp)
+
+    # 夜间轮次只发收益长图，跳过新品预告那条（用户 2026-11-24 要求）
+    if NIGHT_SKIP_NEWPROD and is_night_run():
+        print("夜间轮次：跳过新品预告推送（早间轮次照常）", file=sys.stderr)
+        return 0 if img_url else 1
 
     newprod_url = None
     newprod_link = None
