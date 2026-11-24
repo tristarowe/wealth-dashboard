@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261124n';
+  window.__NP_LAYOUT_VERSION = '20261124o';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -3219,6 +3219,8 @@
     if (!wrap || !wrap.classList || !wrap.classList.contains('sel-wrap')) return;
     var label = wrap.querySelector('.sel-label');
     if (!label) return;
+    /* 2026-11-24：选中非「全部」时给外壳加 on，表头标签才由灰字变蓝字 */
+    wrap.classList.toggle('on', !selIsAll(sel));
     var allItem = sel.options[0];
     var firstText = allItem ? allItem.text : '';
     if (selIsAll(sel)) {
@@ -5757,7 +5759,7 @@
     var out = [];
     days.forEach(function (ds, di) {
       var dd = parseDate(ds);
-      var dayLab = mdText(ds) + (di === 0 ? '<em>今天</em>' : '') + ' 周' + wd[dd.getDay()];
+      var dayLab = mdText(ds) + ' 周' + wd[dd.getDay()] + (di === 0 ? ' <em>今天</em>' : '');
       var body = '<div class="lane-day">' + dayLab + '</div>';
       var items = buckets[di];
       if (!items.length) {
