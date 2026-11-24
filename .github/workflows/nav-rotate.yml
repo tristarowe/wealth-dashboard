@@ -17,7 +17,8 @@ permissions:
   contents: write
 
 concurrency:
-  group: nav-rotate
+  # 2026-11-24 修复：与 daily-fetch / nav-ccb 统一分组，串行写 data.js/library.js，杜绝并发 rebase 冲突
+  group: nav-data
   cancel-in-progress: false
 
 jobs:

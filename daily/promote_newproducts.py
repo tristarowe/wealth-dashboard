@@ -150,6 +150,10 @@ def main():
     ap.add_argument("--gap", type=float, default=1.2)
     ap.add_argument("--max-new", type=int, default=20, help="单次最多并入条数")
     ap.add_argument("--max-pending", type=int, default=30, help="单次最多补净值的占位产品数")
+    # 2026-11-24：workflow 以 --no-self-commit 传入，避免本脚本与「提交数据」步骤双重 push 竞态；
+    # 原脚本未定义该参数，导致 daily-fetch 的并入步骤每天必报 unrecognized arguments。
+    ap.add_argument("--no-self-commit", action="store_true",
+                    help="跳过脚本内自动提交，交由调用方 workflow 统一提交")
     a = ap.parse_args()
 
     np = load_json(NP_JSON, {})
@@ -231,7 +235,8 @@ def main():
         print("无需并入：新品预告中没有已成立且未入库的产品", flush=True)
         return 0
     print("完成：本次新并入 %d 只，产品库共 %d 只" % (added, len(items)), flush=True)
-    commit_in_ci()
+    if not getattr(a, "no_self_commit", False):
+        commit_in_ci()
     return 0
 
 

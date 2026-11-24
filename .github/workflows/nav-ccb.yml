@@ -24,7 +24,8 @@ permissions:
   contents: write
 
 concurrency:
-  group: nav-ccb
+  # 2026-11-24 修复：与 daily-fetch / nav-rotate 统一分组，避免并发写 data.js 触发 rebase 冲突
+  group: nav-data
   cancel-in-progress: false
 
 jobs:
@@ -62,6 +63,22 @@ jobs:
             echo "无数据变化"
           else
             git commit -m "data: 建信小时级补抓 $(date -u +'%Y-%m-%d %H:%M')"
-            git pull --rebase --autostash origin main || true
+            # 2026-11-24 修复：并发冲突时不再 `|| true` 静默吞错（曾导致新数据/push 丢失）
+            ok=0
+            for i in 1 2 3; do
+              git fetch origin main
+              if git rebase origin/main; then ok=1; break; fi
+              for f in assets/data.js assets/library.js daily/library.json; do
+                git checkout --theirs -- "$f" 2>/dev/null || true
+                git add -- "$f" 2>/dev/null || true
+              done
+              if git -c core.editor=true rebase --continue; then ok=1; break; fi
+              git rebase --abort 2>/dev/null || true
+              sleep 3
+            done
+            if [ "$ok" != 1 ]; then
+              echo "::error::rebase 三次失败，补抓数据未提交" >&2
+              exit 1
+            fi
             git push origin HEAD:main
           fi

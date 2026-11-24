@@ -172,7 +172,8 @@ def main():
     # 夜间轮次只发收益长图，跳过新品预告那条（用户 2026-11-24 要求）
     if NIGHT_SKIP_NEWPROD and is_night_run():
         print("夜间轮次：跳过新品预告推送（早间轮次照常）", file=sys.stderr)
-        return 0 if img_url else 1
+        # 2026-11-24：长图缺失时已回退文字推送且 Server酱 返回成功，不应再判整体失败
+        return 0
 
     newprod_url = None
     newprod_link = None
@@ -203,7 +204,10 @@ def main():
     else:
         print("无新品预告数据，跳过该条推送", file=sys.stderr)
 
-    return 0 if (img_url and newprod_url) else 1
+    # 2026-11-24：推送本身成功（send 未抛异常即成功）就返回 0；
+    # 长图/新品图缺失已回退文字推送，不能让整条 CI 误报 failure
+    # （2026-11-24 早晨两条 Server酱均 200 SUCCESS 却因缺图返回 1）。
+    return 0
 
 
 if __name__ == "__main__":

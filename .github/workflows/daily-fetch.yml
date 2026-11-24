@@ -17,7 +17,9 @@ permissions:
   contents: write
 
 concurrency:
-  group: daily-fetch
+  # 2026-11-24 修复：原 daily-fetch / nav-ccb / nav-rotate 各组独立，并发写 data.js
+  # 导致 rebase 冲突、新 fetchedAt 被丢弃（页面「数据更新」停在昨晚）。统一分组串行化。
+  group: nav-data
   cancel-in-progress: false
 
 jobs:
@@ -99,6 +101,7 @@ jobs:
         # 幂等：仅并入"成立日<=今天且登记编码未入库"的新品，并为占位产品补抓净值
         # 提交统一交给下方「提交数据」步骤，避免双重 push 竞态
         run: python daily/promote_newproducts.py --gap 1.2 --no-self-commit || true
+        # 2026-11-24：--no-self-commit 参数已补齐（原脚本未定义，导致本步骤每次必失败）。
 
       - name: 同步产品库较新净值到持仓底稿（按登记编码，防双源不同步）
         env:
@@ -119,7 +122,27 @@ jobs:
             echo "无数据变化"
           else
             git commit -m "data: update $(date -u +'%Y-%m-%d')"
-            git pull --rebase --autostash origin main || true
+            # 2026-11-24 修复：原 `git pull --rebase ... || true` 在并发冲突时会吞掉错误，
+            # 随后 git push 因处于 rebase 中间态显示「Everything up-to-date」却没推上去，
+            # 导致新抓取的 fetchedAt/净值被丢弃（页面时间戳停在昨晚）。
+            # 改为带冲突解决的显式重试：数据文件冲突时保留本轮刚抓取的版本（--theirs 在 rebase 中即本轮提交）。
+            ok=0
+            for i in 1 2 3; do
+              git fetch origin main
+              if git rebase origin/main; then ok=1; break; fi
+              # rebase 冲突：data.js/library.js 以本轮抓取结果为准，其余自动合并
+              for f in assets/data.js assets/library.js daily/library.json daily/stats.json assets/newproducts.js daily/newproducts.json; do
+                git checkout --theirs -- "$f" 2>/dev/null || true
+                git add -- "$f" 2>/dev/null || true
+              done
+              if git -c core.editor=true rebase --continue; then ok=1; break; fi
+              git rebase --abort 2>/dev/null || true
+              sleep 3
+            done
+            if [ "$ok" != 1 ]; then
+              echo "::error::rebase 三次失败，数据未提交，请人工干预" >&2
+              exit 1
+            fi
             git push origin HEAD:main
           fi
 

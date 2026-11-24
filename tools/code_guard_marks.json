@@ -1,7 +1,7 @@
 {
   "_doc": "跨端代码守卫共用标记清单 —— 唯一权威来源。WorkBuddy 的 .githooks/pre-push 与 Trae 的 tools/sync_pages.py 都必须读取本文件，禁止在脚本里硬编码标记列表。新增功能后在此登记，两端自动生效。",
   "_maintainer": "任何一端修改本文件后，需在提交信息中说明原因；改动会同时影响两端的推送守卫。",
-  "version": "2026-11-24a56",
+  "version": "2026-11-24a57",
   "protected": {
     "_doc": "受『整批中止』保护的文件：远端内容被他人改过时，整批拒绝推送，必须先 pull 合并。markers 为该文件必须包含的字符串，缺失即判定为旧版/被回退，整批拒推。",
     "index.html": [
@@ -22,7 +22,7 @@
       "data-stamp",
       "B2/Q2：横屏全表由 11px 提到 11.5px",
       "Q1：手机年表/月表",
-      "v=20261124w",
+      "v=20261124x",
       "计息不足 7 天",
       "--blue-soft:#2878af",
       ".pname .mv-under",
@@ -296,7 +296,7 @@
       "公开底稿已脱敏",
       "T.items = T.items.filter(function (t) { return !!t.applyDate; })",
       "登录后可保存你的交易与手工产品数据",
-      "auth.js?v=20261124w",
+      "auth.js?v=20261124x",
       "退出后会清除本机交易缓存",
       "label.innerHTML = CHECK",
       "btn.title = '已登录（点击退出登录）'",
@@ -305,7 +305,7 @@
       "window.__GATE_BYPASS__",
       "id=\"gate-submit\"",
       "id=\"privacy-eye\"",
-      "privacy.js?v=20261124w",
+      "privacy.js?v=20261124x",
       "window.PRIVACY.maskClone",
       ".hero-title-row",
       "if (eye) eye.style.visibility",
@@ -324,7 +324,7 @@
       "multiple size=\"1\"",
       ".ts-cell span{display:block}",
       ".ts-lane{width:176px",
-      "var NP_BUILD = '20261124w'",
+      "var NP_BUILD = '20261124x'",
       "window.__NP_LAYOUT_VERSION !== NP_BUILD",
       ".ts-cell{width:176px;flex:none;padding:6px 2px",
       "2026-11-24 三行版",
@@ -585,7 +585,7 @@
       "2026-11-24 卡片改版：三行呈现",
       "'<div class=\"nhead\">' +",
       "class=\"kl kl-e\">成立",
-      "window.__NP_LAYOUT_VERSION = '20261124w'",
+      "window.__NP_LAYOUT_VERSION = '20261124x'",
       "hit.__npBound",
       "replace(/人民币/g, '')",
       "' is-empty'",
@@ -703,7 +703,10 @@
       "SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}",
       "service_role 绕过 RLS 读取全量交易",
       "shot.py 用这把密钥拉全量交易",
-      "python daily/nav_sites.py"
+      "python daily/nav_sites.py",
+      "group: nav-data",
+      "rebase 三次失败，数据未提交",
+      "--theirs"
     ],
     "tools/sync_pages.py": [
       "def guard_marks"
@@ -804,7 +807,9 @@
       "def eligible_day(p)",
       "timedelta(days=1)",
       "T+1 生效日",
-      "募集起始日 T+1 <="
+      "募集起始日 T+1 <=",
+      "--no-self-commit",
+      "no_self_commit"
     ],
     "daily/shot.py": [
       "inject_live_trades",
@@ -841,7 +846,9 @@
     "daily/notify.py": [
       "NIGHT_SKIP_NEWPROD",
       "def is_night_run",
-      "夜间轮次：跳过新品预告推送"
+      "夜间轮次：跳过新品预告推送",
+      "长图缺失时已回退文字推送且 Server酱 返回成功",
+      "推送本身成功（send 未抛异常即成功）就返回 0"
     ],
     "daily/notify_report.py": [
       "from notify import send",
