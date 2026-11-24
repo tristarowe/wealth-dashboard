@@ -664,13 +664,14 @@
   .gapfill{border:1px dashed var(--rule);border-radius:8px;min-height:56px;display:flex;align-items:center;justify-content:center;background:#fafcfd}
   .gapfill em{font-style:normal;font-size:11px;color:#b7c3cb;letter-spacing:.5px}
   .n-legend{display:flex;gap:16px;align-items:center;font-size:12px;color:var(--muted);margin-top:10px;flex-wrap:wrap}
-  .n-legend i{display:inline-block;width:22px;height:9px;border-radius:3px;background:#fff;border:1.5px solid #0e5a73;vertical-align:middle;margin-right:5px}
+  .n-legend i{display:inline-block;width:22px;height:9px;border-radius:3px;background:#fff;border:1.5px solid #9cbfcb;vertical-align:middle;margin-right:5px}
   /* 卡片：等宽 176，顶部机构色条；2026-11-24 三行版——①名称(风险角标贴末字右对齐)
      ②募集/成立单行。发行机构行按用户要求去掉；仅收纵向留白，字号仍用 11/12/13 阶梯。 */
-  .nchip{border:1px solid var(--rule);border-top:3px solid var(--c);border-radius:8px;background:#fff;box-shadow:0 1px 3px rgba(20,45,60,.05);padding:7px 10px;margin-bottom:7px;cursor:pointer;transition:background .15s}
+  /* 2026-11-24 浅色机构条：--cl 为 --c 与白底混合的浅色；名称取消加粗 600→400 */
+  .nchip{border:1px solid var(--rule);border-top:3px solid var(--cl,var(--c));border-radius:8px;background:#fff;box-shadow:0 1px 3px rgba(20,45,60,.05);padding:7px 10px;margin-bottom:7px;cursor:pointer;transition:background .15s}
   .nchip:hover{background:#f7fbfc}
   .nchip .nhead{display:flex;align-items:flex-start;gap:4px;min-height:34px}
-  .nchip .nm{flex:1;min-width:0;font-size:12.5px;font-weight:600;color:var(--ink);line-height:1.35;word-break:break-all}
+  .nchip .nm{flex:1;min-width:0;font-size:12.5px;font-weight:400;color:var(--ink);line-height:1.35;word-break:break-all}
   .nchip .rk{font-family:var(--mono);font-size:11px;font-weight:600;color:#41606f;background:#eef4f7;border-radius:3px;padding:1px 5px;white-space:nowrap;flex:none;align-self:flex-start;margin-top:0} /* 风险角标固定在第一行右侧，长名称换行不追随下移 */
   .nchip .rk.r3{background:#fdf3e6;color:#a2701f}
   .nchip .rk.r4{background:#fbe9e6;color:#a4453a}
@@ -2254,11 +2255,11 @@
 <!-- 代码类脚本带版本号，改动后同步更新，避免手机端命中旧缓存；数据类脚本不带版本号，保证每日更新能取到 -->
 <!-- 2026-11-23 统一缓存戳：前端改动必须同步 bump，避免浏览器命中旧 JS 造成
      「新 HTML + 旧渲染」的错位（表现为新品预告仍是拉伸甘特卡片 + 巨大原生多选框）。 -->
-<script src="./_shared/js/echarts.min.js?v=20261124i" onerror="this.onerror=null;this.src='./_shared/js/echarts.min.js?t='+Date.now()"></script>
-<script src="./assets/html2canvas.min.js?v=20261124i"></script>
-<script src="./assets/data.js?v=20261124i" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
-<script src="./assets/risk_levels.js?v=20261124i"></script>
-<script src="./assets/transactions.js?v=20261124i"></script>
+<script src="./_shared/js/echarts.min.js?v=20261124j" onerror="this.onerror=null;this.src='./_shared/js/echarts.min.js?t='+Date.now()"></script>
+<script src="./assets/html2canvas.min.js?v=20261124j"></script>
+<script src="./assets/data.js?v=20261124j" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
+<script src="./assets/risk_levels.js?v=20261124j"></script>
+<script src="./assets/transactions.js?v=20261124j"></script>
 <script>
   /* 公开底稿已脱敏：只含 id+pid 的占位行供后台抓净值，不含 applyDate 等明细。
      前端渲染前剔除这类行，真实交易明细由登录后从 Supabase 云端拉取。 */
@@ -2267,16 +2268,16 @@
     if (T && T.items) T.items = T.items.filter(function (t) { return !!t.applyDate; });
   })();
 </script>
-<script src="./assets/newproducts.js?v=20261124i"></script>
-<script src="./assets/library.js?v=20261124i"></script>
-<script src="./assets/supabase-config.js?v=20261124i"></script>
-<script src="./assets/auth.js?v=20261124i"></script>
-<script src="./assets/store.js?v=20261124i" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
+<script src="./assets/newproducts.js?v=20261124j"></script>
+<script src="./assets/library.js?v=20261124j"></script>
+<script src="./assets/supabase-config.js?v=20261124j"></script>
+<script src="./assets/auth.js?v=20261124j"></script>
+<script src="./assets/store.js?v=20261124j" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
 <script>
   /* 先用本地缓存/内置底稿立即渲染，云端数据在后台取回后再重绘，避免等待网络白屏 */
   /* 前序脚本缺失或命中旧缓存时（STORE_READY 不存在）也照常加载看板，避免页面停在空白骨架 */
   (function () {
-    var NP_BUILD = '20261124i';
+    var NP_BUILD = '20261124j';
     function boot(msg, forced) {
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
@@ -2303,7 +2304,7 @@
       // 隐私小眼睛：dashboard.js 就绪后再加载，才能包装 DASHBOARD_REFRESH 并在渲染后套用打码
       if (!window.PRIVACY) {
         var pv = document.createElement('script');
-        pv.src = './assets/privacy.js?v=20261124i';
+        pv.src = './assets/privacy.js?v=20261124j';
         document.body.appendChild(pv);
       }
       if (!window.STORE_REFRESH || typeof window.STORE_REFRESH.then !== 'function') return;

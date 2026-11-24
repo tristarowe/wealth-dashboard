@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261124i';
+  window.__NP_LAYOUT_VERSION = '20261124j';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -5534,6 +5534,18 @@
     for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
     return NP_COLORS[h % NP_COLORS.length];
   }
+  /* 2026-11-24 用户反馈顶部机构色条过深：保留 --c 用于日期文字，另算 --cl（与原色 45% + 白 55%）
+     只给卡片顶边用，同机构配色仍可区分，视觉更轻。非 6 位 hex 直接回退原色。 */
+  function npSoftColor(hex) {
+    var m = /^#?([0-9a-f]{6})$/i.exec(String(hex || ''));
+    if (!m) return hex || '#0e5a73';
+    var n = parseInt(m[1], 16);
+    var ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+    return '#' + ch.map(function (v) {
+      var s = Math.round(v * 0.45 + 255 * 0.55).toString(16);
+      return s.length < 2 ? '0' + s : s;
+    }).join('');
+  }
   function npBindMultiSel(sel, onChange) {
     if (!sel) return;
     var wrap = sel.parentNode;
@@ -5724,7 +5736,7 @@
              发行机构行按用户要求去掉；.nm/.nr/.rk/.na 类名保留供 daily/shot.py 校验。 */
           body += '<div class="nchip" data-org="' + x.channel + '" data-iss="' +
             String(x.issuer || '').replace(/"/g, '&quot;') + '" style="--c:' + color +
-            '" title="' + tip.replace(/"/g, '&quot;') + '">' +
+            ';--cl:' + npSoftColor(color) + '" title="' + tip.replace(/"/g, '&quot;') + '">' +
             '<div class="nhead">' +
               '<div class="nm">' + npShortName(p) + '</div>' +
               (rk ? '<span class="rk' + (rk === 'R3' ? ' r3' : rk === 'R4' || rk === 'R5' ? ' r4' : '') + '">' + rk + '</span>' : '') +
