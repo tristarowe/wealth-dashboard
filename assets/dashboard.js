@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261124p';
+  window.__NP_LAYOUT_VERSION = '20261124q';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -1926,10 +1926,6 @@
         }
         return { m: m, st: st };
       });
-      var bestAnn = null;
-      monthRows.forEach(function (r) {
-        if (r.st.ann !== null && (bestAnn === null || r.st.ann > bestAnn)) bestAnn = r.st.ann;
-      });
       var monthAnnFormula = '年化 = 资金加权内部收益率（XIRR）：Σ Ci/(1+r)^((di−d0)/365)=0 解 r。' +
         '申购记为负、赎回与期末市值记为正，按每笔实际发生日折现；' +
         '截至当月底，从首笔投入到当时的真实资金加权年化，与顶部「累计年化」同口径。' +
@@ -1938,8 +1934,7 @@
       html += '<div class="month-rows">';
       monthRows.slice().reverse().forEach(function (r) {
         var st = r.st;
-        var thumb = (bestAnn !== null && st.ann !== null && Math.abs(st.ann - bestAnn) < 1e-9)
-          ? '<span class="thumb">' + THUMB_UP + '</span>' : '';
+        /* 2026-11-24 q：年化数据条取消大拇指角标，只保留渐变条与数值 */
         html += '<div class="month-item' + (r.m === calState.m ? ' on' : '') + '" data-month="' + r.m + '">' +
           '<span class="m">' + (r.m + 1) + '月</span>' +
           '<span class="v ' + colorBy(st.sum) + '">' + fmtSigned(st.sum) + '</span>' +
@@ -1947,7 +1942,7 @@
           '<span class="d">' + st.pos + '</span>' +
           '<span class="d">' + st.neg + '</span>' +
           '<span class="d">' + st.flat + '</span>' +
-          '<span class="rate-cell ' + rateLevel(st.ann) + '" style="--w:' + barW(st.ann) + '" title="' + monthAnnFormula + '">' + fmtAnn(st.ann) + thumb + '</span>' +
+          '<span class="rate-cell ' + rateLevel(st.ann) + '" style="--w:' + barW(st.ann) + '" title="' + monthAnnFormula + '">' + fmtAnn(st.ann) + '</span>' +
           '</div>';
       });
       html += '</div>';
