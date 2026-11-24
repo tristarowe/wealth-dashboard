@@ -8,7 +8,7 @@
 <!-- 2026-11-24 u 首屏优化：看板脚本提前并行下载，云端域名提前握手；
      两者都不阻塞 HTML 解析，避免旧版「大库先下载完才开始拉 dashboard.js」的串行等待。 -->
 <link rel="preconnect" href="https://asqaxvrovorqfqwpgjkb.supabase.co" crossorigin>
-<link rel="preload" as="script" href="./assets/dashboard.js?v=20261125a" fetchpriority="low">
+<link rel="preload" as="script" href="./assets/dashboard.js?v=20261125b" fetchpriority="low">
 <style>
   :root{
     --bg:#f3f5f7; --card:#fff; --soft:#F9FFFF;
@@ -1899,6 +1899,32 @@
   #metric-value{color:var(--data-ink)!important}
   #sum-table tbody td.mv-col{color:var(--data-ink)!important}
   .pname .mv-under{color:var(--data-ink)!important}
+
+  /* ===== 2026-11-25 方案A 两级导航融合：一级纯文字下划线、二级图标胶囊描边，均无填充 =====
+     用户反馈上下两级按钮区分不大、常点错：一级去蓝底改「文字 + 蓝色下划线」，
+     二级改「图标 + 文字」胶囊、选中只加蓝描边蓝字。两级形态一眼可分，不再混淆。 */
+  @media (max-width:760px){
+    /* 一级：纯文字，选中=蓝字加粗 + 底部 2px 蓝下划线（覆盖全站 .tab.on 蓝填充） */
+    .tabs.has-sub .tab,.tabs.has-sub .tab.on{
+      background:transparent!important;border:0!important;border-radius:0!important;
+      box-shadow:none!important;color:var(--muted)!important;font-weight:500!important;
+      position:relative}
+    .tabs.has-sub .tab.on{color:var(--blue)!important;font-weight:700!important}
+    .tabs.has-sub .tab.on::after{content:"";position:absolute;left:12px;right:12px;bottom:1px;
+      height:2px;border-radius:2px;background:var(--blue)}
+    /* 两级分隔线：虚线改细实线，呼应下划线 */
+    .jumpbar::before{border-top:1px solid var(--rule)}
+    /* 二级：图标+文字胶囊，未选中浅描边灰字、选中蓝描边蓝字，均无填充 */
+    .jumpbar .j{
+      display:flex;align-items:center;justify-content:center;gap:4px;
+      border:1px solid var(--rule)!important;border-radius:8px!important;
+      background:transparent!important;color:var(--muted)!important;font-weight:500!important;
+      height:30px;padding:0 3px!important}
+    .jumpbar .j .ji{width:16px;height:16px;flex:0 0 auto;stroke:currentColor}
+    .jumpbar .j.on{
+      border-color:var(--blue)!important;border-width:1px!important;
+      background:transparent!important;color:var(--blue)!important;font-weight:700!important}
+  }
 </style>
 <script>
   /* 登录墙判定（尽早执行，早于页面内容渲染，避免闪现）：
@@ -2036,9 +2062,9 @@
   <div class="tabpane" id="pane-hold">
     <!-- 方案E 2026-11-20：页内快速跳转条（仅手机端显示，见 CSS .jumpbar）；当前模块高亮由脚本维护 -->
     <nav class="jumpbar" id="jumpbar" aria-label="页内快速跳转">
-      <button type="button" class="j on" data-jump="sec-hold-sum">01 盈亏汇总</button>
-      <button type="button" class="j" data-jump="sec-hold-cal">02 盈亏日历</button>
-      <button type="button" class="j" data-jump="sec-hold-trend">03 盈亏趋势</button>
+      <button type="button" class="j on" data-jump="sec-hold-sum"><svg class="ji" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M3 14.5V10M7 14.5V6M11 14.5V12M15 14.5V8"/></svg><span>汇总</span></button>
+      <button type="button" class="j" data-jump="sec-hold-cal"><svg class="ji" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><rect x="2.5" y="4" width="13" height="11" rx="1.5"/><path d="M2.5 7.5h13M6 2.5v3M12 2.5v3"/></svg><span>日历</span></button>
+      <button type="button" class="j" data-jump="sec-hold-trend"><svg class="ji" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 13l4-4 3 2 5-6"/><path d="M10.5 5h3.5v3.5"/></svg><span>趋势</span></button>
     </nav>
     <section id="sec-hold-sum" class="subpage" data-sub="hold">
       <div class="sec-head"><span class="idx">01</span><h2>盈亏汇总</h2><button type="button" class="info-btn" id="ann-info" aria-label="持仓年化口径说明" aria-expanded="false"><svg viewBox="0 0 16 16" width="10" height="10" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 7v4.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="8" cy="4.6" r=".95" fill="currentColor"/></svg></button><span class="info-pop" id="ann-info-pop" role="note">持仓年化 = 持仓收益 ÷ 持仓成本 × 365 ÷ 计息天数；计息天数 = 最新净值日 − 成交净值日（申购日 T 日，非确认日），与买入所用净值同口径。计息不足 7 天的年化前标 <sup class="dag">*</sup>，样本过短、线性折算波动大，仅供参考。</span></div>
@@ -2158,8 +2184,8 @@
   <div class="tabpane" id="pane-trade" hidden>
     <!-- 方案E 2026-11-20：交易页内分页条（仅手机端显示）——持仓汇总 / 交易流水 两页 -->
     <nav class="jumpbar" id="jumpbar-trade" aria-label="交易页内分页">
-      <button type="button" class="j on" data-jump="sec-trade-sum">01 持仓汇总</button>
-      <button type="button" class="j" data-jump="sec-trade-flow">02 交易流水</button>
+      <button type="button" class="j on" data-jump="sec-trade-sum"><svg class="ji" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M3 14.5V10M7 14.5V6M11 14.5V12M15 14.5V8"/></svg><span>汇总</span></button>
+      <button type="button" class="j" data-jump="sec-trade-flow"><svg class="ji" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5h12M3 9h12M3 13.5h12"/><circle cx="6" cy="4.5" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="9" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="13.5" r="1" fill="currentColor" stroke="none"/></svg><span>流水</span></button>
     </nav>
     <section id="sec-trade-sum" class="subpage" data-sub="trade">
       <div class="sec-head"><span class="idx">01</span><h2>持仓汇总</h2></div>
@@ -2249,8 +2275,8 @@
   <div class="tabpane" id="pane-prod" hidden>
     <!-- 2026-11-24：产品页内分页条（仅手机端显示，见 CSS .jumpbar）——新品预告 / 产品库 两页，参考交易页 -->
     <nav class="jumpbar" id="jumpbar-prod" aria-label="产品页内分页">
-      <button type="button" class="j on" data-jump="sec-prod-new">01 新品预告</button>
-      <button type="button" class="j" data-jump="sec-prod-lib">02 产品库</button>
+      <button type="button" class="j on" data-jump="sec-prod-new"><svg class="ji" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2l1.8 3.9 4.2.5-3.1 2.9.8 4.2L9 11.6l-3.7 1.9.8-4.2L3 6.4l4.2-.5z"/></svg><span>新品</span></button>
+      <button type="button" class="j" data-jump="sec-prod-lib"><svg class="ji" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="3" width="5.5" height="5" rx="1"/><rect x="10" y="3" width="5.5" height="5" rx="1"/><rect x="2.5" y="10" width="5.5" height="5" rx="1"/><rect x="10" y="10" width="5.5" height="5" rx="1"/></svg><span>产品库</span></button>
     </nav>
     <section id="sec-prod-new" class="subpage" data-sub="prod">
       <div class="sec-head"><span class="idx">01</span><h2>新品预告</h2></div>
@@ -2513,9 +2539,9 @@
      「新 HTML + 旧渲染」的错位（表现为新品预告仍是拉伸甘特卡片 + 巨大原生多选框）。 -->
 <!-- 2026-11-24 u：ECharts / html2canvas 改按需加载（趋势图、导出长图才拉），
      不再让 338KB + 47KB 的库阻塞首屏；加载器分别在 dashboard.js 与本页导出逻辑内。 -->
-<script src="./assets/data.js?v=20261125a" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
-<script src="./assets/risk_levels.js?v=20261125a"></script>
-<script src="./assets/transactions.js?v=20261125a"></script>
+<script src="./assets/data.js?v=20261125b" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
+<script src="./assets/risk_levels.js?v=20261125b"></script>
+<script src="./assets/transactions.js?v=20261125b"></script>
 <script>
   /* 公开底稿已脱敏：只含 id+pid 的占位行供后台抓净值，不含 applyDate 等明细。
      前端渲染前剔除这类行，真实交易明细由登录后从 Supabase 云端拉取。 */
@@ -2524,16 +2550,16 @@
     if (T && T.items) T.items = T.items.filter(function (t) { return !!t.applyDate; });
   })();
 </script>
-<script src="./assets/newproducts.js?v=20261125a"></script>
-<script src="./assets/library.js?v=20261125a"></script>
-<script src="./assets/supabase-config.js?v=20261125a"></script>
-<script src="./assets/auth.js?v=20261125a"></script>
-<script src="./assets/store.js?v=20261125a" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
+<script src="./assets/newproducts.js?v=20261125b"></script>
+<script src="./assets/library.js?v=20261125b"></script>
+<script src="./assets/supabase-config.js?v=20261125b"></script>
+<script src="./assets/auth.js?v=20261125b"></script>
+<script src="./assets/store.js?v=20261125b" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
 <script>
   /* 先用本地缓存/内置底稿立即渲染，云端数据在后台取回后再重绘，避免等待网络白屏 */
   /* 前序脚本缺失或命中旧缓存时（STORE_READY 不存在）也照常加载看板，避免页面停在空白骨架 */
   (function () {
-    var NP_BUILD = '20261125a';
+    var NP_BUILD = '20261125b';
     function boot(msg, forced) {
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
@@ -2560,7 +2586,7 @@
       // 隐私小眼睛：dashboard.js 就绪后再加载，才能包装 DASHBOARD_REFRESH 并在渲染后套用打码
       if (!window.PRIVACY) {
         var pv = document.createElement('script');
-        pv.src = './assets/privacy.js?v=20261125a';
+        pv.src = './assets/privacy.js?v=20261125b';
         document.body.appendChild(pv);
       }
       if (!window.STORE_REFRESH || typeof window.STORE_REFRESH.then !== 'function') return;
@@ -3003,7 +3029,7 @@
       if (h2cLoading) return h2cLoading;
       h2cLoading = new Promise(function (resolve, reject) {
         var s = document.createElement('script');
-        s.src = './assets/html2canvas.min.js?v=20261125a';
+        s.src = './assets/html2canvas.min.js?v=20261125b';
         s.onload = resolve;
         s.onerror = function () { h2cLoading = null; reject(new Error('截图组件加载失败')); };
         document.head.appendChild(s);
