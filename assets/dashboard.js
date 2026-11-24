@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261124s';
+  window.__NP_LAYOUT_VERSION = '20261124t';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -3090,7 +3090,9 @@
     if (selPopSel === sel && selPopAnchor === anchorEl) { closeSelPop(); return; }
     closeSelPop();
     var pop = document.createElement('div');
-    pop.className = 'sel-pop' + (opts.single ? ' single' : '');
+    /* 2026-11-24 t：年月筛选走同一弹层但用 .ms-pop 收紧行高，避免 iOS 原生整屏列表 */
+    pop.className = 'sel-pop' + (opts.single ? ' single' : '') +
+      (sel.closest && sel.closest('.month-switch') ? ' ms-pop' : '');
     pop.setAttribute('role', 'listbox');
     var single = !!opts.single;
 
@@ -3218,6 +3220,30 @@
 
   function attachCompactSelects() {
     Array.prototype.forEach.call(document.querySelectorAll('select.th-select'), attachCompactSelect);
+    /* 2026-11-24 t：交易流水/盈亏日历的年月框同样改为自绘紧凑弹层。
+       保留原 select 只作数值存储，外面包一层 .ms-select-wrap + 透明点击层，
+       点整框（含左右箭头之间的值区）都打开 .sel-pop.ms-pop，杜绝 iOS 原生近整屏弹层。 */
+    Array.prototype.forEach.call(document.querySelectorAll('.month-switch select'), function (sel) {
+      if (!sel.parentNode || sel.parentNode.classList.contains('ms-select-wrap')) return;
+      var wrap = document.createElement('span');
+      wrap.className = 'ms-select-wrap';
+      sel.parentNode.insertBefore(wrap, sel);
+      wrap.appendChild(sel);
+      var hit = document.createElement('button');
+      hit.type = 'button';
+      hit.className = 'ms-sel-hit';
+      hit.setAttribute('aria-haspopup', 'listbox');
+      hit.setAttribute('aria-label', sel.getAttribute('aria-label') || '选择年月');
+      hit.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        openSelPop(sel, wrap, { single: true });
+      });
+      wrap.appendChild(hit);
+      sel.addEventListener('change', function () {
+        syncMonthSelState();
+      });
+    });
   }
 
   /* 下拉当前值：由自绘标签居中展示（原生 select 文本无法居中）；多选时显示「已选 N 项」 */
@@ -3296,7 +3322,7 @@
     document.addEventListener('click', function (e) {
       if (!selPop) return;
       if (selPop.contains(e.target)) return;
-      if (e.target.closest && e.target.closest('.sel-wrap')) return;
+      if (e.target.closest && (e.target.closest('.sel-wrap') || e.target.closest('.ms-select-wrap'))) return;
       closeSelPop();
     }, true);
     document.addEventListener('keydown', function (e) {
@@ -5302,7 +5328,10 @@
       var s = sels[i];
       var on = !!(s.value && s.value !== '');
       s.classList.toggle('on', on);
-      s.parentElement.classList.toggle('on', on);
+      /* 2026-11-24 t：select 被 .ms-select-wrap 包住后，用 closest 找到真正的 .month-switch
+         外壳加蓝框，避免给内层 wrap 加 on 导致蓝框丢失。 */
+      var sw = s.closest ? s.closest('.month-switch') : s.parentElement;
+      if (sw) sw.classList.toggle('on', on);
     }
   }
 

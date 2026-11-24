@@ -1816,6 +1816,30 @@
   /* 新品筛选无匹配时给出明确空态，避免所有泳道被隐藏后整页空白 */
   .np-empty{text-align:center;padding:26px 12px;font-size:12px;color:var(--muted)}
   .np-empty[hidden]{display:none}
+
+  /* ===== 2026-11-24 t：年月筛选框贴合文字 + 自绘紧凑弹层 =====
+     原原生 select 在 iOS 上弹出近整屏系统列表（用户截图反馈占屏过多），改为点整框打开
+     与表头筛选同款 .sel-pop 小弹层；框体压到 26px 高、宽度由内容决定，选中只留长方形蓝框。 */
+  .month-switch{height:26px!important;border:1px solid var(--blue-line)!important;
+    border-radius:3px!important;background:transparent!important;overflow:visible}
+  .month-switch.on{border-color:var(--blue)!important}
+  .ms-select-wrap{position:relative;display:inline-flex;align-items:center;justify-content:center;height:24px}
+  .month-switch .mini-select,.month-switch .ms-sel{
+    border:0!important;border-radius:0!important;height:24px!important;min-width:0!important;
+    width:auto!important;padding:0 3px!important;text-align:center!important;text-align-last:center!important;
+    font-family:var(--font)!important;font-size:12px!important;font-weight:500!important;
+    line-height:24px!important;color:var(--muted)!important;background:transparent!important;
+    outline:none!important;-webkit-appearance:none;appearance:none;pointer-events:none;cursor:pointer}
+  .month-switch.on .mini-select,.month-switch.on .ms-sel,
+  .month-switch .mini-select.on,.month-switch .ms-sel.on{color:var(--blue)!important;font-weight:700!important}
+  .ms-sel-hit{position:absolute;inset:0;z-index:2;width:100%;height:100%;padding:0;border:0;
+    background:transparent;cursor:pointer;font-size:0;color:transparent;
+    touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  .ms-arrow{width:18px!important;height:24px!important;background:transparent!important;
+    color:var(--blue)!important;font-size:13px!important;font-weight:500!important}
+  .sel-pop.ms-pop{max-width:min(44vw,132px)!important;min-width:0!important;width:max-content!important;padding:3px!important}
+  .sel-pop.ms-pop .sel-opt{font-size:12px!important;line-height:1.25!important;
+    min-height:0!important;padding:5px 9px!important;text-align:center!important}
 </style>
 <script>
   /* 登录墙判定（尽早执行，早于页面内容渲染，避免闪现）：
@@ -2428,11 +2452,11 @@
 <!-- 代码类脚本带版本号，改动后同步更新，避免手机端命中旧缓存；数据类脚本不带版本号，保证每日更新能取到 -->
 <!-- 2026-11-23 统一缓存戳：前端改动必须同步 bump，避免浏览器命中旧 JS 造成
      「新 HTML + 旧渲染」的错位（表现为新品预告仍是拉伸甘特卡片 + 巨大原生多选框）。 -->
-<script src="./_shared/js/echarts.min.js?v=20261124s" onerror="this.onerror=null;this.src='./_shared/js/echarts.min.js?t='+Date.now()"></script>
-<script src="./assets/html2canvas.min.js?v=20261124s"></script>
-<script src="./assets/data.js?v=20261124s" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
-<script src="./assets/risk_levels.js?v=20261124s"></script>
-<script src="./assets/transactions.js?v=20261124s"></script>
+<script src="./_shared/js/echarts.min.js?v=20261124t" onerror="this.onerror=null;this.src='./_shared/js/echarts.min.js?t='+Date.now()"></script>
+<script src="./assets/html2canvas.min.js?v=20261124t"></script>
+<script src="./assets/data.js?v=20261124t" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
+<script src="./assets/risk_levels.js?v=20261124t"></script>
+<script src="./assets/transactions.js?v=20261124t"></script>
 <script>
   /* 公开底稿已脱敏：只含 id+pid 的占位行供后台抓净值，不含 applyDate 等明细。
      前端渲染前剔除这类行，真实交易明细由登录后从 Supabase 云端拉取。 */
@@ -2441,16 +2465,16 @@
     if (T && T.items) T.items = T.items.filter(function (t) { return !!t.applyDate; });
   })();
 </script>
-<script src="./assets/newproducts.js?v=20261124s"></script>
-<script src="./assets/library.js?v=20261124s"></script>
-<script src="./assets/supabase-config.js?v=20261124s"></script>
-<script src="./assets/auth.js?v=20261124s"></script>
-<script src="./assets/store.js?v=20261124s" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
+<script src="./assets/newproducts.js?v=20261124t"></script>
+<script src="./assets/library.js?v=20261124t"></script>
+<script src="./assets/supabase-config.js?v=20261124t"></script>
+<script src="./assets/auth.js?v=20261124t"></script>
+<script src="./assets/store.js?v=20261124t" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
 <script>
   /* 先用本地缓存/内置底稿立即渲染，云端数据在后台取回后再重绘，避免等待网络白屏 */
   /* 前序脚本缺失或命中旧缓存时（STORE_READY 不存在）也照常加载看板，避免页面停在空白骨架 */
   (function () {
-    var NP_BUILD = '20261124s';
+    var NP_BUILD = '20261124t';
     function boot(msg, forced) {
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
@@ -2477,7 +2501,7 @@
       // 隐私小眼睛：dashboard.js 就绪后再加载，才能包装 DASHBOARD_REFRESH 并在渲染后套用打码
       if (!window.PRIVACY) {
         var pv = document.createElement('script');
-        pv.src = './assets/privacy.js?v=20261124s';
+        pv.src = './assets/privacy.js?v=20261124t';
         document.body.appendChild(pv);
       }
       if (!window.STORE_REFRESH || typeof window.STORE_REFRESH.then !== 'function') return;
