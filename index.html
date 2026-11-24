@@ -1199,7 +1199,7 @@
     .metric .m-sub{font-size:10.5px;margin-top:5px;padding-top:4px}
     .metric .m-sub b{font-size:12px}
     .tabs{width:100%;overflow-x:auto;justify-content:flex-start;border-radius:12px}
-    /* 两行导航融合 2026-11-20：首页/交易有子页条时，主标签去底圆角/下边框/下间距，与子页条拼成一个卡片；产品页无子页条保持圆角 */
+    /* 两行导航融合 2026-11-20（2026-11-24 产品页也纳入）：有子页条时，主标签去底圆角/下边框/下间距，与子页条拼成一个卡片 */
     .tabs.has-sub{border-radius:12px 12px 0 0;border-bottom:0;margin-bottom:0;height:36px;padding:2px 4px;box-sizing:border-box}
     /* 手机主标签行高压缩 2026-11-20：与子页条统一 36px 行高（按钮 32px），字号不变 */
     .tab{flex:1 0 auto;padding:2px 14px;font-size:12.5px;height:32px;min-height:0;box-sizing:border-box}
@@ -1994,7 +1994,12 @@
 
   <!-- ================= 产品 ================= -->
   <div class="tabpane" id="pane-prod" hidden>
-    <section>
+    <!-- 2026-11-24：产品页内分页条（仅手机端显示，见 CSS .jumpbar）——新品预告 / 产品库 两页，参考交易页 -->
+    <nav class="jumpbar" id="jumpbar-prod" aria-label="产品页内分页">
+      <button type="button" class="j on" data-jump="sec-prod-new">01 新品预告</button>
+      <button type="button" class="j" data-jump="sec-prod-lib">02 产品库</button>
+    </nav>
+    <section id="sec-prod-new" class="subpage" data-sub="prod">
       <div class="sec-head"><span class="idx">01</span><h2>新品预告</h2></div>
 
       <!-- 2026-11-24：代销机构 + 发行机构两个多选按钮并排，泳道内容随筛选联动 -->
@@ -2012,7 +2017,7 @@
       </div>
     </section>
 
-    <section>
+    <section id="sec-prod-lib" class="subpage subpage-off" data-sub="prod">
       <div class="sec-head"><span class="idx">02</span><h2>产品库</h2><button class="btn" id="open-add" style="margin-left:auto">＋ 添加产品</button></div>
 
       <div class="filters">
@@ -2249,11 +2254,11 @@
 <!-- 代码类脚本带版本号，改动后同步更新，避免手机端命中旧缓存；数据类脚本不带版本号，保证每日更新能取到 -->
 <!-- 2026-11-23 统一缓存戳：前端改动必须同步 bump，避免浏览器命中旧 JS 造成
      「新 HTML + 旧渲染」的错位（表现为新品预告仍是拉伸甘特卡片 + 巨大原生多选框）。 -->
-<script src="./_shared/js/echarts.min.js?v=20261124h" onerror="this.onerror=null;this.src='./_shared/js/echarts.min.js?t='+Date.now()"></script>
-<script src="./assets/html2canvas.min.js?v=20261124h"></script>
-<script src="./assets/data.js?v=20261124h" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
-<script src="./assets/risk_levels.js?v=20261124h"></script>
-<script src="./assets/transactions.js?v=20261124h"></script>
+<script src="./_shared/js/echarts.min.js?v=20261124i" onerror="this.onerror=null;this.src='./_shared/js/echarts.min.js?t='+Date.now()"></script>
+<script src="./assets/html2canvas.min.js?v=20261124i"></script>
+<script src="./assets/data.js?v=20261124i" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
+<script src="./assets/risk_levels.js?v=20261124i"></script>
+<script src="./assets/transactions.js?v=20261124i"></script>
 <script>
   /* 公开底稿已脱敏：只含 id+pid 的占位行供后台抓净值，不含 applyDate 等明细。
      前端渲染前剔除这类行，真实交易明细由登录后从 Supabase 云端拉取。 */
@@ -2262,16 +2267,16 @@
     if (T && T.items) T.items = T.items.filter(function (t) { return !!t.applyDate; });
   })();
 </script>
-<script src="./assets/newproducts.js?v=20261124h"></script>
-<script src="./assets/library.js?v=20261124h"></script>
-<script src="./assets/supabase-config.js?v=20261124h"></script>
-<script src="./assets/auth.js?v=20261124h"></script>
-<script src="./assets/store.js?v=20261124h" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
+<script src="./assets/newproducts.js?v=20261124i"></script>
+<script src="./assets/library.js?v=20261124i"></script>
+<script src="./assets/supabase-config.js?v=20261124i"></script>
+<script src="./assets/auth.js?v=20261124i"></script>
+<script src="./assets/store.js?v=20261124i" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
 <script>
   /* 先用本地缓存/内置底稿立即渲染，云端数据在后台取回后再重绘，避免等待网络白屏 */
   /* 前序脚本缺失或命中旧缓存时（STORE_READY 不存在）也照常加载看板，避免页面停在空白骨架 */
   (function () {
-    var NP_BUILD = '20261124h';
+    var NP_BUILD = '20261124i';
     function boot(msg, forced) {
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
@@ -2298,7 +2303,7 @@
       // 隐私小眼睛：dashboard.js 就绪后再加载，才能包装 DASHBOARD_REFRESH 并在渲染后套用打码
       if (!window.PRIVACY) {
         var pv = document.createElement('script');
-        pv.src = './assets/privacy.js?v=20261124h';
+        pv.src = './assets/privacy.js?v=20261124i';
         document.body.appendChild(pv);
       }
       if (!window.STORE_REFRESH || typeof window.STORE_REFRESH.then !== 'function') return;
@@ -2471,9 +2476,9 @@
     }
     function show(id) {
       tabs.forEach(function (t) { t.classList.toggle('on', t.dataset.tab === id); });
-      // 两行导航融合：首页/交易有子页条时给主标签加 has-sub（去底圆角拼成一体），产品页无子页条保持圆角
+      // 两行导航融合：首页/交易/产品都有子页条时给主标签加 has-sub（去底圆角拼成一体）
       var tabsBox = document.getElementById('tabs');
-      if (tabsBox) tabsBox.classList.toggle('has-sub', id === 'hold' || id === 'trade');
+      if (tabsBox) tabsBox.classList.toggle('has-sub', id === 'hold' || id === 'trade' || id === 'prod');
       VALID.forEach(function (k) {
         var pane = document.getElementById('pane-' + k);
         if (pane) pane.hidden = (k !== id);
@@ -2503,13 +2508,14 @@
     });
   })();
 
-  // 方案E 2026-11-20（分页版）：首页3子页 / 交易页2子页切换 + 返回顶部
+  // 方案E 2026-11-20（分页版）：首页3子页 / 交易页2子页 / 产品页2子页切换 + 返回顶部
   // 手机端点标签只显示对应子页（.subpage-off 隐藏），桌面端不隐藏仍全部纵向排列。
   (function () {
     var topBtn = document.getElementById('to-top');
     var groups = [
       { pane: 'pane-hold', bar: 'jumpbar' },
-      { pane: 'pane-trade', bar: 'jumpbar-trade' }
+      { pane: 'pane-trade', bar: 'jumpbar-trade' },
+      { pane: 'pane-prod', bar: 'jumpbar-prod' }
     ].map(function (g) {
       var bar = document.getElementById(g.bar);
       var pane = document.getElementById(g.pane);

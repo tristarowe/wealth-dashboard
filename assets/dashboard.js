@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261124h';
+  window.__NP_LAYOUT_VERSION = '20261124i';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -4775,11 +4775,19 @@
     closePanel();
   }
 
+  /* 2026-11-24：产品页已拆成两个子页（新品预告 / 产品库），跨页跳转需落到产品库子页，
+     否则手机端默认停在「新品预告」，筛选后的表格仍是 .subpage-off 隐藏的。复用子页切换按钮的逻辑。 */
+  function showProdSubpage(id) {
+    var btn = document.querySelector('#jumpbar-prod .j[data-jump="' + id + '"]');
+    if (btn) btn.click();
+  }
+
   /* 持仓汇总的产品名 → 产品库：清空筛选，按产品名过滤并滚动到列表 */
   function gotoProduct(pid) {
     var p = findProductById(pid);
     if (!p) return;
     switchTab('prod');
+    showProdSubpage('sec-prod-lib');
     ['sale-sel', 'org-sel', 'risk-sel', 'term-sel', 'incep-sel', 'hold-sel'].forEach(function (id) {
       var sel = document.getElementById(id);
       if (!sel) return;
