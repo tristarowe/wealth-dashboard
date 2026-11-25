@@ -1,30 +1,15 @@
 {
-  "asOf": "2026-11-24",
-  "fetchedAt": "2026-11-24 14:51",
+  "asOf": "2026-11-25",
+  "fetchedAt": "2026-11-25 00:19",
   "source": "六大行及股份制银行新品公告 · 销售文件要素表",
   "window": {
-    "start": "2026-11-24",
-    "end": "2026-12-01"
+    "start": "2026-11-25",
+    "end": "2026-12-02"
   },
   "institutions": [
     "建设银行"
   ],
   "items": [
-    {
-      "name": "工银理财·添利宝现金管理类开放净值型理财产品158号",
-      "issuer": "工银理财有限责任公司",
-      "short": "添利宝现金管理类开放净值型158号",
-      "regCode": "Z7000826002155",
-      "raiseStart": "2026-11-24",
-      "raiseEnd": "2026-11-24",
-      "establish": "2026-11-25",
-      "quotaWan": null,
-      "risk": "R1",
-      "riskRaw": "PR1",
-      "mode": "开放式净值型",
-      "saleChannel": "建设银行",
-      "source": "建行官网新品公告·销售文件要素表"
-    },
     {
       "name": "招银理财招睿增鑫30天持有期4号增强型固收类理财计划",
       "issuer": "招银理财有限责任公司",
@@ -37,21 +22,6 @@
       "risk": "R2",
       "riskRaw": "PR2 中低风险",
       "mode": "",
-      "saleChannel": "建设银行",
-      "source": "建行官网新品公告·销售文件要素表"
-    },
-    {
-      "name": "中邮理财灵活·鸿运最短持有14天16号人民币理财产品",
-      "issuer": "中邮理财有限责任公司",
-      "short": "灵活·鸿运最短持有14天16号人民币",
-      "regCode": "Z7001925000012",
-      "raiseStart": "2026-11-25",
-      "raiseEnd": "2026-11-25",
-      "establish": "2026-11-25",
-      "quotaWan": null,
-      "risk": "R2",
-      "riskRaw": "PR2 中低风险",
-      "mode": "开放式净值型 产品风险等级 PR2 中低风险 以上评定结果为中邮理财有限责任公司",
       "saleChannel": "建设银行",
       "source": "建行官网新品公告·销售文件要素表"
     },
@@ -166,21 +136,6 @@
       "channel": "建设银行",
       "products": [
         {
-          "name": "工银理财·添利宝现金管理类开放净值型理财产品158号",
-          "issuer": "工银理财有限责任公司",
-          "short": "添利宝现金管理类开放净值型158号",
-          "regCode": "Z7000826002155",
-          "raiseStart": "2026-11-24",
-          "raiseEnd": "2026-11-24",
-          "establish": "2026-11-25",
-          "quotaWan": null,
-          "risk": "R1",
-          "riskRaw": "PR1",
-          "mode": "开放式净值型",
-          "saleChannel": "建设银行",
-          "source": "建行官网新品公告·销售文件要素表"
-        },
-        {
           "name": "招银理财招睿增鑫30天持有期4号增强型固收类理财计划",
           "issuer": "招银理财有限责任公司",
           "short": "招睿增鑫30天持有期4号增强型固收类理财计划",
@@ -192,21 +147,6 @@
           "risk": "R2",
           "riskRaw": "PR2 中低风险",
           "mode": "",
-          "saleChannel": "建设银行",
-          "source": "建行官网新品公告·销售文件要素表"
-        },
-        {
-          "name": "中邮理财灵活·鸿运最短持有14天16号人民币理财产品",
-          "issuer": "中邮理财有限责任公司",
-          "short": "灵活·鸿运最短持有14天16号人民币",
-          "regCode": "Z7001925000012",
-          "raiseStart": "2026-11-25",
-          "raiseEnd": "2026-11-25",
-          "establish": "2026-11-25",
-          "quotaWan": null,
-          "risk": "R2",
-          "riskRaw": "PR2 中低风险",
-          "mode": "开放式净值型 产品风险等级 PR2 中低风险 以上评定结果为中邮理财有限责任公司",
           "saleChannel": "建设银行",
           "source": "建行官网新品公告·销售文件要素表"
         },
@@ -319,57 +259,42 @@
     }
   ],
   "stats": {
-    "notices": 82,
+    "notices": 70,
     "candidates": 12,
-    "kept": 10,
-    "dropped": 3,
+    "kept": 8,
+    "dropped": 6,
     "failed": 0,
     "quotaRejected": 0
   },
   "failed": [],
   "established": [
     {
-      "name": "中银理财-稳富7天持有期8号",
-      "issuer": "中银理财有限责任公司",
-      "short": "稳富7天持有期8号",
-      "regCode": "Z7001026001661",
-      "raiseStart": "2026-11-23",
-      "raiseEnd": "2026-11-23",
-      "establish": "2026-11-24",
+      "name": "工银理财·添利宝现金管理类开放净值型理财产品158号",
+      "issuer": "工银理财有限责任公司",
+      "short": "添利宝现金管理类开放净值型158号",
+      "regCode": "Z7000826002155",
+      "raiseStart": "2026-11-24",
+      "raiseEnd": "2026-11-24",
+      "establish": "2026-11-25",
       "quotaWan": null,
-      "risk": "R2",
-      "riskRaw": "",
-      "mode": "开放式净值型产品",
+      "risk": "R1",
+      "riskRaw": "PR1",
+      "mode": "开放式净值型",
       "saleChannel": "建设银行",
       "source": "建行官网新品公告·销售文件要素表"
     },
     {
-      "name": "中银理财-稳富14天持有期6号",
-      "issuer": "中银理财有限责任公司",
-      "short": "稳富14天持有期6号",
-      "regCode": "Z7001026001934",
-      "raiseStart": "2026-11-23",
-      "raiseEnd": "2026-11-23",
-      "establish": "2026-11-24",
+      "name": "中邮理财灵活·鸿运最短持有14天16号人民币理财产品",
+      "issuer": "中邮理财有限责任公司",
+      "short": "灵活·鸿运最短持有14天16号人民币",
+      "regCode": "Z7001925000012",
+      "raiseStart": "2026-11-25",
+      "raiseEnd": "2026-11-25",
+      "establish": "2026-11-25",
       "quotaWan": null,
       "risk": "R2",
-      "riskRaw": "",
-      "mode": "开放式净值型产品",
-      "saleChannel": "建设银行",
-      "source": "建行官网新品公告·销售文件要素表"
-    },
-    {
-      "name": "中银理财-悦享天添30号",
-      "issuer": "中银理财有限责任公司",
-      "short": "悦享天添30号",
-      "regCode": "Z7001026001655",
-      "raiseStart": "2026-11-23",
-      "raiseEnd": "2026-11-23",
-      "establish": "2026-11-24",
-      "quotaWan": null,
-      "risk": "R2",
-      "riskRaw": "",
-      "mode": "开放式净值型产品",
+      "riskRaw": "PR2 中低风险",
+      "mode": "开放式净值型 产品风险等级 PR2 中低风险 以上评定结果为中邮理财有限责任公司",
       "saleChannel": "建设银行",
       "source": "建行官网新品公告·销售文件要素表"
     }
