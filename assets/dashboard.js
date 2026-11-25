@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261125p';
+  window.__NP_LAYOUT_VERSION = '20261125q';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -2240,7 +2240,7 @@
         markPoint/markLine + SVG 渲染器（约 500KB，gzip 173KB），并在首屏 init 后
         立即用 fetch 预热 HTTP 缓存、load 完成后空闲注入脚本——用户读首屏这几秒里
         图库已就绪，切到趋势页几乎不再等待。 */
-  var CHART_URL = './_shared/js/echarts.slim.js?v=20261125p';
+  var CHART_URL = './_shared/js/echarts.slim.js?v=20261125q';
   function injectEcharts() {
     if (window.echarts || window.__ECHARTS_INJECTED__) return;
     window.__ECHARTS_INJECTED__ = true;
@@ -5794,6 +5794,9 @@
      pickerSel 是面板临时勾选集：打开面板按全局选中集初始化（全选→空、部分→显示已选），
      每次改搜索词重置为空（搜索结果默认不勾选），提交时才替换全局选中集。 */
   var pickerSel = [];
+  /* 2026-11-25：本次打开面板是否手动改过勾选。用于区分「打开时带出的已选 √」与
+     「用户本次重新勾选」——只有后者/搜索态才让按钮回到「选择」，否则部分选中时为「清除」。 */
+  var pickerTouched = false;
 
   function pickerMatches(p) {
     var q = pickerQuery.trim().toLowerCase();
@@ -5842,6 +5845,7 @@
        若当前是「单独选择」的部分产品（非全选），把已选产品的 √ 显示出来；
        默认全选所有产品时无需打勾，临时集保持空。 */
     pickerQuery = '';
+    pickerTouched = false;
     var allIds = pickableProducts().map(function (p) { return p.id; });
     var isAll = allIds.length > 0 && allIds.every(function (id) { return selectedIds.indexOf(id) !== -1; });
     pickerSel = isAll ? [] : selectedIds.slice();
@@ -6271,6 +6275,8 @@
       } else if (!t.checked && idx !== -1) {
         pickerSel.splice(idx, 1);
       }
+      pickerTouched = true;
+      if (window.__syncPickerToggle) window.__syncPickerToggle();
     });
 
     /* 点产品名 = 只看这一只（原「仅选」按钮的职责，按钮已取消）。
@@ -6297,6 +6303,7 @@
     if (search) search.addEventListener('input', function () {
       pickerQuery = search.value;
       pickerSel = [];   /* 每次改搜索词重置临时勾选，结果默认不打勾 */
+      pickerTouched = false;
       renderPickerList();
       syncPickerToggle();
     });
@@ -6307,12 +6314,32 @@
     });
 
     var toggleBtn = panel.querySelector('[data-act="toggle"]');
+    /* 2026-11-25：部分选中且未搜索、未重新勾选时按钮改为「清除」——点它清空当前选择、
+       恢复默认全选（全部产品）；其余情况仍是「选择」（提交当前搜索/勾选结果）。 */
     function syncPickerToggle() {
       if (!toggleBtn) return;
-      toggleBtn.textContent = '选择';
+      var allIds = pickableProducts().map(function (p) { return p.id; });
+      var isAll = allIds.length > 0 && allIds.every(function (id) { return selectedIds.indexOf(id) !== -1; });
+      var searching = !!(pickerQuery && pickerQuery.trim());
+      toggleBtn.textContent = (!searching && !pickerTouched && !isAll && allIds.length > 0) ? '清除' : '选择';
+      toggleBtn.title = toggleBtn.textContent === '清除'
+        ? '清除当前选择，恢复默认全部产品'
+        : '选择当前结果（手动勾过则只选勾中的）';
     }
     window.__syncPickerToggle = syncPickerToggle;
     syncPickerToggle();
+
+    /* 「清除」：撤销部分选择，恢复默认全选全部产品，并收起面板。 */
+    function clearPickerChoice() {
+      selectedIds = pickableProducts().map(function (p) { return p.id; });
+      pickerSel = [];
+      pickerTouched = false;
+      renderPickerList();
+      applySelection();
+      updatePickerLabel();
+      syncPickerToggle();
+      closePanel();
+    }
 
     /* 「选择」/回车只作用于当前可见项：手动勾过就用勾中的，否则全选可见项（默认全选语义）；
        提交后替换全局选中集（=只看这几只），收起面板。 */
@@ -6321,12 +6348,16 @@
       if (!ids.length) return;
       selectedIds = pickerSel.length ? pickerSel.slice() : ids;
       pickerSel = [];
+      pickerTouched = false;
       renderPickerList();
       applySelection();
       syncPickerToggle();
       closePanel();
     }
-    if (toggleBtn) toggleBtn.addEventListener('click', commitPickerChoice);
+    if (toggleBtn) toggleBtn.addEventListener('click', function () {
+      if (toggleBtn.textContent === '清除') clearPickerChoice();
+      else commitPickerChoice();
+    });
   }
 
   /* ---------------- 手动更新数据 ---------------- */
