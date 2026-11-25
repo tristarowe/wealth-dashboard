@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261125g';
+  window.__NP_LAYOUT_VERSION = '20261125h';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -276,13 +276,14 @@
      ② 存续期开放日申购、赎回：T+1 个交易日确认，遇周末与法定节假日顺延。
      成立日若恰逢非交易日，份额实际在下个交易日确认，故取「成立日」与「T+1 工作日」较晚者。
      非募集期的存量记录不改写（T+2 产品、跨节顺延等以人工填写为准）。
-     判定只用产品库要素表里的 raiseStart/raiseEnd/establish（说明书原文），不拿首个净值日
-     当成立日——净值序列可能被截断，用截断后的首点会把老产品误判成募集期。 */
+     判定只用产品库要素表里的 raiseStart/raiseEnd/inception（说明书原文；新品数据里成立日字段名是
+     establish），不拿首个净值日当成立日——净值序列可能被截断，用截断后的首点会把老产品误判成募集期。 */
   function confirmDateFor(p, applyDate, stored) {
     var nd = nextWorkday(applyDate);
     if (!applyDate) return stored || nd || '';
     var it = p ? libItemOf(p) : null;
-    var establish = it && it.establish;
+    /* 产品库把成立日存成 inception（说明书「成立日」），新品数据里叫 establish，两者都认 */
+    var establish = it && (it.establish || it.inception);
     var rs = it && it.raiseStart;
     var re = it && it.raiseEnd;
     var inRaise = !!(establish && applyDate < establish &&
@@ -2232,7 +2233,7 @@
         markPoint/markLine + SVG 渲染器（约 500KB，gzip 173KB），并在首屏 init 后
         立即用 fetch 预热 HTTP 缓存、load 完成后空闲注入脚本——用户读首屏这几秒里
         图库已就绪，切到趋势页几乎不再等待。 */
-  var CHART_URL = './_shared/js/echarts.slim.js?v=20261125g';
+  var CHART_URL = './_shared/js/echarts.slim.js?v=20261125h';
   function injectEcharts() {
     if (window.echarts || window.__ECHARTS_INJECTED__) return;
     window.__ECHARTS_INJECTED__ = true;
