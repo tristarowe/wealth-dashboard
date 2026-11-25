@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261125l';
+  window.__NP_LAYOUT_VERSION = '20261125m';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -2240,7 +2240,7 @@
         markPoint/markLine + SVG 渲染器（约 500KB，gzip 173KB），并在首屏 init 后
         立即用 fetch 预热 HTTP 缓存、load 完成后空闲注入脚本——用户读首屏这几秒里
         图库已就绪，切到趋势页几乎不再等待。 */
-  var CHART_URL = './_shared/js/echarts.slim.js?v=20261125l';
+  var CHART_URL = './_shared/js/echarts.slim.js?v=20261125m';
   function injectEcharts() {
     if (window.echarts || window.__ECHARTS_INJECTED__) return;
     window.__ECHARTS_INJECTED__ = true;
@@ -5799,10 +5799,18 @@
       (p.regCode || '').toLowerCase().indexOf(q) !== -1;
   }
 
+  /* 2026-11-25 产品面板按名称排序 + 全选/反选仅作用于搜索结果：
+     搜索只负责过滤，不改变顺序；全选/反选以当前可见项为范围，搜「建信」再按一次即全选这 4 只。 */
+  function visiblePickerProducts() {
+    return pickableProducts().filter(pickerMatches);
+  }
+
   function renderPickerList() {
     var list = document.getElementById('ms-list');
     if (!list) return;
-    var items = sortBySearch(pickableProducts().filter(pickerMatches), pickerQuery);
+    var items = visiblePickerProducts().sort(function (a, b) {
+      return prodDispName(a).localeCompare(prodDispName(b), 'zh-CN');
+    });
     if (!items.length) {
       list.innerHTML = '<div class="ms-empty">未找到匹配产品</div>';
       return;
@@ -5829,6 +5837,7 @@
     var search = document.getElementById('ms-search');
     if (search) { search.value = ''; search.focus(); }
     renderPickerList();
+    if (window.__syncPickerToggle) window.__syncPickerToggle();
     var r = trigger.getBoundingClientRect();
     var pw = panel.offsetWidth;
     var ph = panel.offsetHeight;
@@ -6274,21 +6283,28 @@
     if (search) search.addEventListener('input', function () {
       pickerQuery = search.value;
       renderPickerList();
+      syncPickerToggle();
     });
 
     var toggleBtn = panel.querySelector('[data-act="toggle"]');
+    /* 全选/反选只作用于当前搜索可见的产品：搜「建信」后按一次即把这 4 只全选，
+       不再动搜索结果之外的产品；没有搜索词时可见项=全部，行为与原来一致。 */
     function syncPickerToggle() {
       if (!toggleBtn) return;
-      var total = pickableProducts().length;
-      var all = total > 0 && selectedIds.length >= total;
+      var ids = visiblePickerProducts().map(function (p) { return p.id; });
+      var all = ids.length > 0 && ids.every(function (id) { return selectedIds.indexOf(id) !== -1; });
       toggleBtn.textContent = all ? '反选' : '全选';
     }
     window.__syncPickerToggle = syncPickerToggle;
     syncPickerToggle();
     if (toggleBtn) toggleBtn.addEventListener('click', function () {
-      var ids = pickableProducts().map(function (p) { return p.id; });
-      var all = selectedIds.length >= ids.length;
-      selectedIds = all ? [] : ids;
+      var ids = visiblePickerProducts().map(function (p) { return p.id; });
+      var all = ids.length > 0 && ids.every(function (id) { return selectedIds.indexOf(id) !== -1; });
+      if (all) ids.forEach(function (id) {
+        var k = selectedIds.indexOf(id);
+        if (k !== -1) selectedIds.splice(k, 1);
+      });
+      else ids.forEach(function (id) { if (selectedIds.indexOf(id) === -1) selectedIds.push(id); });
       renderPickerList();
       applySelection();
       syncPickerToggle();
