@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261125e';
+  window.__NP_LAYOUT_VERSION = '20261125f';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -2185,7 +2185,7 @@
         markPoint/markLine + SVG 渲染器（约 500KB，gzip 173KB），并在首屏 init 后
         立即用 fetch 预热 HTTP 缓存、load 完成后空闲注入脚本——用户读首屏这几秒里
         图库已就绪，切到趋势页几乎不再等待。 */
-  var CHART_URL = './_shared/js/echarts.slim.js?v=20261125e';
+  var CHART_URL = './_shared/js/echarts.slim.js?v=20261125f';
   function injectEcharts() {
     if (window.echarts || window.__ECHARTS_INJECTED__) return;
     window.__ECHARTS_INJECTED__ = true;
@@ -5940,11 +5940,15 @@
 
     var NP = window.NEW_PRODUCTS || { lanes: [] };
     var _todayKey = ymd(new Date());
-    /* 拉平所有产品（附代销机构 + 发行机构），过滤已成立（成立日<=今天不再算新品预告） */
+    /* 拉平所有产品（附代销机构 + 发行机构）：
+       过滤已成立（成立日<=今天不再算新品预告）；
+       2026-11-25 起：募集起始日已过去的产品不再呈现——起始日为 24 号的产品，
+       到了 25 号（其 T+1）即从新品预告中移除，只保留 raiseStart >= 今天的产品。 */
     var flat = [];
     (NP.lanes || []).forEach(function (l) {
       (l.products || []).forEach(function (p) {
         if (p.establish && p.establish <= _todayKey) return;
+        if (p.raiseStart && p.raiseStart < _todayKey) return;
         flat.push({ p: p, channel: npChannelOf(p), issuer: npIssuerOf(p) });
       });
     });
