@@ -8,7 +8,7 @@
 <!-- 2026-11-24 u 首屏优化：看板脚本提前并行下载，云端域名提前握手；
      两者都不阻塞 HTML 解析，避免旧版「大库先下载完才开始拉 dashboard.js」的串行等待。 -->
 <link rel="preconnect" href="https://asqaxvrovorqfqwpgjkb.supabase.co" crossorigin>
-<link rel="preload" as="script" href="./assets/dashboard.js?v=20261125f" fetchpriority="low">
+<link rel="preload" as="script" href="./assets/dashboard.js?v=20261125g" fetchpriority="low">
 <style>
   :root{
     --bg:#f3f5f7; --card:#fff; --soft:#F9FFFF;
@@ -1797,8 +1797,12 @@
      整数段占满可用宽度且右对齐，点和小数段紧跟其后。这样无论字体是否等宽、
      千分位逗号宽度如何、iOS 是否缓存旧 CSS，小数点都落在同一竖线。
      （前两次只靠 tabular-nums + 右对齐，iOS 旧缓存下仍左对齐，故改结构性方案） */
+  /* 2026-11-25：金额格字体与「确认净值/确认日期」等数字列统一为 var(--mono)。
+     此前 .mcell 用系统无衬线（金额）而净值/日期用等宽，同一行两套字形，
+     目视金额偏粗、日期偏细（交易流水红框内四行即此问题）。小数点同列由 inline-grid
+     锁定，不依赖字体，故统一字体不会让小数点错位。 */
   .mcell{display:inline-grid;grid-template-columns:1fr auto auto;width:100%;
-    font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','PingFang SC','Microsoft YaHei',sans-serif!important;
+    font-family:var(--mono)!important;
     font-variant-numeric:tabular-nums lining-nums!important;
     font-feature-settings:'tnum' 1,'lnum' 1!important;
     -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
@@ -2474,13 +2478,13 @@
       <label class="field">成交净值（T日）<input id="trade-nav" inputmode="decimal" placeholder="自动带出T日净值，可手工修改"></label>
       <label class="field field-wide">确认日期
         <span class="dp-wrap">
-          <input id="trade-confirm" type="text" readonly inputmode="none" autocomplete="off" placeholder="默认T+1工作日，点此选择" aria-haspopup="dialog">
+          <input id="trade-confirm" type="text" readonly inputmode="none" autocomplete="off" placeholder="募集期认购按成立日、存续期按 T+1 工作日自动带出" aria-haspopup="dialog">
           <svg class="dp-ico" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="3" y="5.5" width="18" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3 10.5h18M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
         </span>
       </label>
       <input type="hidden" id="trade-channel" value="建设银行">
     </div>
-    <div class="note-line">按申购日（T日）净值成交，不收手续费；确认日期默认为 T+1 工作日。成交净值与确认日期自动带出，均可手工修改。申购填金额、按成交净值折算份额；赎回/清仓填份额（清仓自动带出全部可卖份额）、按成交净值自动折算金额。所有交易均为人工录入，实际以银行 App 为准。</div>
+    <div class="note-line">按申购日（T日）净值成交，不收手续费；确认日期自动带出——募集期认购取产品成立日（如招睿增鑫30天4号 11-24 认购、11-27 成立即 11-27 确认），存续期申购/赎回取 T+1 工作日，遇周末与法定节假日顺延。成交净值与确认日期均可手工修改。申购填金额、按成交净值折算份额；赎回/清仓填份额（清仓自动带出全部可卖份额）、按成交净值自动折算金额。所有交易均为人工录入，实际以银行 App 为准。</div>
     </div>
     <div class="modal-foot"><button type="button" class="btn" data-close="modal-trade">取消</button><button type="button" class="btn primary" id="trade-submit">提交</button></div>
   </div>
@@ -2578,9 +2582,9 @@
      「新 HTML + 旧渲染」的错位（表现为新品预告仍是拉伸甘特卡片 + 巨大原生多选框）。 -->
 <!-- 2026-11-24 u：ECharts / html2canvas 改按需加载（趋势图、导出长图才拉），
      不再让 338KB + 47KB 的库阻塞首屏；加载器分别在 dashboard.js 与本页导出逻辑内。 -->
-<script src="./assets/data.js?v=20261125f" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
-<script src="./assets/risk_levels.js?v=20261125f"></script>
-<script src="./assets/transactions.js?v=20261125f"></script>
+<script src="./assets/data.js?v=20261125g" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
+<script src="./assets/risk_levels.js?v=20261125g"></script>
+<script src="./assets/transactions.js?v=20261125g"></script>
 <script>
   /* 公开底稿已脱敏：只含 id+pid 的占位行供后台抓净值，不含 applyDate 等明细。
      前端渲染前剔除这类行，真实交易明细由登录后从 Supabase 云端拉取。 */
@@ -2589,16 +2593,16 @@
     if (T && T.items) T.items = T.items.filter(function (t) { return !!t.applyDate; });
   })();
 </script>
-<script src="./assets/newproducts.js?v=20261125f"></script>
-<script src="./assets/library.js?v=20261125f"></script>
-<script src="./assets/supabase-config.js?v=20261125f"></script>
-<script src="./assets/auth.js?v=20261125f"></script>
-<script src="./assets/store.js?v=20261125f" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
+<script src="./assets/newproducts.js?v=20261125g"></script>
+<script src="./assets/library.js?v=20261125g"></script>
+<script src="./assets/supabase-config.js?v=20261125g"></script>
+<script src="./assets/auth.js?v=20261125g"></script>
+<script src="./assets/store.js?v=20261125g" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
 <script>
   /* 先用本地缓存/内置底稿立即渲染，云端数据在后台取回后再重绘，避免等待网络白屏 */
   /* 前序脚本缺失或命中旧缓存时（STORE_READY 不存在）也照常加载看板，避免页面停在空白骨架 */
   (function () {
-    var NP_BUILD = '20261125f';
+    var NP_BUILD = '20261125g';
     function boot(msg, forced) {
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
@@ -2625,7 +2629,7 @@
       // 隐私小眼睛：dashboard.js 就绪后再加载，才能包装 DASHBOARD_REFRESH 并在渲染后套用打码
       if (!window.PRIVACY) {
         var pv = document.createElement('script');
-        pv.src = './assets/privacy.js?v=20261125f';
+        pv.src = './assets/privacy.js?v=20261125g';
         document.body.appendChild(pv);
       }
       if (!window.STORE_REFRESH || typeof window.STORE_REFRESH.then !== 'function') return;
@@ -3068,7 +3072,7 @@
       if (h2cLoading) return h2cLoading;
       h2cLoading = new Promise(function (resolve, reject) {
         var s = document.createElement('script');
-        s.src = './assets/html2canvas.min.js?v=20261125f';
+        s.src = './assets/html2canvas.min.js?v=20261125g';
         s.onload = resolve;
         s.onerror = function () { h2cLoading = null; reject(new Error('截图组件加载失败')); };
         document.head.appendChild(s);

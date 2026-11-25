@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261125f';
+  window.__NP_LAYOUT_VERSION = '20261125g';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -255,6 +255,52 @@
     var cand = libInc || p.inception || first;
     if (first && cand > first) cand = first;
     return cand || first || '';
+  }
+
+  /* 产品库要素（按登记编码）：募集起止日与成立日，用于判定「募集期认购」 */
+  function libItemOf(p) {
+    if (!p || !p.regCode) return null;
+    var items = (typeof PRODUCT_LIBRARY !== 'undefined' && PRODUCT_LIBRARY.items) || [];
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].regCode === p.regCode) return items[i];
+    }
+    return null;
+  }
+
+  /* ===== 份额确认日规则（2026-11-25 核对建行 App 后固化）=====
+     ① 募集期认购（申购日落在产品募集期、且早于成立日）：份额在「产品成立日」确认，不是 T+1。
+        实测：招银招睿增鑫30天4号（Z7001626001126）募集 11-24~11-26、11-27 成立，
+        11-24 认购 4,997.00 元 → 建行 App「预计 2026-11-27 确认份额」。
+        旧逻辑一律 nextWorkday(申购日) 得 11-25，比银行实际早 2 天，确认日/起息日/
+        XIRR 现金流日全部偏前。
+     ② 存续期开放日申购、赎回：T+1 个交易日确认，遇周末与法定节假日顺延。
+     成立日若恰逢非交易日，份额实际在下个交易日确认，故取「成立日」与「T+1 工作日」较晚者。
+     非募集期的存量记录不改写（T+2 产品、跨节顺延等以人工填写为准）。
+     判定只用产品库要素表里的 raiseStart/raiseEnd/establish（说明书原文），不拿首个净值日
+     当成立日——净值序列可能被截断，用截断后的首点会把老产品误判成募集期。 */
+  function confirmDateFor(p, applyDate, stored) {
+    var nd = nextWorkday(applyDate);
+    if (!applyDate) return stored || nd || '';
+    var it = p ? libItemOf(p) : null;
+    var establish = it && it.establish;
+    var rs = it && it.raiseStart;
+    var re = it && it.raiseEnd;
+    var inRaise = !!(establish && applyDate < establish &&
+      (!rs || applyDate >= rs) && (!re || applyDate <= re));
+    if (inRaise) return establish > nd ? establish : nd;
+    return stored || nd;
+  }
+
+  /* 把「募集期认购」的存量交易确认日校正到成立日：只改内存渲染值，不写库，
+     用户下次编辑并提交时才会落库。每次重算持仓前跑一遍，保证确认日列、
+     起息日、XIRR 现金流日同源。 */
+  function normalizeTxConfirmDates() {
+    var items = (window.TRANSACTIONS && window.TRANSACTIONS.items) || [];
+    items.forEach(function (t) {
+      if (!t || !t.applyDate) return;
+      var want = confirmDateFor(findProductById(t.pid), t.applyDate, t.confirmDate);
+      if (want && want !== t.confirmDate) t.confirmDate = want;
+    });
   }
 
   /* 成立天数：真实成立日到今天（当日）的自然日数 */
@@ -791,6 +837,7 @@
 
   // 交易底稿 → 持仓：申购累加份额，赎回/清仓按确认净值扣减，起息日 = 首次确认日
   function computeHoldings() {
+    normalizeTxConfirmDates();
     var tx = ((window.TRANSACTIONS && window.TRANSACTIONS.items) || []).slice();
     var cashFlows = [];
     HOLD_REALIZED = [];
@@ -2185,7 +2232,7 @@
         markPoint/markLine + SVG 渲染器（约 500KB，gzip 173KB），并在首屏 init 后
         立即用 fetch 预热 HTTP 缓存、load 完成后空闲注入脚本——用户读首屏这几秒里
         图库已就绪，切到趋势页几乎不再等待。 */
-  var CHART_URL = './_shared/js/echarts.slim.js?v=20261125f';
+  var CHART_URL = './_shared/js/echarts.slim.js?v=20261125g';
   function injectEcharts() {
     if (window.echarts || window.__ECHARTS_INJECTED__) return;
     window.__ECHARTS_INJECTED__ = true;
@@ -4565,9 +4612,9 @@
     var shEl = document.getElementById('trade-shares');
     var amtEl = document.getElementById('trade-amount');
     var applyDate = applyEl ? applyEl.value : '';
-    var confirmDate = nextWorkday(applyDate);
+    var confirmDate = confirmDateFor(p, applyDate, '');
     /* 成交净值按申购日（T 日）净值；T 日净值未披露时显示「待确认」，不用最近净值预估。
-       确认日期默认 T+1 工作日。两者均自动带出，用户可在提交前手工修改。 */
+       确认日期：募集期认购取产品成立日，存续期申购取 T+1 工作日（见 confirmDateFor）。 */
     var navOn = applyDate ? navOnDate(p, applyDate) : null;
     if (dateEl) dateEl.value = confirmDate;
     if (navEl) {
@@ -4674,7 +4721,8 @@
         }
       }
       if (applyEl) applyEl.value = edit.applyDate || edit.confirmDate || '';
-      if (dateEl) dateEl.value = edit.confirmDate || edit.applyDate || '';
+      /* 募集期认购的存量记录：确认日按成立日带出，用户点「提交」即落库校正 */
+      if (dateEl) dateEl.value = confirmDateFor(curP, edit.applyDate, edit.confirmDate || edit.applyDate || '');
       if (chEl) chEl.value = edit.saleChannel || '建设银行';
     } else {
       syncTradeForm();
@@ -4726,7 +4774,7 @@
       /* 赎回/清仓以份额为准，金额一律由份额 × 成交净值算出 */
       amount = shares * nav;
     }
-    if (!dateEl.value && applyEl && applyEl.value) dateEl.value = nextWorkday(applyEl.value);
+    if (!dateEl.value && applyEl && applyEl.value) dateEl.value = confirmDateFor(p, applyEl.value, '');
     /* 净值待确认也可以先提交：申购记金额、赎回/清仓记份额，净值披露后自动折算并计入持仓 */
     var navPending = !(nav > 0);
     if (navPending) {
@@ -5478,7 +5526,7 @@
           '<td class="r num">' + fmtMoneyCell(txShares(t, p)) + '</td>' +
           '<td class="r num">' + (st === '在途' ? '<span class="pending-nav">待确认</span>' : fmtNav(txConfirmNav(t, p))) + '</td>' +
           '<td class="r num">' + (txAmount(t, p) === null ? '<span class="pending-nav">待确认</span>' : fmtMoneyCell(txAmount(t, p))) + '</td>' +
-          '<td class="c num">' + t.confirmDate + '</td>' +
+          '<td class="c num" title="份额确认日：募集期认购按产品成立日，存续期申购/赎回按 T+1 工作日">' + t.confirmDate + '</td>' +
           '<td class="c"><span class="tag' + (st === '在途' ? ' np' : '') + '" title="' +
             (st === '在途' ? '在途：' + txPendingReason(t) + '，暂不计入持仓；净值披露后自动转为已确认' : '已确认并计入持仓') + '">' + st + '</span></td>' +
           '<td class="c"><button class="mini" data-edit="' + t.id + '">修改</button> ' +
