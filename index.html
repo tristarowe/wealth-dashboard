@@ -8,7 +8,7 @@
 <!-- 2026-11-24 u 首屏优化：看板脚本提前并行下载，云端域名提前握手；
      两者都不阻塞 HTML 解析，避免旧版「大库先下载完才开始拉 dashboard.js」的串行等待。 -->
 <link rel="preconnect" href="https://asqaxvrovorqfqwpgjkb.supabase.co" crossorigin>
-<link rel="preload" as="script" href="./assets/dashboard.js?v=20261125h" fetchpriority="low">
+<link rel="preload" as="script" href="./assets/dashboard.js?v=20261125i" fetchpriority="low">
 <style>
   :root{
     --bg:#f3f5f7; --card:#fff; --soft:#F9FFFF;
@@ -104,7 +104,8 @@
   .metric{background:#fff;border:1px solid var(--rule);border-radius:12px;padding:14px 18px}
   .metric .k{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.04em}
   .metric .v{font-family:var(--mono);font-size:26px;font-weight:700;line-height:1.25;margin-top:2px;font-variant-numeric:tabular-nums;white-space:nowrap}
-  .metric .v em{font-style:normal;font-size:11.5px;font-weight:400;color:var(--muted);margin-left:4px;white-space:nowrap}
+  /* 2026-11-25 A/D：单位「元」为纯中文，改正文体、字号收敛到 11px（数值 .v 仍等宽，对齐不受影响） */
+  .metric .v em{font-style:normal;font-family:var(--font);font-size:11px;font-weight:400;color:var(--muted);margin-left:4px;white-space:nowrap}
   .metric.key .v{color:var(--up)}
   .metric .v.up{color:var(--up)}
   .metric .v.down{color:var(--down)}
@@ -175,11 +176,13 @@
   .prod-link:hover{background:#dceef4}
   .pname .ptags{display:inline-flex;align-items:baseline;gap:6px;margin-left:6px}
   .cdate span{display:block;font-family:var(--mono);font-size:12px;color:var(--ink);white-space:nowrap}
-  .cdate i{display:block;font-style:normal;font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-top:1px}
+  /* 2026-11-25 A：.cdate i / .st i 内容为纯中文辅助文字（「X 天」「偏弱/新持仓」），
+     数值在 .cdate span / .st b（仍用等宽）。中文辅助行改正文体，避免被等宽字体回退成窄方字形。 */
+  .cdate i{display:block;font-style:normal;font-family:var(--font);font-size:11.5px;color:var(--muted);margin-top:1px}
   .nav-under{display:none}
   .unit-u{display:block;font-size:11.5px;color:var(--muted);font-weight:400;line-height:1.2;margin-top:1px}
   .st b{display:block;font-family:var(--mono);font-weight:700}
-  .st i{display:block;font-style:normal;font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-top:1px}
+  .st i{display:block;font-style:normal;font-family:var(--font);font-size:11.5px;color:var(--muted);margin-top:1px}
   .st b.up,.st i.up{color:var(--up)}
   .st b.down,.st i.down{color:var(--down)}
   /* 盈亏明细：7日~成立至今等历史区间不做红绿着色，按内容区分黑/灰 */
@@ -250,8 +253,9 @@
   .prod-tbl tbody td[data-col="p10k"]{font-weight:700}
   .prod-tbl .st b.m-p10k{font-weight:400}
   .prod-tbl tbody td.num:not([data-col="p10k"]):not([data-col="ann"]){color:var(--ink)}
-  /* 产品库：风险等级 / 持有期两列与今日万收等数值列同字号同字体观感 */
-  .prod-tbl tbody td.pmeta{font-family:var(--mono);font-size:13px;color:var(--muted)}
+  /* 产品库：风险等级 / 持有期两列与今日万收等数值列同字号同字体观感
+     2026-11-25 A：内容为「30天/日开」等中文单位，改正文体保持字形一致 */
+  .prod-tbl tbody td.pmeta{font-family:var(--font);font-size:13px;color:var(--muted)}
   /* 四张数据表：固定列宽，相同内容同列宽，收紧列距 */
   #hold-table,#sum-table,#prod-table,#flow-table{table-layout:fixed}
   #hold-table thead th,#hold-table tbody td{padding:9px 7px}
@@ -319,9 +323,9 @@
   /* 持仓汇总：净值日期保持单行，列窄时也不会断成「11-」「10」两行（2026-11-21 四轮：列序调整后为第 3 列） */
   #sum-table thead th:nth-child(3),#sum-table tbody td:nth-child(3){white-space:nowrap}
   #hold-table tbody td.dcell,#sum-table tbody td.dcell{white-space:nowrap;text-align:center}
-  #hold-table td.dcell .days,#sum-table td.dcell .days,
-  #hold-table td.dcell .dunit,#sum-table td.dcell .dunit{font-family:var(--mono);font-size:13px;font-weight:400;font-variant-numeric:tabular-nums}
-  #hold-table td.dcell .dunit,#sum-table td.dcell .dunit{font-style:normal;color:var(--muted);margin-left:1px;vertical-align:baseline}
+  #hold-table td.dcell .days,#sum-table td.dcell .days{font-family:var(--mono);font-size:13px;font-weight:400;font-variant-numeric:tabular-nums}
+  /* 2026-11-25 A：.dunit 内容仅「天」，纯中文单位用正文体；数值 .days 仍保持等宽 */
+  #hold-table td.dcell .dunit,#sum-table td.dcell .dunit{font-family:var(--font);font-size:13px;font-weight:400;font-style:normal;color:var(--muted);margin-left:1px;vertical-align:baseline}
   /* 盈亏汇总「天数」列：上=持仓天数、下=成立天数，中间细分割线，均不带单位 */
   /* 天数两行分割线 2026-11-20：改为绝对定位在「持仓天数/成立天数」两行正中的行边界，
      与右侧数据列「日均万收/年化」之间的 border-bottom 严格同一水平线；
@@ -417,7 +421,8 @@
   .cal-sum b{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--ink);line-height:1.2}
   .cal-sum .lead b{font-size:15px}
   .cal-sum b.up{color:var(--up)} .cal-sum b.down{color:var(--down)}
-  .cal-sum i{font-style:normal;font-size:11.5px;color:var(--muted)}
+  /* 2026-11-25 A：「天」为纯中文，显式正文体，避免继承等宽字形 */
+  .cal-sum i{font-style:normal;font-family:var(--font);font-size:11.5px;color:var(--muted)}
 
   /* trend */
   .trend-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
@@ -683,6 +688,8 @@
   .ts-grid{display:flex;gap:10px;padding:0 12px;background:#f7f9fa;border-bottom:1px solid var(--rule);min-width:max-content}
   .ts-cell{width:176px;flex:none;padding:6px 2px;text-align:center;font-family:var(--mono);font-size:12px;color:var(--muted);line-height:1.35;white-space:nowrap}
   .ts-cell b{display:block;font-family:var(--mono);font-weight:700;font-size:13px;color:var(--muted)}
+  /* 2026-11-25 A：星期「周一~周日/今天」为纯中文，改正文体；日期数字 b 保留等宽 */
+  .ts-cell span,.ts-cell em{font-family:var(--font)}
   .ts-cell span{display:block}
   .ts-cell.is-today b,.ts-cell.is-today em{color:#a2701f}
   .ts-cell em{font-style:normal;font-size:11px;color:#a2701f}
@@ -1082,9 +1089,10 @@
     /* 恢复千分位：横屏 6 列更窄，左右内边距 8→4px、字距收紧容纳逗号，字号不缩 */
     .metric{padding:9px 4px}
     .metric .v{font-size:15px;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.5px}
-    /* 横屏 6 列很窄：持仓金额与其他卡同档字号，单位「元」不换行 */
-    .metric .v em{font-size:9.5px;margin-left:1px}
-    .metric .m-sub{font-size:10px;margin-top:5px;padding-top:5px}
+    /* 2026-11-25 D：单位/副标题字号收敛——单位 9.5→11px、副标题 10→10.5px（与竖屏一致，
+       实测三视口无溢出）。数值 .v 仍 15px，单位改正文体后不影响等宽数值对齐。 */
+    .metric .v em{font-size:11px;margin-left:1px}
+    .metric .m-sub{font-size:10.5px;margin-top:5px;padding-top:5px}
   }
   @media (max-width:760px){
     body{padding:14px 12px calc(28px + env(safe-area-inset-bottom))}
@@ -1232,7 +1240,8 @@
     /* 恢复千分位逗号：左右内边距 8→5px 腾出约 6px 容纳逗号，字号与其他卡同档不缩 */
     .metric{padding:9px 5px}
     .metric .v{font-size:15px;overflow:hidden;letter-spacing:-.4px}
-    .metric .v em{font-size:9.5px;margin-left:1px}
+    /* 2026-11-25 D：指标单位 9.5→11px（与副标题档一致，实测无溢出） */
+    .metric .v em{font-size:11px;margin-left:1px}
     .metric .m-sub{font-size:10.5px;margin-top:5px;padding-top:4px}
     .metric .m-sub b{font-size:12px}
     .tabs{width:100%;overflow-x:auto;justify-content:flex-start;border-radius:12px}
@@ -1751,7 +1760,11 @@
   .filters .sel-label,.np-toolbar .sel-label,.chip,.filter-tail .chip,
   .sel-opt,.sel-pop.single .sel-opt,.prod-sug .sel-opt,
   .dp-grid button,.dp-mgrid button,.dp-nav,.dp-foot button,
-  .month-item,.month-item > span:not(.rate-cell),.th-select{color:var(--muted)!important;font-weight:500!important}
+  .th-select{color:var(--muted)!important;font-weight:500!important}
+  /* 2026-11-25 C：月度项数据行与年表数据行、竖屏保持一致 400（正文档）。
+     原来被上面「按钮/选项统一 500」宽选择器连写成 500，导致桌面/横屏比竖屏偏重。
+     年化条 .rate-cell 是数值强调，另行保留 700，不在此列。 */
+  .month-item,.month-item > span:not(.rate-cell){color:var(--muted)!important;font-weight:400!important}
   .btn.primary{color:var(--blue)!important;font-weight:500!important}
   /* 2026-11-24 s：只有图一的主导航 .tab.on 与产品页内导航 .jumpbar .j.on 保留蓝填充；
      其余筛选按钮/下拉选项/年月切换选中一律无填充，仅蓝字 + 蓝描边。 */
@@ -2582,9 +2595,9 @@
      「新 HTML + 旧渲染」的错位（表现为新品预告仍是拉伸甘特卡片 + 巨大原生多选框）。 -->
 <!-- 2026-11-24 u：ECharts / html2canvas 改按需加载（趋势图、导出长图才拉），
      不再让 338KB + 47KB 的库阻塞首屏；加载器分别在 dashboard.js 与本页导出逻辑内。 -->
-<script src="./assets/data.js?v=20261125h" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
-<script src="./assets/risk_levels.js?v=20261125h"></script>
-<script src="./assets/transactions.js?v=20261125h"></script>
+<script src="./assets/data.js?v=20261125i" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
+<script src="./assets/risk_levels.js?v=20261125i"></script>
+<script src="./assets/transactions.js?v=20261125i"></script>
 <script>
   /* 公开底稿已脱敏：只含 id+pid 的占位行供后台抓净值，不含 applyDate 等明细。
      前端渲染前剔除这类行，真实交易明细由登录后从 Supabase 云端拉取。 */
@@ -2593,16 +2606,16 @@
     if (T && T.items) T.items = T.items.filter(function (t) { return !!t.applyDate; });
   })();
 </script>
-<script src="./assets/newproducts.js?v=20261125h"></script>
-<script src="./assets/library.js?v=20261125h"></script>
-<script src="./assets/supabase-config.js?v=20261125h"></script>
-<script src="./assets/auth.js?v=20261125h"></script>
-<script src="./assets/store.js?v=20261125h" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
+<script src="./assets/newproducts.js?v=20261125i"></script>
+<script src="./assets/library.js?v=20261125i"></script>
+<script src="./assets/supabase-config.js?v=20261125i"></script>
+<script src="./assets/auth.js?v=20261125i"></script>
+<script src="./assets/store.js?v=20261125i" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
 <script>
   /* 先用本地缓存/内置底稿立即渲染，云端数据在后台取回后再重绘，避免等待网络白屏 */
   /* 前序脚本缺失或命中旧缓存时（STORE_READY 不存在）也照常加载看板，避免页面停在空白骨架 */
   (function () {
-    var NP_BUILD = '20261125h';
+    var NP_BUILD = '20261125i';
     function boot(msg, forced) {
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
@@ -2629,7 +2642,7 @@
       // 隐私小眼睛：dashboard.js 就绪后再加载，才能包装 DASHBOARD_REFRESH 并在渲染后套用打码
       if (!window.PRIVACY) {
         var pv = document.createElement('script');
-        pv.src = './assets/privacy.js?v=20261125h';
+        pv.src = './assets/privacy.js?v=20261125i';
         document.body.appendChild(pv);
       }
       if (!window.STORE_REFRESH || typeof window.STORE_REFRESH.then !== 'function') return;
@@ -3072,7 +3085,7 @@
       if (h2cLoading) return h2cLoading;
       h2cLoading = new Promise(function (resolve, reject) {
         var s = document.createElement('script');
-        s.src = './assets/html2canvas.min.js?v=20261125h';
+        s.src = './assets/html2canvas.min.js?v=20261125i';
         s.onload = resolve;
         s.onerror = function () { h2cLoading = null; reject(new Error('截图组件加载失败')); };
         document.head.appendChild(s);
