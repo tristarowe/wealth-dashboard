@@ -88,6 +88,7 @@
 | E23 | 刷新/首次加载缓慢（11-24） | ECharts 338KB 串行阻塞 + 无预取 | DCL/load 时间达标；`fetch` 预取图库；dashboard.js 完成 < 2s |
 | E24 | 手机端新品预告数据行可左右滑动（11-25） | 8 天 × 176px = 1408px 超出容器，`#np-lanes` 成横向滚动容器，日期表头被裁切 | 触屏/≤1200px 改日期纵向分组 + 卡片自适应网格，空泳道隐藏；WebKit/Chromium 横竖屏实测 `scrollWidth == clientWidth` |
 | E25 | 06:00 排查微信推送漏发（11-25） | WorkBuddy 平台限流 429（09:11 才重置），本地任务首轮即中断，未走到 workflow_dispatch | GitHub Actions 看门狗 07:30 独立检查当天是否发出排查报告，未发出则经 Server酱告警；不依赖本地环境 |
+| E26 | library 数据文件带未解决冲突标记（11-25） | 远端数据提交把 `<<<<<<<`/`=======`/`>>>>>>>` 写进 `assets/library.js` 与 `daily/library.json`，产品库 JS SyntaxError | 取远端较新一侧（fetchedAt 08:24）清除标记；`tools/check_data.py` 新增 `check_conflict_markers()` 全文扫描，命中即 FAIL |
 
 ---
 

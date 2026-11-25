@@ -756,6 +756,8 @@
       "SHORT_DAYS = 7"
     ],
     "tools/check_data.py": [
+      "def check_conflict_markers(problems)",
+      "存在未解决的 git 冲突标记",
       "def check_structure(d, problems, warns)",
       "def check_consistency(d, problems)",
       "REG_CODE_RE = re.compile",

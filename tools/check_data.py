@@ -213,6 +213,33 @@ def check_formula_marks(problems):
             problems.append(f"口径公式标记缺失：{label}（期望找到 {token!r}）——年化/万收口径可能被改写")
 
 
+def check_conflict_markers(problems):
+    """2026-11-25：阻断「未解决的 git 冲突标记被提交进数据/前端文件」。
+
+    当日 daily/library.json 与 assets/library.js 被远端数据提交带入
+    <<<<<<< / ======= / >>>>>>>，library.js 直接 SyntaxError，产品库整页失效，
+    而原有 check_data.py 只核验 data.js，完全没发现。这里对会进页面的
+    数据/脚本文件做全文行扫描，命中即致命，避免同类事故再次静默上线。
+    """
+    targets = [ROOT / "index.html", ROOT / "assets" / "data.js",
+               ROOT / "assets" / "library.js", ROOT / "assets" / "newproducts.js",
+               ROOT / "daily" / "library.json", ROOT / "daily" / "newproducts.json",
+               ROOT / "daily" / "stats.json"]
+    pat = re.compile(r"^(?:<<<<<<<|=======|>>>>>>>)")
+    for p in targets:
+        if not p.exists():
+            continue
+        try:
+            text = p.read_text(encoding="utf-8")
+        except Exception as e:
+            problems.append(f"无法读取 {p.name} 做冲突标记扫描：{e}")
+            continue
+        for i, line in enumerate(text.splitlines(), 1):
+            if pat.match(line):
+                problems.append(f"{p.relative_to(ROOT)}:{i} 存在未解决的 git 冲突标记：{line[:40]}")
+                break
+
+
 def main():
     quiet = "--quiet" in sys.argv
     scan_all = "--all" in sys.argv
@@ -222,6 +249,7 @@ def main():
         print(f"FAIL：无法读取数据文件：{e}")
         return 1
     problems, warns = [], []
+    check_conflict_markers(problems)
     check_formula_marks(problems)
     n = check_structure(d, problems, warns)
     checked, skipped_cash = check_consistency(d, problems)
