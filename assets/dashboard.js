@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261125m';
+  window.__NP_LAYOUT_VERSION = '20261125n';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -2240,7 +2240,7 @@
         markPoint/markLine + SVG 渲染器（约 500KB，gzip 173KB），并在首屏 init 后
         立即用 fetch 预热 HTTP 缓存、load 完成后空闲注入脚本——用户读首屏这几秒里
         图库已就绪，切到趋势页几乎不再等待。 */
-  var CHART_URL = './_shared/js/echarts.slim.js?v=20261125m';
+  var CHART_URL = './_shared/js/echarts.slim.js?v=20261125n';
   function injectEcharts() {
     if (window.echarts || window.__ECHARTS_INJECTED__) return;
     window.__ECHARTS_INJECTED__ = true;
@@ -5789,6 +5789,9 @@
   }
 
   var pickerQuery = '';
+  /* 2026-11-25 搜索结果默认不勾选：搜索态用临时勾选集，提交时才替换全局选中集。
+     null = 非搜索态（复选框反映全局 selectedIds）；[] = 搜索态且尚未勾选任何结果。 */
+  var pickerSearchSel = null;
 
   function pickerMatches(p) {
     var q = pickerQuery.trim().toLowerCase();
@@ -5799,8 +5802,9 @@
       (p.regCode || '').toLowerCase().indexOf(q) !== -1;
   }
 
-  /* 2026-11-25 产品面板按名称排序 + 全选/反选仅作用于搜索结果：
-     搜索只负责过滤，不改变顺序；全选/反选以当前可见项为范围，搜「建信」再按一次即全选这 4 只。 */
+  /* 2026-11-25 产品面板按名称排序 + 搜索结果默认不勾选：
+     搜索只负责过滤，不改变顺序；搜索态勾选框反映 pickerSearchSel（初始为空，结果默认不勾选），
+     点「选择」或按回车才把当前可见结果替换为全局选中集，一步完成「只看这几只」。 */
   function visiblePickerProducts() {
     return pickableProducts().filter(pickerMatches);
   }
@@ -5815,8 +5819,9 @@
       list.innerHTML = '<div class="ms-empty">未找到匹配产品</div>';
       return;
     }
+    var selPool = pickerSearchSel === null ? selectedIds : pickerSearchSel;
     list.innerHTML = items.map(function (p) {
-      var checked = selectedIds.indexOf(p.id) !== -1 ? ' checked' : '';
+      var checked = selPool.indexOf(p.id) !== -1 ? ' checked' : '';
       return '<div class="ms-item">' +
         '<label class="ms-pick">' +
         '<input type="checkbox" value="' + p.id + '"' + checked + '>' +
@@ -5834,6 +5839,7 @@
     panel.hidden = false;
     /* 每次打开先回到完整产品列表：清掉上次的搜索词与搜索结果态 */
     pickerQuery = '';
+    pickerSearchSel = null;
     var search = document.getElementById('ms-search');
     if (search) { search.value = ''; search.focus(); }
     renderPickerList();
@@ -6252,13 +6258,16 @@
     list.addEventListener('change', function (e) {
       var t = e.target;
       if (!t || t.type !== 'checkbox') return;
-      var idx = selectedIds.indexOf(t.value);
+      /* 搜索态勾选只进临时集（结果默认不勾选），点「选择」/回车才提交到全局；
+         非搜索态沿用原逻辑，直接增减全局选中集。 */
+      var pool = pickerSearchSel === null ? selectedIds : pickerSearchSel;
+      var idx = pool.indexOf(t.value);
       if (t.checked && idx === -1) {
-        selectedIds.push(t.value);
+        pool.push(t.value);
       } else if (!t.checked && idx !== -1) {
-        selectedIds.splice(idx, 1);
+        pool.splice(idx, 1);
       }
-      applySelection();
+      if (pickerSearchSel === null) applySelection();
     });
 
     /* 点产品名 = 只看这一只（原「仅选」按钮的职责，按钮已取消）。
@@ -6273,42 +6282,49 @@
       e.preventDefault();
       e.stopPropagation();
       selectedIds = [cb.value];
+      pickerSearchSel = null;
       applySelection();
       renderPickerList();
       updatePickerLabel();
       closePanel();
     });
 
+    /* 2026-11-25 搜索结果默认不勾选 + 按钮统一「选择」+ 回车提交：
+       搜「建信」→4 只默认不勾选 → 点「选择」或按回车即只看这 4 只，不再需要「反选→再搜→全选」。 */
     var search = document.getElementById('ms-search');
     if (search) search.addEventListener('input', function () {
       pickerQuery = search.value;
+      /* 有搜索词：临时集清空（结果默认不勾选）；清空搜索词：回到反映全局选中集 */
+      pickerSearchSel = pickerQuery.trim() ? [] : null;
       renderPickerList();
       syncPickerToggle();
+    });
+    if (search) search.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      commitPickerChoice();
     });
 
     var toggleBtn = panel.querySelector('[data-act="toggle"]');
-    /* 全选/反选只作用于当前搜索可见的产品：搜「建信」后按一次即把这 4 只全选，
-       不再动搜索结果之外的产品；没有搜索词时可见项=全部，行为与原来一致。 */
     function syncPickerToggle() {
       if (!toggleBtn) return;
-      var ids = visiblePickerProducts().map(function (p) { return p.id; });
-      var all = ids.length > 0 && ids.every(function (id) { return selectedIds.indexOf(id) !== -1; });
-      toggleBtn.textContent = all ? '反选' : '全选';
+      toggleBtn.textContent = '选择';
     }
     window.__syncPickerToggle = syncPickerToggle;
     syncPickerToggle();
-    if (toggleBtn) toggleBtn.addEventListener('click', function () {
+
+    /* 「选择」只作用于当前搜索可见项：手动勾过就用勾中的，否则全选可见项；
+       提交后替换全局选中集（=只看这几只），并把临时集交回全局以便复选框如实显示。 */
+    function commitPickerChoice() {
       var ids = visiblePickerProducts().map(function (p) { return p.id; });
-      var all = ids.length > 0 && ids.every(function (id) { return selectedIds.indexOf(id) !== -1; });
-      if (all) ids.forEach(function (id) {
-        var k = selectedIds.indexOf(id);
-        if (k !== -1) selectedIds.splice(k, 1);
-      });
-      else ids.forEach(function (id) { if (selectedIds.indexOf(id) === -1) selectedIds.push(id); });
+      if (!ids.length) return;
+      selectedIds = (pickerSearchSel && pickerSearchSel.length) ? pickerSearchSel.slice() : ids;
+      pickerSearchSel = null;
       renderPickerList();
       applySelection();
       syncPickerToggle();
-    });
+    }
+    if (toggleBtn) toggleBtn.addEventListener('click', commitPickerChoice);
   }
 
   /* ---------------- 手动更新数据 ---------------- */
