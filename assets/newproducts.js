@@ -1,13 +1,16 @@
 window.NEW_PRODUCTS = {
   "asOf": "2026-11-25",
   "fetchedAt": "2026-11-25 00:19",
-  "source": "六大行及股份制银行新品公告 · 销售文件要素表",
+  "source": "云端登记 + 官网公告",
   "window": {
     "start": "2026-11-25",
-    "end": "2026-12-02"
+    "end": "2026-12-01"
   },
   "institutions": [
-    "建设银行"
+    "招银理财有限责任公司",
+    "交银理财有限责任公司",
+    "信银理财有限责任公司",
+    "光大理财有限责任公司"
   ],
   "items": [
     {
@@ -133,7 +136,7 @@ window.NEW_PRODUCTS = {
   ],
   "lanes": [
     {
-      "channel": "建设银行",
+      "channel": "招银理财有限责任公司",
       "products": [
         {
           "name": "招银理财招睿增鑫30天持有期4号增强型固收类理财计划",
@@ -151,6 +154,41 @@ window.NEW_PRODUCTS = {
           "source": "建行官网新品公告·销售文件要素表"
         },
         {
+          "name": "招银理财招睿添利日开30号固定收益类理财计划",
+          "issuer": "招银理财有限责任公司",
+          "short": "招睿添利日开30号理财计划",
+          "regCode": "Z7001626001160",
+          "raiseStart": "2026-11-26",
+          "raiseEnd": "2026-11-30",
+          "establish": "2026-12-01",
+          "quotaWan": null,
+          "risk": "R2",
+          "riskRaw": "PR2 中低风险",
+          "mode": "",
+          "saleChannel": "建设银行",
+          "source": "建行官网新品公告·销售文件要素表"
+        },
+        {
+          "name": "招银理财招睿鑫鼎14天持有期10号固定收益类理财计划",
+          "issuer": "招银理财有限责任公司",
+          "short": "招睿鑫鼎14天持有期10号理财计划",
+          "regCode": "Z7001626001164",
+          "raiseStart": "2026-11-26",
+          "raiseEnd": "2026-11-30",
+          "establish": "2026-12-01",
+          "quotaWan": null,
+          "risk": "R2",
+          "riskRaw": "PR2 中低风险",
+          "mode": "",
+          "saleChannel": "建设银行",
+          "source": "建行官网新品公告·销售文件要素表"
+        }
+      ]
+    },
+    {
+      "channel": "交银理财有限责任公司",
+      "products": [
+        {
           "name": "交银理财稳享灵动慧利日开147号（7天持有期）理财产品",
           "issuer": "交银理财有限责任公司",
           "short": "稳享灵动慧利日开147号",
@@ -164,7 +202,12 @@ window.NEW_PRODUCTS = {
           "mode": "开放式",
           "saleChannel": "建设银行",
           "source": "建行官网新品公告·销售文件要素表"
-        },
+        }
+      ]
+    },
+    {
+      "channel": "信银理财有限责任公司",
+      "products": [
         {
           "name": "信银理财安盈象固收稳利日开258号理财产品",
           "issuer": "信银理财有限责任公司",
@@ -179,12 +222,17 @@ window.NEW_PRODUCTS = {
           "mode": "开放式",
           "saleChannel": "建设银行",
           "source": "建行官网新品公告·销售文件要素表"
-        },
+        }
+      ]
+    },
+    {
+      "channel": "光大理财有限责任公司",
+      "products": [
         {
-          "name": "阳光金增利稳健乐享日开135号",
+          "name": "阳光金增利稳健乐享天天购109号",
           "issuer": "光大理财有限责任公司",
-          "short": "阳光金增利稳健乐享日开135号",
-          "regCode": "Z7001426003245",
+          "short": "阳光金增利稳健乐享天天购109号",
+          "regCode": "Z7001426003205",
           "raiseStart": "2026-11-26",
           "raiseEnd": "2026-11-30",
           "establish": "2026-12-01",
@@ -211,10 +259,10 @@ window.NEW_PRODUCTS = {
           "source": "建行官网新品公告·销售文件要素表"
         },
         {
-          "name": "阳光金增利稳健乐享天天购109号",
+          "name": "阳光金增利稳健乐享日开135号",
           "issuer": "光大理财有限责任公司",
-          "short": "阳光金增利稳健乐享天天购109号",
-          "regCode": "Z7001426003205",
+          "short": "阳光金增利稳健乐享日开135号",
+          "regCode": "Z7001426003245",
           "raiseStart": "2026-11-26",
           "raiseEnd": "2026-11-30",
           "establish": "2026-12-01",
@@ -222,36 +270,6 @@ window.NEW_PRODUCTS = {
           "risk": "R2",
           "riskRaw": "",
           "mode": "开放式净值型",
-          "saleChannel": "建设银行",
-          "source": "建行官网新品公告·销售文件要素表"
-        },
-        {
-          "name": "招银理财招睿鑫鼎14天持有期10号固定收益类理财计划",
-          "issuer": "招银理财有限责任公司",
-          "short": "招睿鑫鼎14天持有期10号理财计划",
-          "regCode": "Z7001626001164",
-          "raiseStart": "2026-11-26",
-          "raiseEnd": "2026-11-30",
-          "establish": "2026-12-01",
-          "quotaWan": null,
-          "risk": "R2",
-          "riskRaw": "PR2 中低风险",
-          "mode": "",
-          "saleChannel": "建设银行",
-          "source": "建行官网新品公告·销售文件要素表"
-        },
-        {
-          "name": "招银理财招睿添利日开30号固定收益类理财计划",
-          "issuer": "招银理财有限责任公司",
-          "short": "招睿添利日开30号理财计划",
-          "regCode": "Z7001626001160",
-          "raiseStart": "2026-11-26",
-          "raiseEnd": "2026-11-30",
-          "establish": "2026-12-01",
-          "quotaWan": null,
-          "risk": "R2",
-          "riskRaw": "PR2 中低风险",
-          "mode": "",
           "saleChannel": "建设银行",
           "source": "建行官网新品公告·销售文件要素表"
         }
