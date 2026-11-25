@@ -90,6 +90,8 @@
 | E25 | 06:00 排查微信推送漏发（11-25） | WorkBuddy 平台限流 429（09:11 才重置），本地任务首轮即中断，未走到 workflow_dispatch | GitHub Actions 看门狗 07:30 独立检查当天是否发出排查报告，未发出则经 Server酱告警；不依赖本地环境 |
 | E26 | library 数据文件带未解决冲突标记（11-25） | 远端数据提交把 `<<<<<<<`/`=======`/`>>>>>>>` 写进 `assets/library.js` 与 `daily/library.json`，产品库 JS SyntaxError | 取远端较新一侧（fetchedAt 08:24）清除标记；`tools/check_data.py` 新增 `check_conflict_markers()` 全文扫描，命中即 FAIL |
 | E27 | 新品预告仍显示募集起始日已过的产品（11-25） | 只按「已成立」过滤，募集起始日为昨日（T+1 起）的产品仍留在预告里 | `renderNewProds()` 增加 `raiseStart < 今天` 过滤：起始日 24 号的产品到 25 号即移除；交易录入候选池不受影响 |
+| E28 | 交易流水同一行字体不一致（11-25） | 金额/份额走 `fmtMoneyCell()` 的 `.mcell`（系统无衬线），确认净值/确认日期走 `td.num` 的 `var(--mono)`，同行两套字形，目视金额偏粗、日期偏细 | `.mcell` 字体统一为 `var(--mono)`；小数点同列由 inline-grid 锁定、不依赖字体，故统一后仍严格共线；四列实测同一 font-family/13px/400 |
+| E29 | 份额确认日按 T+1 算错（11-25） | 旧逻辑一律 `nextWorkday(申购日)`，募集期认购实际要等产品成立日：招睿增鑫30天4号 募集 11-24~11-26、11-27 成立，建行 App 显示 11-27 确认，看板算成 11-25 | 新增 `confirmDateFor()`：申购日落在产品库募集期（raiseStart~raiseEnd）且早于 inception/establish 时，确认日取成立日（与 T+1 取较晚者）；`normalizeTxConfirmDates()` 在 `computeHoldings()` 前校正存量记录（只改内存，编辑提交才落库） |
 
 ---
 
