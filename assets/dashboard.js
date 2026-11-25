@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261125n';
+  window.__NP_LAYOUT_VERSION = '20261125o';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -2240,7 +2240,7 @@
         markPoint/markLine + SVG 渲染器（约 500KB，gzip 173KB），并在首屏 init 后
         立即用 fetch 预热 HTTP 缓存、load 完成后空闲注入脚本——用户读首屏这几秒里
         图库已就绪，切到趋势页几乎不再等待。 */
-  var CHART_URL = './_shared/js/echarts.slim.js?v=20261125n';
+  var CHART_URL = './_shared/js/echarts.slim.js?v=20261125o';
   function injectEcharts() {
     if (window.echarts || window.__ECHARTS_INJECTED__) return;
     window.__ECHARTS_INJECTED__ = true;
@@ -5789,9 +5789,9 @@
   }
 
   var pickerQuery = '';
-  /* 2026-11-25 搜索结果默认不勾选：搜索态用临时勾选集，提交时才替换全局选中集。
-     null = 非搜索态（复选框反映全局 selectedIds）；[] = 搜索态且尚未勾选任何结果。 */
-  var pickerSearchSel = null;
+  /* 2026-11-25 复选框只在「单独选择」时打勾：默认全选所有产品，无需用 √ 呈现。
+     pickerSel 是面板临时勾选集，打开面板/每次搜索都重置为空；提交时才替换全局选中集。 */
+  var pickerSel = [];
 
   function pickerMatches(p) {
     var q = pickerQuery.trim().toLowerCase();
@@ -5802,9 +5802,9 @@
       (p.regCode || '').toLowerCase().indexOf(q) !== -1;
   }
 
-  /* 2026-11-25 产品面板按名称排序 + 搜索结果默认不勾选：
-     搜索只负责过滤，不改变顺序；搜索态勾选框反映 pickerSearchSel（初始为空，结果默认不勾选），
-     点「选择」或按回车才把当前可见结果替换为全局选中集，一步完成「只看这几只」。 */
+  /* 2026-11-25 产品面板按名称排序 + 默认不打勾：
+     搜索只负责过滤，不改变顺序；复选框只反映面板临时勾选集 pickerSel（初始为空），
+     点「选择」或按回车把可见结果（或手动勾选的）替换为全局选中集并收起面板。 */
   function visiblePickerProducts() {
     return pickableProducts().filter(pickerMatches);
   }
@@ -5819,9 +5819,8 @@
       list.innerHTML = '<div class="ms-empty">未找到匹配产品</div>';
       return;
     }
-    var selPool = pickerSearchSel === null ? selectedIds : pickerSearchSel;
     list.innerHTML = items.map(function (p) {
-      var checked = selPool.indexOf(p.id) !== -1 ? ' checked' : '';
+      var checked = pickerSel.indexOf(p.id) !== -1 ? ' checked' : '';
       return '<div class="ms-item">' +
         '<label class="ms-pick">' +
         '<input type="checkbox" value="' + p.id + '"' + checked + '>' +
@@ -5837,9 +5836,9 @@
     var panel = document.getElementById('ms-panel');
     if (!trigger || !panel) return;
     panel.hidden = false;
-    /* 每次打开先回到完整产品列表：清掉上次的搜索词与搜索结果态 */
+    /* 每次打开先回到完整产品列表：清掉搜索词与临时勾选（默认全选不打勾） */
     pickerQuery = '';
-    pickerSearchSel = null;
+    pickerSel = [];
     var search = document.getElementById('ms-search');
     if (search) { search.value = ''; search.focus(); }
     renderPickerList();
@@ -6258,21 +6257,18 @@
     list.addEventListener('change', function (e) {
       var t = e.target;
       if (!t || t.type !== 'checkbox') return;
-      /* 搜索态勾选只进临时集（结果默认不勾选），点「选择」/回车才提交到全局；
-         非搜索态沿用原逻辑，直接增减全局选中集。 */
-      var pool = pickerSearchSel === null ? selectedIds : pickerSearchSel;
-      var idx = pool.indexOf(t.value);
+      /* 勾选只进临时集（默认全选不打勾，手动勾才是「单独选择」），
+         点「选择」/回车才提交到全局，不在勾选过程中反复重绘看板。 */
+      var idx = pickerSel.indexOf(t.value);
       if (t.checked && idx === -1) {
-        pool.push(t.value);
+        pickerSel.push(t.value);
       } else if (!t.checked && idx !== -1) {
-        pool.splice(idx, 1);
+        pickerSel.splice(idx, 1);
       }
-      if (pickerSearchSel === null) applySelection();
     });
 
     /* 点产品名 = 只看这一只（原「仅选」按钮的职责，按钮已取消）。
-       默认全选时复选框是勾选状态，直接点它反而会取消该产品；
-       故把「点名称」统一定义为隔离选中并收起面板，勾选框仍负责多选增减。 */
+       复选框默认不打勾、只用于「单独选择」时勾选，点名称仍隔离选中该只并收起面板。 */
     list.addEventListener('click', function (e) {
       var nameEl = e.target && e.target.closest ? e.target.closest('.ms-name') : null;
       if (!nameEl) return;
@@ -6282,20 +6278,19 @@
       e.preventDefault();
       e.stopPropagation();
       selectedIds = [cb.value];
-      pickerSearchSel = null;
+      pickerSel = [];
       applySelection();
       renderPickerList();
       updatePickerLabel();
       closePanel();
     });
 
-    /* 2026-11-25 搜索结果默认不勾选 + 按钮统一「选择」+ 回车提交：
-       搜「建信」→4 只默认不勾选 → 点「选择」或按回车即只看这 4 只，不再需要「反选→再搜→全选」。 */
+    /* 2026-11-25 默认不打勾 + 按钮统一「选择」+ 回车提交后收起面板：
+       默认全选所有产品（复选框不打勾）；搜「建信」→4 只默认不打勾 → 回车即只看这 4 只并收起面板。 */
     var search = document.getElementById('ms-search');
     if (search) search.addEventListener('input', function () {
       pickerQuery = search.value;
-      /* 有搜索词：临时集清空（结果默认不勾选）；清空搜索词：回到反映全局选中集 */
-      pickerSearchSel = pickerQuery.trim() ? [] : null;
+      pickerSel = [];   /* 每次改搜索词重置临时勾选，结果默认不打勾 */
       renderPickerList();
       syncPickerToggle();
     });
@@ -6313,16 +6308,17 @@
     window.__syncPickerToggle = syncPickerToggle;
     syncPickerToggle();
 
-    /* 「选择」只作用于当前搜索可见项：手动勾过就用勾中的，否则全选可见项；
-       提交后替换全局选中集（=只看这几只），并把临时集交回全局以便复选框如实显示。 */
+    /* 「选择」/回车只作用于当前可见项：手动勾过就用勾中的，否则全选可见项（默认全选语义）；
+       提交后替换全局选中集（=只看这几只），收起面板。 */
     function commitPickerChoice() {
       var ids = visiblePickerProducts().map(function (p) { return p.id; });
       if (!ids.length) return;
-      selectedIds = (pickerSearchSel && pickerSearchSel.length) ? pickerSearchSel.slice() : ids;
-      pickerSearchSel = null;
+      selectedIds = pickerSel.length ? pickerSel.slice() : ids;
+      pickerSel = [];
       renderPickerList();
       applySelection();
       syncPickerToggle();
+      closePanel();
     }
     if (toggleBtn) toggleBtn.addEventListener('click', commitPickerChoice);
   }
