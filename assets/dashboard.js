@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261125o';
+  window.__NP_LAYOUT_VERSION = '20261125p';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -2240,7 +2240,7 @@
         markPoint/markLine + SVG 渲染器（约 500KB，gzip 173KB），并在首屏 init 后
         立即用 fetch 预热 HTTP 缓存、load 完成后空闲注入脚本——用户读首屏这几秒里
         图库已就绪，切到趋势页几乎不再等待。 */
-  var CHART_URL = './_shared/js/echarts.slim.js?v=20261125o';
+  var CHART_URL = './_shared/js/echarts.slim.js?v=20261125p';
   function injectEcharts() {
     if (window.echarts || window.__ECHARTS_INJECTED__) return;
     window.__ECHARTS_INJECTED__ = true;
@@ -5789,8 +5789,10 @@
   }
 
   var pickerQuery = '';
-  /* 2026-11-25 复选框只在「单独选择」时打勾：默认全选所有产品，无需用 √ 呈现。
-     pickerSel 是面板临时勾选集，打开面板/每次搜索都重置为空；提交时才替换全局选中集。 */
+  /* 2026-11-25 复选框只在「单独选择」时打勾：默认全选所有产品，无需用 √ 呈现；
+     若已单独选中部分产品，打开面板时把这些 √ 显示出来。
+     pickerSel 是面板临时勾选集：打开面板按全局选中集初始化（全选→空、部分→显示已选），
+     每次改搜索词重置为空（搜索结果默认不勾选），提交时才替换全局选中集。 */
   var pickerSel = [];
 
   function pickerMatches(p) {
@@ -5836,9 +5838,13 @@
     var panel = document.getElementById('ms-panel');
     if (!trigger || !panel) return;
     panel.hidden = false;
-    /* 每次打开先回到完整产品列表：清掉搜索词与临时勾选（默认全选不打勾） */
+    /* 每次打开先回到完整产品列表、清掉搜索词。
+       若当前是「单独选择」的部分产品（非全选），把已选产品的 √ 显示出来；
+       默认全选所有产品时无需打勾，临时集保持空。 */
     pickerQuery = '';
-    pickerSel = [];
+    var allIds = pickableProducts().map(function (p) { return p.id; });
+    var isAll = allIds.length > 0 && allIds.every(function (id) { return selectedIds.indexOf(id) !== -1; });
+    pickerSel = isAll ? [] : selectedIds.slice();
     var search = document.getElementById('ms-search');
     if (search) { search.value = ''; search.focus(); }
     renderPickerList();
