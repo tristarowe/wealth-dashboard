@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261126h';
+  window.__NP_LAYOUT_VERSION = '20261126i';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -21,6 +21,16 @@
      周频/停止更新的产品不标注。 */
   var DISCLOSURE_LAG_OVERRIDE = {
     /* 例：'Z7001926001090': 2  // 中邮鸿锦7天45号：说明书约定 T+2 披露 */
+  };
+
+  /* 份额确认节奏（工作日）：'登记编码': N。默认 T+1，只登记已核过说明书的产品。
+     与上面的净值披露节奏完全无关：披露晚不改写份额确认日，确认日以本表为准。
+     2026-11-26 建行 PDF 核实中邮鸿锦7天45号（Z7001926001090）：
+       「客户申购受理日后第 2 个工作日确认」「赎回受理日后第 2 个工作日确认」；
+       「资金到账日为赎回受理日后 3 个工作日内」是另一口径。
+     募集期认购仍在 confirmDateFor 里按产品成立日处理，不受本表影响。 */
+  var CONFIRM_WORKDAY_OFFSET = {
+    'Z7001926001090': 2
   };
 
   function parseDate(s) {
@@ -200,7 +210,7 @@
     return (sh > 0 && nav > 0) ? sh * nav : null;
   }
 
-  /* 确认日按申购日 T+1 自动换算，遇周末/法定节假日顺延至下一交易日 */
+  /* 确认日按说明书偏移（默认 T+1，个别 T+2）自动换算，遇周末/法定节假日顺延至下一交易日 */
   var MARKET_HOLIDAYS = [
     ['2025-01-01', '2025-01-01'],
     ['2025-01-28', '2025-02-04'],
@@ -228,12 +238,20 @@
     return false;
   }
 
-  function nextWorkday(s) {
+  /* 受理日后第 n 个工作日：n=1 即原 nextWorkday。产品级确认偏移（T+2）也走这里，
+     遇到周末/法定节假日连续顺延，避免"T+2"落在周六。 */
+  function addWorkdays(s, n) {
     var d = s ? parseDate(s) : null;
     if (!d || isNaN(d.getTime())) return '';
-    do { d = new Date(d.getTime() + DAY); } while (isMarketClosed(d));
+    var left = Math.max(1, Number(n) || 1);
+    while (left > 0) {
+      d = new Date(d.getTime() + DAY);
+      if (!isMarketClosed(d)) left--;
+    }
     return isoDate(d);
   }
+
+  function nextWorkday(s) { return addWorkdays(s, 1); }
 
   function dayDiff(a, b) {
     return Math.round((b.getTime() - a.getTime()) / DAY);
@@ -294,14 +312,20 @@
         11-24 认购 4,997.00 元 → 建行 App「预计 2026-11-27 确认份额」。
         旧逻辑一律 nextWorkday(申购日) 得 11-25，比银行实际早 2 天，确认日/起息日/
         XIRR 现金流日全部偏前。
-     ② 存续期开放日申购、赎回：T+1 个交易日确认，遇周末与法定节假日顺延。
-     成立日若恰逢非交易日，份额实际在下个交易日确认，故取「成立日」与「T+1 工作日」较晚者。
-     非募集期的存量记录不改写（T+2 产品、跨节顺延等以人工填写为准）。
+     ② 存续期开放日申购、赎回：默认 T+1 个工作日；说明书明确约定 T+2 的产品按
+        CONFIRM_WORKDAY_OFFSET 取 T+2，遇周末与法定节假日顺延。中邮鸿锦7天45号
+        （Z7001926001090）建行 PDF 原文「申购/赎回受理日后第 2 个工作日确认」，
+        故 11-26（周四）提交 → 11-27（周五）T+1 → 11-30（周一）T+2。
+     ③ 成立日若恰逢非交易日，份额实际在下个交易日确认，故募集期取「成立日」与「T+1 工作日」较晚者。
+     ④ 存量记录：人工填写的确认日一律保留；但若存的是旧版自动 T+1 值，
+        且该产品说明书为 T+2，则视为过期默认值纠正为 T+2，否则交易流水会继续显示错误的 11-27。
      判定只用产品库要素表里的 raiseStart/raiseEnd/inception（说明书原文；新品数据里成立日字段名是
      establish），不拿首个净值日当成立日——净值序列可能被截断，用截断后的首点会把老产品误判成募集期。 */
   function confirmDateFor(p, applyDate, stored) {
+    var offset = (p && p.regCode && CONFIRM_WORKDAY_OFFSET[p.regCode]) || 1;
+    var auto = addWorkdays(applyDate, offset);
     var nd = nextWorkday(applyDate);
-    if (!applyDate) return stored || nd || '';
+    if (!applyDate) return stored || auto || '';
     var it = p ? libItemOf(p) : null;
     /* 产品库把成立日存成 inception（说明书「成立日」），新品数据里叫 establish，两者都认 */
     var establish = it && (it.establish || it.inception);
@@ -310,7 +334,8 @@
     var inRaise = !!(establish && applyDate < establish &&
       (!rs || applyDate >= rs) && (!re || applyDate <= re));
     if (inRaise) return establish > nd ? establish : nd;
-    return stored || nd;
+    if (offset > 1 && stored && stored === nd) return auto;
+    return stored || auto;
   }
 
   /* 把「募集期认购」的存量交易确认日校正到成立日：只改内存渲染值，不写库，
@@ -323,6 +348,12 @@
       var want = confirmDateFor(findProductById(t.pid), t.applyDate, t.confirmDate);
       if (want && want !== t.confirmDate) t.confirmDate = want;
     });
+  }
+
+  /* 测试钩子：仅在守卫绕过模式（专项脚本）下暴露，正式站不挂载。
+     用来直接断言确认日偏移与存量纠正，避免只靠界面点击漏掉数据层口径。 */
+  if (window.__GATE_BYPASS__) {
+    window.__DASH_CONFIRM_TEST__ = { confirmDateFor: confirmDateFor, addWorkdays: addWorkdays };
   }
 
   /* 成立天数：真实成立日到今天（当日）的自然日数 */
@@ -748,7 +779,8 @@
   }
 
   /* 截至某净值日已起息的份额：只累计起息日 <= 该净值日的批次。
-     银行规则：份额自确认日（T+1）当日净值起享有收益，此前净值涨跌不归属该批次。 */
+     银行规则：份额自确认日（默认 T+1、说明书 T+2 的产品为 T+2）当日净值起享有收益，
+     此前净值涨跌不归属该批次。 */
   function vestedShares(lots, navDate) {
     if (!lots || !lots.length || !navDate) return 0;
     var s = 0;
@@ -945,8 +977,8 @@
       } else {
         /* 清仓后重新申购：起息日按本次确认日重新计算 */
         if (!(rec.shares > 0.000001)) rec.startDate = t.confirmDate;
-        /* 每笔买入记为独立份额批次，起息日 = 该笔确认日（T+1）。
-           银行规则：T 日按 T 日净值成交、T+1 确认起息；一批份额的收益从
+        /* 每笔买入记为独立份额批次，起息日 = 该笔确认日（默认 T+1，T+2 产品为 T+2）。
+           银行规则：T 日按 T 日净值成交、确认日起息；一批份额的收益从
            「确认日当日净值」开始归属，确认日之前的净值涨跌与其无关。
            navDate 记录「成交净值日」（T 日），只用于年化分母，保证与按成交净值买入的分子同口径。 */
         var buyNavDate = navDateAt(p, t.applyDate || t.confirmDate) || t.confirmDate || t.applyDate;
@@ -979,7 +1011,7 @@
       var mv = rec.shares * latestNav;
       var profit = mv - rec.cost + rec.realized;
       /* 持仓天数按建行理财口径：持仓天数 = t 日 − 起息日（t 日 = 今天）。
-         起息日 = 份额确认日（T 日申购按 T 日净值成交，T+1 确认份额并起息）。
+         起息日 = 份额确认日（T 日申购按 T 日净值成交，确认日起息）。
          确认日早于产品首个净值日时（新发产品成立当天确认、次日起才有净值），
          起息日按首个净值日计：产品没有净值的日子不可能产生收益，也不能算进持有期。
          例：信银安盈象14天165号 08-25 成立并确认、08-26 首个净值日，
@@ -2390,7 +2422,7 @@
         markPoint/markLine + SVG 渲染器（约 500KB，gzip 173KB），并在首屏 init 后
         立即用 fetch 预热 HTTP 缓存、load 完成后空闲注入脚本——用户读首屏这几秒里
         图库已就绪，切到趋势页几乎不再等待。 */
-  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126h';
+  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126i';
   function injectEcharts() {
     if (window.echarts || window.__ECHARTS_INJECTED__) return;
     window.__ECHARTS_INJECTED__ = true;
@@ -4775,7 +4807,8 @@
     var applyDate = applyEl ? applyEl.value : '';
     var confirmDate = confirmDateFor(p, applyDate, '');
     /* 成交净值按申购日（T 日）净值；T 日净值未披露时显示「待确认」，不用最近净值预估。
-       确认日期：募集期认购取产品成立日，存续期申购取 T+1 工作日（见 confirmDateFor）。 */
+       确认日期：募集期认购取产品成立日，存续期申购/赎回默认 T+1、说明书约定 T+2 的产品取 T+2
+       （见 confirmDateFor / CONFIRM_WORKDAY_OFFSET）。 */
     var navOn = applyDate ? navOnDate(p, applyDate) : null;
     if (dateEl) dateEl.value = confirmDate;
     if (navEl) {
@@ -5689,7 +5722,7 @@
           '<td class="r num">' + fmtMoneyCell(txShares(t, p)) + '</td>' +
           '<td class="r num">' + (st === '在途' ? '<span class="pending-nav">待确认</span>' : fmtNav(txConfirmNav(t, p))) + '</td>' +
           '<td class="r num">' + (txAmount(t, p) === null ? '<span class="pending-nav">待确认</span>' : fmtMoneyCell(txAmount(t, p))) + '</td>' +
-          '<td class="c num" title="份额确认日：募集期认购按产品成立日，存续期申购/赎回按 T+1 工作日">' + t.confirmDate + '</td>' +
+          '<td class="c num" title="份额确认日：募集期认购按产品成立日，存续期申购/赎回按产品说明书 T+1 或 T+2 工作日">' + t.confirmDate + '</td>' +
           '<td class="c"><span class="tag' + (st === '在途' ? ' np' : '') + '" title="' +
             (st === '在途' ? '在途：' + txPendingReason(t) + '，暂不计入持仓；净值披露后自动转为已确认' : '已确认并计入持仓') + '">' + st + '</span></td>' +
           '<td class="c"><button class="mini" data-edit="' + t.id + '">修改</button> ' +
