@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261126g';
+  window.__NP_LAYOUT_VERSION = '20261126h';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -1360,10 +1360,13 @@
   /* 表格金额单元格专用：把金额拆成「整数 / 小数点 / 两位小数」三段，
      整数段右对齐占固定宽度、小数段左对齐，小数点由 CSS grid 锁死在同一竖线。
      这样即使 iOS 上字体回退成非等宽字体、千分位逗号宽度不一，也不会让小数点错位。
-     （2026-11-24 小数点第三次修复：前两次只加 tabular-nums/右对齐，iOS 缓存旧 CSS 时仍失效） */
-  function fmtMoneyCell(v) {
+     2026-11-26：WebKit 长金额小数点锁定（minmax 第一列 + 竖屏加宽数值列）；
+     signed=true 时正值补 + 号，供持仓收益/累计收益复用同一套三段结构。 */
+  function fmtMoneyCell(v, signed) {
     if (v === null || v === undefined || isNaN(v)) return '—';
-    var s = v.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    var n = Number(v);
+    var s = n.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (signed && n > 0) s = '+' + s;
     var dot = s.indexOf('.');
     if (dot < 0) return s;
     return '<span class="mcell"><span class="mci">' + s.slice(0, dot) +
@@ -2387,7 +2390,7 @@
         markPoint/markLine + SVG 渲染器（约 500KB，gzip 173KB），并在首屏 init 后
         立即用 fetch 预热 HTTP 缓存、load 完成后空闲注入脚本——用户读首屏这几秒里
         图库已就绪，切到趋势页几乎不再等待。 */
-  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126g';
+  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126h';
   function injectEcharts() {
     if (window.echarts || window.__ECHARTS_INJECTED__) return;
     window.__ECHARTS_INJECTED__ = true;
@@ -5436,10 +5439,10 @@
           '</div></td>' +
         '<td class="r num mv-col">' + fmtMoneyCell(h.mv) + '</td>' +
         '<td class="c num">' + (h.latestDate ? withBadge(mmdd(h.latestDate), navLagBadge(h.product)) : '—') + '</td>' +
-        '<td class="r num ' + colorBy(h.holdProfit) + '" title="持仓收益（仅当前持仓份额）= 市值 − 剩余成本">' + fmtSigned(h.holdProfit) + '</td>' +
+        '<td class="r num ' + colorBy(h.holdProfit) + '" title="持仓收益（仅当前持仓份额）= 市值 − 剩余成本">' + fmtMoneyCell(h.holdProfit, true) + '</td>' +
         '<td class="r num ' + (h.annShort ? 'muted' : colorBy(h.ann)) + '" title="' + annTipOf(h) + '">' +
           fmtAnnCell(h.ann, h.annShort ? '<sup class="dag" title="计息不足 ' + SHORT_ANN_DAYS + ' 天，年化为短样本折算，仅供参考">*</sup>' : '') + '</td>' +
-        '<td class="r num ' + colorBy(h.profit) + '" title="累计收益 = 持仓收益 + 已赎回部分已实现">' + fmtSigned(h.profit) + '</td>' +
+        '<td class="r num ' + colorBy(h.profit) + '" title="累计收益 = 持仓收益 + 已赎回部分已实现">' + fmtMoneyCell(h.profit, true) + '</td>' +
         '<td class="r num shares-col">' + fmtMoneyCell(h.shares) + '</td>' +
         '<td class="r num nav-col">' + fmtNav(h.latestNav) + '</td>' +
         '<td class="c num dcell" title="持仓天数 ' + h.days + ' 天 = 今天 − 起息日 ' + (h.effStartDate || '') +
