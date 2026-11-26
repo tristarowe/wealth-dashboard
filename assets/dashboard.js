@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261126b';
+  window.__NP_LAYOUT_VERSION = '20261126c';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -257,12 +257,33 @@
     return cand || first || '';
   }
 
-  /* 产品库要素（按登记编码）：募集起止日与成立日，用于判定「募集期认购」 */
+  /* 产品库要素（按登记编码）：募集起止日与成立日，用于判定「募集期认购」。
+     2026-11-26：交易弹窗允许直接录入「今日新品」，这类产品要素在 newproducts.js、
+     尚未进 PRODUCT_LIBRARY。旧实现只查产品库，导致 11-26 认购、12-01 成立的
+     招睿添利日开30号被误判为存续期申购，确认日取 T+1 得 11-27（应为成立日 12-01）。
+     这里把新品要素按同一结构补进来，募集期规则对两类产品完全一致。 */
   function libItemOf(p) {
-    if (!p || !p.regCode) return null;
+    if (!p) return null;
     var items = (typeof PRODUCT_LIBRARY !== 'undefined' && PRODUCT_LIBRARY.items) || [];
-    for (var i = 0; i < items.length; i++) {
-      if (items[i].regCode === p.regCode) return items[i];
+    if (p.regCode) {
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].regCode === p.regCode) return items[i];
+      }
+    }
+    var np = (window.NEW_PRODUCTS && window.NEW_PRODUCTS.items) || [];
+    for (var j = 0; j < np.length; j++) {
+      var hit = (p.regCode && String(np[j].regCode || '') === String(p.regCode)) ||
+        (!p.regCode && p.name && np[j].name === p.name);
+      if (hit) {
+        return {
+          regCode: np[j].regCode || '',
+          /* 新品字段叫 establish，产品库叫 inception；confirmDateFor 两者都认 */
+          establish: np[j].establish || '',
+          inception: np[j].inception || np[j].establish || '',
+          raiseStart: np[j].raiseStart || '',
+          raiseEnd: np[j].raiseEnd || ''
+        };
+      }
     }
     return null;
   }
@@ -1324,7 +1345,9 @@
      正负号、短样本 † 与 % 后缀都不再移动小数点（旧版只靠右对齐 + 零宽 %，
      有符号或不同整数位时目视仍会错开一格）。 */
   function fmtCellDecimal(v, suffix, signed, badge) {
-    if (v === null || v === undefined || isNaN(v)) return '—';
+    /* 2026-11-26：无数据统一走 .nodash（固定等宽字体 + 固定字号），
+       避免上下两行分属 mono/中文字体时同一个「—」渲染出两种长度。 */
+    if (v === null || v === undefined || isNaN(v)) return '<span class="nodash">—</span>';
     var s = (signed && Number(v) > 0 ? '+' : '') + Number(v).toFixed(2);
     var dot = s.indexOf('.');
     if (dot < 0) return s;
@@ -2288,7 +2311,7 @@
         markPoint/markLine + SVG 渲染器（约 500KB，gzip 173KB），并在首屏 init 后
         立即用 fetch 预热 HTTP 缓存、load 完成后空闲注入脚本——用户读首屏这几秒里
         图库已就绪，切到趋势页几乎不再等待。 */
-  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126b';
+  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126c';
   function injectEcharts() {
     if (window.echarts || window.__ECHARTS_INJECTED__) return;
     window.__ECHARTS_INJECTED__ = true;
@@ -3111,15 +3134,15 @@
         winCell(w7) + winCell(w14) + winCell(w30) +
         /* 成立至今 2026-11-20：与 30日列同款双行——上日均万收、下成立年化，同口径自洽（ann≈per×3.65） */
         sinceCell(m) +
-        '<td class="c pmeta">' + (riskShort(p) || '—') + '</td>' +
+        '<td class="c pmeta">' + (riskShort(p) || '<span class="nodash">—</span>') + '</td>' +
         '<td class="c pmeta">' + term + '</td>' +
         '<td class="r num">' + (m.latestNav != null ? fmtNav(m.latestNav) : '<span class="muted">待披露</span>') + '</td>' +
         '<td class="c cdate">' + (m.inception && listingDaysOf(p) !== null ?
           '<span>' + m.inception + '</span><i>' + listingDaysOf(p) + ' 天</i>' :
-          '<span class="muted">—</span>') + '</td>' +
+          '<span class="muted nodash">—</span>') + '</td>' +
         '<td class="c">' + (h ? '<button class="mini" data-detail="' + p.id + '">详情</button>' : '') +
           (p.manual ? '<button class="mini warn" data-del-product="' + p.id + '" style="margin-left:4px">删除</button>' : '') +
-          (!h && !p.manual ? '<span class="muted">-</span>' : '') + '</td>' +
+          (!h && !p.manual ? '<span class="muted nodash">—</span>' : '') + '</td>' +
         '</tr>';
     }).join('');
 
