@@ -74,17 +74,41 @@ def inject_live_trades(page):
     page.wait_for_timeout(1500)
     print("已注入云端交易", len(items), "笔用于截图", flush=True)
 
-    # 注入后校验：能对上产品的持仓数应与「去重后的申购产品数」一致。
-    # 少于此说明产品库/别名映射没把交易认全，此时长图会只剩少数几行，必须重试。
-    want = len({t.get("pid") for t in items if t.get("type") == "申购" and t.get("pid")})
-    got = page.evaluate(
-        "() => (window.DASHBOARD_HOLDINGS || []).filter(h => h.shares > 1e-6).length"
+    # 注入后校验：能对上产品的持仓数应与「当前实际有份额的产品数」一致。
+    # 2026-11-26 净份额口径：清仓产品不计入应识别持仓
+    # 原口径用「去重后的申购产品数」，把已全额赎回清仓的产品
+    # 也算进应识别数——云端 16 只申购里有 3 只已清仓，实际持仓本就只有 13 只，
+    # 却被误判成「只认出 13/16」而反复重试、长图失败。改按每只 pid 的申购−赎回
+    # 净份额 >0 计算应持仓数；清仓产品不再计入。真正漏识别（净持仓>0 但没认出
+    # 哪怕一只）才判失败。诊断同时打印缺失 pid，便于下次定位映射问题。
+    net_shares = {}
+    for t in items:
+        pid = t.get("pid")
+        if not pid or t.get("status") not in (None, "", "已确认"):
+            continue
+        typ = t.get("type") or "申购"
+        sh = float(t.get("shares") or 0)
+        if typ == "申购":
+            net_shares[pid] = net_shares.get(pid, 0.0) + sh
+        elif typ in ("赎回", "清仓"):
+            net_shares[pid] = net_shares.get(pid, 0.0) - sh
+    held_pids = {p for p, v in net_shares.items() if v > 1e-6}
+    want = len(held_pids)
+    detail = page.evaluate(
+        """() => ({
+            got: (window.DASHBOARD_HOLDINGS || []).filter(h => h.shares > 1e-6).length,
+            pids: (window.DASHBOARD_HOLDINGS || []).filter(h => h.shares > 1e-6)
+                    .map(h => (h.tx && h.tx.pid) || (h.product && h.product.id) || ''),
+            lib: (window.DASHBOARD_LIBRARY || []).length
+        })"""
     )
-    lib = page.evaluate("() => (window.DASHBOARD_LIBRARY || []).length")
+    got, lib = detail["got"], detail["lib"]
     print(f"注入后持仓 {got} 只（应为 {want} 只），产品库模型 {lib} 只", flush=True)
     if want and got < max(1, want - 1):
+        missing = sorted(held_pids - set(detail["pids"]))
         raise RuntimeError(
-            f"持仓只认出 {got}/{want} 只（产品库模型 {lib} 只），长图会残缺；转重试"
+            f"持仓只认出 {got}/{want} 只（产品库模型 {lib} 只），"
+            f"未识别 pid：{missing}；长图会残缺；转重试"
         )
 
 
