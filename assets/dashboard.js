@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261126r';
+  window.__NP_LAYOUT_VERSION = '20261126s';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -1517,9 +1517,10 @@
     if (AGG) {
       AGG.dates.forEach(function (d, i) {
         if (d.indexOf(ym) !== 0) return;
-        var v = AGG.raw ? AGG.raw[i] : AGG.per10k[i];
-        if (v === null || v === undefined) return;
-        month += v;
+        /* 本月收益与月度表、日均万收同源：跨月首段只取落在本月的那几天 */
+        var sh = periodShare(AGG, i, ym + '-01');
+        if (!sh) return;
+        month += sh.v;
         mCnt += 1;
       });
     }
@@ -2029,6 +2030,28 @@
      —— 周末/节假日不披露净值，其累计涨跌按该段真实跨越的自然日摊销。
      —— 首段可能跨月/跨年，只把落在本期内的天数与对应收益计入本期。
      年化严格由日均万收换算：日均万收 × 3.65 = 年化%。 */
+  /* 2026-11-26：把「跨越期初的那一段」按天数拆开，只保留落在本期内的收益份额。
+     披露日遇周末/节假日会顺延，所以某期第一个披露格常压了上周末尾 2~3 天
+     （如 10-30 披露后，下一个披露日是 11-02）。整段金额既含上期尾几天、也含本期头几天。
+     日历格子必须显示整段（它是披露值，不拆分），但「月度收益 / 年度收益 / 本月收益 /
+     日均万收」只能算本期那几天，否则同一个月会出现「收益 +4.00、日均万收 -0.55」
+     这种一列说亏一列说赚的符号打架。以下所有求和点统一走本函数。
+     返回 { v: 本期收益份额, days: 本期计息天数 }。 */
+  function periodShare(p, i, periodStart) {
+    var raw = p.raw ? p.raw[i] : p.per10k[i];
+    if (raw === null || raw === undefined) return null;
+    var gap = p.gaps && p.gaps[i] > 0 ? p.gaps[i] : 1;
+    var segStart = (p.prevDates && p.prevDates[i]) || '';
+    if (segStart && segStart < periodStart && gap > 1) {
+      /* dayDiff 是差值不是包含式计数：11-01 到 11-03 落在本月是 3 天，dayDiff 只给 2，
+         故 +1；否则月初当天披露的那段会判 inside=0 被整段丢弃（收益里有、日均里没有）。
+         inside>=gap 说明整段都在本期，取全额。 */
+      var inside = dayDiff(parseDate(periodStart), parseDate(p.dates[i])) + 1;
+      if (inside > 0 && inside < gap) return { v: raw * inside / gap, days: inside };
+    }
+    return { v: raw, days: gap };
+  }
+
   function cumulativePeriodStats(p, prefix) {
     var idxs = [];
     for (var i = 0; i < p.dates.length; i++) {
@@ -2038,25 +2061,17 @@
     var periodStart = prefix + (/^\d{4}-$/.test(prefix) ? '01-01' : '01');
     var sum = 0, acc = 0, days = 0;
     idxs.forEach(function (i) {
-      var raw = p.raw ? p.raw[i] : p.per10k[i];
-      if (raw === null || raw === undefined) return;
-      sum += raw;
+      var sh = periodShare(p, i, periodStart);
+      if (!sh) return;
       var base = p.prevMv && p.prevMv[i] > 0 ? p.prevMv[i] : 0;
-      var segStart = (p.prevDates && p.prevDates[i]) || p.dates[i];
-      var gap = p.gaps && p.gaps[i] > 0 ? p.gaps[i] : 1;
-      var v = raw;
-      if (segStart < periodStart) {
-        var inside = dayDiff(parseDate(periodStart), parseDate(p.dates[i]));
-        if (!(inside > 0)) return;
-        v = raw * inside / gap;
-        gap = inside;
-      }
-      if (!(base > 0) || !(gap > 0)) return;
-      /* v/base 是「该段累计收益率」（段内 gap 天合计），先按段累加收益率，
+      /* 无市值的段（清仓后空档）整段跳过：收益与日均同时不计，避免一方进一方不进 */
+      if (!(base > 0) || !(sh.days > 0)) return;
+      /* v/base 是「该段累计收益率」（段内 sh.days 天合计），先按段累加收益率，
          最后统一除以总天数：avg = Σ(段收益率) / Σ(段天数) × 10000。
-         不能写成 Σ(段收益率 × 天数)：段收益率本身已含 gap 天，再乘天数会把周更产品的权重放大 gap 倍。 */
-      acc += v / base;
-      days += gap;
+         不能写成 Σ(段收益率 × 天数)：段收益率本身已含天数，再乘会把周更产品的权重放大。 */
+      sum += sh.v;
+      acc += sh.v / base;
+      days += sh.days;
     });
     if (!(days > 0)) return { avg: null, ann: null, days: 0, sum: sum };
     var avg = acc / days * 10000;
@@ -2065,17 +2080,19 @@
 
   function monthStats(p, perMap, y, m, keepPid) {
     var prefix = y + '-' + String(m + 1).padStart(2, '0') + '-';
-    var sum = 0, cnt = 0, pos = 0, neg = 0, flat = 0;
+    var cnt = 0, pos = 0, neg = 0, flat = 0;
     p.dates.forEach(function (dt) {
       if (dt.indexOf(prefix) !== 0) return;
       var v = perMap[dt];
       if (v === undefined) return;
-      sum += v;
       cnt += 1;
+      /* 正/回撤/挂0 按单日金额判号，跨月段缩放不改符号，故无需摊销 */
       if (v > 0.005) pos += 1;
       else if (v < -0.005) neg += 1;
       else flat += 1;
     });
+    /* 月度「收益」不再自己全额求和，直接用 cumulativePeriodStats 的 sum：
+       它已按 periodShare 只统计落在本月的那几天，与「日均万收」同源，两列必然同号。 */
     var st = cumulativePeriodStats(p, prefix);
     /* 2026-11-26：月度「年化」改用「单月收益率年化」口径 —— 当月收益 ÷ 期初市值
        × 365 ÷ 当月自然日数，等价于日均万收 × 3.65。
@@ -2085,7 +2102,7 @@
        月度列衡量「该月赚钱速度」，累计卡衡量「整笔资金的内部收益率」。 */
     var ann = st.ann;
     return {
-      sum: sum,
+      sum: st.sum,
       avg: st.avg,
       cnt: cnt,
       pos: pos,
@@ -2255,7 +2272,13 @@
         cells.push('<div class="cell nodata"><div class="d">' + d2 + '</div><div class="v">—</div><div class="a">—</div></div>');
         continue;
       }
-      sum += v;
+      /* 2026-11-26：与月度表、年度表同口径 —— 跨月首格只计落在本月的那几天。
+         日历格子本身仍显示整段披露值（数据里没有拆分后的每日净值），所以
+         「格子逐格相加」会比这里的合计多出月初/月末那几天，属口径统一的必然代价；
+         跨月格已加 title 说明覆盖哪几天。 */
+      var ai = (AGG && AGG.dates) ? AGG.dates.indexOf(ds) : -1;
+      var sh = ai >= 0 ? periodShare(AGG, ai, prefix + '01') : null;
+      sum += sh ? sh.v : v;
       if (v > 0.005) pos += 1; else if (v < -0.005) neg += 1; else flat += 1;
       /* 2026-11-26：挂0 日（收益恰为 0）保留后，不能让 0 抢走「最佳/最低」角标 ——
          整月无回撤时 0 会变成最小值、被误标成「今日收益最低」。
@@ -2264,7 +2287,14 @@
       var worst = (minV !== null && minV < -0.005 && Math.abs(v - minV) < 1e-9);
       // 手机端格子窄，两位小数会被截断，绝对值≥10 时收一位
       var txt = (compact && Math.abs(v) >= 10) ? (v > 0 ? '+' : '') + v.toFixed(1) : fmtSigned(v);
-      cells.push('<div class="cell' + (best ? ' best' : '') + '">' +
+      /* 跨多日的格子标一句覆盖范围：周末/节假日顺延后一格常压了 2~3 天，
+         让「格子是几天的合计」这件事在界面上可见，不至于误以为是单日收益 */
+      var spanTip = '';
+      if (ai >= 0 && AGG.gaps && AGG.gaps[ai] > 1 && AGG.prevDates) {
+        spanTip = ' title="' + ds + ' 覆盖 ' + AGG.prevDates[ai] + ' 至 ' + ds + ' 共 ' + AGG.gaps[ai] +
+          ' 天的收益' + (AGG.prevDates[ai] < prefix + '01' ? '；其中上月末那几天算上月，本格只把本月部分计入当月' : '') + '"';
+      }
+      cells.push('<div class="cell' + (best ? ' best' : '') + '"' + spanTip + '>' +
         '<div class="d">' + d2 + (best ? '<span class="thumb">' + THUMB_UP + '</span>' : '')
           + (worst ? '<span class="thumb thumb-down" title="今日收益最低">' + THUMB_DOWN + '</span>' : '') + '</div>' +
         '<div class="vrow"><span class="v ' + colorBy(v) + '">' + txt + '</span></div>' +
@@ -2278,7 +2308,7 @@
     var summary = document.getElementById('cal-summary');
     if (summary) {
       summary.innerHTML =
-        '<span class="lead">当月收益<b class="' + colorBy(sum) + '">' + fmtSigned(sum) + '</b><i>元</i></span>' +
+        '<span class="lead" title="只计落在本月的那几天。月初第一格若含上月末 2~3 天（周末/节假日顺延披露），那部分算上月，故与日历格子逐格相加会差这一小段。">当月收益<b class="' + colorBy(sum) + '">' + fmtSigned(sum) + '</b><i>元</i></span>' +
         '<span class="st">正收益<b>' + pos + '</b><i>天</i></span>' +
         '<span class="st">回撤<b>' + neg + '</b><i>天</i></span>' +
         '<span class="st">挂0<b>' + flat + '</b><i>天</i></span>';
@@ -2316,7 +2346,9 @@
       var v = AGG.raw ? AGG.raw[i] : AGG.per10k[i];
       if (v === null || v === undefined) return;
       if (!map[y]) map[y] = { sum: 0, cnt: 0, pos: 0, neg: 0, flat: 0 };
-      map[y].sum += v;
+      /* 年度「收益」同样只计落在本年度的那几天：跨年首段按天拆开，
+         与年度日均万收同源，避免跨年时两列符号相反（同月度表口径） */
+      map[y].sum += periodShare(AGG, i, y + '-01-01').v;
       map[y].cnt += 1;
       if (v > 0.005) map[y].pos += 1;
       else if (v < -0.005) map[y].neg += 1;
@@ -2454,7 +2486,7 @@
         markPoint/markLine + SVG 渲染器（约 500KB，gzip 173KB），并在首屏 init 后
         立即用 fetch 预热 HTTP 缓存、load 完成后空闲注入脚本——用户读首屏这几秒里
         图库已就绪，切到趋势页几乎不再等待。 */
-  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126r';
+  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126s';
   function injectEcharts() {
     if (window.echarts || window.__ECHARTS_INJECTED__) return;
     window.__ECHARTS_INJECTED__ = true;
