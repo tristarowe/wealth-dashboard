@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261126m';
+  window.__NP_LAYOUT_VERSION = '20261126n';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -2445,7 +2445,7 @@
         markPoint/markLine + SVG 渲染器（约 500KB，gzip 173KB），并在首屏 init 后
         立即用 fetch 预热 HTTP 缓存、load 完成后空闲注入脚本——用户读首屏这几秒里
         图库已就绪，切到趋势页几乎不再等待。 */
-  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126m';
+  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126n';
   function injectEcharts() {
     if (window.echarts || window.__ECHARTS_INJECTED__) return;
     window.__ECHARTS_INJECTED__ = true;
@@ -5765,7 +5765,10 @@
             (flowSel[t.id] ? ' checked' : '') + '></td>' +
           '<td class="num">' + t.applyDate + '</td>' +
           '<td><div class="pname">' + (p ? prodDispName(p) : t.pid) + '</div></td>' +
-          '<td class="c"><span class="tag' + (t.type === '赎回' || t.type === '清仓' ? ' new' : '') + '">' + t.type + '</span></td>' +
+          /* 2026-11-26：类型标签字色/填充色与持仓汇总操作按钮一致（申购↔加购、赎回↔赎回、清仓↔清仓）。
+             不复用 .tag.new：该 class 还用于「持仓」角标，改它会误伤别处。 */
+          '<td class="c"><span class="tag ttype-' +
+            (t.type === '申购' ? 'buy' : t.type === '赎回' ? 'sell' : 'warn') + '">' + t.type + '</span></td>' +
           '<td class="r num">' + fmtMoneyCell(txShares(t, p)) + '</td>' +
           '<td class="r num">' + (st === '在途' ? '<span class="pending-nav">待确认</span>' : fmtNav(txConfirmNav(t, p))) + '</td>' +
           '<td class="r num">' + (txAmount(t, p) === null ? '<span class="pending-nav">待确认</span>' : fmtMoneyCell(txAmount(t, p))) + '</td>' +
