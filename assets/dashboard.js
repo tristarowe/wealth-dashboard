@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261126p';
+  window.__NP_LAYOUT_VERSION = '20261126q';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -2445,7 +2445,7 @@
         markPoint/markLine + SVG 渲染器（约 500KB，gzip 173KB），并在首屏 init 后
         立即用 fetch 预热 HTTP 缓存、load 完成后空闲注入脚本——用户读首屏这几秒里
         图库已就绪，切到趋势页几乎不再等待。 */
-  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126p';
+  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126q';
   function injectEcharts() {
     if (window.echarts || window.__ECHARTS_INJECTED__) return;
     window.__ECHARTS_INJECTED__ = true;
@@ -3278,13 +3278,11 @@
         '<td class="c cdate">' + (m.inception && listingDaysOf(p) !== null ?
           '<span>' + m.inception + '</span><i>' + listingDaysOf(p) + ' 天</i>' :
           '<span class="muted nodash">—</span>') + '</td>' +
-        '<td class="c">' + (h ? '<button class="mini" data-detail="' + p.id + '">详情</button>' : '') +
-          (p.manual ? '<button class="mini warn" data-del-product="' + p.id + '" style="margin-left:4px">删除</button>' : '') +
-          (!h && !p.manual ? '<span class="muted nodash">—</span>' : '') + '</td>' +
+        /* 2026-11-26 用户要求：产品库「操作」列删除，详情/删除按钮不再显示（入口改由名称跳转与添加弹窗历史记录承担） */
         '</tr>';
     }).join('');
 
-    tbody.innerHTML = html || '<tr><td colspan="12" class="c muted" style="padding:28px">当前筛选条件下暂无产品</td></tr>';
+    tbody.innerHTML = html || '<tr><td colspan="11" class="c muted" style="padding:28px">当前筛选条件下暂无产品</td></tr>';
 
     var totalEl = document.getElementById('prod-total');
     if (totalEl) totalEl.textContent = allModels.length;
@@ -5775,7 +5773,8 @@
           '<td class="c num" title="份额确认日：募集期认购按产品成立日，存续期申购/赎回按产品说明书 T+1 或 T+2 工作日">' + t.confirmDate + '</td>' +
           '<td class="c"><span class="tag' + (st === '在途' ? ' np' : '') + '" title="' +
             (st === '在途' ? '在途：' + txPendingReason(t) + '，暂不计入持仓；净值披露后自动转为已确认' : '已确认并计入持仓') + '">' + st + '</span></td>' +
-          '<td class="c"><button class="mini" data-edit="' + t.id + '">修改</button> ' +
+          /* 2026-11-26：操作按钮与持仓汇总同款填充底色、无描边：修改=蓝字浅蓝底、删除=红字浅红底 */
+          '<td class="c"><button class="mini edt" data-edit="' + t.id + '">修改</button> ' +
             '<button class="mini warn" data-del="' + t.id + '">删除</button></td>' +
           '</tr>';
       }).join('');
