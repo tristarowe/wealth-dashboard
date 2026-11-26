@@ -8,7 +8,7 @@
 <!-- 2026-11-24 u 首屏优化：看板脚本提前并行下载，云端域名提前握手；
      两者都不阻塞 HTML 解析，避免旧版「大库先下载完才开始拉 dashboard.js」的串行等待。 -->
 <link rel="preconnect" href="https://asqaxvrovorqfqwpgjkb.supabase.co" crossorigin>
-<link rel="preload" as="script" href="./assets/dashboard.js?v=20261126aa" fetchpriority="low">
+<link rel="preload" as="script" href="./assets/dashboard.js?v=20261126ab" fetchpriority="low">
 <style>
   :root{
     --bg:#f3f5f7; --card:#fff; --soft:#F9FFFF;
@@ -905,6 +905,19 @@
   /* 产品库不设最小宽度：13 列按百分比自适应容器，窄屏也不出现横向滚动条 */
   #prod-table{min-width:0}
 
+  /* ===== 产品库「角标放首行右侧」2026-11-26 第五轮（用户：「角标改放首行右侧」） =====
+     DOM 里 .ptags 排在名称之前（见 dashboard.js 渲染注释），视觉顺序靠下面几条还原：
+     · ≥761（平板/桌面）：flex + order —— 名称在前、链接图标居中、角标最后；
+       名称 flex:0 1 auto（不 grow）→ 角标紧贴名称末尾落在首行，不被挤到第二行；
+       align-items:baseline 让角标文字与名称**首行**同一基线，多行名时角标不往下掉；
+     · ≤760（竖屏）：改用 float:right（见竖屏媒体块），角标贴到单元格首行右端，
+       名称只有首行让位，续行仍吃满整列。 */
+  #prod-table .pname{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:4px}
+  #prod-table .pname>a.plink,
+  #prod-table .pname>.pname-t{order:1;flex:0 1 auto;min-width:0}
+  #prod-table .pname>.prod-link{order:2;flex:0 0 auto;margin-left:2px}
+  #prod-table .pname>.ptags{order:3;flex:0 0 auto;margin-left:0}
+
   @media (max-width:968px){
     /* 横屏/平板宽度下日历并排会把「每日收益」压成窄条，统一改为上下堆叠 */
     .cal-split{grid-template-columns:minmax(0,1fr)}
@@ -953,6 +966,11 @@
     #prod-table tbody td:nth-child(1) .pname>.pname-t{flex:1 1 46%;min-width:0}
     #prod-table tbody td:nth-child(1) .pname>.ptags,
     #sum-table tbody td:nth-child(1) .pname>.ptags{flex:0 0 auto;margin-left:0}
+    /* 第五轮：产品库角标放首行右侧 —— 名称按首行基线对齐（多行名时角标不往下掉）；
+       链接图标固定不伸缩，否则会被上面 `>a{flex:1 1 46%}` 撑成一条大空白。 */
+    #prod-table tbody td:nth-child(1) .pname{align-items:baseline}
+    #prod-table tbody td:nth-child(1) .pname>.prod-link{flex:0 0 auto;order:2;margin-left:2px}
+    #prod-table tbody td:nth-child(1) .pname>.ptags{order:3;margin-left:4px}
     #prod-table tbody td:nth-child(1) .pname>.salech,
     #sum-table tbody td:nth-child(1) .pname>.salech{flex:0 0 100%}
     /* 移动端输入框 16px 仅为防 iOS 聚焦放大；产品库搜索框例外（2026-11-21 五轮用户要求：
@@ -1272,23 +1290,24 @@
     /* 名称列 6px：全局「首页列左对齐 10px」规则（#prod-table thead th:nth-child(1){padding-left/right:10px}）
        选择器多一个 :nth-child，特异性高于上面的 6px，必须显式压回，否则名称列与邻列间距 16px、其余 12px */
     #prod-table thead th:nth-child(1),#prod-table tbody td:nth-child(1){padding-left:6px !important;padding-right:6px !important}
-    /* 名称 / 角标排版 2026-11-26 第四轮（用户：「新品、持仓等角标不参与换行，尽量每个角标都能统一对齐，
-       名称换行就行」）：
-       · 名称占「固定两行槽位」min-height:2.9em（line-height 1.45 × 2 = 36.25px）——一行名的产品
-         也占两行高度，于是角标行永远落在同一 y（实测 46px），220 个产品（171 个一行名 / 49 个两行名）
-         的角标全部在同一水平线，不再随名称行数上下漂移；
-       · 角标行 flex:0 0 100% 独占一行、内部 nowrap：角标自身绝不换行，也不会被名称挤散；
-       · 名称单元格 vertical-align:top：名称顶端统一（原先含角标的行名称被上提 8px、纯名称行居中，错开一档）；
-         行高只剩 52（无角标）/ 69（有角标）两档，虚线分隔节奏一致；
+    /* 名称 / 角标排版 2026-11-26 第五轮（用户：「角标改放首行右侧」）：
+       · .ptags 渲染在名称之前，竖屏用 float:right —— 角标贴在单元格首行右端，
+         名称首行自动缩短让位，续行仍吃满整列（比「整列右侧留一栏」少挤 1~2 行）；
+       · .pname 必须是 block（上一轮的 flex 会忽略 float），并 clear 收尾避免浮动溢出到下一行；
+       · 角标自身 nowrap：多个角标永远同一行，绝不换行；
+       · 名称单元格 vertical-align:top：名称顶端与角标顶端都贴齐行首，各行的角标都落在各自首行；
        · 角标盒统一 20px 高：新品带 1px 描边比持仓高 2px、混排时底边不齐，改为 transparent 边框 + inset 环，
-         视觉不变、与持仓等高同基线；清仓角标自带的 margin-left:6px 也清零（否则比其它角标右缩 6px）。
-       槽位用 min-height 而非 height：将来出现 3 行超长名仍可向下生长，不会被裁切。 */
+         视觉不变、与持仓等高同基线；清仓角标自带的 margin-left:6px 也清零。 */
     #prod-table tbody td:nth-child(1){vertical-align:top}
-    #prod-table tbody td:nth-child(1) .pname{row-gap:2px;align-content:flex-start}
+    #prod-table tbody td:nth-child(1) .pname{display:block}
+    #prod-table tbody td:nth-child(1) .pname::after{content:'';display:block;clear:both}
     #prod-table tbody td:nth-child(1) .pname>a.plink,
-    #prod-table tbody td:nth-child(1) .pname>.pname-t{min-height:2.9em}
-    #prod-table tbody td:nth-child(1) .pname>.prod-link{flex:0 0 auto;margin-left:3px}
-    #prod-table tbody td:nth-child(1) .pname>.ptags{flex:0 0 100%;margin:0;align-items:center;flex-wrap:nowrap;white-space:nowrap}
+    #prod-table tbody td:nth-child(1) .pname>.pname-t{display:inline;float:none;min-height:0}
+    #prod-table tbody td:nth-child(1) .pname>.prod-link{display:inline-flex;float:none;margin-left:3px;vertical-align:-2px}
+    /* 角标浮动盒高度必须正好等于一行的行高（1.45em），否则 20px 的角标会侵入第二行、
+       把名称第二行也挤窄（实测会出现「交银稳享 / 慧选 / 日开13号」三行参差）。
+       角标自身 19.9px 居中后上下各溢出 ~0.9px，视觉不可见。 */
+    #prod-table tbody td:nth-child(1) .pname>.ptags{float:right;margin:0 0 0 5px;height:1.45em;display:flex;align-items:center;flex-wrap:nowrap;white-space:nowrap}
     /* 角标盒统一种类：全都带 1px 边框（默认透明）+ border-box，外高一律 19.9px；
        新品的橙色描边改由 inset 环承担（border-color 透明后仍保留 1px 宽度，尺寸不变、观感不变），
        清仓角标自带的 margin-left:6px 清零，避免比其它角标右缩 6px。 */
@@ -2532,7 +2551,7 @@
             <div class="att-title">数据说明与口径（PDF）</div>
             <div class="att-sub">含全局口径、顶部指标卡、盈亏、年化口径辨析、交易、新品预告、产品库、添加产品、数据体检九组 · 更新于 2026-11-26（含份额确认日 T+1/T+2 规则）</div>
           </div>
-          <a class="btn primary" href="./assets/数据说明.pdf?v=20261126aa" target="_blank" rel="noopener">点击查看</a>
+          <a class="btn primary" href="./assets/数据说明.pdf?v=20261126ab" target="_blank" rel="noopener">点击查看</a>
         </div>
       </div>
     </section>
@@ -2689,9 +2708,9 @@
      「新 HTML + 旧渲染」的错位（表现为新品预告仍是拉伸甘特卡片 + 巨大原生多选框）。 -->
 <!-- 2026-11-24 u：ECharts / html2canvas 改按需加载（趋势图、导出长图才拉），
      不再让 338KB + 47KB 的库阻塞首屏；加载器分别在 dashboard.js 与本页导出逻辑内。 -->
-<script src="./assets/data.js?v=20261126aa" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
-<script src="./assets/risk_levels.js?v=20261126aa"></script>
-<script src="./assets/transactions.js?v=20261126aa"></script>
+<script src="./assets/data.js?v=20261126ab" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
+<script src="./assets/risk_levels.js?v=20261126ab"></script>
+<script src="./assets/transactions.js?v=20261126ab"></script>
 <script>
   /* 公开底稿已脱敏：只含 id+pid 的占位行供后台抓净值，不含 applyDate 等明细。
      前端渲染前剔除这类行，真实交易明细由登录后从 Supabase 云端拉取。 */
@@ -2700,16 +2719,16 @@
     if (T && T.items) T.items = T.items.filter(function (t) { return !!t.applyDate; });
   })();
 </script>
-<script src="./assets/newproducts.js?v=20261126aa"></script>
-<script src="./assets/library.js?v=20261126aa"></script>
-<script src="./assets/supabase-config.js?v=20261126aa"></script>
-<script src="./assets/auth.js?v=20261126aa"></script>
-<script src="./assets/store.js?v=20261126aa" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
+<script src="./assets/newproducts.js?v=20261126ab"></script>
+<script src="./assets/library.js?v=20261126ab"></script>
+<script src="./assets/supabase-config.js?v=20261126ab"></script>
+<script src="./assets/auth.js?v=20261126ab"></script>
+<script src="./assets/store.js?v=20261126ab" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
 <script>
   /* 先用本地缓存/内置底稿立即渲染，云端数据在后台取回后再重绘，避免等待网络白屏 */
   /* 前序脚本缺失或命中旧缓存时（STORE_READY 不存在）也照常加载看板，避免页面停在空白骨架 */
   (function () {
-    var NP_BUILD = '20261126aa';
+    var NP_BUILD = '20261126ab';
     function boot(msg, forced) {
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
@@ -2736,7 +2755,7 @@
       // 隐私小眼睛：dashboard.js 就绪后再加载，才能包装 DASHBOARD_REFRESH 并在渲染后套用打码
       if (!window.PRIVACY) {
         var pv = document.createElement('script');
-        pv.src = './assets/privacy.js?v=20261126aa';
+        pv.src = './assets/privacy.js?v=20261126ab';
         document.body.appendChild(pv);
       }
       if (!window.STORE_REFRESH || typeof window.STORE_REFRESH.then !== 'function') return;
@@ -3179,7 +3198,7 @@
       if (h2cLoading) return h2cLoading;
       h2cLoading = new Promise(function (resolve, reject) {
         var s = document.createElement('script');
-        s.src = './assets/html2canvas.min.js?v=20261126aa';
+        s.src = './assets/html2canvas.min.js?v=20261126ab';
         s.onload = resolve;
         s.onerror = function () { h2cLoading = null; reject(new Error('截图组件加载失败')); };
         document.head.appendChild(s);

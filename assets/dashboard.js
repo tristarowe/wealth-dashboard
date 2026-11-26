@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261126aa';
+  window.__NP_LAYOUT_VERSION = '20261126ab';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -2621,7 +2621,7 @@
         markPoint/markLine + SVG 渲染器（约 500KB，gzip 173KB），并在首屏 init 后
         立即用 fetch 预热 HTTP 缓存、load 完成后空闲注入脚本——用户读首屏这几秒里
         图库已就绪，切到趋势页几乎不再等待。 */
-  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126aa';
+  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126ab';
   function injectEcharts() {
     if (window.echarts || window.__ECHARTS_INJECTED__) return;
     window.__ECHARTS_INJECTED__ = true;
@@ -3426,11 +3426,10 @@
 
       return '<tr data-pid="' + p.id + '">' +
         /* 星标列 2026-11-21 按用户要求移除，释放的列宽已均分给其余各列（colgroup 6.1%→6.37%） */
-        '<td><div class="pname">' + (h ?
-          '<a class="plink" href="javascript:void(0)" data-goto-trade="' + p.id + '" title="' + (p.name || '') + '">' +
-            prodDispName(p) + '</a>' :
-          '<span class="pname-t" title="' + (p.name || '') + '">' + prodDispName(p) + '</span>') +
-          prodLinkIcon(p) +
+        /* 2026-11-26 第五轮（用户：「角标改放首行右侧」）：.ptags 提到名称**之前**渲染 ——
+           竖屏靠 float:right 让它只占首行右端（续行名称仍吃满整列），
+           平板/桌面靠 flex order 还原「名称 → 链接图标 → 角标」的视觉顺序。 */
+        '<td><div class="pname">' +
           '<span class="ptags">' +
           (h ? (h.cleared ?
             '<span class="cleared-date">' +
@@ -3442,6 +3441,11 @@
           (isNew ? '<span class="tag np">新品</span>' : '') +
           (p.manual ? '<span class="tag" style="background:#f4f7f9;color:#7d939f" title="手工添加的产品">手工</span>' : '') +
           '</span>' +
+          (h ?
+          '<a class="plink" href="javascript:void(0)" data-goto-trade="' + p.id + '" title="' + (p.name || '') + '">' +
+            prodDispName(p) + '</a>' :
+          '<span class="pname-t" title="' + (p.name || '') + '">' + prodDispName(p) + '</span>') +
+          prodLinkIcon(p) +
           '</div></td>' +
         '<td class="c num">' + (m.latestDate ? withBadge(mmdd(m.latestDate), navLagBadge(p)) : '<span class="muted">待披露</span>') + '</td>' +
         '<td class="r num ' + colorBy(m.todayPer) + '" data-col="p10k">' + fmtCellDecimal(m.todayPer, '', true) + '</td>' +
