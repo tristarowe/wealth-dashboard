@@ -143,6 +143,8 @@
 
 | E69 | 只选在途产品时，年度表「暂无收益数据」但月度表仍挂着旧月份（11 月 +18.33…，11-26）；年表/月表「收益」「日均万收」配色不一致 | ①`renderCalendar` 在 `AGG` 为空时只清日历与年度表（年度表由 `renderYearView` 自己写空态），**没有清 `#month-list`**，DOM 保留了上一次渲染的行；日历标题、年月下拉也留着上一次的年月。②月表所有 span 被 `.month-item > span:not(.rate-cell){color:var(--muted)!important}` 统一成灰字，年表 `td.cnt`（日均万收）也是灰字，而年表收益走 `.up` 有涨跌色 → 同列两表、同表两列配色不一致。 | ①空态分支同时重建月度表（表头 + `.month-empty`「暂无收益数据」，留白与年表一致），`#year-label` 恢复「月度收益」、`#cal-sub` 恢复「每日收益」，年月下拉与箭头置灰、占位「—」；非空分支重新 `disabled=false` 恢复。②`monthStats` 的收益/日均万收与年表 `td.cnt` 都带 `colorBy()`，新增 `.month-item > span.v.up/.d.up`、`.year-table td.cnt.up/.down` 高优先级规则（置于 muted `!important` 之后）统一红涨绿跌。实测：全选 4 行、四列颜色均为 `rgb(192,57,43)`；只选在途 → 两表同为空态、下拉置灰、`本月收益 —`；切回全部产品恢复；393 竖屏无溢出；period_edges/period_share/month_sum_year/skipped_hint/smoke BAD 0。缓存戳 20261126v，守卫清单 a25。 |
 
+| E70 | 年表与月表「收益」数字格式不一样（11-26） | 年表收益走 `fmtMoney`（`toLocaleString`，带千分位、正号手工拼）→ `+1,234.56`；月表收益走 `fmtSigned`（`toFixed(2)`，无千分位）→ `+1234.56`，同一个数在两处格式不同。零值颜色也不一致：年表 `colorBy(0)` 返回空串 → 继承墨色（深黑），月表被 `.month-item > span{color:muted!important}` 压成灰色。 | 千分位统一收进 `fmtSigned()`（`Math.abs` 后 `toLocaleString` 两位小数 + 正负号），年表/月表/指标卡/日历汇总共用同一函数；年表收益改用 `fmtSigned`，零值加 `muted`（与月表一致，0 既非涨也非跌）；年表日均万收也改用 `fmtSigned`，去掉手工拼正号。实测：净值全平场景年表与各月 4 处均为 `0.00`、同色 `rgb(93,107,118)`、同右对齐；金额过千场景两处均 `+4,200.00`/`+11,200.00` 带千分位且同色；年度 = 各月相加；393 竖屏指标卡与月表收益均未裁切、无横向溢出。缓存戳 20261126w，守卫清单 a26。 |
+
 ---
 
 ## 核对方式（每日排查）

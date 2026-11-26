@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261126v';
+  window.__NP_LAYOUT_VERSION = '20261126w';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -1305,9 +1305,15 @@
     return (v > 0 ? '+' : '') + v.toFixed(2);
   }
 
+  /* 带符号两位小数：正数显示 +，负数自带 -，0 不带符号。
+     2026-11-26：千分位统一到这里 —— 年表「收益」原先走 fmtMoney（1,234.56），
+     月表走 toFixed（1234.56），同一个数在两处格式不同。全站金额展示共用本函数，
+     保证「+1,234.56 / -12.34 / 0.00」在两表、指标卡、日历汇总完全一致。 */
   function fmtSigned(v) {
     if (v === null || v === undefined || isNaN(v)) return '—';
-    return (v > 0 ? '+' : '') + v.toFixed(2);
+    var n = Number(v);
+    var abs = Math.abs(n).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return (n > 0 ? '+' : n < 0 ? '-' : '') + abs;
   }
 
   function fmtAnn(v) {
@@ -2485,9 +2491,9 @@
 
       return '<tr data-year="' + y + '" class="' + (y === String(calState.y) ? 'on' : '') + '">' +
         '<td class="ym">' + y + '</td>' +
-        '<td class="r num ' + colorBy(s.sum) + '">' + (s.sum > 0 ? '+' : '') + fmtMoney(s.sum) + '</td>' +
+        '<td class="r num ' + (colorBy(s.sum) || 'muted') + '">' + fmtSigned(s.sum) + '</td>' +
         '<td class="r num cnt ' + colorBy(avgWan) + '" title="日均万收 = 区间收益 ÷ 期初市值 ÷ 自然日数 × 10000；每日赚钱速度，时间加权">'
-          + (avgWan === null ? '—' : (avgWan > 0 ? '+' : '') + avgWan.toFixed(2)) + '</td>' +
+          + (avgWan === null ? '—' : fmtSigned(avgWan)) + '</td>' +
         '<td class="num cnt">' + s.pos + '</td>' +
         '<td class="num cnt">' + s.neg + '</td>' +
         '<td class="num cnt">' + (s.flat || 0) + '</td>' +
@@ -2589,7 +2595,7 @@
         markPoint/markLine + SVG 渲染器（约 500KB，gzip 173KB），并在首屏 init 后
         立即用 fetch 预热 HTTP 缓存、load 完成后空闲注入脚本——用户读首屏这几秒里
         图库已就绪，切到趋势页几乎不再等待。 */
-  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126v';
+  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126w';
   function injectEcharts() {
     if (window.echarts || window.__ECHARTS_INJECTED__) return;
     window.__ECHARTS_INJECTED__ = true;
