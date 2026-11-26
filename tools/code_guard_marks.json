@@ -1,7 +1,7 @@
 {
   "_doc": "跨端代码守卫共用标记清单 —— 唯一权威来源。WorkBuddy 的 .githooks/pre-push 与 Trae 的 tools/sync_pages.py 都必须读取本文件，禁止在脚本里硬编码标记列表。新增功能后在此登记，两端自动生效。",
   "_maintainer": "任何一端修改本文件后，需在提交信息中说明原因；改动会同时影响两端的推送守卫。",
-  "version": "2026-11-26a32",
+  "version": "2026-11-26a33",
   "protected": {
     "_doc": "受『整批中止』保护的文件：远端内容被他人改过时，整批拒绝推送，必须先 pull 合并。markers 为该文件必须包含的字符串，缺失即判定为旧版/被回退，整批拒推。",
     "index.html": [
@@ -22,7 +22,7 @@
       "data-stamp",
       "B2/Q2：横屏全表由 11px 提到 11.5px",
       "Q1：手机年表/月表",
-      "v=20261126ac",
+      "v=20261126ad",
       ".tag.ttype-buy",
       ".tag.ttype-sell",
       ".tag.ttype-warn",
@@ -303,7 +303,7 @@
       "公开底稿已脱敏",
       "T.items = T.items.filter(function (t) { return !!t.applyDate; })",
       "登录后可保存你的交易与手工产品数据",
-      "auth.js?v=20261126ac",
+      "auth.js?v=20261126ad",
       "退出后会清除本机交易缓存",
       "label.innerHTML = CHECK",
       "btn.title = '已登录（点击退出登录）'",
@@ -312,7 +312,7 @@
       "window.__GATE_BYPASS__",
       "id=\"gate-submit\"",
       "id=\"privacy-eye\"",
-      "privacy.js?v=20261126ac",
+      "privacy.js?v=20261126ad",
       "window.PRIVACY.maskClone",
       ".hero-title-row",
       "if (eye) eye.style.visibility",
@@ -331,7 +331,7 @@
       "multiple size=\"1\"",
       ".ts-cell span{display:block}",
       ".ts-lane{width:176px",
-      "var NP_BUILD = '20261126ac'",
+      "var NP_BUILD = '20261126ad'",
       "window.__NP_LAYOUT_VERSION !== NP_BUILD",
       ".ts-cell{width:176px;flex:none;padding:6px 2px",
       "2026-11-24 三行版",
@@ -368,7 +368,7 @@
       "nth-child(n+2):nth-child(-n+6){text-align:right!important}",
       "2026-11-24 角标恢复填充/胶囊白底/金额三段对齐/数据说明并入产品库",
       "更新于 2026-11-26（含份额确认日 T+1/T+2 规则）",
-      "数据说明.pdf?v=20261126ac",
+      "数据说明.pdf?v=20261126ad",
       "mcell{display:inline-grid;grid-template-columns:minmax(0,1fr) auto auto;width:100%",
       "doc-attach-line{border-top:1px solid var(--rule);margin-bottom:12px}",
       "cloud-chip.on,.auth-chip.on{background:#fff!important;font-weight:500!important}",
@@ -457,7 +457,12 @@
       "#prod-table tbody td:nth-child(1),#prod-table thead th:nth-child(1){width:auto !important;min-width:0 !important;max-width:none !important}",
       ".month-item > span.v.up,.month-item > span.d.up{color:var(--up)!important}",
       ".year-table td.cnt.down{color:var(--down)!important}",
-      ".month-list .month-empty{padding:28px 9px"
+      ".month-list .month-empty{padding:28px 9px",
+      "产品库「手机横屏」列宽重排 2026-11-26 第七轮",
+      "#prod-table col:nth-child(2){width:63px !important}",
+      "#prod-table col:nth-child(2){width:66.5px !important}",
+      "#prod-table{width:740px}",
+      "#prod-table.no-p10k{width:675px}"
     ],
     "assets/dashboard.js": [
       "2026-11-26 第五轮（用户：「角标改放首行右侧」）",
