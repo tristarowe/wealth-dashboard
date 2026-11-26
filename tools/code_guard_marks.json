@@ -559,7 +559,6 @@
       "ah-deleted",
       "root.style.scrollBehavior = 'auto'",
       "同帧立即滚回原位",
-      "<span class=\"muted\">-</span>",
       "function isNameLine(ln)",
       "function mergeNameLines(idx)",
       "window.__parseOcrFields = parseOcrFields;",
@@ -687,7 +686,8 @@
       "gainLots: rec.gainLots",
       "月度年化 = 当月收益 ÷ 当月期初市值",
       "return '<span class=\"nodash\">—</span>'",
-      "var np = (window.NEW_PRODUCTS && window.NEW_PRODUCTS.items) || []"
+      "var np = (window.NEW_PRODUCTS && window.NEW_PRODUCTS.items) || []",
+      "<span class=\"muted nodash\">—</span>"
     ],
     "assets/store.js": [
       "sbTombstones",
