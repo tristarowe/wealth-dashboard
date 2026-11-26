@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261126c';
+  window.__NP_LAYOUT_VERSION = '20261126d';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -1706,9 +1706,15 @@
       var nmHead = nm.length > 1 ? nm.slice(0, -1) : '';
       var nmLast = nm.slice(-1);
       var nmAttr = ' href="javascript:void(0)" data-goto-trade="' + p.id + '" title="查看「' + (p.name || '') + '」的交易记录"';
+      /* 2026-11-26：盈亏汇总与产品库/持仓汇总联动——清仓行在名称后带同款 T 日角标，
+         日期取交易 T 日（applyDate），旧数据回退确认日；与 👍/👎 一起放进 .pn-last
+         保持 nowrap，名称换行时整组跟随末字，不孤立成行。 */
+      var clearTag = (h && h.cleared && h.tx && (h.tx.applyDate || h.tx.confirmDate))
+        ? '<span class="cleared-date">' +
+          (h.tx.applyDate || h.tx.confirmDate).slice(5).replace('-', '.') + ' 清仓</span>' : '';
       html += '<td' + rs + '><div class="pname"><div class="pn-row">' +
         '<a class="plink"' + nmAttr + '>' + nmHead + '</a>' +
-        '<span class="pn-last"><a class="plink"' + nmAttr + '>' + nmLast + '</a>' + badge + downBadge + '</span>' +
+        '<span class="pn-last"><a class="plink"' + nmAttr + '>' + nmLast + '</a>' + badge + downBadge + clearTag + '</span>' +
         '</div>' + mvUnder + '</div></td>';
       html += '<td class="c num"' + rs + '>' + (m.latestDate ? withBadge(mmdd(m.latestDate), navLagBadge(p)) : '—') + '</td>';
       html += '<td class="r num today-col ' + colorBy(tv) + '"' + rs + '>' + fmtSigned(tv) + '</td>';
@@ -2311,7 +2317,7 @@
         markPoint/markLine + SVG 渲染器（约 500KB，gzip 173KB），并在首屏 init 后
         立即用 fetch 预热 HTTP 缓存、load 完成后空闲注入脚本——用户读首屏这几秒里
         图库已就绪，切到趋势页几乎不再等待。 */
-  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126c';
+  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126d';
   function injectEcharts() {
     if (window.echarts || window.__ECHARTS_INJECTED__) return;
     window.__ECHARTS_INJECTED__ = true;
