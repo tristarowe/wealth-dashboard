@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261126e';
+  window.__NP_LAYOUT_VERSION = '20261126f';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -1269,13 +1269,35 @@
     return { text: '偏弱', cls: 'sc-weak' };
   }
 
-  // 1–10 综合评分：全部按近一个月（30 日）表现考核（公式与旧版一致）
-  function scoreFor(m, p, peerAvg30) {
-    var a30 = m.windows[2].ann;
-    if (a30 === null) return null;
+  /* 2026-11-26：收益表现按 7/14/30 日年化加权（25%/25%/50%），让短期表现进入评分。
+     短窗 ann 缺失（成立不足窗口天数）时按剩余权重归一化；全部缺失则无评分。 */
+  var BLEND_WINDOWS = [
+    { idx: 0, label: '7日', w: 0.25 },
+    { idx: 1, label: '14日', w: 0.25 },
+    { idx: 2, label: '30日', w: 0.5 }
+  ];
+  function blendedAnn(m) {
+    if (!m || !m.windows) return { ann: null, parts: [], wsum: 0 };
+    var sum = 0, wsum = 0, parts = [];
+    BLEND_WINDOWS.forEach(function (bw) {
+      var a = m.windows[bw.idx] && m.windows[bw.idx].ann;
+      if (a === null || a === undefined || !isFinite(a)) return;
+      sum += a * bw.w;
+      wsum += bw.w;
+      parts.push(bw.label + ' ' + a.toFixed(2) + '%×' + Math.round(bw.w * 100) + '%');
+    });
+    if (!(wsum > 0)) return { ann: null, parts: [], wsum: 0 };
+    return { ann: sum / wsum, parts: parts, wsum: wsum };
+  }
 
-    var marketScore = clamp((a30 - MARKET_RATE) / (RATE_TOP - MARKET_RATE) * 10, 0, 10);
-    var peerScore = clamp(((a30 - peerAvg30) + 1) / 2 * 10, 0, 10);
+  // 1–10 综合评分：收益表现按 7/14/30 日加权年化考核，稳健/趋势仍看近 30 日
+  function scoreFor(m, p, peerAvg) {
+    var blend = blendedAnn(m);
+    var aPerf = blend.ann;
+    if (aPerf === null) return null;
+
+    var marketScore = clamp((aPerf - MARKET_RATE) / (RATE_TOP - MARKET_RATE) * 10, 0, 10);
+    var peerScore = clamp(((aPerf - peerAvg) + 1) / 2 * 10, 0, 10);
 
     var recent = p.per10k.slice(-30).filter(function (v) { return v !== null && v !== undefined; });
     var stabilityScore = clamp((1 - std(recent) / SD_FLOOR) * 10, 0, 10);
@@ -1293,7 +1315,10 @@
       marketScore: marketScore,
       peerScore: peerScore,
       stabilityScore: stabilityScore,
-      trendScore: trendScore
+      trendScore: trendScore,
+      perfAnn: aPerf,
+      blendParts: blend.parts,
+      blendWsum: blend.wsum
     };
   }
 
@@ -1304,7 +1329,8 @@
   }
 
   function peerAvg30Of(models) {
-    return mean(models.map(function (x) { return x.m.windows[2].ann; }).filter(function (v) { return v !== null; }));
+    /* 同类均值与收益分同源：用同一套多窗加权年化，口径一致才不会失真 */
+    return mean(models.map(function (x) { return blendedAnn(x.m).ann; }).filter(function (v) { return v !== null && v !== undefined; }));
   }
 
   function scoreCell(row, cls, rowspan) {
@@ -1317,7 +1343,9 @@
     var rating = ratingOf(row.score.score);
     var sc = row.score;
     /* 颜色直接用文字等级对应的 cls，保证五档文字与颜色一一对应。 */
-    var tip = '市场利率 ' + MARKET_RATE.toFixed(1) + '% · 收益 ' + sc.marketScore.toFixed(1) +
+    var wsumNote = sc.blendWsum < 0.999 ? '（部分窗口不足，已按剩余权重归一化）' : '';
+    var tip = '收益表现加权年化 ' + sc.perfAnn.toFixed(2) + '% = ' + sc.blendParts.join(' + ') + wsumNote +
+      ' · 市场利率 ' + MARKET_RATE.toFixed(1) + '% · 收益 ' + sc.marketScore.toFixed(1) +
       ' / 同类 ' + sc.peerScore.toFixed(1) + ' / 稳健 ' + sc.stabilityScore.toFixed(1) +
       ' / 趋势 ' + sc.trendScore.toFixed(1);
     return '<td' + rs + ' class="' + (cls || 'c') + ' st score-col ' + rating.cls + '" title="' + tip + '"><b>' +
@@ -2319,7 +2347,7 @@
         markPoint/markLine + SVG 渲染器（约 500KB，gzip 173KB），并在首屏 init 后
         立即用 fetch 预热 HTTP 缓存、load 完成后空闲注入脚本——用户读首屏这几秒里
         图库已就绪，切到趋势页几乎不再等待。 */
-  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126e';
+  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126f';
   function injectEcharts() {
     if (window.echarts || window.__ECHARTS_INJECTED__) return;
     window.__ECHARTS_INJECTED__ = true;
