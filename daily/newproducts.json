@@ -1,6 +1,6 @@
 {
   "asOf": "2026-11-26",
-  "fetchedAt": "2026-11-26 14:45",
+  "fetchedAt": "2026-11-26 14:54",
   "source": "六大行及股份制银行新品公告 · 销售文件要素表",
   "window": {
     "start": "2026-11-26",
@@ -114,6 +114,36 @@
       "mode": "",
       "saleChannel": "建设银行",
       "source": "建行官网新品公告·销售文件要素表"
+    },
+    {
+      "name": "信银理财安盈象固收稳利日开259号理财产品",
+      "issuer": "信银理财有限责任公司",
+      "short": "安盈象固收稳利日开259号",
+      "regCode": "Z7002626002817",
+      "raiseStart": "2026-11-30",
+      "raiseEnd": "2026-12-02",
+      "establish": "2026-12-03",
+      "quotaWan": null,
+      "risk": "R2",
+      "riskRaw": "PR2",
+      "mode": "开放式",
+      "saleChannel": "建设银行",
+      "source": "建行官网新品公告·销售文件要素表"
+    },
+    {
+      "name": "信银理财安盈象固收稳利十四天持有期170号理财产品",
+      "issuer": "信银理财有限责任公司",
+      "short": "安盈象固收稳利十四天持有期170号",
+      "regCode": "Z7002626002855",
+      "raiseStart": "2026-11-30",
+      "raiseEnd": "2026-12-02",
+      "establish": "2026-12-03",
+      "quotaWan": null,
+      "risk": "R2",
+      "riskRaw": "PR2",
+      "mode": "开放式",
+      "saleChannel": "建设银行",
+      "source": "建行官网新品公告·销售文件要素表"
     }
   ],
   "lanes": [
@@ -224,15 +254,45 @@
           "mode": "",
           "saleChannel": "建设银行",
           "source": "建行官网新品公告·销售文件要素表"
+        },
+        {
+          "name": "信银理财安盈象固收稳利日开259号理财产品",
+          "issuer": "信银理财有限责任公司",
+          "short": "安盈象固收稳利日开259号",
+          "regCode": "Z7002626002817",
+          "raiseStart": "2026-11-30",
+          "raiseEnd": "2026-12-02",
+          "establish": "2026-12-03",
+          "quotaWan": null,
+          "risk": "R2",
+          "riskRaw": "PR2",
+          "mode": "开放式",
+          "saleChannel": "建设银行",
+          "source": "建行官网新品公告·销售文件要素表"
+        },
+        {
+          "name": "信银理财安盈象固收稳利十四天持有期170号理财产品",
+          "issuer": "信银理财有限责任公司",
+          "short": "安盈象固收稳利十四天持有期170号",
+          "regCode": "Z7002626002855",
+          "raiseStart": "2026-11-30",
+          "raiseEnd": "2026-12-02",
+          "establish": "2026-12-03",
+          "quotaWan": null,
+          "risk": "R2",
+          "riskRaw": "PR2",
+          "mode": "开放式",
+          "saleChannel": "建设银行",
+          "source": "建行官网新品公告·销售文件要素表"
         }
       ]
     }
   ],
   "stats": {
-    "notices": 65,
+    "notices": 81,
     "candidates": 17,
-    "kept": 7,
-    "dropped": 5,
+    "kept": 9,
+    "dropped": 8,
     "failed": 0,
     "quotaRejected": 0
   },
