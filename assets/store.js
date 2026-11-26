@@ -14,6 +14,9 @@
   var DEL_KEY = 'wealth3.trades.del';
   var refreshing = null;
   var TIMEOUT = 8000;
+  /* 写入（新增/修改/删除交易）给足时间：2026-11-26 有用户在弱网下 8 秒超时被 abort，
+     表现为点「提交」后只弹「signal is aborted without reason」且交易没进云端。 */
+  var WRITE_TIMEOUT = 20000;
 
   /* 已删除交易墓碑：页面交易底稿在静态文件里，DELETE 云端对底稿行是空操作，
      因此把删除记录存到云端 newproducts 表（key=tradel:ID）+ 本地，刷新后依然生效 */
@@ -78,11 +81,20 @@
     } catch (e) { /* 隐私模式或超配额，忽略 */ }
   }
 
-  /* 带超时的 fetch：网络差时最多等 TIMEOUT 毫秒，避免整页卡在加载 */
+  /* 超时错误统一成中文文案，别把浏览器的 AbortError 原样弹给用户 */
+  function timeoutError() {
+    var e = new Error('网络请求超时，请检查网络后重试');
+    e.name = 'TimeoutError';
+    e.timeout = true;
+    return e;
+  }
+
+  /* 带超时的 fetch：读取最多 8 秒避免整页卡住；写入最多 20 秒，避免弱网误判失败 */
   function req(u, opt) {
     opt = opt || {};
     var ctrl = typeof window.AbortController === 'function' ? new window.AbortController() : null;
-    var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, opt.timeout || TIMEOUT) : null;
+    var ms = opt.timeout || (opt.write ? WRITE_TIMEOUT : TIMEOUT);
+    var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, ms) : null;
     var o = { method: opt.method || 'GET', headers: opt.headers || headers(), cache: 'no-store' };
     if (opt.body) o.body = opt.body;
     if (ctrl) o.signal = ctrl.signal;
@@ -91,7 +103,19 @@
       return r;
     }, function (e) {
       if (timer) clearTimeout(timer);
+      if (e && e.name === 'AbortError') throw timeoutError();
       throw e;
+    });
+  }
+
+  /* 写入专用：超时或网络中断自动重试一次。add() 的 id 在首次请求前已固定，
+     重试时同 id 命中主键冲突视为「首笔其实已写入」，不会产生重复交易。 */
+  function reqWrite(u, opt) {
+    opt = opt || {};
+    opt.write = true;
+    return req(u, opt).catch(function (e) {
+      if (!e || (!e.timeout && e.name !== 'TypeError')) throw e;
+      return req(u, opt);
     });
   }
 
@@ -176,7 +200,9 @@
       confirmNav: Number(r.confirm_nav),
       status: r.status || '已确认',
       saleChannel: r.sale_channel || '',
-      source: r.source || '人工录入'
+      source: r.source || '人工录入',
+      /* 云端创建时间：交易流水同日多笔按「交易时间先后」排序用（PostgREST 默认字段） */
+      createdAt: r.created_at || ''
     };
   }
 
@@ -457,18 +483,31 @@
       confirmNav: tx.confirmNav,
       status: '已确认',
       saleChannel: tx.saleChannel || '',
-      source: tx.source || '人工录入'
+      source: tx.source || '人工录入',
+      createdAt: ''
     };
     if (!online) return Promise.reject(new Error('云端未配置，无法保存'));
-    return req(url + '/rest/v1/' + txTable, {
+    return reqWrite(url + '/rest/v1/' + txTable, {
       method: 'POST',
       headers: headers(),
       body: JSON.stringify(txToRow(item))
     }).then(function (r) {
+      /* 重试时首笔其实已落库：同 id 主键冲突按成功处理，不重复写入 */
+      if (r.status === 409) {
+        item.createdAt = new Date().toISOString();
+        applyTrades(fileItems().concat([item]));
+        writeCache(fileItems());
+        return { ok: true, message: '已录入云端', item: item };
+      }
       if (!r.ok) throw fail('交易保存失败', r.status);
-      applyTrades(fileItems().concat([item]));
-      writeCache(fileItems());
-      return { ok: true, message: '已录入云端', item: item };
+      /* 云端返回的 created_at 带回本地：新交易才能在同日流水里排在最新一笔 */
+      return r.json().catch(function () { return null; }).then(function (rows) {
+        var row = Array.isArray(rows) ? rows[0] : rows;
+        item.createdAt = (row && row.created_at) || new Date().toISOString();
+        applyTrades(fileItems().concat([item]));
+        writeCache(fileItems());
+        return { ok: true, message: '已录入云端', item: item };
+      });
     });
   }
 
@@ -487,13 +526,14 @@
       source: tx.source || '人工录入'
     });
     delete row.id;
-    return req(url + '/rest/v1/' + txTable + '?id=eq.' + encodeURIComponent(id), {
+    return reqWrite(url + '/rest/v1/' + txTable + '?id=eq.' + encodeURIComponent(id), {
       method: 'PATCH',
       headers: headers(),
       body: JSON.stringify(row)
     }).then(function (r) {
       if (!r.ok) throw fail('交易修改失败', r.status);
-      var item = Object.assign({}, tx, { id: id });
+      var old = fileItems().filter(function (t) { return t.id === id; })[0] || {};
+      var item = Object.assign({}, tx, { id: id, createdAt: old.createdAt || '' });
       applyTrades(fileItems().map(function (t) { return t.id === id ? item : t; }));
       writeCache(fileItems());
       return { ok: true, message: '已修改云端交易' };
@@ -505,7 +545,7 @@
     var rows = ids.map(function (id) {
       return { key: 'tradel:' + id, data: { kind: 'tradel', id: id, at: new Date().toISOString() } };
     });
-    return req(url + '/rest/v1/' + npTable + '?on_conflict=key', {
+    return reqWrite(url + '/rest/v1/' + npTable + '?on_conflict=key', {
       method: 'POST',
       headers: headers({ Prefer: 'resolution=merge-duplicates,return=minimal' }),
       body: JSON.stringify(rows)
@@ -519,7 +559,7 @@
     applyTrades(window.TRANSACTIONS && window.TRANSACTIONS.items || []);
     writeCache(window.TRANSACTIONS.items);
     return Promise.all([
-      req(url + '/rest/v1/' + txTable + '?id=eq.' + encodeURIComponent(id), {
+      reqWrite(url + '/rest/v1/' + txTable + '?id=eq.' + encodeURIComponent(id), {
         method: 'DELETE',
         headers: headers({ Prefer: 'return=minimal' })
       }).then(function (r) {
@@ -545,7 +585,7 @@
       return '"' + String(id).replace(/"/g, '') + '"';
     }).join(',') + ')';
     return Promise.all([
-      req(url + '/rest/v1/' + txTable + '?id=in.' + encodeURIComponent(list), {
+      reqWrite(url + '/rest/v1/' + txTable + '?id=in.' + encodeURIComponent(list), {
         method: 'DELETE',
         headers: headers({ Prefer: 'return=minimal' })
       }).then(function (r) {
@@ -580,7 +620,7 @@
     };
     window.MANUAL_HISTORY = [rec].concat(window.MANUAL_HISTORY || []).slice(0, 200);
     if (!online) return Promise.resolve(false);
-    return req(url + '/rest/v1/' + npTable + '?on_conflict=key', {
+    return reqWrite(url + '/rest/v1/' + npTable + '?on_conflict=key', {
       method: 'POST',
       headers: headers({ Prefer: 'resolution=merge-duplicates,return=minimal' }),
       body: JSON.stringify([{ key: histKey(), data: rec }])
@@ -591,7 +631,7 @@
     if (!online) return Promise.reject(new Error('云端未配置，无法保存产品'));
     var data = { kind: 'manual' };
     for (var k in p) data[k] = p[k];
-    return req(url + '/rest/v1/' + npTable + '?on_conflict=key', {
+    return reqWrite(url + '/rest/v1/' + npTable + '?on_conflict=key', {
       method: 'POST',
       headers: headers({ Prefer: 'resolution=merge-duplicates,return=representation' }),
       body: JSON.stringify([{ key: 'manual:' + p.id, data: data }])
@@ -609,7 +649,7 @@
   function removeProduct(id) {
     if (!online) return Promise.reject(new Error('云端未配置，无法删除产品'));
     var removed = (window.MANUAL_PRODUCTS || []).filter(function (x) { return x.id === id; })[0] || { id: id };
-    return req(url + '/rest/v1/' + npTable + '?key=eq.' + encodeURIComponent('manual:' + id), {
+    return reqWrite(url + '/rest/v1/' + npTable + '?key=eq.' + encodeURIComponent('manual:' + id), {
       method: 'DELETE',
       headers: headers({ Prefer: 'return=minimal' })
     }).then(function (r) {

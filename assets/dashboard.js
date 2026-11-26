@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261126j';
+  window.__NP_LAYOUT_VERSION = '20261126k';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -2445,7 +2445,7 @@
         markPoint/markLine + SVG 渲染器（约 500KB，gzip 173KB），并在首屏 init 后
         立即用 fetch 预热 HTTP 缓存、load 完成后空闲注入脚本——用户读首屏这几秒里
         图库已就绪，切到趋势页几乎不再等待。 */
-  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126j';
+  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126k';
   function injectEcharts() {
     if (window.echarts || window.__ECHARTS_INJECTED__) return;
     window.__ECHARTS_INJECTED__ = true;
@@ -5690,7 +5690,19 @@
       if (flowState.type && (t.type || '申购') !== flowState.type) return false;
       if (flowState.status && txStatus(t) !== flowState.status) return false;
       return true;
-    }).sort(function (a, b) { return b.applyDate.localeCompare(a.applyDate); });
+    }).sort(function (a, b) {
+      /* 交易流水按交易日期倒序（最新在前）；同一天按云端创建时间倒序，
+         刚录入的那一笔排在同日最前，再退化为确认日/id 保证顺序稳定。
+         2026-11-26：原比较器只按 applyDate，同日顺序沿用云端 confirm_date 升序，
+         新增交易会排在同日旧记录后面，看起来像「没有排序」。 */
+      var c = String(b.applyDate || '').localeCompare(String(a.applyDate || ''));
+      if (c) return c;
+      c = String(b.createdAt || '').localeCompare(String(a.createdAt || ''));
+      if (c) return c;
+      c = String(b.confirmDate || '').localeCompare(String(a.confirmDate || ''));
+      if (c) return c;
+      return String(b.id || '').localeCompare(String(a.id || ''));
+    });
 
     /* 当前筛选结果：供全选、按月全选、批量删除使用；切走的选择自动清理 */
     flowIds = items.map(function (t) { return t.id; });
