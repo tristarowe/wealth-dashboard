@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261126i';
+  window.__NP_LAYOUT_VERSION = '20261126j';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -23,15 +23,36 @@
     /* 例：'Z7001926001090': 2  // 中邮鸿锦7天45号：说明书约定 T+2 披露 */
   };
 
-  /* 份额确认节奏（工作日）：'登记编码': N。默认 T+1，只登记已核过说明书的产品。
+  /* 份额确认节奏（工作日）：默认 T+1，只有说明书明确 T+2 的产品才偏移。
      与上面的净值披露节奏完全无关：披露晚不改写份额确认日，确认日以本表为准。
-     2026-11-26 建行 PDF 核实中邮鸿锦7天45号（Z7001926001090）：
-       「客户申购受理日后第 2 个工作日确认」「赎回受理日后第 2 个工作日确认」；
-       「资金到账日为赎回受理日后 3 个工作日内」是另一口径。
+     2026-11-26 逐只核实 16 只持仓产品说明书：仅中邮「优盛·鸿锦最短持有」系列
+     约定 T+2，其余（中银稳富/悦享、招银招睿、信银安盈象、建信嘉鑫、交银稳享、
+     贝莱德贝淳、光大阳光金）均为 T+1。
+       · 7天45号 Z7001926001090 建行 PDF：「客户申购受理日后第 2 个工作日确认」
+         「赎回受理日后第 2 个工作日确认」，「资金到账日后 3 个工作日内」是另一口径；
+       · 14天16号 2601NC016A 邮储 PDF：同样「受理日后第 2 个工作日确认」，
+         同系列 14天23号/25号一并覆盖。
+     编码表用于精确登记；SERIES 用产品名模糊匹配，覆盖同系列后续新品，避免漏登。
      募集期认购仍在 confirmDateFor 里按产品成立日处理，不受本表影响。 */
   var CONFIRM_WORKDAY_OFFSET = {
-    'Z7001926001090': 2
+    'Z7001926001090': 2,  /* 中邮优盛·鸿锦最短持有7天45号 */
+    'Z7001926001092': 2,  /* 中邮优盛·鸿锦最短持有14天23号 */
+    'Z7001926001210': 2   /* 中邮优盛·鸿锦最短持有14天25号 */
   };
+  /* 已核实的 T+2 产品系列（按名称片段匹配，命中即 T+2）。
+     只收「优盛·鸿锦最短持有」——中邮其他系列（智盛/福瑞/合盛等封闭式）未核实，
+     不在此列，仍走默认 T+1。 */
+  var CONFIRM_T2_SERIES = ['优盛·鸿锦最短持有', '优盛鸿锦最短持有'];
+
+  function confirmOffsetOf(p) {
+    if (!p) return 1;
+    if (p.regCode && CONFIRM_WORKDAY_OFFSET[p.regCode]) return CONFIRM_WORKDAY_OFFSET[p.regCode];
+    var name = String(p.name || p.short || '');
+    for (var i = 0; i < CONFIRM_T2_SERIES.length; i++) {
+      if (name.indexOf(CONFIRM_T2_SERIES[i]) >= 0) return 2;
+    }
+    return 1;
+  }
 
   function parseDate(s) {
     var p = s.split('-');
@@ -313,16 +334,18 @@
         旧逻辑一律 nextWorkday(申购日) 得 11-25，比银行实际早 2 天，确认日/起息日/
         XIRR 现金流日全部偏前。
      ② 存续期开放日申购、赎回：默认 T+1 个工作日；说明书明确约定 T+2 的产品按
-        CONFIRM_WORKDAY_OFFSET 取 T+2，遇周末与法定节假日顺延。中邮鸿锦7天45号
-        （Z7001926001090）建行 PDF 原文「申购/赎回受理日后第 2 个工作日确认」，
-        故 11-26（周四）提交 → 11-27（周五）T+1 → 11-30（周一）T+2。
+        CONFIRM_WORKDAY_OFFSET（精确编码）+ CONFIRM_T2_SERIES（系列名）取 T+2，
+        遇周末与法定节假日顺延。2026-11-26 逐只核实 16 只持仓产品说明书，
+        仅中邮「优盛·鸿锦最短持有」系列为 T+2：7天45号、14天23号、14天25号；
+        11-26（周四）提交 → 11-27（周五）T+1 → 11-30（周一）T+2。
+        其余持仓（中银/招银/信银/建信/交银/贝莱德/光大）说明书均为 T+1。
      ③ 成立日若恰逢非交易日，份额实际在下个交易日确认，故募集期取「成立日」与「T+1 工作日」较晚者。
      ④ 存量记录：人工填写的确认日一律保留；但若存的是旧版自动 T+1 值，
         且该产品说明书为 T+2，则视为过期默认值纠正为 T+2，否则交易流水会继续显示错误的 11-27。
      判定只用产品库要素表里的 raiseStart/raiseEnd/inception（说明书原文；新品数据里成立日字段名是
      establish），不拿首个净值日当成立日——净值序列可能被截断，用截断后的首点会把老产品误判成募集期。 */
   function confirmDateFor(p, applyDate, stored) {
-    var offset = (p && p.regCode && CONFIRM_WORKDAY_OFFSET[p.regCode]) || 1;
+    var offset = confirmOffsetOf(p);
     var auto = addWorkdays(applyDate, offset);
     var nd = nextWorkday(applyDate);
     if (!applyDate) return stored || auto || '';
@@ -353,7 +376,7 @@
   /* 测试钩子：仅在守卫绕过模式（专项脚本）下暴露，正式站不挂载。
      用来直接断言确认日偏移与存量纠正，避免只靠界面点击漏掉数据层口径。 */
   if (window.__GATE_BYPASS__) {
-    window.__DASH_CONFIRM_TEST__ = { confirmDateFor: confirmDateFor, addWorkdays: addWorkdays };
+    window.__DASH_CONFIRM_TEST__ = { confirmDateFor: confirmDateFor, addWorkdays: addWorkdays, confirmOffsetOf: confirmOffsetOf };
   }
 
   /* 成立天数：真实成立日到今天（当日）的自然日数 */
@@ -2422,7 +2445,7 @@
         markPoint/markLine + SVG 渲染器（约 500KB，gzip 173KB），并在首屏 init 后
         立即用 fetch 预热 HTTP 缓存、load 完成后空闲注入脚本——用户读首屏这几秒里
         图库已就绪，切到趋势页几乎不再等待。 */
-  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126i';
+  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126j';
   function injectEcharts() {
     if (window.echarts || window.__ECHARTS_INJECTED__) return;
     window.__ECHARTS_INJECTED__ = true;

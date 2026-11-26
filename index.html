@@ -8,7 +8,7 @@
 <!-- 2026-11-24 u 首屏优化：看板脚本提前并行下载，云端域名提前握手；
      两者都不阻塞 HTML 解析，避免旧版「大库先下载完才开始拉 dashboard.js」的串行等待。 -->
 <link rel="preconnect" href="https://asqaxvrovorqfqwpgjkb.supabase.co" crossorigin>
-<link rel="preload" as="script" href="./assets/dashboard.js?v=20261126i" fetchpriority="low">
+<link rel="preload" as="script" href="./assets/dashboard.js?v=20261126j" fetchpriority="low">
 <style>
   :root{
     --bg:#f3f5f7; --card:#fff; --soft:#F9FFFF;
@@ -1976,13 +1976,13 @@
     .year-table tbody td{font-weight:400!important}
   }
 
-  /* ===== 2026-11-25 手机端新品预告：取消泳道横向滑动 =====
-     横屏/平板宽度下 8 天 × 176px = 1408px 超出容器，#np-lanes 变成横向滚动容器，
-     卡片行可左右滑动而日期表头被 .timeline 裁切，二者错位（用户截图即此现象）。
-     改为与竖屏一致的「日期纵向分组 + 卡片自适应网格」：空日期隐藏、
-     有产品的日期横排卡片，全部内容随页面纵向滚动，不再出现横向滑动。
-     条件含 pointer:coarse 以覆盖任意宽度的触屏设备；max-width:1200px 覆盖窄桌面窗口。 */
-  @media (min-width:761px) and (max-width:1200px), (pointer:coarse) and (min-width:761px){
+  /* ===== 2026-11-26 新品预告：全宽度取消泳道横向滑动 =====
+     旧规则只覆盖 761~1200px 与触屏，桌面 >1200px（如 1440px）仍是横滑泳道：
+     表头 .ts-grid 宽 1502px 被 .timeline(overflow:hidden) 裁切、#np-lanes 却能左右滚，
+     滑动后日期与卡片错列——正是用户截图现象。现对所有宽度统一改为
+     「日期纵向分组 + 卡片自适应网格」：空日期隐藏、有产品的日期横排卡片，
+     表头改为每组 lane 内的 .lane-day，随页面纵向滚动，不再有横向滚动条。 */
+  @media (min-width:761px){
     .ts-grid{display:none}
     #np-lanes{display:block;overflow:visible;padding:0}
     .ts-lane{width:auto;min-width:0;margin-bottom:12px}
@@ -2453,7 +2453,7 @@
             <div class="att-title">数据说明与口径（PDF）</div>
             <div class="att-sub">含全局口径、顶部指标卡、盈亏、年化口径辨析、交易、新品预告、产品库、添加产品、数据体检九组 · 更新于 2026-11-26（含份额确认日 T+1/T+2 规则）</div>
           </div>
-          <a class="btn primary" href="./assets/数据说明.pdf?v=20261126i" target="_blank" rel="noopener">点击查看</a>
+          <a class="btn primary" href="./assets/数据说明.pdf?v=20261126j" target="_blank" rel="noopener">点击查看</a>
         </div>
       </div>
     </section>
@@ -2610,9 +2610,9 @@
      「新 HTML + 旧渲染」的错位（表现为新品预告仍是拉伸甘特卡片 + 巨大原生多选框）。 -->
 <!-- 2026-11-24 u：ECharts / html2canvas 改按需加载（趋势图、导出长图才拉），
      不再让 338KB + 47KB 的库阻塞首屏；加载器分别在 dashboard.js 与本页导出逻辑内。 -->
-<script src="./assets/data.js?v=20261126i" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
-<script src="./assets/risk_levels.js?v=20261126i"></script>
-<script src="./assets/transactions.js?v=20261126i"></script>
+<script src="./assets/data.js?v=20261126j" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
+<script src="./assets/risk_levels.js?v=20261126j"></script>
+<script src="./assets/transactions.js?v=20261126j"></script>
 <script>
   /* 公开底稿已脱敏：只含 id+pid 的占位行供后台抓净值，不含 applyDate 等明细。
      前端渲染前剔除这类行，真实交易明细由登录后从 Supabase 云端拉取。 */
@@ -2621,16 +2621,16 @@
     if (T && T.items) T.items = T.items.filter(function (t) { return !!t.applyDate; });
   })();
 </script>
-<script src="./assets/newproducts.js?v=20261126i"></script>
-<script src="./assets/library.js?v=20261126i"></script>
-<script src="./assets/supabase-config.js?v=20261126i"></script>
-<script src="./assets/auth.js?v=20261126i"></script>
-<script src="./assets/store.js?v=20261126i" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
+<script src="./assets/newproducts.js?v=20261126j"></script>
+<script src="./assets/library.js?v=20261126j"></script>
+<script src="./assets/supabase-config.js?v=20261126j"></script>
+<script src="./assets/auth.js?v=20261126j"></script>
+<script src="./assets/store.js?v=20261126j" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
 <script>
   /* 先用本地缓存/内置底稿立即渲染，云端数据在后台取回后再重绘，避免等待网络白屏 */
   /* 前序脚本缺失或命中旧缓存时（STORE_READY 不存在）也照常加载看板，避免页面停在空白骨架 */
   (function () {
-    var NP_BUILD = '20261126i';
+    var NP_BUILD = '20261126j';
     function boot(msg, forced) {
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
@@ -2657,7 +2657,7 @@
       // 隐私小眼睛：dashboard.js 就绪后再加载，才能包装 DASHBOARD_REFRESH 并在渲染后套用打码
       if (!window.PRIVACY) {
         var pv = document.createElement('script');
-        pv.src = './assets/privacy.js?v=20261126i';
+        pv.src = './assets/privacy.js?v=20261126j';
         document.body.appendChild(pv);
       }
       if (!window.STORE_REFRESH || typeof window.STORE_REFRESH.then !== 'function') return;
@@ -3100,7 +3100,7 @@
       if (h2cLoading) return h2cLoading;
       h2cLoading = new Promise(function (resolve, reject) {
         var s = document.createElement('script');
-        s.src = './assets/html2canvas.min.js?v=20261126i';
+        s.src = './assets/html2canvas.min.js?v=20261126j';
         s.onload = resolve;
         s.onerror = function () { h2cLoading = null; reject(new Error('截图组件加载失败')); };
         document.head.appendChild(s);
