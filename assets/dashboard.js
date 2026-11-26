@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261126q';
+  window.__NP_LAYOUT_VERSION = '20261126r';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -1197,7 +1197,13 @@
               var cum = (p.nav[i] - h.costNav) * sh;
               return { inc: cum, base: h.cost, cnt: 1 };
             })();
-        if (!(g.cnt > 0) || Math.abs(g.inc) < 1e-12) continue;
+        /* 2026-11-26：只按「该日有无已起息批次」判断披露点，收益恰为 0 的日子必须保留。
+           旧写法 `Math.abs(g.inc) < 1e-12` 会在净值持平的净值日整条丢弃该日期，
+           导致盈亏日历把它画成空白「—」、月度/年度「挂0」也无法计数
+           （单产品视图里持仓天数少，几乎全是这种情况，挂0 恒为 0）。
+           保留后：能画 0.00、计入挂0，正收益/回撤天数与收益合计均不受影响
+           （0 收益日只是把一个 gap 拆成两段，日均与合计口径不变）。 */
+        if (!(g.cnt > 0)) continue;
         if (!(dt in sums)) { sums[dt] = 0; prevs[dt] = 0; counts[dt] = 0; }
         sums[dt] += g.inc;
         prevs[dt] += g.base;
@@ -2251,8 +2257,11 @@
       }
       sum += v;
       if (v > 0.005) pos += 1; else if (v < -0.005) neg += 1; else flat += 1;
-      var best = (maxV !== null && Math.abs(v - maxV) < 1e-9);
-      var worst = (minV !== null && maxV !== minV && Math.abs(v - minV) < 1e-9);
+      /* 2026-11-26：挂0 日（收益恰为 0）保留后，不能让 0 抢走「最佳/最低」角标 ——
+         整月无回撤时 0 会变成最小值、被误标成「今日收益最低」。
+         最佳只在有正收益时标记，最低只在真有回撤（< -0.005）时标记。 */
+      var best = (maxV !== null && maxV > 0.005 && Math.abs(v - maxV) < 1e-9);
+      var worst = (minV !== null && minV < -0.005 && Math.abs(v - minV) < 1e-9);
       // 手机端格子窄，两位小数会被截断，绝对值≥10 时收一位
       var txt = (compact && Math.abs(v) >= 10) ? (v > 0 ? '+' : '') + v.toFixed(1) : fmtSigned(v);
       cells.push('<div class="cell' + (best ? ' best' : '') + '">' +
@@ -2445,7 +2454,7 @@
         markPoint/markLine + SVG 渲染器（约 500KB，gzip 173KB），并在首屏 init 后
         立即用 fetch 预热 HTTP 缓存、load 完成后空闲注入脚本——用户读首屏这几秒里
         图库已就绪，切到趋势页几乎不再等待。 */
-  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126q';
+  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126r';
   function injectEcharts() {
     if (window.echarts || window.__ECHARTS_INJECTED__) return;
     window.__ECHARTS_INJECTED__ = true;

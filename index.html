@@ -8,7 +8,7 @@
 <!-- 2026-11-24 u 首屏优化：看板脚本提前并行下载，云端域名提前握手；
      两者都不阻塞 HTML 解析，避免旧版「大库先下载完才开始拉 dashboard.js」的串行等待。 -->
 <link rel="preconnect" href="https://asqaxvrovorqfqwpgjkb.supabase.co" crossorigin>
-<link rel="preload" as="script" href="./assets/dashboard.js?v=20261126q" fetchpriority="low">
+<link rel="preload" as="script" href="./assets/dashboard.js?v=20261126r" fetchpriority="low">
 <style>
   :root{
     --bg:#f3f5f7; --card:#fff; --soft:#F9FFFF;
@@ -1228,6 +1228,34 @@
     #flow-table thead th:nth-child(2){white-space:nowrap}
     /* 自适应列宽时整列移除「今日万收」，不占位也不留空列（固定列宽下改用 visibility 隐藏） */
     #prod-table.no-p10k [data-col="p10k"]{display:none}
+    /* 产品库竖屏 2026-11-26（用户要求「由产品名称释放宽度，均匀分给其他列，让 7日列压进首屏」）：
+       原来名称列固定 176px、整表 min-width 880px，导致 7日 列右边缘落在 403px（首屏内容宽仅 367px）
+       被切掉一半。改为固定列宽：名称 176→120（释放 56px），释放的宽度均分给其余 10 列
+       （净值日期/今日万收/7日/14日/30日/成立至今/风险/持有期/产品净值/成立日期）。
+       首屏右边缘：名称 120 + 净值日期 56 + 今日万收 62 + 7日 56 = 294px —— 小屏 320（内容宽 296px）
+       与 iPhone 393（内容宽 369px）都能完整看到 7日，393 下 14日 也压进首屏（351px）；
+       余下 5~6 列横向滑动查看（整表 706px）。 */
+    #prod-table{table-layout:fixed;width:706px;min-width:706px}
+    #prod-table colgroup col{width:auto !important}
+    #prod-table col:nth-child(1){width:120px !important}
+    #prod-table col:nth-child(2){width:56px !important}
+    #prod-table col:nth-child(3){width:62px !important}
+    #prod-table col:nth-child(4){width:56px !important}
+    #prod-table col:nth-child(5){width:56px !important}
+    #prod-table col:nth-child(6){width:56px !important}
+    #prod-table col:nth-child(7){width:58px !important}
+    #prod-table col:nth-child(8){width:46px !important}
+    #prod-table col:nth-child(9){width:60px !important}
+    #prod-table col:nth-child(10){width:60px !important}
+    #prod-table col:nth-child(11){width:76px !important}
+    /* 名称列取消 144~176px 的 min/max 约束，否则固定布局下仍会被撑回原宽 */
+    #prod-table tbody td:nth-child(1),#prod-table thead th:nth-child(1){min-width:0;max-width:none;width:120px}
+    /* 列间距统一 5px（左右各 5px），缩窄后的 56px 周期列仍放得下「+11.95」这类最宽值 */
+    #prod-table thead th,#prod-table tbody td{padding:8px 5px}
+    /* 名称列收窄后，「新品/持仓」角标不能再与名称同行（会把名称挤成 3~4 行），
+       竖屏改为角标独占一行、名称吃满整列宽度换行，最多 2 行。 */
+    #prod-table tbody td:nth-child(1) .pname{row-gap:1px}
+    #prod-table tbody td:nth-child(1) .pname>.ptags{flex:0 0 100%;margin:1px 0 0}
     .hero{padding:16px 14px 18px;border-radius:14px}
     .hero-top{flex-direction:column;align-items:stretch;gap:10px}
     .hero-actions{position:absolute;top:12px;right:12px;display:flex;flex-direction:column;justify-content:flex-end;gap:6px}
@@ -2455,7 +2483,7 @@
             <div class="att-title">数据说明与口径（PDF）</div>
             <div class="att-sub">含全局口径、顶部指标卡、盈亏、年化口径辨析、交易、新品预告、产品库、添加产品、数据体检九组 · 更新于 2026-11-26（含份额确认日 T+1/T+2 规则）</div>
           </div>
-          <a class="btn primary" href="./assets/数据说明.pdf?v=20261126q" target="_blank" rel="noopener">点击查看</a>
+          <a class="btn primary" href="./assets/数据说明.pdf?v=20261126r" target="_blank" rel="noopener">点击查看</a>
         </div>
       </div>
     </section>
@@ -2612,9 +2640,9 @@
      「新 HTML + 旧渲染」的错位（表现为新品预告仍是拉伸甘特卡片 + 巨大原生多选框）。 -->
 <!-- 2026-11-24 u：ECharts / html2canvas 改按需加载（趋势图、导出长图才拉），
      不再让 338KB + 47KB 的库阻塞首屏；加载器分别在 dashboard.js 与本页导出逻辑内。 -->
-<script src="./assets/data.js?v=20261126q" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
-<script src="./assets/risk_levels.js?v=20261126q"></script>
-<script src="./assets/transactions.js?v=20261126q"></script>
+<script src="./assets/data.js?v=20261126r" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
+<script src="./assets/risk_levels.js?v=20261126r"></script>
+<script src="./assets/transactions.js?v=20261126r"></script>
 <script>
   /* 公开底稿已脱敏：只含 id+pid 的占位行供后台抓净值，不含 applyDate 等明细。
      前端渲染前剔除这类行，真实交易明细由登录后从 Supabase 云端拉取。 */
@@ -2623,16 +2651,16 @@
     if (T && T.items) T.items = T.items.filter(function (t) { return !!t.applyDate; });
   })();
 </script>
-<script src="./assets/newproducts.js?v=20261126q"></script>
-<script src="./assets/library.js?v=20261126q"></script>
-<script src="./assets/supabase-config.js?v=20261126q"></script>
-<script src="./assets/auth.js?v=20261126q"></script>
-<script src="./assets/store.js?v=20261126q" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
+<script src="./assets/newproducts.js?v=20261126r"></script>
+<script src="./assets/library.js?v=20261126r"></script>
+<script src="./assets/supabase-config.js?v=20261126r"></script>
+<script src="./assets/auth.js?v=20261126r"></script>
+<script src="./assets/store.js?v=20261126r" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
 <script>
   /* 先用本地缓存/内置底稿立即渲染，云端数据在后台取回后再重绘，避免等待网络白屏 */
   /* 前序脚本缺失或命中旧缓存时（STORE_READY 不存在）也照常加载看板，避免页面停在空白骨架 */
   (function () {
-    var NP_BUILD = '20261126q';
+    var NP_BUILD = '20261126r';
     function boot(msg, forced) {
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
@@ -2659,7 +2687,7 @@
       // 隐私小眼睛：dashboard.js 就绪后再加载，才能包装 DASHBOARD_REFRESH 并在渲染后套用打码
       if (!window.PRIVACY) {
         var pv = document.createElement('script');
-        pv.src = './assets/privacy.js?v=20261126q';
+        pv.src = './assets/privacy.js?v=20261126r';
         document.body.appendChild(pv);
       }
       if (!window.STORE_REFRESH || typeof window.STORE_REFRESH.then !== 'function') return;
@@ -3102,7 +3130,7 @@
       if (h2cLoading) return h2cLoading;
       h2cLoading = new Promise(function (resolve, reject) {
         var s = document.createElement('script');
-        s.src = './assets/html2canvas.min.js?v=20261126q';
+        s.src = './assets/html2canvas.min.js?v=20261126r';
         s.onload = resolve;
         s.onerror = function () { h2cLoading = null; reject(new Error('截图组件加载失败')); };
         document.head.appendChild(s);
