@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261126d';
+  window.__NP_LAYOUT_VERSION = '20261126e';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -1253,17 +1253,19 @@
     return Math.sqrt(s / arr.length);
   }
 
-  /* 2026-11-25：评分四档各有独立色，彼此色相拉开且避开涨跌红(#c0392b,~6°)/绿(#1e8449,~145°)。
-     ① 优秀 >=7.5 琥珀金 #b07d18 (~40°)
-     ② 良好 >=6   青     #0e7c86 (~186°)
-     ③ 一般 >=4   紫     #8659a8 (~274°)
-     ④ 偏弱 <4    玫紫   #a8478a (~319°)
+  /* 2026-11-26：评分五档，阈值 8/6/4/2，各档独立色且避开涨跌红(#c0392b)/绿(#1e8449)。
+     ① 优秀 >=8   亮金 #d4a000
+     ② 良好 >=6   橙   #e67622
+     ③ 中等 >=4   浅棕 #a67850
+     ④ 一般 >=2   深棕 #514036
+     ⑤ 偏弱 <2    官绿 #01a578
      无评分(sc-none)走中性灰，不计等级。文字与颜色同源：scoreCell 直接用 rating.cls，
-     不再另算一套阈值（旧版文字 7.5/6/4、上色 7/5，4~5 与 6~7 区间文字颜色错位）。 */
+     不再另算一套阈值（旧版文字/上色阈值不一致导致 4~5、6~7 区间文字颜色错位）。 */
   function ratingOf(s) {
-    if (s >= 7.5) return { text: '优秀', cls: 'sc-best' };
+    if (s >= 8) return { text: '优秀', cls: 'sc-best' };
     if (s >= 6) return { text: '良好', cls: 'sc-good' };
-    if (s >= 4) return { text: '一般', cls: 'sc-mid' };
+    if (s >= 4) return { text: '中等', cls: 'sc-mid' };
+    if (s >= 2) return { text: '一般', cls: 'sc-low' };
     return { text: '偏弱', cls: 'sc-weak' };
   }
 
@@ -1314,7 +1316,7 @@
     }
     var rating = ratingOf(row.score.score);
     var sc = row.score;
-    /* 颜色直接用文字等级对应的 cls，保证「优秀/良好/一般/偏弱」文字与颜色一一对应。 */
+    /* 颜色直接用文字等级对应的 cls，保证五档文字与颜色一一对应。 */
     var tip = '市场利率 ' + MARKET_RATE.toFixed(1) + '% · 收益 ' + sc.marketScore.toFixed(1) +
       ' / 同类 ' + sc.peerScore.toFixed(1) + ' / 稳健 ' + sc.stabilityScore.toFixed(1) +
       ' / 趋势 ' + sc.trendScore.toFixed(1);
@@ -2317,7 +2319,7 @@
         markPoint/markLine + SVG 渲染器（约 500KB，gzip 173KB），并在首屏 init 后
         立即用 fetch 预热 HTTP 缓存、load 完成后空闲注入脚本——用户读首屏这几秒里
         图库已就绪，切到趋势页几乎不再等待。 */
-  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126d';
+  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126e';
   function injectEcharts() {
     if (window.echarts || window.__ECHARTS_INJECTED__) return;
     window.__ECHARTS_INJECTED__ = true;
