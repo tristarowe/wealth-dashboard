@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261126w';
+  window.__NP_LAYOUT_VERSION = '20261126x';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -1071,10 +1071,22 @@
       var invested = rec.invested > 0 ? rec.invested : rec.cost;
       var unrealized = mv - rec.cost;
       /* 今日收益按「截至最新净值日已起息的份额」计算（而非全部持仓份额）：
-         追加申购的新份额在自身确认日之前不产生收益，避免把未起息份额算进当日收益。 */
+         追加申购的新份额在自身确认日之前不产生收益，避免把未起息份额算进当日收益。
+         2026-11-26：改为直接用收益时间线的净值差（与盈亏日历同一个 gainsOnDate），
+         不再拿「已四舍五入到分的万份收益」乘份额 —— 万收 0.31 元本身就带了
+         ±0.005 元的取舍误差，1.5 万份时正好放大到半厘，于是汇总 +0.47、
+         日历 +0.46，同一个产品同一天差 0.01。净值差是原始精度，两边必然同值。 */
       var incomeShares = alive ? vestedShares(rec.lots, p.latestDate) : 0;
-      var income = (incomeShares > 1e-9 && lastPer !== null && lastPer !== undefined)
-        ? lastPer * incomeShares / 10000 : 0;
+      var income = 0;
+      if (incomeShares > 1e-9) {
+        if (rec.gainLots && rec.gainLots.length) {
+          var glm = gainsOnDate(p, rec.gainLots, n - 1);
+          if (glm.cnt > 0) income = glm.inc;
+        } else if (lastPer !== null && lastPer !== undefined) {
+          /* 无收益时间线的老数据兜底：仍按万收折算 */
+          income = lastPer * incomeShares / 10000;
+        }
+      }
       /* 2026-11-26：已清仓产品在「卖出当日」仍计息——用收益时间线算最新净值日的最后一日收益，
          不再因份额归零一律显示「—」。卖出后若净值日继续推进，已闭合段不会再贡献收益，
          income 自然为 0（显示为 0.00，符合「已无持仓、当日无收益」）。 */
@@ -1226,7 +1238,9 @@
       multi: true,
       unit: 'yuan',
       dates: dates,
-      per10k: dates.map(function (d) { return Math.round(sums[d] * 100) / 100; }),
+      /* 整数分：用 roundMoney 统一「四舍五入」，避免 0.465 因浮点尾差被 Math.round 舍成 0.46，
+         而汇总同一个金额显示 0.47（2026-11-26 中银稳富7天27号 11-25 的 0.01 差异） */
+      per10k: dates.map(function (d) { return roundMoney(sums[d]); }),
       /* 未取整合计：月/年合计用原始值累加，仅在展示时取整，保证与逐日累加闭合 */
       raw: dates.map(function (d) { return sums[d]; }),
       counts: dates.map(function (d) { return counts[d]; }),
@@ -1305,13 +1319,25 @@
     return (v > 0 ? '+' : '') + v.toFixed(2);
   }
 
+  /* 金额取整到分：统一「四舍五入」且不受浮点尾差影响。
+     0.465 元在两个地方会算出 0.464999999998 和 0.4650000000000001，
+     浏览器默认的 toLocaleString/toFixed 一个给 0.46、一个给 0.47，
+     于是同一天同一笔钱在盈亏日历与汇总里差 0.01（2026-11-26 中银稳富7天27号）。
+     先按 1e-7 的容差校正、再四舍五入，全站金额只有一种取整结果。 */
+  function roundMoney(v) {
+    var n = Number(v);
+    if (!isFinite(n)) return n;
+    var s = n < 0 ? -1 : 1;
+    return s * Math.round(Math.abs(n) * 100 + 1e-7) / 100;
+  }
+
   /* 带符号两位小数：正数显示 +，负数自带 -，0 不带符号。
      2026-11-26：千分位统一到这里 —— 年表「收益」原先走 fmtMoney（1,234.56），
      月表走 toFixed（1234.56），同一个数在两处格式不同。全站金额展示共用本函数，
      保证「+1,234.56 / -12.34 / 0.00」在两表、指标卡、日历汇总完全一致。 */
   function fmtSigned(v) {
     if (v === null || v === undefined || isNaN(v)) return '—';
-    var n = Number(v);
+    var n = roundMoney(v);
     var abs = Math.abs(n).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     return (n > 0 ? '+' : n < 0 ? '-' : '') + abs;
   }
@@ -1463,7 +1489,7 @@
   /* ---------------- 顶部指标卡 ---------------- */
   function fmtMoney(v) {
     if (v === null || v === undefined || isNaN(v)) return '—';
-    return v.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return roundMoney(v).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
   /* 表格金额单元格专用：把金额拆成「整数 / 小数点 / 两位小数」三段，
      整数段右对齐占固定宽度、小数段左对齐，小数点由 CSS grid 锁死在同一竖线。
@@ -1472,7 +1498,7 @@
      signed=true 时正值补 + 号，供持仓收益/累计收益复用同一套三段结构。 */
   function fmtMoneyCell(v, signed) {
     if (v === null || v === undefined || isNaN(v)) return '—';
-    var n = Number(v);
+    var n = roundMoney(v);
     var s = n.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     if (signed && n > 0) s = '+' + s;
     var dot = s.indexOf('.');
@@ -2595,7 +2621,7 @@
         markPoint/markLine + SVG 渲染器（约 500KB，gzip 173KB），并在首屏 init 后
         立即用 fetch 预热 HTTP 缓存、load 完成后空闲注入脚本——用户读首屏这几秒里
         图库已就绪，切到趋势页几乎不再等待。 */
-  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126w';
+  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126x';
   function injectEcharts() {
     if (window.echarts || window.__ECHARTS_INJECTED__) return;
     window.__ECHARTS_INJECTED__ = true;
