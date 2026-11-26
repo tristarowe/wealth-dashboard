@@ -1,6 +1,6 @@
 {
   "asOf": "2026-11-26",
-  "fetchedAt": "2026-11-27 07:49",
+  "fetchedAt": "2026-11-27 07:50",
   "source": "建行新品公告·销售文件要素表 + 中国理财网净值",
   "window": {
     "start": "2026-08-01",
@@ -25,7 +25,8 @@
         null
       ],
       "latestDate": "",
-      "latestNav": null
+      "latestNav": null,
+      "navTried": "2026-11-26"
     },
     {
       "id": "LZ7000926002191",
@@ -71,7 +72,8 @@
         null
       ],
       "latestDate": "",
-      "latestNav": null
+      "latestNav": null,
+      "navTried": "2026-11-26"
     },
     {
       "id": "LZ7001925000012",
