@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261126a';
+  window.__NP_LAYOUT_VERSION = '20261126b';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -737,16 +737,36 @@
     return s;
   }
 
+  /* 2026-11-26：按「完整份额批次时间线」计算某产品在某个净值日的收益与期初市值。
+     lot.date = 确认日（自当日起息，含当日净值）；lot.soldDate = 卖出确认日（含当日净值）；
+     lot.buyNav = 成交净值日(T日)净值，作为该批次首日的收益起点。
+     这样已清仓份额在持有期内逐日计息，而不是把整笔已实现收益一次性砸在清仓确认日。 */
+  function gainsOnDate(p, lots, i) {
+    var inc = 0, base = 0, cnt = 0;
+    var navToday = p.nav[i];
+    var prevNav = i > 0 ? p.nav[i - 1] : null;
+    var firstActiveDate = i > 0 ? p.dates[i - 1] : null;
+    for (var k = 0; k < lots.length; k++) {
+      var gl = lots[k];
+      if (p.dates[i] < gl.date || (gl.soldDate && p.dates[i] > gl.soldDate)) continue;
+      /* 批次首日：用成交净值作起点；其余日子用上一净值日。
+         若确认日落在非披露日，首个披露日仍按成交净值起算。 */
+      var isFirst = !prevNav || !firstActiveDate || firstActiveDate < gl.date;
+      var fromNav = isFirst ? (Number(gl.buyNav) > 0 ? Number(gl.buyNav) : prevNav) : prevNav;
+      if (!(fromNav > 0) || !(navToday > 0)) continue;
+      inc += (navToday - fromNav) * gl.shares;
+      base += fromNav * gl.shares;
+      cnt += 1;
+    }
+    return { inc: inc, base: base, cnt: cnt };
+  }
+
   /* 组合现金流（只记与持仓同口径的已生效交易）：申购为负、赎回/清仓为正。
      供「累计收益年化（XIRR）」使用，口径与持仓计算保持完全一致。 */
   var PORTFOLIO_FLOWS = [];
   /* 累计年化（XIRR）缓存：renderMetrics 算出后存这里，盈亏日历年度表最新行直接复用，
      保证「累计年化卡」与「年度年化」两个数字严格同源同值。 */
   var CUM_ANN_CACHE = null;
-  /* 每笔赎回/清仓落袋的已实现收益，按产品 + 确认日记录。
-     供盈亏日历使用：把这些已实现收益补记进赎回日的每日收益，
-     使「日历收益合计 = 累计收益指标卡」（持仓收益 + 已实现收益）。 */
-  var HOLD_REALIZED = [];
 
   /* XIRR 求解核心：把一组现金流按实际发生日折现，求净现值为 0 的年化内部收益率。
      现金流约定：申购/投入为负，赎回/回收为正；最后一笔通常是期末市值。
@@ -841,7 +861,6 @@
     normalizeTxConfirmDates();
     var tx = ((window.TRANSACTIONS && window.TRANSACTIONS.items) || []).slice();
     var cashFlows = [];
-    HOLD_REALIZED = [];
     tx.sort(function (a, b) {
       return a.confirmDate < b.confirmDate ? -1 : a.confirmDate > b.confirmDate ? 1 : 0;
     });
@@ -860,7 +879,7 @@
       var p = findProductById(t.pid);
       if (!p) return;
       var rec = acc[p.id];
-      if (!rec) rec = acc[p.id] = { product: p, shares: 0, cost: 0, invested: 0, realized: 0, startDate: null, lots: [], lastTx: t };
+      if (!rec) rec = acc[p.id] = { product: p, shares: 0, cost: 0, invested: 0, realized: 0, startDate: null, lots: [], gainLots: [], lastTx: t };
       /* 成交净值缺失时按确认日净值兜底，净值披露后自动生效 */
       var nav = Number(t.confirmNav) || navForConfirm(p, t.applyDate || t.confirmDate) || 1;
       var sh = Number(t.shares);
@@ -872,25 +891,36 @@
         var avg = rec.shares > 0 ? rec.cost / rec.shares : nav;
         var realizedGain = sell * (nav - avg);
         rec.realized += realizedGain;
-        /* 记录已实现收益事件：盈亏日历将在该确认日把它补记进每日收益，
-           使日历收益合计与累计收益指标卡闭合（分母 base = 卖出份额的成本）。 */
-        var rdate = t.confirmDate || t.applyDate;
-        if (rdate && Math.abs(realizedGain) > 1e-9) {
-          HOLD_REALIZED.push({ pid: p.id, date: rdate, gain: realizedGain, base: sell * avg });
-        }
         rec.cost -= sell * avg;
         rec.shares -= sell;
         /* 赎回款：整笔赎回优先用底稿金额（银行实际到账），部分赎回按成交净值折算 */
         var proceeds = (sell >= sh - 1e-6 && Number(t.amount) > 0) ? Number(t.amount) : sell * nav;
         cashFlows.push({ d: t.confirmDate || t.applyDate, v: proceeds, pid: p.id });
-        /* 赎回/清仓按先进先出扣减份额批次，保证剩余批次的起息日归属正确 */
+        /* 赎回/清仓按先进先出扣减份额批次，保证剩余批次的起息日归属正确。
+           2026-11-26：同时维护「收益时间线」gainLots——被卖出的份额不必删除，
+           而是标记 soldDate（卖出成交净值日）转入已闭合段，之后由 buildAggregate
+           按日计息，收益自然停在卖出当天，而不是整笔砸在确认日。 */
         var remain = sell;
+        var sellDate = navDateAt(p, t.applyDate || t.confirmDate) || t.confirmDate || t.applyDate;
         for (var li = 0; li < rec.lots.length && remain > 1e-9; li++) {
           var take = Math.min(rec.lots[li].shares, remain);
           rec.lots[li].shares -= take;
           remain -= take;
         }
         rec.lots = rec.lots.filter(function (l) { return l.shares > 1e-9; });
+        /* gainLots：把每个被卖批次拆成「持有段（含卖出当日）」+「剩余仍持有段」 */
+        var glNext = [];
+        var glRemain = sell;
+        rec.gainLots.forEach(function (gl) {
+          if (gl.soldDate || glRemain <= 1e-9) { glNext.push(gl); return; }
+          var gt = Math.min(gl.shares, glRemain);
+          glNext.push({ date: gl.date, buyNav: gl.buyNav, shares: gt, soldDate: sellDate });
+          glRemain -= gt;
+          if (gl.shares - gt > 1e-9) {
+            glNext.push({ date: gl.date, buyNav: gl.buyNav, shares: gl.shares - gt, soldDate: null });
+          }
+        });
+        rec.gainLots = glNext;
       } else {
         /* 清仓后重新申购：起息日按本次确认日重新计算 */
         if (!(rec.shares > 0.000001)) rec.startDate = t.confirmDate;
@@ -898,10 +928,14 @@
            银行规则：T 日按 T 日净值成交、T+1 确认起息；一批份额的收益从
            「确认日当日净值」开始归属，确认日之前的净值涨跌与其无关。
            navDate 记录「成交净值日」（T 日），只用于年化分母，保证与按成交净值买入的分子同口径。 */
-        rec.lots.push({
+        var buyNavDate = navDateAt(p, t.applyDate || t.confirmDate) || t.confirmDate || t.applyDate;
+        rec.lots.push({ date: t.confirmDate || t.applyDate, navDate: buyNavDate, shares: sh });
+        /* 收益时间线：成交净值日(T日)的净值作为首日起息基准，确认日(批次 date)起计入收益 */
+        rec.gainLots.push({
           date: t.confirmDate || t.applyDate,
-          navDate: navDateAt(p, t.applyDate || t.confirmDate) || t.confirmDate || t.applyDate,
-          shares: sh
+          buyNav: Number(t.confirmNav) || navOnDate(p, buyNavDate) || nav,
+          shares: sh,
+          soldDate: null
         });
         rec.shares += sh;
         var paid = Number(t.amount) || sh * nav;
@@ -963,7 +997,21 @@
       /* 今日收益按「截至最新净值日已起息的份额」计算（而非全部持仓份额）：
          追加申购的新份额在自身确认日之前不产生收益，避免把未起息份额算进当日收益。 */
       var incomeShares = alive ? vestedShares(rec.lots, p.latestDate) : 0;
-      var incomePending = !(incomeShares > 1e-9) || lastPer === null || lastPer === undefined;
+      var income = (incomeShares > 1e-9 && lastPer !== null && lastPer !== undefined)
+        ? lastPer * incomeShares / 10000 : 0;
+      /* 2026-11-26：已清仓产品在「卖出当日」仍计息——用收益时间线算最新净值日的最后一日收益，
+         不再因份额归零一律显示「—」。卖出后若净值日继续推进，已闭合段不会再贡献收益，
+         income 自然为 0（显示为 0.00，符合「已无持仓、当日无收益」）。 */
+      if (!alive && rec.gainLots && rec.gainLots.length) {
+        var lg = gainsOnDate(p, rec.gainLots, n - 1);
+        if (lg.cnt > 0 && Math.abs(lg.inc) > 1e-9) {
+          income = lg.inc;
+          incomeShares = rec.gainLots.reduce(function (s, gl) {
+            return (gl.soldDate && gl.soldDate >= p.latestDate) ? s + gl.shares : s;
+          }, 0);
+        }
+      }
+      var incomePending = !(incomeShares > 1e-9) || (alive && (lastPer === null || lastPer === undefined));
       var h = {
         tx: rec.lastTx,
         product: p,
@@ -988,10 +1036,11 @@
         annShort: accrualDays > 0 && accrualDays < SHORT_ANN_DAYS,
         days: days,
         accrualDays: accrualDays,
-        income: incomePending ? 0 : lastPer * incomeShares / 10000,
+        income: incomePending ? 0 : income,
         incomeShares: incomeShares,
         incomePending: incomePending,
         lots: rec.lots,
+        gainLots: rec.gainLots,
         cleared: !alive
       };
       HOLDINGS.push(h);
@@ -1049,16 +1098,6 @@
     return selectedIds.indexOf(canon) !== -1 || selectedIds.indexOf(pid) !== -1;
   }
 
-  /* 已实现收益的日期对齐：取产品净值日中 >= 确认日的最近一天；确认日晚于所有净值日
-     则归到最后一天；产品无净值日返回空。 */
-  function alignRealizedDate(dates, confirmDate) {
-    if (!dates || !dates.length || !confirmDate) return null;
-    for (var i = 0; i < dates.length; i++) {
-      if (dates[i] >= confirmDate) return dates[i];
-    }
-    return dates[dates.length - 1];
-  }
-
   // 合计口径：按持仓份额把万收折算为当日收益（元），年化按当日前一净值日市值折算
   function buildAggregate(products) {
     if (!products.length) return null;
@@ -1066,34 +1105,28 @@
     products.forEach(function (p) {
       var h = HOLD_BY_PID[p.id];
       if (!h) return;
-      var lastCum = 0;
+      /* 2026-11-26：每日收益改按「完整份额批次时间线」逐日计息。
+         已清仓份额的收益随着持有期按净值变动逐日计入（含卖出当日），
+         不再把整笔已实现收益一次性补记到清仓确认日——那会让清仓当天
+         收益/年化异常放大（如 25 号 +63.62、12.73%）。
+         每个批次首日以成交净值日净值为起点，之后每日按相邻净值差 × 份额计息。 */
+      var lots = (h.gainLots && h.gainLots.length) ? h.gainLots : null;
       for (var i = 0; i < p.dates.length; i++) {
         var dt = p.dates[i];
-        /* 历史每日收益按「当日已起息份额」计算：多笔买入时，各批次从自身确认日起
-           才参与收益，避免用当前总份额回溯计算导致历史收益虚高。 */
-        var shOnDay = h.lots ? vestedShares(h.lots, dt) : (dt < h.startDate ? 0 : h.shares);
-        if (!(shOnDay > 1e-9)) continue;
-        var cum = (p.nav[i] - h.costNav) * shOnDay;
-        var income = cum - lastCum;
-        var prevMv = h.cost + lastCum;
-        lastCum = cum;
+        var g = lots
+          ? gainsOnDate(p, lots, i)
+          : (function () { /* 兜底：无时间线的老数据沿用原已起息份额口径 */
+              var sh = h.lots ? vestedShares(h.lots, dt) : (dt < h.startDate ? 0 : h.shares);
+              if (!(sh > 1e-9)) return { inc: 0, base: 0, cnt: 0 };
+              var cum = (p.nav[i] - h.costNav) * sh;
+              return { inc: cum, base: h.cost, cnt: 1 };
+            })();
+        if (!(g.cnt > 0) || Math.abs(g.inc) < 1e-12) continue;
         if (!(dt in sums)) { sums[dt] = 0; prevs[dt] = 0; counts[dt] = 0; }
-        sums[dt] += income;
-        prevs[dt] += prevMv;
+        sums[dt] += g.inc;
+        prevs[dt] += g.base;
         counts[dt] += 1;
       }
-      /* 累计收益口径：把该产品的已赎回已实现收益补记进赎回确认日。
-         否则日历只反映「当前持仓的浮动盈亏」（持仓收益），累计收益指标卡还含已落袋部分，
-         两者对不上。gain 计入当日收益、base（卖出本金）计入当日期初市值，分子分母同口径，
-         收益列 / 日均万收 / 年化会一起变成累计口径并自动闭合。 */
-      HOLD_REALIZED.forEach(function (ev) {
-        if (ev.pid !== p.id) return;
-        var rdt = alignRealizedDate(p.dates, ev.date);
-        if (!rdt) return;
-        if (!(rdt in sums)) { sums[rdt] = 0; prevs[rdt] = 0; counts[rdt] = 0; }
-        sums[rdt] += ev.gain;
-        prevs[rdt] += ev.base;
-      });
     });
     var dates = Object.keys(sums).sort();
     /* 每个披露点对应的收益区间 = 上一个披露点 → 当前披露点（首个点区间为 0 天）。
@@ -1528,7 +1561,9 @@
      未起息/清仓/无昨日净值时返回 null（与看板 todayBase 判空一致，显示「—」）。 */
   function todayWanOf(p) {
     var h = HOLD_BY_PID[p.id];
-    if (!h || h.cleared || h.incomePending) return null;
+    /* 2026-11-26：清仓当日仍计息，只要收益时间线给出有效末日收益就照常显示万收；
+       只有清仓后净值日继续推进、已无份额可取时才返回空。 */
+    if (!h || h.incomePending) return null;
     if (h.income === null || h.income === undefined) return null;
     var n = p.nav ? p.nav.length : 0;
     if (n < 2 || !(p.nav[n - 2] > 0)) return null;
@@ -1879,11 +1914,13 @@
       else flat += 1;
     });
     var st = cumulativePeriodStats(p, prefix);
-    /* 「年化」统一为截至当月底的累计资金加权 XIRR（与累计卡同源），
-       不再用「日均万收×365」的时间加权折算，避免与累计年化卡对不上。 */
-    var lastDay = new Date(y, m + 1, 0).getDate();
-    var monthEnd = y + '-' + String(m + 1).padStart(2, '0') + '-' + String(lastDay).padStart(2, '0');
-    var ann = xirrRangeAnn(monthEnd, keepPid);
+    /* 2026-11-26：月度「年化」改用「单月收益率年化」口径 —— 当月收益 ÷ 期初市值
+       × 365 ÷ 当月自然日数，等价于日均万收 × 3.65。
+       旧口径是「截至当月底的累计 XIRR」，早期月份跨度不足 45 天或现金流稀疏时
+       被稳健性保护判空，整列只剩最新月有数。改为单月口径后，每个有收益的月份
+       都有可读的年化；注意它与顶部累计年化卡（全区间 XIRR）不再同值，两者含义不同：
+       月度列衡量「该月赚钱速度」，累计卡衡量「整笔资金的内部收益率」。 */
+    var ann = st.ann;
     return {
       sum: sum,
       avg: st.avg,
@@ -2000,22 +2037,13 @@
     if (list) {
       var monthPids = {};
       selectedProducts().forEach(function (sp) { monthPids[sp.id] = 1; });
-      var lastNavDate = p.dates[p.dates.length - 1];
-      var latestMonth = +lastNavDate.slice(5, 7) - 1;
-      var latestMonthYear = +lastNavDate.slice(0, 4);
       var monthRows = months.map(function (m) {
         var st = monthStats(p, sumMap, calState.y, m, monthPids);
-        /* 最新月份（含最新净值日）直接复用累计年化卡的值，严格同值；
-           其余月份用截至当月底的区间 XIRR。 */
-        if (calState.y === latestMonthYear && m === latestMonth && CUM_ANN_CACHE !== null) {
-          st.ann = CUM_ANN_CACHE;
-        }
         return { m: m, st: st };
       });
-      var monthAnnFormula = '年化 = 资金加权内部收益率（XIRR）：Σ Ci/(1+r)^((di−d0)/365)=0 解 r。' +
-        '申购记为负、赎回与期末市值记为正，按每笔实际发生日折现；' +
-        '截至当月底，从首笔投入到当时的真实资金加权年化，与顶部「累计年化」同口径。' +
-        '建仓初期现金流集中、跨度不足 45 天时 XIRR 无经济意义，显示「—」。';
+      var monthAnnFormula = '月度年化 = 当月收益 ÷ 当月期初市值 × 365 ÷ 当月自然日数 × 100%' +
+        '（等价于日均万收 × 3.65），衡量该月赚钱速度。' +
+        '与顶部「累计年化」口径不同：后者是全区间资金加权 XIRR，衡量整笔资金内部收益率，两者不要求同值。';
       var html = '<div class="month-row mhead"><span>月份</span><span>收益</span><span>日均万收</span><span>正收益</span><span>回撤</span><span>挂0</span><span>年化</span></div>';
       html += '<div class="month-rows">';
       monthRows.slice().reverse().forEach(function (r) {
@@ -2260,7 +2288,7 @@
         markPoint/markLine + SVG 渲染器（约 500KB，gzip 173KB），并在首屏 init 后
         立即用 fetch 预热 HTTP 缓存、load 完成后空闲注入脚本——用户读首屏这几秒里
         图库已就绪，切到趋势页几乎不再等待。 */
-  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126a';
+  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126b';
   function injectEcharts() {
     if (window.echarts || window.__ECHARTS_INJECTED__) return;
     window.__ECHARTS_INJECTED__ = true;
