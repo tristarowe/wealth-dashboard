@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261126s';
+  window.__NP_LAYOUT_VERSION = '20261126t';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -1513,20 +1513,13 @@
     /* 本月日均万收必须与盈亏日历同口径：组合万收 = 当日收益 ÷ 前一日市值 × 10000，
        逐日折算后取平均。原先用各产品 per10k 简单算术平均（等权），与按市值加权的组合
        实际表现不符，导致看板 0.65 / 日历 0.61 对不上；现统一为市值加权口径。 */
-    var month = 0, mCnt = 0;
-    if (AGG) {
-      AGG.dates.forEach(function (d, i) {
-        if (d.indexOf(ym) !== 0) return;
-        /* 本月收益与月度表、日均万收同源：跨月首段只取落在本月的那几天 */
-        var sh = periodShare(AGG, i, ym + '-01');
-        if (!sh) return;
-        month += sh.v;
-        mCnt += 1;
-      });
-    }
+    /* 本月收益直接取月度表的 sum（同源 cumulativePeriodStats）：
+       跨月格按自然日拆开，月初/月末两端都裁，与月度表、日历底部严格同值。 */
+    var mStats = AGG ? cumulativePeriodStats(AGG, ym + '-') : null;
+    var month = mStats ? mStats.sum : 0;
+    var mCnt = mStats && mStats.days > 0 ? 1 : 0;
     /* 本月日均万收统一为自然日口径：本月收益 ÷ 期初市值 ÷ 区间实际自然日数。
        不再按披露点数量平均，避免周末/节假日不披露导致日均虚高。 */
-    var mStats = AGG ? cumulativePeriodStats(AGG, ym + '-') : null;
     var mWanAvg = mStats ? mStats.avg : null;
 
     var cost = 0, holdProfit = 0, totalProfit = 0, mv = 0, invested = 0;
@@ -2030,49 +2023,70 @@
      —— 周末/节假日不披露净值，其累计涨跌按该段真实跨越的自然日摊销。
      —— 首段可能跨月/跨年，只把落在本期内的天数与对应收益计入本期。
      年化严格由日均万收换算：日均万收 × 3.65 = 年化%。 */
-  /* 2026-11-26：把「跨越期初的那一段」按天数拆开，只保留落在本期内的收益份额。
-     披露日遇周末/节假日会顺延，所以某期第一个披露格常压了上周末尾 2~3 天
-     （如 10-30 披露后，下一个披露日是 11-02）。整段金额既含上期尾几天、也含本期头几天。
-     日历格子必须显示整段（它是披露值，不拆分），但「月度收益 / 年度收益 / 本月收益 /
-     日均万收」只能算本期那几天，否则同一个月会出现「收益 +4.00、日均万收 -0.55」
-     这种一列说亏一列说赚的符号打架。以下所有求和点统一走本函数。
+  /* 2026-11-26（晚间修正）：按自然日把每个披露段摊进区间，两端都裁。
+     披露日遇周末/节假日会顺延，所以一格常压 2~3 天（如 10-30 → 11-02 一格含
+     10-31、11-01、11-02 三天）。整段金额既含上期尾几天、也含本期头几天。
+     日历格子仍显示整段披露值（数据里没有逐日净值），但月度/年度/本月收益/
+     日均万收只能算落在本期内的天数。
+     旧实现只处理「本期第一格里的上期尾巴」，漏掉了「上期最后一格里的本期尾巴」：
+     10-31 那天藏在 11-02 的格子里，10 月统计遍历不到 11 月的日期，于是这天的
+     收益既不在 10 月、也不在 11 月，永远消失 —— 表现就是「10 月 +0.99、
+     11 月 0.00、年度却 0.00（年度全额计入那段含 10-31 的 -2.98）」。
+     现改为对每个段与 [from, to] 求重叠天数，>0 才按天数比例计入：
+       · 月度相加 = 年度（同一天只归属一个期间，不重不漏）
+       · 月初那格只给本月该得的部分，月末那格也把本月尾巴还给本月
      返回 { v: 本期收益份额, days: 本期计息天数 }。 */
-  function periodShare(p, i, periodStart) {
+  function periodShare(p, i, from, to) {
     var raw = p.raw ? p.raw[i] : p.per10k[i];
     if (raw === null || raw === undefined) return null;
+    var segEnd = p.dates[i];
+    var segStart = (p.prevDates && p.prevDates[i]) || segEnd;
+    /* 先做字符串区间快速排除，避免为几千个披露点反复 parseDate：
+       段末早于期间起点 → 整段在期间之前；段起点不早于期间终点 → 整段在期间之后。 */
+    if (segEnd < from || segStart >= to) return null;
     var gap = p.gaps && p.gaps[i] > 0 ? p.gaps[i] : 1;
-    var segStart = (p.prevDates && p.prevDates[i]) || '';
-    if (segStart && segStart < periodStart && gap > 1) {
-      /* dayDiff 是差值不是包含式计数：11-01 到 11-03 落在本月是 3 天，dayDiff 只给 2，
-         故 +1；否则月初当天披露的那段会判 inside=0 被整段丢弃（收益里有、日均里没有）。
-         inside>=gap 说明整段都在本期，取全额。 */
-      var inside = dayDiff(parseDate(periodStart), parseDate(p.dates[i])) + 1;
-      if (inside > 0 && inside < gap) return { v: raw * inside / gap, days: inside };
-    }
-    return { v: raw, days: gap };
+    /* 段覆盖 (segStart, segEnd] 共 gap 天；换成相对 from 的偏移算重叠。
+       首个披露段的 prevDates 等于自身（差值 0 天），需按 gap 回推起点。 */
+    var a = parseDate(from), b = parseDate(to);
+    var d1 = dayDiff(a, parseDate(segEnd));
+    var d0 = dayDiff(a, parseDate(segStart));
+    if (d1 - d0 < gap) d0 = d1 - gap;
+    var endOff = dayDiff(a, b);
+    var lo = Math.max(d0 + 1, 0);
+    var hi = Math.min(d1, endOff);
+    var days = hi - lo + 1;
+    if (!(days > 0)) return null;
+    if (days >= gap) return { v: raw, days: gap };
+    return { v: raw * days / gap, days: days };
+  }
+
+  /* 期间字符串 → [起, 止]（含两端）。年度 prefix 形如 '2026-'，月度 '2026-11-'。 */
+  function periodRange(prefix) {
+    if (/^\d{4}-$/.test(prefix)) return [prefix + '01-01', prefix + '12-31'];
+    var y = +prefix.slice(0, 4), m = +prefix.slice(5, 7);
+    var last = new Date(y, m, 0).getDate();
+    return [prefix + '01', prefix + String(last).padStart(2, '0')];
   }
 
   function cumulativePeriodStats(p, prefix) {
-    var idxs = [];
-    for (var i = 0; i < p.dates.length; i++) {
-      if (p.dates[i].indexOf(prefix) === 0) idxs.push(i);
-    }
-    if (!idxs.length) return { avg: null, ann: null, days: 0, sum: 0 };
-    var periodStart = prefix + (/^\d{4}-$/.test(prefix) ? '01-01' : '01');
+    if (!p || !p.dates || !p.dates.length) return { avg: null, ann: null, days: 0, sum: 0 };
+    var range = periodRange(prefix);
     var sum = 0, acc = 0, days = 0;
-    idxs.forEach(function (i) {
-      var sh = periodShare(p, i, periodStart);
-      if (!sh) return;
+    /* 不再按日期前缀过滤：本期末尾那几天可能压在下一个月的首格里，
+       必须遍历全部披露点，靠重叠天数决定它归属本期多少。 */
+    for (var i = 0; i < p.dates.length; i++) {
+      var sh = periodShare(p, i, range[0], range[1]);
+      if (!sh) continue;
       var base = p.prevMv && p.prevMv[i] > 0 ? p.prevMv[i] : 0;
       /* 无市值的段（清仓后空档）整段跳过：收益与日均同时不计，避免一方进一方不进 */
-      if (!(base > 0) || !(sh.days > 0)) return;
+      if (!(base > 0) || !(sh.days > 0)) continue;
       /* v/base 是「该段累计收益率」（段内 sh.days 天合计），先按段累加收益率，
          最后统一除以总天数：avg = Σ(段收益率) / Σ(段天数) × 10000。
          不能写成 Σ(段收益率 × 天数)：段收益率本身已含天数，再乘会把周更产品的权重放大。 */
       sum += sh.v;
       acc += sh.v / base;
       days += sh.days;
-    });
+    }
     if (!(days > 0)) return { avg: null, ann: null, days: 0, sum: sum };
     var avg = acc / days * 10000;
     return { avg: avg, ann: avg * 3.65, days: days, sum: sum };
@@ -2224,7 +2238,7 @@
       var monthAnnFormula = '月度年化 = 当月收益 ÷ 当月期初市值 × 365 ÷ 当月自然日数 × 100%' +
         '（等价于日均万收 × 3.65），衡量该月赚钱速度。' +
         '与顶部「累计年化」口径不同：后者是全区间资金加权 XIRR，衡量整笔资金内部收益率，两者不要求同值。';
-      var html = '<div class="month-row mhead"><span>月份</span><span>收益</span><span>日均万收</span><span>正收益</span><span>回撤</span><span>挂0</span><span>年化</span></div>';
+      var html = '<div class="month-row mhead"><span>月份</span><span title="按自然日计：跨月的披露格按天数拆开，月初那格只计本月天数、月末那格也把本月尾巴算回本月，所以各月相加严格等于全年。">收益</span><span>日均万收</span><span>正收益</span><span>回撤</span><span>挂0</span><span>年化</span></div>';
       html += '<div class="month-rows">';
       monthRows.slice().reverse().forEach(function (r) {
         var st = r.st;
@@ -2262,7 +2276,7 @@
     });
     for (var b = 0; b < offset; b++) cells.push('<div class="cell empty"></div>');
 
-    var pos = 0, neg = 0, flat = 0, sum = 0;
+    var pos = 0, neg = 0, flat = 0;
     var compact = (window.innerWidth || 1200) < 480;
     for (var d2 = 1; d2 <= lastDay; d2++) {
       var ds = prefix + String(d2).padStart(2, '0');
@@ -2272,13 +2286,11 @@
         cells.push('<div class="cell nodata"><div class="d">' + d2 + '</div><div class="v">—</div><div class="a">—</div></div>');
         continue;
       }
-      /* 2026-11-26：与月度表、年度表同口径 —— 跨月首格只计落在本月的那几天。
+      /* 2026-11-26：与月度表、年度表同口径 —— 跨月格只把落在本月的那几天计入合计。
          日历格子本身仍显示整段披露值（数据里没有拆分后的每日净值），所以
          「格子逐格相加」会比这里的合计多出月初/月末那几天，属口径统一的必然代价；
          跨月格已加 title 说明覆盖哪几天。 */
       var ai = (AGG && AGG.dates) ? AGG.dates.indexOf(ds) : -1;
-      var sh = ai >= 0 ? periodShare(AGG, ai, prefix + '01') : null;
-      sum += sh ? sh.v : v;
       if (v > 0.005) pos += 1; else if (v < -0.005) neg += 1; else flat += 1;
       /* 2026-11-26：挂0 日（收益恰为 0）保留后，不能让 0 抢走「最佳/最低」角标 ——
          整月无回撤时 0 会变成最小值、被误标成「今日收益最低」。
@@ -2292,7 +2304,7 @@
       var spanTip = '';
       if (ai >= 0 && AGG.gaps && AGG.gaps[ai] > 1 && AGG.prevDates) {
         spanTip = ' title="' + ds + ' 覆盖 ' + AGG.prevDates[ai] + ' 至 ' + ds + ' 共 ' + AGG.gaps[ai] +
-          ' 天的收益' + (AGG.prevDates[ai] < prefix + '01' ? '；其中上月末那几天算上月，本格只把本月部分计入当月' : '') + '"';
+          ' 天的收益；月度/年度统计按自然日拆到各自月份，本格只显示整段披露值' + '"';
       }
       cells.push('<div class="cell' + (best ? ' best' : '') + '"' + spanTip + '>' +
         '<div class="d">' + d2 + (best ? '<span class="thumb">' + THUMB_UP + '</span>' : '')
@@ -2305,10 +2317,14 @@
     var sub = document.getElementById('cal-sub');
     if (sub) sub.textContent = calState.y + ' 年 ' + (calState.m + 1) + ' 月 · 每日收益';
 
+    /* 当月收益 = 月度表同一结果（同源 cumulativePeriodStats）：
+       它把跨月格按自然日拆给上月/本月，且两端都裁，月度相加 = 年度。 */
+    var mStat = cumulativePeriodStats(AGG, prefix);
+    var sum = mStat.sum;
     var summary = document.getElementById('cal-summary');
     if (summary) {
       summary.innerHTML =
-        '<span class="lead" title="只计落在本月的那几天。月初第一格若含上月末 2~3 天（周末/节假日顺延披露），那部分算上月，故与日历格子逐格相加会差这一小段。">当月收益<b class="' + colorBy(sum) + '">' + fmtSigned(sum) + '</b><i>元</i></span>' +
+        '<span class="lead" title="只计落在本月的自然日：月初第一格若压了上月末 2~3 天，那部分算上月；月末最后一格压到下月初的那部分算下月。故与日历格子逐格相加会差这几天的份额。">当月收益<b class="' + colorBy(sum) + '">' + fmtSigned(sum) + '</b><i>元</i></span>' +
         '<span class="st">正收益<b>' + pos + '</b><i>天</i></span>' +
         '<span class="st">回撤<b>' + neg + '</b><i>天</i></span>' +
         '<span class="st">挂0<b>' + flat + '</b><i>天</i></span>';
@@ -2346,9 +2362,8 @@
       var v = AGG.raw ? AGG.raw[i] : AGG.per10k[i];
       if (v === null || v === undefined) return;
       if (!map[y]) map[y] = { sum: 0, cnt: 0, pos: 0, neg: 0, flat: 0 };
-      /* 年度「收益」同样只计落在本年度的那几天：跨年首段按天拆开，
-         与年度日均万收同源，避免跨年时两列符号相反（同月度表口径） */
-      map[y].sum += periodShare(AGG, i, y + '-01-01').v;
+      /* 年度「收益」放到循环后按年统一算（cumulativePeriodStats 的 sum）：
+         跨年首段按自然日拆开，两端都裁，年度 = 各月相加，避免跨年时两列符号相反。 */
       map[y].cnt += 1;
       if (v > 0.005) map[y].pos += 1;
       else if (v < -0.005) map[y].neg += 1;
@@ -2373,6 +2388,9 @@
       var s = map[y];
       /* 日均万收保持自然日口径（时间加权的赚钱速度指标，与年化不再互为折算） */
       var st = cumulativePeriodStats(AGG, y + '-');
+      /* 年度「收益」与日均万收同源：同一次计算里的 sum，两列必然同号，
+         且严格等于该年 12 个月度行之和（自然日不重不漏）。 */
+      s.sum = st.sum;
       var avgWan = st.avg;
       var yearEnd = y + '-12-31';
       /* 最新年度：直接复用累计年化卡的值，确保与指标卡严格相等 */
@@ -2486,7 +2504,7 @@
         markPoint/markLine + SVG 渲染器（约 500KB，gzip 173KB），并在首屏 init 后
         立即用 fetch 预热 HTTP 缓存、load 完成后空闲注入脚本——用户读首屏这几秒里
         图库已就绪，切到趋势页几乎不再等待。 */
-  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126s';
+  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126t';
   function injectEcharts() {
     if (window.echarts || window.__ECHARTS_INJECTED__) return;
     window.__ECHARTS_INJECTED__ = true;
