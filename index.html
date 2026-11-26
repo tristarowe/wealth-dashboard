@@ -8,7 +8,7 @@
 <!-- 2026-11-24 u 首屏优化：看板脚本提前并行下载，云端域名提前握手；
      两者都不阻塞 HTML 解析，避免旧版「大库先下载完才开始拉 dashboard.js」的串行等待。 -->
 <link rel="preconnect" href="https://asqaxvrovorqfqwpgjkb.supabase.co" crossorigin>
-<link rel="preload" as="script" href="./assets/dashboard.js?v=20261126o" fetchpriority="low">
+<link rel="preload" as="script" href="./assets/dashboard.js?v=20261126p" fetchpriority="low">
 <style>
   :root{
     --bg:#f3f5f7; --card:#fff; --soft:#F9FFFF;
@@ -1987,9 +1987,9 @@
      用户定案：不要描边，改填充底色。申购↔加购浅蓝底、赎回↔赎回浅棕底、清仓↔清仓浅红底，
      字色分别为 #2878af / #a2701f / #c0392b。只给流水类型列加专用 class，
      不改 .tag.new（它还用于「持仓」角标）。border-color:transparent 保持尺寸稳定且视觉无描边。 */
-  .tag.ttype-buy{color:#2878af!important;background:#f2f8fa!important;border-color:transparent!important}
-  .tag.ttype-sell{color:#a2701f!important;background:#fdf8ef!important;border-color:transparent!important}
-  .tag.ttype-warn{color:#c0392b!important;background:#fdf4f2!important;border-color:transparent!important}
+  .tag.ttype-buy{color:#2878af!important;background:#f2f8fa!important;border:1px solid transparent!important}
+  .tag.ttype-sell{color:#a2701f!important;background:#fdf8ef!important;border:1px solid transparent!important}
+  .tag.ttype-warn{color:#c0392b!important;background:#fdf4f2!important;border:1px solid transparent!important}
   /* 持仓汇总「操作」按钮同步为填充底色、无描边，与流水类型标签逐项对应。
      必须放在 2026-11-24 的 background:transparent!important 覆盖块之后。 */
   .mini.buy{background:#f2f8fa!important;border-color:transparent!important;color:#2878af!important}
@@ -2453,7 +2453,7 @@
             <div class="att-title">数据说明与口径（PDF）</div>
             <div class="att-sub">含全局口径、顶部指标卡、盈亏、年化口径辨析、交易、新品预告、产品库、添加产品、数据体检九组 · 更新于 2026-11-26（含份额确认日 T+1/T+2 规则）</div>
           </div>
-          <a class="btn primary" href="./assets/数据说明.pdf?v=20261126o" target="_blank" rel="noopener">点击查看</a>
+          <a class="btn primary" href="./assets/数据说明.pdf?v=20261126p" target="_blank" rel="noopener">点击查看</a>
         </div>
       </div>
     </section>
@@ -2610,9 +2610,9 @@
      「新 HTML + 旧渲染」的错位（表现为新品预告仍是拉伸甘特卡片 + 巨大原生多选框）。 -->
 <!-- 2026-11-24 u：ECharts / html2canvas 改按需加载（趋势图、导出长图才拉），
      不再让 338KB + 47KB 的库阻塞首屏；加载器分别在 dashboard.js 与本页导出逻辑内。 -->
-<script src="./assets/data.js?v=20261126o" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
-<script src="./assets/risk_levels.js?v=20261126o"></script>
-<script src="./assets/transactions.js?v=20261126o"></script>
+<script src="./assets/data.js?v=20261126p" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
+<script src="./assets/risk_levels.js?v=20261126p"></script>
+<script src="./assets/transactions.js?v=20261126p"></script>
 <script>
   /* 公开底稿已脱敏：只含 id+pid 的占位行供后台抓净值，不含 applyDate 等明细。
      前端渲染前剔除这类行，真实交易明细由登录后从 Supabase 云端拉取。 */
@@ -2621,16 +2621,16 @@
     if (T && T.items) T.items = T.items.filter(function (t) { return !!t.applyDate; });
   })();
 </script>
-<script src="./assets/newproducts.js?v=20261126o"></script>
-<script src="./assets/library.js?v=20261126o"></script>
-<script src="./assets/supabase-config.js?v=20261126o"></script>
-<script src="./assets/auth.js?v=20261126o"></script>
-<script src="./assets/store.js?v=20261126o" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
+<script src="./assets/newproducts.js?v=20261126p"></script>
+<script src="./assets/library.js?v=20261126p"></script>
+<script src="./assets/supabase-config.js?v=20261126p"></script>
+<script src="./assets/auth.js?v=20261126p"></script>
+<script src="./assets/store.js?v=20261126p" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
 <script>
   /* 先用本地缓存/内置底稿立即渲染，云端数据在后台取回后再重绘，避免等待网络白屏 */
   /* 前序脚本缺失或命中旧缓存时（STORE_READY 不存在）也照常加载看板，避免页面停在空白骨架 */
   (function () {
-    var NP_BUILD = '20261126o';
+    var NP_BUILD = '20261126p';
     function boot(msg, forced) {
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
@@ -2657,7 +2657,7 @@
       // 隐私小眼睛：dashboard.js 就绪后再加载，才能包装 DASHBOARD_REFRESH 并在渲染后套用打码
       if (!window.PRIVACY) {
         var pv = document.createElement('script');
-        pv.src = './assets/privacy.js?v=20261126o';
+        pv.src = './assets/privacy.js?v=20261126p';
         document.body.appendChild(pv);
       }
       if (!window.STORE_REFRESH || typeof window.STORE_REFRESH.then !== 'function') return;
@@ -3100,7 +3100,7 @@
       if (h2cLoading) return h2cLoading;
       h2cLoading = new Promise(function (resolve, reject) {
         var s = document.createElement('script');
-        s.src = './assets/html2canvas.min.js?v=20261126o';
+        s.src = './assets/html2canvas.min.js?v=20261126p';
         s.onload = resolve;
         s.onerror = function () { h2cLoading = null; reject(new Error('截图组件加载失败')); };
         document.head.appendChild(s);
