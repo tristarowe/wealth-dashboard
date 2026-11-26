@@ -8,7 +8,7 @@
 <!-- 2026-11-24 u 首屏优化：看板脚本提前并行下载，云端域名提前握手；
      两者都不阻塞 HTML 解析，避免旧版「大库先下载完才开始拉 dashboard.js」的串行等待。 -->
 <link rel="preconnect" href="https://asqaxvrovorqfqwpgjkb.supabase.co" crossorigin>
-<link rel="preload" as="script" href="./assets/dashboard.js?v=20261126y" fetchpriority="low">
+<link rel="preload" as="script" href="./assets/dashboard.js?v=20261126z" fetchpriority="low">
 <style>
   :root{
     --bg:#f3f5f7; --card:#fff; --soft:#F9FFFF;
@@ -1230,34 +1230,48 @@
     #flow-table thead th:nth-child(2){white-space:nowrap}
     /* 自适应列宽时整列移除「今日万收」，不占位也不留空列（固定列宽下改用 visibility 隐藏） */
     #prod-table.no-p10k [data-col="p10k"]{display:none}
-    /* 产品库竖屏 2026-11-26 第二轮（用户：「只需 产品名称～7日 列在首屏，不要过度压缩产品名称列」）：
-       首屏只要求排到 7日，名称列能多宽就给多宽 —— 不再为多挤一列把名称压到 120px，
-       也不允许出现「被切掉一半的 14日 数字」这种半列残影。
-       做法：表格宽 = 容器宽 + 408px，名称列 = 表格宽 − 580（其余 10 列之和）⇒ 名称 = 容器宽 − 172，
-       7日 右边缘落在容器右边缘内侧 4px（留出边框/取整余量），再往右的 14日 完全在屏幕外。
-       实测名称列：320→122、375→177、393→195、430→232（上限 232，由 min(…,812px) 兜住），
-       一行可容 12~14 个汉字，「信银安盈象14天165号」「贝莱德建信贝淳金元120天2期」不再折行。
-       今日万收 62→56（「+9.99」最宽约 33px 够用）。 */
-    #prod-table{table-layout:fixed;width:min(calc(100% + 408px),812px);min-width:0}
+    /* 竖屏例外（2026-11-26 第三轮）：固定列宽下不能 display:none —— 单元格一旦从行里消失，
+       colgroup 的 11 个 <col> 与前 10 个单元格错位映射，产品净值/成立日期会被套上邻列宽度而挤压。
+       这里改为「列宽归 0 + 单元格不可见」：列仍占一个槽位，其余列宽一个都不变，整表 737→677。 */
+    #prod-table.no-p10k{width:677px}
+    #prod-table.no-p10k col#prod-p10k-col{width:0 !important}
+    #prod-table.no-p10k [data-col="p10k"]{display:table-cell;visibility:hidden;padding:0 !important;overflow:hidden}
+    /* ===== 产品库竖屏 2026-11-26 第三轮（用户：「重新调整列宽列间距，除产品名称列改 140px，
+       其他列按内容调整，列间距保持一致均匀，不要挤压不要溢出」）=====
+       上一版把名称列做成 calc(100% − 580px) 自适应、其余列固定 56~76px，结果净值列(60px)装不下
+       「1.005400」(55px + 左右内边距) 被压成与「成立日期」的日期贴在一起（截图红框：1.0054002026-11-03）。
+       本轮改为「每列都按自己最宽的真实内容定宽，谁也不压谁」：
+       · 名称列 = 140px（用户指定），列内文字两行内换行；
+       · 其余列宽 = 左右内边距 6px + 最宽内容（全量 11 页实测，见下）；
+       · 列间距统一：所有列左右各 6px 内边距；含「%」的四列右内边距 13px（6px 间距 + 6.9px 的 % 挂位，
+         % 由 .pu 悬挂到 padding 里，所以数字右边缘 13px、% 右边缘 6.9px，与邻列仍留出同样的 12px 空白）；
+       · 表格总宽 737px（不再用「容器宽 + 408px」的写法），容器装不下时横向滚动，绝不压缩内容。
+       实测最宽内容：净值日期「待披露」37.5｜今日万收「+11.95」41.3｜7日/14日/30日/成立至今 负号两位小数 41.6
+       ｜风险 R2 13.8｜持有期「180天」33.1｜产品净值「1.005400」55｜成立日期「2026-11-03」69.5。
+       首屏（393 屏内容宽 369）：名称 140 + 净值日期 60 + 今日万收 60 + 7日 61 = 321，7日 完整可见。 */
+    #prod-table{table-layout:fixed;width:737px;min-width:0;max-width:none}
     #prod-table colgroup col{width:auto !important}
-    /* 名称列 = 表格宽 − 其余 10 列（580px），随容器伸缩：不写死 px，7日 右边缘永远贴在容器右边缘。
-       注意必须写死这个 calc，否则 max-width:968 块里的 `td:nth-child(1){width:176px}`
-       会成为名称列的实际宽度（固定布局下首行单元格宽度优先），表格又被撑到 756px。 */
-    #prod-table col:nth-child(1){width:calc(100% - 580px) !important}
-    #prod-table col:nth-child(2){width:56px !important}
-    #prod-table col:nth-child(3){width:56px !important}
-    #prod-table col:nth-child(4){width:56px !important}
-    #prod-table col:nth-child(5){width:56px !important}
-    #prod-table col:nth-child(6){width:56px !important}
-    #prod-table col:nth-child(7){width:58px !important}
-    #prod-table col:nth-child(8){width:46px !important}
-    #prod-table col:nth-child(9){width:60px !important}
-    #prod-table col:nth-child(10){width:60px !important}
-    #prod-table col:nth-child(11){width:76px !important}
-    /* 名称列取消 144~176px 的 min/max 约束，否则固定布局下仍会被撑回原宽 */
-    #prod-table tbody td:nth-child(1),#prod-table thead th:nth-child(1){min-width:0;max-width:none;width:calc(100% - 580px)}
-    /* 列间距统一 5px（左右各 5px），缩窄后的 56px 周期列仍放得下「+11.95」这类最宽值 */
-    #prod-table thead th,#prod-table tbody td{padding:8px 5px}
+    /* 名称列固定 140px（不再随容器伸缩）：必须连首列 td 一起写死，
+       否则 max-width:968 块里的 `td:nth-child(1){width:176px}` 在固定布局下会成为实际列宽 */
+    #prod-table col:nth-child(1){width:140px !important}
+    #prod-table tbody td:nth-child(1),#prod-table thead th:nth-child(1){min-width:0;max-width:none;width:140px}
+    #prod-table col:nth-child(2){width:60px !important}   /* 净值日期（表头 48 + 左右 6） */
+    #prod-table col:nth-child(3){width:60px !important}   /* 今日万收（表头 48 + 左右 6） */
+    #prod-table col:nth-child(4){width:61px !important}   /* 7日：负号 5 字符数字 41.6 + 6 + 13 */
+    #prod-table col:nth-child(5){width:61px !important}   /* 14日 */
+    #prod-table col:nth-child(6){width:61px !important}   /* 30日 */
+    #prod-table col:nth-child(7){width:61px !important}   /* 成立至今 */
+    #prod-table col:nth-child(8){width:36px !important}   /* 风险（表头「风险」24 + 12） */
+    #prod-table col:nth-child(9){width:48px !important}   /* 持有期（表头 36 + 12） */
+    #prod-table col:nth-child(10){width:67px !important}  /* 产品净值「1.005400」55 + 12 */
+    #prod-table col:nth-child(11){width:82px !important}  /* 成立日期「2026-11-03」69.5 + 12 */
+    /* 列间距统一：表头与数据格左右各 6px；含 % 的四列右内边距靠 --pgut 提到 13px（全局对齐规则里读这个变量） */
+    #prod-table{--pgut:13px}
+    #prod-table thead th,#prod-table tbody td{padding:8px 6px}
+    #prod-table thead th,#prod-table tbody td{box-sizing:border-box}
+    /* 名称列 6px：全局「首页列左对齐 10px」规则（#prod-table thead th:nth-child(1){padding-left/right:10px}）
+       选择器多一个 :nth-child，特异性高于上面的 6px，必须显式压回，否则名称列与邻列间距 16px、其余 12px */
+    #prod-table thead th:nth-child(1),#prod-table tbody td:nth-child(1){padding-left:6px !important;padding-right:6px !important}
     /* 名称列收窄后，「新品/持仓」角标不能再与名称同行（会把名称挤成 3~4 行），
        竖屏改为角标独占一行、名称吃满整列宽度换行，最多 2 行。 */
     #prod-table tbody td:nth-child(1) .pname{row-gap:1px}
@@ -1559,7 +1573,9 @@
     /* 持仓汇总操作按钮贴合文字 2026-11-20：与流水/产品库同款 2px 6px + line-height 1.2
        （原 4px 9px / normal 实测 44×26px，过宽过高；改后约 36×18px） */
     #sum-table tbody td:last-child .mini{padding:1px 5px;line-height:1.2}
-    #prod-table tbody td{padding:5px 6px}
+    /* 只收上下 padding（行高 48px 需要）；左右内边距统一由上方「产品库竖屏列宽/列间距」规则给 6px，
+       此处若写成 padding:5px 6px 会与表头的左右内边距不一致，列与列之间的空隙差 1px */
+    #prod-table tbody td{padding-top:5px;padding-bottom:5px}
     #prod-table .st b,#prod-table .st i,
     #prod-table .cdate span,#prod-table .cdate i{line-height:1.35}
   }
@@ -2498,7 +2514,7 @@
             <div class="att-title">数据说明与口径（PDF）</div>
             <div class="att-sub">含全局口径、顶部指标卡、盈亏、年化口径辨析、交易、新品预告、产品库、添加产品、数据体检九组 · 更新于 2026-11-26（含份额确认日 T+1/T+2 规则）</div>
           </div>
-          <a class="btn primary" href="./assets/数据说明.pdf?v=20261126y" target="_blank" rel="noopener">点击查看</a>
+          <a class="btn primary" href="./assets/数据说明.pdf?v=20261126z" target="_blank" rel="noopener">点击查看</a>
         </div>
       </div>
     </section>
@@ -2655,9 +2671,9 @@
      「新 HTML + 旧渲染」的错位（表现为新品预告仍是拉伸甘特卡片 + 巨大原生多选框）。 -->
 <!-- 2026-11-24 u：ECharts / html2canvas 改按需加载（趋势图、导出长图才拉），
      不再让 338KB + 47KB 的库阻塞首屏；加载器分别在 dashboard.js 与本页导出逻辑内。 -->
-<script src="./assets/data.js?v=20261126y" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
-<script src="./assets/risk_levels.js?v=20261126y"></script>
-<script src="./assets/transactions.js?v=20261126y"></script>
+<script src="./assets/data.js?v=20261126z" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
+<script src="./assets/risk_levels.js?v=20261126z"></script>
+<script src="./assets/transactions.js?v=20261126z"></script>
 <script>
   /* 公开底稿已脱敏：只含 id+pid 的占位行供后台抓净值，不含 applyDate 等明细。
      前端渲染前剔除这类行，真实交易明细由登录后从 Supabase 云端拉取。 */
@@ -2666,16 +2682,16 @@
     if (T && T.items) T.items = T.items.filter(function (t) { return !!t.applyDate; });
   })();
 </script>
-<script src="./assets/newproducts.js?v=20261126y"></script>
-<script src="./assets/library.js?v=20261126y"></script>
-<script src="./assets/supabase-config.js?v=20261126y"></script>
-<script src="./assets/auth.js?v=20261126y"></script>
-<script src="./assets/store.js?v=20261126y" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
+<script src="./assets/newproducts.js?v=20261126z"></script>
+<script src="./assets/library.js?v=20261126z"></script>
+<script src="./assets/supabase-config.js?v=20261126z"></script>
+<script src="./assets/auth.js?v=20261126z"></script>
+<script src="./assets/store.js?v=20261126z" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
 <script>
   /* 先用本地缓存/内置底稿立即渲染，云端数据在后台取回后再重绘，避免等待网络白屏 */
   /* 前序脚本缺失或命中旧缓存时（STORE_READY 不存在）也照常加载看板，避免页面停在空白骨架 */
   (function () {
-    var NP_BUILD = '20261126y';
+    var NP_BUILD = '20261126z';
     function boot(msg, forced) {
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
@@ -2702,7 +2718,7 @@
       // 隐私小眼睛：dashboard.js 就绪后再加载，才能包装 DASHBOARD_REFRESH 并在渲染后套用打码
       if (!window.PRIVACY) {
         var pv = document.createElement('script');
-        pv.src = './assets/privacy.js?v=20261126y';
+        pv.src = './assets/privacy.js?v=20261126z';
         document.body.appendChild(pv);
       }
       if (!window.STORE_REFRESH || typeof window.STORE_REFRESH.then !== 'function') return;
@@ -3145,7 +3161,7 @@
       if (h2cLoading) return h2cLoading;
       h2cLoading = new Promise(function (resolve, reject) {
         var s = document.createElement('script');
-        s.src = './assets/html2canvas.min.js?v=20261126y';
+        s.src = './assets/html2canvas.min.js?v=20261126z';
         s.onload = resolve;
         s.onerror = function () { h2cLoading = null; reject(new Error('截图组件加载失败')); };
         document.head.appendChild(s);
