@@ -1,6 +1,6 @@
 {
   "asOf": "2026-11-25",
-  "fetchedAt": "2026-11-26 08:24",
+  "fetchedAt": "2026-11-26 09:18",
   "source": "建行新品公告·销售文件要素表 + 中国理财网净值",
   "window": {
     "start": "2026-08-01",
@@ -39,13 +39,18 @@
       "inception": "2026-11-26",
       "raiseStart": "2026-11-25",
       "raiseEnd": "2026-11-25",
-      "dates": [],
-      "nav": [],
+      "dates": [
+        "2026-11-25"
+      ],
+      "nav": [
+        1.0
+      ],
       "per10k": [
+        null,
         null
       ],
-      "latestDate": "",
-      "latestNav": null
+      "latestDate": "2026-11-25",
+      "latestNav": 1.0
     },
     {
       "id": "LZ7000826002155",
