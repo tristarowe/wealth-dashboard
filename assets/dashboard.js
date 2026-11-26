@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261126ac';
+  window.__NP_LAYOUT_VERSION = '20261126ag';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -2621,7 +2621,7 @@
         markPoint/markLine + SVG 渲染器（约 500KB，gzip 173KB），并在首屏 init 后
         立即用 fetch 预热 HTTP 缓存、load 完成后空闲注入脚本——用户读首屏这几秒里
         图库已就绪，切到趋势页几乎不再等待。 */
-  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126ac';
+  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126ag';
   function injectEcharts() {
     if (window.echarts || window.__ECHARTS_INJECTED__) return;
     window.__ECHARTS_INJECTED__ = true;
@@ -3665,6 +3665,30 @@
       sel.dispatchEvent(new Event('change', { bubbles: true }));
     }
 
+    /* 2026-11-26 十轮（用户：「点筛选按钮不跳搜索框、选项多不好筛」）：
+       选项 ≥8 个时弹层顶部加搜索框，打开即聚焦 —— 发行机构（12 项）、成立期这类长列表
+       可以边打边筛，不用在弹层里逐条找。搜索只做显示过滤，勾选与筛选口径完全不变；
+       首项「全部」永远可见，避免筛完后无法一键还原。 */
+    var selQ = null;
+    if (!single && sel.options.length >= 8) {
+      selQ = document.createElement('input');
+      selQ.type = 'search';
+      selQ.className = 'sel-q';
+      selQ.placeholder = '搜索' + (sel.options[0] ? sel.options[0].text : '');
+      selQ.setAttribute('aria-label', '搜索筛选选项');
+      selQ.setAttribute('autocomplete', 'off');
+      selQ.addEventListener('click', function (e) { e.stopPropagation(); });
+      selQ.addEventListener('input', function () {
+        var kw = selQ.value.trim().toLowerCase();
+        Array.prototype.forEach.call(pop.querySelectorAll('.sel-opt'), function (row, j) {
+          var hitOk = !kw || j === 0 || row.textContent.toLowerCase().indexOf(kw) !== -1;
+          row.style.display = hitOk ? '' : 'none';
+        });
+        placeSelPop();
+      });
+      pop.appendChild(selQ);
+    }
+
     Array.prototype.forEach.call(sel.options, function (opt, i) {
       if (single) {
         /* 表头筛选（类型/状态/净值日期/数据）与新品代销机构：单列、点选即生效并收起 */
@@ -3743,6 +3767,11 @@
     /* 单列弹层宽度由 CSS width:max-content 贴合文字，这里只约束多选筛选的最小宽度 */
     if (!single) pop.style.minWidth = Math.max(r.width, 132) + 'px';
     placeSelPop();
+    /* 打开即聚焦搜索框（用户：「点了不跳搜索框」）。必须与点击在同一手势内聚焦，
+       iOS 才会把键盘弹出来；preventScroll 防止聚焦时页面被拉走。 */
+    if (selQ) {
+      try { selQ.focus({ preventScroll: true }); } catch (err) { try { selQ.focus(); } catch (e2) {} }
+    }
   }
 
   /* 产品库「成立期」：年份 + 12 个月融合月历，替代旧的 ZYYY-MM 平铺复选列表。
@@ -5671,17 +5700,19 @@
         ? ' title="申购待确认：确认日净值未披露，按最新净值估算计入"'
         : ' title="在途：确认日未到或确认日净值未披露，确认后自动更新"';
       /* 列序 2026-11-21 四轮／八轮（用户要求）：持仓金额紧跟产品名称，产品净值放持仓份额右侧；
-         八轮起产品净值**桌面与手机都是独立列**，名称下方不再放净值小字（.nav-under 已停用） */
+         八轮起产品净值**桌面与手机都是独立列**，名称下方不再放净值小字（.nav-under 已停用）；
+         2026-11-26 十轮：.ptags 提到名称之前 —— 与产品库一致，角标才能用 float:right
+         贴到单元格首行右端（DOM 在名称之后时，float 会被已排好的文字挤到下一行）。 */
       return '<tr>' +
-        '<td><div class="pname"><a class="plink" href="javascript:void(0)" data-goto-prod="' + p.id + '" title="在产品库中查看「' + (p.name || '') + '」">' +
-          prodDispName(p) + '</a>' +
-          '<span class="ptags">' +
+        '<td><div class="pname"><span class="ptags">' +
           (inflight ? '<span class="tag np"' + inflightTip + '>在途</span>' : '') +
           (h.cleared ? '<span class="cleared-date">' +
             /* 2026-11-26：与产品库一致，清仓角标日期取交易 T 日，旧数据回退确认日。 */
             (h.tx && (h.tx.applyDate || h.tx.confirmDate)
               ? (h.tx.applyDate || h.tx.confirmDate).slice(5).replace('-', '.') : '') + ' 清仓</span>' : '') +
           '</span>' +
+          '<a class="plink" href="javascript:void(0)" data-goto-prod="' + p.id + '" title="在产品库中查看「' + (p.name || '') + '」">' +
+          prodDispName(p) + '</a>' +
           '</div></td>' +
         '<td class="r num mv-col">' + fmtMoneyCell(h.mv) + '</td>' +
         '<td class="c num">' + (h.latestDate ? withBadge(mmdd(h.latestDate), navLagBadge(h.product)) : '—') + '</td>' +

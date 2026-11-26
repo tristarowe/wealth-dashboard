@@ -8,7 +8,7 @@
 <!-- 2026-11-24 u 首屏优化：看板脚本提前并行下载，云端域名提前握手；
      两者都不阻塞 HTML 解析，避免旧版「大库先下载完才开始拉 dashboard.js」的串行等待。 -->
 <link rel="preconnect" href="https://asqaxvrovorqfqwpgjkb.supabase.co" crossorigin>
-<link rel="preload" as="script" href="./assets/dashboard.js?v=20261126af" fetchpriority="low">
+<link rel="preload" as="script" href="./assets/dashboard.js?v=20261126ag" fetchpriority="low">
 <style>
   :root{
     --bg:#f3f5f7; --card:#fff; --soft:#F9FFFF;
@@ -468,6 +468,12 @@
   .filters .sel-hit{position:absolute;inset:0;z-index:2;display:block;width:100%;height:100%;padding:0;border:0;background:transparent;cursor:pointer;font-size:0;color:transparent}
   /* overscroll-behavior:contain 阻止下拉列表滚到边界后把滚动「穿透」给整页（手机横屏滑搜索结果时整页跟着滑动） */
   .sel-pop{position:fixed;z-index:250;min-width:132px;max-width:min(80vw,240px);max-height:264px;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;background:#fff;border:1px solid #dbe7ed;border-radius:10px;box-shadow:0 12px 28px rgba(28,58,80,.16);padding:4px}
+  /* 多选筛选弹层内的搜索框（选项 ≥8 时出现）：与列表同宽、细边、聚焦变蓝，去掉 iOS 原生搜索框外观 */
+  .sel-pop .sel-q{display:block;width:auto;box-sizing:border-box;font-family:var(--font);font-size:12.5px;line-height:1.4;
+    padding:5px 8px;margin:2px 2px 4px;border:1px solid var(--rule);border-radius:6px;background:#fff;color:var(--ink);
+    -webkit-appearance:none;appearance:none}
+  .sel-pop .sel-q:focus{outline:none;border-color:var(--accent)}
+  .sel-pop .sel-q::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none}
   .sel-opt{display:block;width:100%;text-align:center;border:0;background:transparent;font-family:var(--font);font-size:12.5px;font-weight:500;line-height:1.4;color:var(--ink);padding:6px 9px;border-radius:6px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .sel-opt:hover{background:#f2f7fa}
   .sel-opt.on{background:var(--accent-deep);color:#fff;font-weight:700}
@@ -1886,6 +1892,28 @@
     #prod-table tbody td:nth-child(1) .pname>.ptags .tag.np{border-color:transparent;box-shadow:inset 0 0 0 1px #f1e1c6}
   }
 
+  /* ===== 持仓汇总（交易页）角标贴首行右端 2026-11-26 第十轮 =====
+     用户：「手机横竖屏，持仓汇总的角标也放首行，不参与换行」。
+     与产品库第九轮完全同口径：统一用 float:right（不设断点）——
+     · DOM 里 .ptags 已提到名称之前（dashboard.js renderTradeSummary），float 才能吃掉首行右端；
+     · .pname 必须 block（flex 会忽略 float），::after clear 收尾；
+     · float 不参与行内换行，角标永远落在首行右端，名称只有首行让位、续行吃满整列；
+     · 浮盒高度 1.45em = 一行行高，避免 20px 角标侵入第二行把续行也挤窄；
+     · 角标盒统一 20px（transparent 边框 + inset 橙环），与产品库同一套视觉；
+     · .salech（代销机构小字）由 flex:0 0 100% 改 block 独占一行，浮动收起后仍另起一行。
+     不设断点的原因：桌面 sum-table 的 .pname 没有 flex 规则（默认 block），
+     DOM 里 .ptags 已前置，不 float 就会显示成「在途 产品名」——角标跑到名称左边。
+     全视口统一 float 后，桌面名称列 223px 也是「首行名称 + 右端角标」。 */
+  #sum-table tbody td:nth-child(1){vertical-align:top}
+  #sum-table tbody td:nth-child(1) .pname{display:block}
+  #sum-table tbody td:nth-child(1) .pname::after{content:'';display:block;clear:both}
+  #sum-table tbody td:nth-child(1) .pname>a.plink,
+  #sum-table tbody td:nth-child(1) .pname>.pname-t{display:inline;float:none;min-height:0;flex:none}
+  #sum-table tbody td:nth-child(1) .pname>.salech{display:block;float:none;flex:none;width:auto;margin-left:0}
+  #sum-table tbody td:nth-child(1) .pname>.ptags{float:right;order:0;flex:none;margin:0 0 0 5px;height:1.45em;display:flex;align-items:center;flex-wrap:nowrap;white-space:nowrap}
+  #sum-table tbody td:nth-child(1) .pname>.ptags>*{box-sizing:border-box;border:1px solid transparent;margin-left:0}
+  #sum-table tbody td:nth-child(1) .pname>.ptags .tag.np{border-color:transparent;box-shadow:inset 0 0 0 1px #f1e1c6}
+
   /* 导出时撑满基准宽度，避免窄窗口裁切 */
   .page.is-exporting{width:1320px}
   .page.is-exporting .tbl-scroll{overflow:visible;max-height:none}
@@ -2737,7 +2765,7 @@
             <div class="att-title">数据说明与口径（PDF）</div>
             <div class="att-sub">含全局口径、顶部指标卡、盈亏、年化口径辨析、交易、新品预告、产品库、添加产品、数据体检九组 · 更新于 2026-11-26（含份额确认日 T+1/T+2 规则）</div>
           </div>
-          <a class="btn primary" href="./assets/数据说明.pdf?v=20261126af" target="_blank" rel="noopener">点击查看</a>
+          <a class="btn primary" href="./assets/数据说明.pdf?v=20261126ag" target="_blank" rel="noopener">点击查看</a>
         </div>
       </div>
     </section>
@@ -2894,9 +2922,9 @@
      「新 HTML + 旧渲染」的错位（表现为新品预告仍是拉伸甘特卡片 + 巨大原生多选框）。 -->
 <!-- 2026-11-24 u：ECharts / html2canvas 改按需加载（趋势图、导出长图才拉），
      不再让 338KB + 47KB 的库阻塞首屏；加载器分别在 dashboard.js 与本页导出逻辑内。 -->
-<script src="./assets/data.js?v=20261126af" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
-<script src="./assets/risk_levels.js?v=20261126af"></script>
-<script src="./assets/transactions.js?v=20261126af"></script>
+<script src="./assets/data.js?v=20261126ag" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
+<script src="./assets/risk_levels.js?v=20261126ag"></script>
+<script src="./assets/transactions.js?v=20261126ag"></script>
 <script>
   /* 公开底稿已脱敏：只含 id+pid 的占位行供后台抓净值，不含 applyDate 等明细。
      前端渲染前剔除这类行，真实交易明细由登录后从 Supabase 云端拉取。 */
@@ -2905,16 +2933,16 @@
     if (T && T.items) T.items = T.items.filter(function (t) { return !!t.applyDate; });
   })();
 </script>
-<script src="./assets/newproducts.js?v=20261126af"></script>
-<script src="./assets/library.js?v=20261126af"></script>
-<script src="./assets/supabase-config.js?v=20261126af"></script>
-<script src="./assets/auth.js?v=20261126af"></script>
-<script src="./assets/store.js?v=20261126af" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
+<script src="./assets/newproducts.js?v=20261126ag"></script>
+<script src="./assets/library.js?v=20261126ag"></script>
+<script src="./assets/supabase-config.js?v=20261126ag"></script>
+<script src="./assets/auth.js?v=20261126ag"></script>
+<script src="./assets/store.js?v=20261126ag" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
 <script>
   /* 先用本地缓存/内置底稿立即渲染，云端数据在后台取回后再重绘，避免等待网络白屏 */
   /* 前序脚本缺失或命中旧缓存时（STORE_READY 不存在）也照常加载看板，避免页面停在空白骨架 */
   (function () {
-    var NP_BUILD = '20261126af';
+    var NP_BUILD = '20261126ag';
     function boot(msg, forced) {
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
@@ -2941,7 +2969,7 @@
       // 隐私小眼睛：dashboard.js 就绪后再加载，才能包装 DASHBOARD_REFRESH 并在渲染后套用打码
       if (!window.PRIVACY) {
         var pv = document.createElement('script');
-        pv.src = './assets/privacy.js?v=20261126af';
+        pv.src = './assets/privacy.js?v=20261126ag';
         document.body.appendChild(pv);
       }
       if (!window.STORE_REFRESH || typeof window.STORE_REFRESH.then !== 'function') return;
@@ -3384,7 +3412,7 @@
       if (h2cLoading) return h2cLoading;
       h2cLoading = new Promise(function (resolve, reject) {
         var s = document.createElement('script');
-        s.src = './assets/html2canvas.min.js?v=20261126af';
+        s.src = './assets/html2canvas.min.js?v=20261126ag';
         s.onload = resolve;
         s.onerror = function () { h2cLoading = null; reject(new Error('截图组件加载失败')); };
         document.head.appendChild(s);
