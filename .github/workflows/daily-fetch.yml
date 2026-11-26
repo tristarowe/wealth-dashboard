@@ -2,14 +2,16 @@ name: daily-fetch
 
 on:
   # 三层触发，互为兜底（同一 concurrency group，不会并发；重复跑会因「无数据变化」快速结束）
-  #   ① Gitee Go 准点触发（workflow_dispatch）——北京 07:30 / 22:00，准点不排队，优先；
+  #   ① Gitee Go 准点触发（workflow_dispatch）——北京 07:00 / 22:00，准点不排队，优先；
   #   ② GitHub 原生 cron 兜底——Gitee Go 失效时仍能跑。高峰期会排队 30～50 分钟，
-  #      故提前挂号到北京 07:20 / 21:50，实际落点大致对齐 07:30 / 22:00；
+  #      故提前挂号到北京 06:50 / 21:50，实际落点大致对齐 07:00 / 22:00；
   #   ③ 手动 workflow_dispatch。
   # 2026-11-19 事故：移除 cron 后完全依赖 Gitee Go，Gitee Go 停摆导致 11-18 22:00、
   # 11-19 07:30 两轮全部漏跑，数据停在 11-18 15:58。故恢复 cron 兜底。
+  # 2026-11-26 用户要求：早间轮次由 07:30 提前到 07:00；微信推送不再按钟点无条件发送，
+  # 改为「本轮全部抓取步骤完成且确实提交了新数据」才推（见末尾 changed 门禁）。
   schedule:
-    - cron: "20 23 * * *"   # UTC 23:20 = 北京次日 07:20（前一日汇总）
+    - cron: "50 22 * * *"   # UTC 22:50 = 北京次日 06:50 挂号，实际落点≈07:00（前一日汇总）
     - cron: "50 13 * * *"   # UTC 13:50 = 北京 21:50（当日净值）
   workflow_dispatch:
 
@@ -111,6 +113,7 @@ jobs:
         run: python daily/sync_nav_data.py
 
       - name: 提交数据
+        id: commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -120,6 +123,7 @@ jobs:
                   daily/nav_holdings_t1.py daily/nav_rotate.py
           if git diff --cached --quiet; then
             echo "无数据变化"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             git commit -m "data: update $(date -u +'%Y-%m-%d')"
             # 2026-11-24 修复：原 `git pull --rebase ... || true` 在并发冲突时会吞掉错误，
@@ -144,9 +148,12 @@ jobs:
               exit 1
             fi
             git push origin HEAD:main
+            echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: 生成看板长图
+        # 只有本轮真的抓到并提交了新数据才生成长图/推送，避免源端未披露时空推打扰
+        if: steps.commit.outputs.changed == 'true'
         env:
           PYTHONIOENCODING: utf-8
           PW_CHANNEL: ""
@@ -155,6 +162,8 @@ jobs:
         run: python daily/shot.py || true
 
       - name: 微信推送
+        # 2026-11-26：推送唯一触发条件 = 全部抓取步骤跑完 + 确有新数据提交（不再按钟点无条件发）
+        if: steps.commit.outputs.changed == 'true'
         env:
           PYTHONIOENCODING: utf-8
           SERVERCHAN_SENDKEY: ${{ secrets.SERVERCHAN_SENDKEY }}

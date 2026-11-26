@@ -4,10 +4,12 @@ name: bugcheck-watchdog
 # 用户完全收不到推送。看门狗不依赖本地环境，07:30 检查当天 05:50–07:30
 # 是否有 bugcheck-report 的 workflow_dispatch；没有就用 Server酱 推送告警。
 # 有正常报告则静默退出，不重复打扰。
+#
+# 2026-11-26 用户要求「不再定时微信发送，以数据抓取更新触发为准」：
+# 排查报告不再由本地自动化单独推微信（改写入仓库 daily/bugcheck_last.md，随数据推送附带），
+# 本工作流的定时检查会恒判「未推送」而每天误报，故移除 schedule，仅保留手动 workflow_dispatch。
 
 on:
-  schedule:
-    - cron: "30 23 * * *"   # UTC 23:30 = 北京次日 07:30
   workflow_dispatch:
 
 permissions:

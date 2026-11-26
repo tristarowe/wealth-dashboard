@@ -1,6 +1,7 @@
 """通过 Server酱 把看板长图 + 当日摘要推送到个人微信。"""
 import json
 import os
+import re
 import sys
 import time
 from datetime import datetime, timedelta, timezone
@@ -13,6 +14,8 @@ from img_host import upload
 ROOT = Path(__file__).resolve().parent.parent
 STATS = Path(__file__).resolve().parent / "stats.json"
 META = Path(__file__).resolve().parent / "shot_meta.json"
+# 2026-11-26：排查报告不再单独推微信，改由 06:00 自动化写入本文件并在数据推送里附一行摘要
+BUGCHECK = Path(__file__).resolve().parent / "bugcheck_last.md"
 
 KEY = os.environ.get("SERVERCHAN_SENDKEY", "").strip()
 KEY_FILE = Path(__file__).resolve().parent / "serverchan.key"
@@ -38,6 +41,24 @@ def is_night_run():
     if force == "0":
         return True
     return 20 <= datetime.now(BJ_TZ).hour <= 23
+
+
+def bugcheck_line():
+    """取当日排查结论首行（供数据推送附带）。非当日或无文件则返回空串。"""
+    if not BUGCHECK.exists():
+        return ""
+    try:
+        text = BUGCHECK.read_text(encoding="utf-8").strip()
+    except OSError:
+        return ""
+    if not text:
+        return ""
+    m = re.search(r"(20\d{2}-\d{2}-\d{2})", text)
+    if not m or m.group(1) != datetime.now(BJ_TZ).strftime("%Y-%m-%d"):
+        return ""
+    first = text.splitlines()[0].strip().lstrip("#").strip()
+    first = re.sub(r"^全站排查\s*", "", first)
+    return first[:60]
 
 
 def compose(stats, img_url, income, img_link=None):
@@ -160,6 +181,9 @@ def main():
         print("缺少长图，回退文字推送：", snap, file=sys.stderr)
 
     title, desp = compose(stats, img_url, income, img_link)
+    bc = bugcheck_line()
+    if bc:
+        desp += f"\n\n**今日排查**：{bc}"
     if not img_url:
         desp += "\n\n（长图生成失败，已回退文字推送）"
         err = Path(__file__).resolve().parent / "shot_error.txt"
