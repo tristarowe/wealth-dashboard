@@ -1,10 +1,10 @@
 window.NEW_PRODUCTS = {
   "asOf": "2026-11-26",
-  "fetchedAt": "2026-11-26 01:27",
+  "fetchedAt": "2026-11-26 14:45",
   "source": "六大行及股份制银行新品公告 · 销售文件要素表",
   "window": {
     "start": "2026-11-26",
-    "end": "2026-12-03"
+    "end": "2026-12-02"
   },
   "institutions": [
     "建设银行"
@@ -229,10 +229,10 @@ window.NEW_PRODUCTS = {
     }
   ],
   "stats": {
-    "notices": 68,
+    "notices": 65,
     "candidates": 17,
     "kept": 7,
-    "dropped": 8,
+    "dropped": 5,
     "failed": 0,
     "quotaRejected": 0
   }

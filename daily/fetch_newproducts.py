@@ -728,10 +728,10 @@ def build():
     lanes.sort(key=lambda l: (-len(l["products"]), l["channel"]))
 
     window_start = today
-    # 2026-11-21：窗口由 7 天放宽到 8 天（今天起含今天共 8 列）。周六跑时正好覆盖
-    # 「下周一募集、下周日成立」，原 7 天窗口会把周日成立/周日截止募集的新品裁掉；
-    # 再放宽到 10 天则横屏每列只剩 78px，产品名会被挤成省略号，故取 8 天折中。
-    window_end = (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%d")
+    # 2026-11-26：按用户要求恢复仅展示 7 天日期（今天起含今天共 7 列）。
+    # 已重跑建行官网公告核查：下周 1-4（2026-11-30~2026-12-03）无新品开始募集，
+    # 裁掉第 8 列不丢数据；解析失败 0 条。若后续出现周日成立/周日截止的新品再评估。
+    window_end = (datetime.now() + timedelta(days=6)).strftime("%Y-%m-%d")
     payload = {
         "asOf": today,
         "fetchedAt": datetime.now().strftime("%Y-%m-%d %H:%M"),
