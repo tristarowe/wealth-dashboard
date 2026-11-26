@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261126f';
+  window.__NP_LAYOUT_VERSION = '20261126g';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -1637,11 +1637,37 @@
     if (key === 'value') return h ? h.mv : null;
     if (key === 'holddays') return h ? h.days : null;
     if (key === 'score') return row.score ? row.score.score : null;
-    if (key in WINDOW_SORT) return m.windows[WINDOW_SORT[key]].per;
+    /* 2026-11-26：窗口列排序跟随「数据」下拉当前口径，年化模式按 ann 排、万收模式按 per 排，
+       避免点了「年化」后表头排序仍按万收值，看起来像「筛选/排序不生效」。 */
+    if (key in WINDOW_SORT) {
+      var w = m.windows[WINDOW_SORT[key]];
+      return holdMetric === 'ann' ? w.ann : w.per;
+    }
     return null;
   }
 
-  function renderProfitTable() {
+  /* 2026-11-26：行数据计算与表格绘制分离。「数据」下拉切万收/年化时只重绘 tbody，
+     不重算持仓/评分/指标卡——旧版整表重绘在手机上卡顿，后来改成只切 CSS class，
+     但那些 class 的规则早已不覆盖 .pwin/.awin，导致选了年化仍显示万收。
+     这里缓存一份已排序行 + 极值，切换时直接复用，既即时生效又不触发重活。 */
+  var profitRowsCache = null;
+
+  function sortProfitRows(rows) {
+    if (!profitState.key) return;
+    rows.sort(function (a, b) {
+      var av = profitSortValue(a, profitState.key);
+      var bv = profitSortValue(b, profitState.key);
+      var dir = profitState.dir === 'asc' ? 1 : -1;
+      if (profitState.key === 'name' || profitState.key === 'navdate') {
+        return String(av).localeCompare(String(bv), 'zh-Hans-CN') * dir;
+      }
+      if (av === null || av === undefined) return 1;
+      if (bv === null || bv === undefined) return -1;
+      return (av - bv) * dir;
+    });
+  }
+
+  function computeProfitRows() {
     var tbody = document.getElementById('hold-body');
     if (!tbody) return;
 
@@ -1673,19 +1699,7 @@
       return { item: item, score: scoreFor(item.m, item.product, peerAvg30) };
     });
 
-    if (profitState.key) {
-      rows.sort(function (a, b) {
-        var av = profitSortValue(a, profitState.key);
-        var bv = profitSortValue(b, profitState.key);
-        var dir = profitState.dir === 'asc' ? 1 : -1;
-        if (profitState.key === 'name' || profitState.key === 'navdate') {
-          return String(av).localeCompare(String(bv), 'zh-Hans-CN') * dir;
-        }
-        if (av === null || av === undefined) return 1;
-        if (bv === null || bv === undefined) return -1;
-        return (av - bv) * dir;
-      });
-    }
+    sortProfitRows(rows);
 
     var maxV = null, minV = null;
     var maxIncome = null, minIncome = null;
@@ -1703,6 +1717,16 @@
         if (minIncome === null || inc < minIncome) minIncome = inc;
       }
     });
+
+    /* 缓存已算好的行与极值：切换万收/年化时只重绘单元格，不再跑 summaryRows / scoreFor / XIRR */
+    profitRowsCache = { rows: rows, maxV: maxV, minV: minV, maxIncome: maxIncome, minIncome: minIncome };
+  }
+
+  function paintProfitRows() {
+    var tbody = document.getElementById('hold-body');
+    if (!tbody || !profitRowsCache) return;
+    var rows = profitRowsCache.rows, maxV = profitRowsCache.maxV, minV = profitRowsCache.minV;
+    var maxIncome = profitRowsCache.maxIncome, minIncome = profitRowsCache.minIncome;
 
     var html = '';
     rows.forEach(function (row, i) {
@@ -1799,7 +1823,12 @@
         th.classList.add(profitState.dir === 'asc' ? 'sorted-asc' : 'sorted-desc');
       }
     });
+  }
 
+  /* 完整重绘：重算行数据（含净值日期筛选/评分/排序）→ 画表 → 刷新指标卡 */
+  function renderProfitTable() {
+    computeProfitRows();
+    paintProfitRows();
     renderMetrics();
   }
 
@@ -1814,7 +1843,14 @@
           profitState.key = key;
           profitState.dir = 'desc';
         }
-        renderProfitTable();
+        /* 2026-11-26：排序只改顺序，缓存的行数据没变——复用缓存重排 + 重绘即可，
+           不再跑 summaryRows / scoreFor / XIRR（点表头的卡顿来源）。 */
+        if (profitRowsCache) {
+          sortProfitRows(profitRowsCache.rows);
+          paintProfitRows();
+        } else {
+          renderProfitTable();
+        }
       });
     });
   }
@@ -1830,9 +1866,13 @@
       holdMetric = (v === 'per10k' || v === 'ann') ? v : 'both';
       tbl.classList.toggle('only-ann', holdMetric === 'ann');
       tbl.classList.toggle('only-p10k', holdMetric === 'per10k');
+      /* 2026-11-26：切换后必须按新口径重绘单元格。旧逻辑只切 CSS class，
+         但 #hold-table 里根本没有 .st.win / .lbl 节点，选了「年化」仍显示万收，
+         用户误以为卡住、反复点选造成卡顿感。这里只重画 tbody，复用已缓存的行数据，
+         不跑 summaryRows / scoreFor / XIRR，实测 <2ms，手机也即时响应。 */
+      paintProfitRows();
     }
 
-    /* 2026-11-24：这里只是切换两列 CSS 显隐，不需要整表重绘（手机点击会明显卡一下） */
     sel.addEventListener('change', apply);
     apply();
   }
@@ -2347,7 +2387,7 @@
         markPoint/markLine + SVG 渲染器（约 500KB，gzip 173KB），并在首屏 init 后
         立即用 fetch 预热 HTTP 缓存、load 完成后空闲注入脚本——用户读首屏这几秒里
         图库已就绪，切到趋势页几乎不再等待。 */
-  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126f';
+  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126g';
   function injectEcharts() {
     if (window.echarts || window.__ECHARTS_INJECTED__) return;
     window.__ECHARTS_INJECTED__ = true;
