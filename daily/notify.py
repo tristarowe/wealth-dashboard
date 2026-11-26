@@ -145,6 +145,13 @@ def main():
         send("万收看板更新失败", f"**{msg}**")
         return 0
 
+    # 2026-11-26 用户要求：晚间轮次（北京 20:00 后，实际约 22:30）整轮不推微信，
+    # 收益长图与新品预告都取消；只保留早间 07:00 轮。数据照常抓取提交。
+    # 需要临时补推时设 NP_FORCE_PUSH=1。
+    if is_night_run() and os.environ.get("NP_FORCE_PUSH", "").strip() != "1":
+        print("夜间轮次：整轮不推送微信（收益长图+新品预告均跳过，早间轮次正常）", file=sys.stderr)
+        return 0
+
     if not STATS.exists():
         print("缺少 stats.json，跳过推送", file=sys.stderr)
         return 1
