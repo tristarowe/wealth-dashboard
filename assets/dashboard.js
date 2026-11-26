@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261126k';
+  window.__NP_LAYOUT_VERSION = '20261126l';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -2445,7 +2445,7 @@
         markPoint/markLine + SVG 渲染器（约 500KB，gzip 173KB），并在首屏 init 后
         立即用 fetch 预热 HTTP 缓存、load 完成后空闲注入脚本——用户读首屏这几秒里
         图库已就绪，切到趋势页几乎不再等待。 */
-  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126k';
+  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126l';
   function injectEcharts() {
     if (window.echarts || window.__ECHARTS_INJECTED__) return;
     window.__ECHARTS_INJECTED__ = true;
@@ -2916,6 +2916,9 @@
   var prodUi = {
     /* 多选筛选：数组为空表示不限；多选时按「命中任一」过滤 */
     sale: [], org: [], risk: [], term: [], incep: [], q: '',
+    /* 从持仓/流水产品名跳转过来的唯一产品 id：非空时产品库只显示这一只，
+       搜索框里的名字只是回显，不再走「名称包含」匹配（否则建信嘉鑫30天会带出第53期等同系列） */
+    onlyPid: '',
     flagNew: false, flagFav: false,
     holdHolding: true, holdCleared: true, page: 1, pages: 1,
     mPer10k: true, mAnn: true,
@@ -3184,6 +3187,7 @@
 
     var list = allModels.filter(function (item) {
       var p = item.product;
+      if (prodUi.onlyPid && !samePid(p.id, prodUi.onlyPid)) return false;
       if (!inGlobalScope(p.id)) return false;
       var h = HOLD_BY_PID[p.id];
       var term = termOf(p);
@@ -3917,6 +3921,8 @@
         /* 选中后主动收起软键盘：地址气泡/QuickType 工具栏随键盘一起消失 */
         try { input.blur(); } catch (err) {}
         prodUi.q = input.value;
+        /* 从候选里点选的是一只具体产品：与持仓联动一致，按 id 唯一过滤 */
+        prodUi.onlyPid = canonicalPidById(p.id) || p.id;
         prodUi.page = 1;
         renderProductTable();
       });
@@ -4039,6 +4045,8 @@
 
     var search = document.getElementById('prod-search');
     if (search) search.addEventListener('input', function () {
+      /* 用户自己改了搜索框就解除跳转带来的唯一产品锁定，回到正常的名称包含搜索 */
+      prodUi.onlyPid = '';
       prodUi.q = search.value;
       prodUi.page = 1;
       /* 2026-11-24：搜索框每次击键原本全量重建产品表，手机上输入明显卡顿；
@@ -4062,6 +4070,7 @@
       Array.prototype.forEach.call(document.querySelectorAll('.filters .chip[data-flag]'), function (b) {
         b.classList.remove('on');
       });
+      prodUi.onlyPid = '';
       prodUi.q = ''; prodUi.sale = []; prodUi.org = []; prodUi.risk = [];
       prodUi.term = []; prodUi.incep = [];
       prodUi.flagNew = false; prodUi.flagFav = false;
@@ -4696,6 +4705,7 @@
         /* 清空产品库搜索与页码，保证刚添加的产品立即可见 */
         var si = document.getElementById('prod-search');
         if (si) si.value = '';
+        prodUi.onlyPid = '';
         prodUi.q = '';
         prodUi.page = 1;
         renderAll();
@@ -5368,6 +5378,8 @@
        一长串原始全名（如「招睿添利日开25号固定收益类」），与表格里的简称对不上 */
     if (search) search.value = prodDispName(p);
     prodUi.q = prodDispName(p);
+    /* 唯一值联动：只认 canonical id，不让「建信嘉鑫30天」把第53期等同系列一起筛出来 */
+    prodUi.onlyPid = canonicalPidById(p.id) || p.id;
     prodUi.page = 1;
     renderProductTable();
     var tbl = document.getElementById('prod-table');
@@ -7027,6 +7039,9 @@
     }
   }
   window.DASHBOARD_REFRESH = refreshFromStore;
+  if (window.__GATE_BYPASS__) {
+    window.__DASH_PROD_TEST__ = { gotoProduct: gotoProduct, prodUi: prodUi };
+  }
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
