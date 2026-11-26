@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261126t';
+  window.__NP_LAYOUT_VERSION = '20261126u';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -1177,7 +1177,7 @@
   // 合计口径：按持仓份额把万收折算为当日收益（元），年化按当日前一净值日市值折算
   function buildAggregate(products) {
     if (!products.length) return null;
-    var sums = {}, prevs = {}, counts = {};
+    var sums = {}, prevs = {}, counts = {}, byPid = {};
     products.forEach(function (p) {
       var h = HOLD_BY_PID[p.id];
       if (!h) return;
@@ -1204,6 +1204,8 @@
            保留后：能画 0.00、计入挂0，正收益/回撤天数与收益合计均不受影响
            （0 收益日只是把一个 gap 拆成两段，日均与合计口径不变）。 */
         if (!(g.cnt > 0)) continue;
+        /* 该产品确实产出了收益点：用于识别「有持仓却完全没进盈亏汇总」的产品（见 AGG_SKIPPED） */
+        byPid[p.id] = 1;
         if (!(dt in sums)) { sums[dt] = 0; prevs[dt] = 0; counts[dt] = 0; }
         sums[dt] += g.inc;
         prevs[dt] += g.base;
@@ -1236,12 +1238,51 @@
       prevDates: prevDates,
       gaps: gaps,
       latestDate: dates[dates.length - 1],
-      inception: dates[0]
+      inception: dates[0],
+      /* 哪些产品真的贡献了收益点：没进这里的持仓产品要在日历上显式说明原因，
+         否则用户勾选了产品却看不到任何数据，会以为筛选坏了（11-26 贝淳/添利日开30号反馈）。 */
+      byPid: byPid
     };
   }
 
+  /* 有持仓但算不出每日收益的产品 → 日历底部给一句原因，不静默消失。
+     典型：手工添加的产品只有最新一个净值点；或今天刚确认、净值还没更新到确认日。 */
+  var AGG_SKIPPED = [];
+  function whyNoDailyIncome(p) {
+    var h = HOLD_BY_PID[p.id];
+    if (!h) return '没有持仓';
+    if (!p.dates || !p.dates.length) return '还没有净值数据';
+    var firstLot = '';
+    (h.gainLots || []).forEach(function (g) {
+      if (g.soldDate) return;
+      if (!firstLot || g.date < firstLot) firstLot = g.date;
+    });
+    if (!firstLot && h.startDate) firstLot = h.startDate;
+    var last = p.latestDate || p.dates[p.dates.length - 1];
+    if (firstLot && last < firstLot) return '最新净值 ' + last + '，还没到确认日 ' + firstLot;
+    if (!(h.shares > 0)) return '已清仓，无在持份额';
+    return '暂无可计算的收益点';
+  }
+
   function refreshAggregate() {
-    AGG = buildAggregate(selectedProducts());
+    var prods = selectedProducts();
+    AGG = buildAggregate(prods);
+    AGG_SKIPPED = [];
+    var inScope = {}, seen = {};
+    prods.forEach(function (p) { inScope[p.id] = 1; });
+    /* 用持仓汇总行（含「申购在途」行）判断谁没进 AGG：
+       在途产品不在 HOLD_BY_PID 里，只看持仓索引会把它们彻底漏掉，
+       而它们恰恰是用户最疑惑的「我明明勾选了，为什么汇总里没有」。 */
+    summaryRows().forEach(function (r) {
+      var p = r && r.product;
+      if (!p || !inScope[p.id] || seen[p.id]) return;
+      if (AGG && AGG.byPid && AGG.byPid[p.id]) return;
+      seen[p.id] = 1;
+      AGG_SKIPPED.push({
+        name: p.short || p.name,
+        why: r.pending ? '申购在途，净值披露后开始计息' : whyNoDailyIncome(p)
+      });
+    });
   }
   refreshAggregate();
 
@@ -2172,6 +2213,21 @@
     calState.m = d.getMonth();
   }
 
+  /* 日历底部提示：数据区间 + 「哪些持仓产品没算进来、为什么」。
+     用 textContent 组装，避免产品名里的特殊字符被当成 HTML。 */
+  function paintCalHint(baseText) {
+    var el = document.getElementById('cal-range-hint');
+    if (!el) return;
+    el.textContent = baseText || '';
+    if (!AGG_SKIPPED.length) return;
+    var row = document.createElement('div');
+    row.className = 'cal-skip';
+    row.textContent = '未计入每日收益：' + AGG_SKIPPED.map(function (s) {
+      return s.name + '（' + s.why + '）';
+    }).join('；');
+    el.appendChild(row);
+  }
+
   function renderCalendar() {
     var wrap = document.getElementById('cal');
     if (!wrap) return;
@@ -2186,8 +2242,9 @@
     if (!p || !p.dates.length) {
       renderYearView();
       wrap.innerHTML = '';
-      var sumEl = document.getElementById('cal-summary');
-      if (sumEl) sumEl.innerHTML = '<span class="lead">当月收益<b>—</b><i>元</i></span>';
+      var sumEl0 = document.getElementById('cal-summary');
+      if (sumEl0) sumEl0.innerHTML = '<span class="lead">当月收益<b>—</b><i>元</i></span>';
+      paintCalHint('暂无每日收益数据');
       return;
     }
 
@@ -2224,7 +2281,7 @@
     var yLabel = document.getElementById('year-label');
     if (yLabel) yLabel.textContent = calState.y + ' 年 · 月度收益';
     var rangeHint = document.getElementById('cal-range-hint');
-    if (rangeHint) rangeHint.textContent = '数据区间 ' + p.dates[0] + ' ~ ' + p.dates[p.dates.length - 1];
+    if (rangeHint) paintCalHint('数据区间 ' + p.dates[0] + ' ~ ' + p.dates[p.dates.length - 1]);
 
     // 左侧月度收益表
     var list = document.getElementById('month-list');
@@ -2504,7 +2561,7 @@
         markPoint/markLine + SVG 渲染器（约 500KB，gzip 173KB），并在首屏 init 后
         立即用 fetch 预热 HTTP 缓存、load 完成后空闲注入脚本——用户读首屏这几秒里
         图库已就绪，切到趋势页几乎不再等待。 */
-  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126t';
+  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126u';
   function injectEcharts() {
     if (window.echarts || window.__ECHARTS_INJECTED__) return;
     window.__ECHARTS_INJECTED__ = true;
