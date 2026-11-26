@@ -1,7 +1,6 @@
 """通过 Server酱 把看板长图 + 当日摘要推送到个人微信。"""
 import json
 import os
-import re
 import sys
 import time
 from datetime import datetime, timedelta, timezone
@@ -14,8 +13,6 @@ from img_host import upload
 ROOT = Path(__file__).resolve().parent.parent
 STATS = Path(__file__).resolve().parent / "stats.json"
 META = Path(__file__).resolve().parent / "shot_meta.json"
-# 2026-11-26：排查报告不再单独推微信，改由 06:00 自动化写入本文件并在数据推送里附一行摘要
-BUGCHECK = Path(__file__).resolve().parent / "bugcheck_last.md"
 
 KEY = os.environ.get("SERVERCHAN_SENDKEY", "").strip()
 KEY_FILE = Path(__file__).resolve().parent / "serverchan.key"
@@ -41,24 +38,6 @@ def is_night_run():
     if force == "0":
         return True
     return 20 <= datetime.now(BJ_TZ).hour <= 23
-
-
-def bugcheck_line():
-    """取当日排查结论首行（供数据推送附带）。非当日或无文件则返回空串。"""
-    if not BUGCHECK.exists():
-        return ""
-    try:
-        text = BUGCHECK.read_text(encoding="utf-8").strip()
-    except OSError:
-        return ""
-    if not text:
-        return ""
-    m = re.search(r"(20\d{2}-\d{2}-\d{2})", text)
-    if not m or m.group(1) != datetime.now(BJ_TZ).strftime("%Y-%m-%d"):
-        return ""
-    first = text.splitlines()[0].strip().lstrip("#").strip()
-    first = re.sub(r"^全站排查\s*", "", first)
-    return first[:60]
 
 
 def compose(stats, img_url, income, img_link=None):
@@ -139,8 +118,16 @@ def send(title, desp):
     )
     data = resp.json() if resp.headers.get("content-type", "").startswith("application/json") else {}
     print("Server酱返回：", resp.status_code, data)
+    # Server酱免费版每天 5 条上限（code 40001）：第三方额度问题，不是站点 Bug。
+    # 数据已成功抓取提交，不能因为额度用尽把整个 daily-fetch 变红（2026-11-26 22:43 即此情况）。
+    # 判为警告并返回 False，调用方跳过后续推送，workflow 保持 success。
+    if data.get("code") == 40001:
+        print("::warning::Server酱 当日发送次数已达上限，本条未送达（第三方额度，数据不受影响）",
+              file=sys.stderr)
+        return False
     if resp.status_code != 200 or data.get("code") not in (0, None):
         raise SystemExit(f"推送失败：{resp.text[:200]}")
+    return True
 
 
 def main():
@@ -181,9 +168,6 @@ def main():
         print("缺少长图，回退文字推送：", snap, file=sys.stderr)
 
     title, desp = compose(stats, img_url, income, img_link)
-    bc = bugcheck_line()
-    if bc:
-        desp += f"\n\n**今日排查**：{bc}"
     if not img_url:
         desp += "\n\n（长图生成失败，已回退文字推送）"
         err = Path(__file__).resolve().parent / "shot_error.txt"
@@ -191,7 +175,9 @@ def main():
             desp += f"\n\n截图错误：{err.read_text(encoding='utf-8').strip()[:180]}"
     if "--test" in sys.argv:
         title = "【测试】" + title
-    send(title, desp)
+    if not send(title, desp):
+        # 当日额度已用尽：不必再试新品预告那条，直接正常结束（数据已提交，不判失败）
+        return 0
 
     # 夜间轮次只发收益长图，跳过新品预告那条（用户 2026-11-24 要求）
     if NIGHT_SKIP_NEWPROD and is_night_run():
