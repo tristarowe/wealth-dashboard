@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261126u';
+  window.__NP_LAYOUT_VERSION = '20261126v';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -2242,6 +2242,32 @@
     if (!p || !p.dates.length) {
       renderYearView();
       wrap.innerHTML = '';
+      /* 2026-11-26：AGG 为空时必须把月度表一起清掉（E69）。
+         旧版只清日历，年度表由 renderYearView 自己写空态，月度表却保留上一次渲染的
+         HTML，于是「只选在途产品」时出现「年度暂无收益数据、月度却还挂着 11 月 +18.33」
+         的自相矛盾画面。空态文案与留白和年度表保持一致。 */
+      var listEl0 = document.getElementById('month-list');
+      if (listEl0) {
+        listEl0.innerHTML = '<div class="month-row mhead"><span>月份</span><span>收益</span>' +
+          '<span>日均万收</span><span>正收益</span><span>回撤</span><span>挂0</span><span>年化</span></div>' +
+          '<div class="month-empty">暂无收益数据</div>';
+      }
+      var yLabel0 = document.getElementById('year-label');
+      if (yLabel0) yLabel0.textContent = '月度收益';
+      /* 日历标题也不能留着上一次的年月（否则空态还写着「2026 年 11 月 · 每日收益」） */
+      var calSub0 = document.getElementById('cal-sub');
+      if (calSub0) calSub0.textContent = '每日收益';
+      /* 没有收益数据时年月切换无意义：置灰并显示占位，避免残留上一次的年月值 */
+      ['cal-year-sel', 'cal-month-sel'].forEach(function (id) {
+        var s = document.getElementById(id);
+        if (!s) return;
+        s.innerHTML = '<option>—</option>';
+        s.disabled = true;
+      });
+      ['cal-year-prev', 'cal-year-next', 'cal-prev', 'cal-next'].forEach(function (id) {
+        var b = document.getElementById(id);
+        if (b) b.disabled = true;
+      });
       var sumEl0 = document.getElementById('cal-summary');
       if (sumEl0) sumEl0.innerHTML = '<span class="lead">当月收益<b>—</b><i>元</i></span>';
       paintCalHint('暂无每日收益数据');
@@ -2263,6 +2289,7 @@
     // 年 / 月下拉
     var ySel = document.getElementById('cal-year-sel');
     if (ySel) {
+      ySel.disabled = false;
       /* 下拉按降序呈现（最新在最前），底层 years 数组仍升序供 stepYear 箭头使用 */
       ySel.innerHTML = years.slice().reverse().map(function (y) {
         return '<option value="' + y + '">' + y + ' 年</option>';
@@ -2271,6 +2298,7 @@
     }
     var mSel = document.getElementById('cal-month-sel');
     if (mSel) {
+      mSel.disabled = false;
       /* 月份同样降序；months 来自实际净值日期，天然不含未来月 */
       mSel.innerHTML = months.slice().reverse().map(function (m) {
         return '<option value="' + m + '">' + (m + 1) + ' 月</option>';
@@ -2303,7 +2331,7 @@
         html += '<div class="month-item' + (r.m === calState.m ? ' on' : '') + '" data-month="' + r.m + '">' +
           '<span class="m">' + (r.m + 1) + '月</span>' +
           '<span class="v ' + colorBy(st.sum) + '">' + fmtSigned(st.sum) + '</span>' +
-          '<span class="d" title="日均万收 = 当月收益 ÷ 期初市值 ÷ 自然日数 × 10000；每日赚钱速度，时间加权">' + fmtSigned(st.avg) + '</span>' +
+          '<span class="d ' + colorBy(st.avg) + '" title="日均万收 = 当月收益 ÷ 期初市值 ÷ 自然日数 × 10000；每日赚钱速度，时间加权">' + fmtSigned(st.avg) + '</span>' +
           '<span class="d">' + st.pos + '</span>' +
           '<span class="d">' + st.neg + '</span>' +
           '<span class="d">' + st.flat + '</span>' +
@@ -2458,7 +2486,7 @@
       return '<tr data-year="' + y + '" class="' + (y === String(calState.y) ? 'on' : '') + '">' +
         '<td class="ym">' + y + '</td>' +
         '<td class="r num ' + colorBy(s.sum) + '">' + (s.sum > 0 ? '+' : '') + fmtMoney(s.sum) + '</td>' +
-        '<td class="r num cnt" title="日均万收 = 区间收益 ÷ 期初市值 ÷ 自然日数 × 10000；每日赚钱速度，时间加权">'
+        '<td class="r num cnt ' + colorBy(avgWan) + '" title="日均万收 = 区间收益 ÷ 期初市值 ÷ 自然日数 × 10000；每日赚钱速度，时间加权">'
           + (avgWan === null ? '—' : (avgWan > 0 ? '+' : '') + avgWan.toFixed(2)) + '</td>' +
         '<td class="num cnt">' + s.pos + '</td>' +
         '<td class="num cnt">' + s.neg + '</td>' +
@@ -2561,7 +2589,7 @@
         markPoint/markLine + SVG 渲染器（约 500KB，gzip 173KB），并在首屏 init 后
         立即用 fetch 预热 HTTP 缓存、load 完成后空闲注入脚本——用户读首屏这几秒里
         图库已就绪，切到趋势页几乎不再等待。 */
-  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126u';
+  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126v';
   function injectEcharts() {
     if (window.echarts || window.__ECHARTS_INJECTED__) return;
     window.__ECHARTS_INJECTED__ = true;

@@ -141,6 +141,8 @@
 
 | E68 | 勾选的产品在盈亏汇总里完全看不到（招银招睿添利日开30号，11-26） | 产品有持仓行/勾选项，但盈亏日历、月度表、年度表、本月收益卡全是「—」，也没有任何说明。根因有两类：①今天确认的申购仍判「在途」，`HOLD_BY_PID` 里没有它，`buildAggregate` 自然不产出收益点；②手工添加的产品只有最新一个净值点，或净值日期早于确认日，`p.dates[i] < gl.date` 对全部点成立 → 0 个收益点。两种都让产品「静默消失」，用户以为筛选失效。 | `buildAggregate` 增加 `byPid`（哪些产品真的产出了收益点）；`refreshAggregate` 遍历 `summaryRows()`（含在途行）与选中范围比对，未进 `byPid` 的写入 `AGG_SKIPPED` 并附原因（`申购在途，净值披露后开始计息` / `还没有净值数据` / `最新净值 X，还没到确认日 Y` / `已清仓，无在持份额`）；日历底部由 `paintCalHint()` 以 `.cal-skip` 小字点名「未计入每日收益：产品（原因）」，无数据时空态也带这条提示。实测 A 正常计入不提示、B 在途提示在途、C 无净值提示缺数据，三视口 BAD 0。缓存戳 20261126u，守卫清单 a24。 |
 
+| E69 | 只选在途产品时，年度表「暂无收益数据」但月度表仍挂着旧月份（11 月 +18.33…，11-26）；年表/月表「收益」「日均万收」配色不一致 | ①`renderCalendar` 在 `AGG` 为空时只清日历与年度表（年度表由 `renderYearView` 自己写空态），**没有清 `#month-list`**，DOM 保留了上一次渲染的行；日历标题、年月下拉也留着上一次的年月。②月表所有 span 被 `.month-item > span:not(.rate-cell){color:var(--muted)!important}` 统一成灰字，年表 `td.cnt`（日均万收）也是灰字，而年表收益走 `.up` 有涨跌色 → 同列两表、同表两列配色不一致。 | ①空态分支同时重建月度表（表头 + `.month-empty`「暂无收益数据」，留白与年表一致），`#year-label` 恢复「月度收益」、`#cal-sub` 恢复「每日收益」，年月下拉与箭头置灰、占位「—」；非空分支重新 `disabled=false` 恢复。②`monthStats` 的收益/日均万收与年表 `td.cnt` 都带 `colorBy()`，新增 `.month-item > span.v.up/.d.up`、`.year-table td.cnt.up/.down` 高优先级规则（置于 muted `!important` 之后）统一红涨绿跌。实测：全选 4 行、四列颜色均为 `rgb(192,57,43)`；只选在途 → 两表同为空态、下拉置灰、`本月收益 —`；切回全部产品恢复；393 竖屏无溢出；period_edges/period_share/month_sum_year/skipped_hint/smoke BAD 0。缓存戳 20261126v，守卫清单 a25。 |
+
 ---
 
 ## 核对方式（每日排查）
