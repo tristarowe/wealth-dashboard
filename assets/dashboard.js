@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261125s';
+  window.__NP_LAYOUT_VERSION = '20261126a';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -1163,12 +1163,13 @@
      † 标记（成立不足 1 年）放在数字左侧：右对齐下不会移动数字右边缘，
      也就不会像原来那样越出单元格边框。 */
   function fmtAnnCell(v, badge) {
-    if (v === null || v === undefined || isNaN(v)) return '—';
-    return (badge || '') + v.toFixed(2) + '<span class="pu">%</span>';
+    /* 2026-11-26：% 放进 .mcf 末段，不再用零宽 .pu 挂位；
+       小数点由 mcell 三段网格锁死，负号/†/% 均不影响点位。 */
+    return fmtCellDecimal(v, '%', false, badge);
   }
-  /* 日均万收单元格：† 同样前置 */
+  /* 日均万收单元格：† 放进整数段，不推小数点 */
   function fmtPerCell(v, badge) {
-    return (badge || '') + fmt2(v);
+    return fmtCellDecimal(v, '', false, badge);
   }
 
   /* 2026-11-25：0 是「净值未披露」的占位哨兵（confirmNav: 0），银行理财净值不会为 0。
@@ -1283,6 +1284,22 @@
     if (dot < 0) return s;
     return '<span class="mcell"><span class="mci">' + s.slice(0, dot) +
       '</span><span class="mcd">.</span><span class="mcf">' + s.slice(dot + 1) + '</span></span>';
+  }
+
+  /* 2026-11-26：区间双行数值（7日/14日/30日/成立至今）小数点结构性对齐。
+     与 fmtMoneyCell 同构：整数段右对齐占满、点与两位小数/单位段固定，
+     正负号、短样本 † 与 % 后缀都不再移动小数点（旧版只靠右对齐 + 零宽 %，
+     有符号或不同整数位时目视仍会错开一格）。 */
+  function fmtCellDecimal(v, suffix, signed, badge) {
+    if (v === null || v === undefined || isNaN(v)) return '—';
+    var s = (signed && Number(v) > 0 ? '+' : '') + Number(v).toFixed(2);
+    var dot = s.indexOf('.');
+    if (dot < 0) return s;
+    /* 单位（%）放进零宽 .pu 挂位：不能让它参与 mcf 列宽计算，
+       否则下行百分比的末列比上行万收宽一个字符，小数点仍会错开约 7px。 */
+    var tail = s.slice(dot + 1) + (suffix ? '<span class="pu">' + suffix + '</span>' : '');
+    return '<span class="mcell"><span class="mci">' + (badge || '') + s.slice(0, dot) +
+      '</span><span class="mcd">.</span><span class="mcf">' + tail + '</span></span>';
   }
 
   function holdingsOf(models) {
@@ -2104,11 +2121,14 @@
       var y = d.slice(0, 4);
       var v = AGG.raw ? AGG.raw[i] : AGG.per10k[i];
       if (v === null || v === undefined) return;
-      if (!map[y]) map[y] = { sum: 0, cnt: 0, pos: 0, neg: 0 };
+      if (!map[y]) map[y] = { sum: 0, cnt: 0, pos: 0, neg: 0, flat: 0 };
       map[y].sum += v;
       map[y].cnt += 1;
       if (v > 0.005) map[y].pos += 1;
       else if (v < -0.005) map[y].neg += 1;
+      /* 2026-11-26：年度表补「挂0」计数，与月度表 flat 同口径（|万收|≤0.005）。
+         原年度表第 6 列既无表头也无数值，月度表却有「挂0」，两表对不上。 */
+      else map[y].flat += 1;
     });
     var years = Object.keys(map).sort().reverse();
     var latestYear = years[0];
@@ -2141,7 +2161,7 @@
           + (avgWan === null ? '—' : (avgWan > 0 ? '+' : '') + avgWan.toFixed(2)) + '</td>' +
         '<td class="num cnt">' + s.pos + '</td>' +
         '<td class="num cnt">' + s.neg + '</td>' +
-        '<td></td>' +
+        '<td class="num cnt">' + (s.flat || 0) + '</td>' +
         '<td><div class="rate-cell ' + rateLv(ann) + '" style="--w:' + barW(ann) + '" title="' + annTitle + '">' + (ann === null ? '—' : ann.toFixed(2) + '%') + '</div></td>' +
         '</tr>';
     }).join('');
@@ -2240,7 +2260,7 @@
         markPoint/markLine + SVG 渲染器（约 500KB，gzip 173KB），并在首屏 init 后
         立即用 fetch 预热 HTTP 缓存、load 完成后空闲注入脚本——用户读首屏这几秒里
         图库已就绪，切到趋势页几乎不再等待。 */
-  var CHART_URL = './_shared/js/echarts.slim.js?v=20261125s';
+  var CHART_URL = './_shared/js/echarts.slim.js?v=20261126a';
   function injectEcharts() {
     if (window.echarts || window.__ECHARTS_INJECTED__) return;
     window.__ECHARTS_INJECTED__ = true;
@@ -3035,7 +3055,7 @@
       /* 成立至今列：上日均万收 / 下成立年化，与 30日列同构；日均由年化按 per=ann/3.65 反算，口径自洽 */
       function sinceCell(m) {
         var per = (typeof m.sinceAnn === 'number') ? m.sinceAnn / 3.65 : null;
-        return '<td class="c st"><b class="m-p10k ' + colorBy(per) + '">' + fmt2(per) +
+        return '<td class="c st"><b class="m-p10k ' + colorBy(per) + '">' + fmtCellDecimal(per) +
           '</b><i class="m-ann ' + colorBy(m.sinceAnn) + '">' + fmtAnnCell(m.sinceAnn) + '</i></td>';
       }
 
@@ -3049,14 +3069,17 @@
           '<span class="ptags">' +
           (h ? (h.cleared ?
             '<span class="cleared-date">' +
-              (h.tx && h.tx.confirmDate ? h.tx.confirmDate.slice(5) + ' ' : '') + '清仓</span>' :
+              /* 2026-11-26：清仓角标按交易 T 日（applyDate），不是确认日；
+                 旧数据缺 applyDate 时回退 confirmDate。 */
+              (h.tx && (h.tx.applyDate || h.tx.confirmDate)
+                ? (h.tx.applyDate || h.tx.confirmDate).slice(5).replace('-', '.') + ' ' : '') + '清仓</span>' :
             '<span class="tag new">持仓</span>') : '') +
           (isNew ? '<span class="tag np">新品</span>' : '') +
           (p.manual ? '<span class="tag" style="background:#f4f7f9;color:#7d939f" title="手工添加的产品">手工</span>' : '') +
           '</span>' +
           '</div></td>' +
         '<td class="c num">' + (m.latestDate ? withBadge(mmdd(m.latestDate), navLagBadge(p)) : '<span class="muted">待披露</span>') + '</td>' +
-        '<td class="r num ' + colorBy(m.todayPer) + '" data-col="p10k">' + fmtSigned(m.todayPer) + '</td>' +
+        '<td class="r num ' + colorBy(m.todayPer) + '" data-col="p10k">' + fmtCellDecimal(m.todayPer, '', true) + '</td>' +
         winCell(w7) + winCell(w14) + winCell(w30) +
         /* 成立至今 2026-11-20：与 30日列同款双行——上日均万收、下成立年化，同口径自洽（ann≈per×3.65） */
         sinceCell(m) +
@@ -5279,7 +5302,9 @@
           '<span class="ptags">' +
           (inflight ? '<span class="tag np"' + inflightTip + '>在途</span>' : '') +
           (h.cleared ? '<span class="cleared-date">' +
-            (h.tx && h.tx.confirmDate ? h.tx.confirmDate.slice(5).replace('-', '.') : '') + ' 清仓</span>' : '') +
+            /* 2026-11-26：与产品库一致，清仓角标日期取交易 T 日，旧数据回退确认日。 */
+            (h.tx && (h.tx.applyDate || h.tx.confirmDate)
+              ? (h.tx.applyDate || h.tx.confirmDate).slice(5).replace('-', '.') : '') + ' 清仓</span>' : '') +
           '</span>' +
           '</div></td>' +
         '<td class="r num mv-col">' + fmtMoneyCell(h.mv) + '</td>' +
