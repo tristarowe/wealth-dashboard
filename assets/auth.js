@@ -38,6 +38,32 @@
     return !!(d && d.expires_at && Date.now() / 1000 >= Number(d.expires_at) - 60);
   }
 
+  /* 2026-11-27 E87：页面开着超过令牌有效期（Supabase 默认 1 小时）后，
+     旧的 token() 直接返回空串，store.js 会退回 anon key 写表并被 RLS 拒绝（401）。
+     写入前统一走这里：有效令牌直接复用，过期则先用 refresh_token 续期；
+     force=true 用于服务端仍判 401 时再强刷一次。并发调用共用一个请求，避免重复续期。 */
+  var refreshing = null;
+  function refreshSession(force) {
+    if (!force && token()) return Promise.resolve(true);
+    if (!sess || !sess.refresh_token) return Promise.resolve(false);
+    if (refreshing) return refreshing;
+    refreshing = postToken({
+      grant_type: 'refresh_token',
+      refresh_token: sess.refresh_token
+    }).then(function (d) {
+      sess = d;
+      persist();
+      return true;
+    }).catch(function () {
+      signOut();
+      return false;
+    }).then(function (ok) {
+      refreshing = null;
+      return ok;
+    });
+    return refreshing;
+  }
+
   function token() {
     if (!sess || !sess.access_token || expired(sess)) return '';
     return sess.access_token;
@@ -90,11 +116,9 @@
   /* 刷新令牌：access 过期但有 refresh_token 时续期，成功后重载页面让 store 用新令牌取数 */
   function tryRefresh() {
     if (!sess || !sess.refresh_token || !expired(sess)) return;
-    postToken({ grant_type: 'refresh_token', refresh_token: sess.refresh_token }).then(function (d) {
-      sess = d;
-      persist();
-      try { window.location.reload(); } catch (e) {}
-    }).catch(function () { signOut(); });
+    refreshSession(true).then(function (ok) {
+      if (ok) try { window.location.reload(); } catch (e) {}
+    });
   }
   tryRefresh();
 
@@ -103,7 +127,9 @@
     email: email,
     isLogin: isLogin,
     signIn: signIn,
-    signOut: signOut
+    signOut: signOut,
+    refresh: refreshSession,
+    forceRefresh: function () { return refreshSession(true); }
   };
   window.dispatchEvent(new Event('auth:ready'));
 })();

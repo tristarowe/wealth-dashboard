@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261127g';
+  window.__NP_LAYOUT_VERSION = '20261127h';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -2637,7 +2637,7 @@
         markPoint/markLine + SVG 渲染器（约 500KB，gzip 173KB），并在首屏 init 后
         立即用 fetch 预热 HTTP 缓存、load 完成后空闲注入脚本——用户读首屏这几秒里
         图库已就绪，切到趋势页几乎不再等待。 */
-  var CHART_URL = './_shared/js/echarts.slim.js?v=20261127g';
+  var CHART_URL = './_shared/js/echarts.slim.js?v=20261127h';
   function injectEcharts() {
     if (window.echarts || window.__ECHARTS_INJECTED__) return;
     window.__ECHARTS_INJECTED__ = true;
@@ -4997,6 +4997,34 @@
     return findProductById(hid.value);
   }
 
+  /* 2026-11-27 E88：用户可能直接在「产品搜索」框里输入完整简称/全称，但没点下拉候选，
+     隐藏的 trade-prod 仍为空，旧逻辑直接 return（没有任何可见提示），表现为「点击提交无反应」。
+     这里只在输入与产品名称/简称/登记编码完全一致时自动选中；多条命中仍要求用户点具体份额。 */
+  function tradeExactMatches(q) {
+    var kw = String(q || '').trim().toLowerCase();
+    if (!kw) return [];
+    var pool = allUniqueProducts().concat(tradeNewProducts());
+    return pool.filter(function (p) {
+      return [p.short, p.name, prodDispName(p), p.regCode].some(function (v) {
+        return String(v || '').trim().toLowerCase() === kw;
+      });
+    });
+  }
+
+  function resolveTradeProduct() {
+    var p = tradeProduct();
+    if (p) return { product: p, ambiguous: false };
+    var qEl = document.getElementById('trade-prod-q');
+    var matches = tradeExactMatches(qEl && qEl.value);
+    if (matches.length !== 1) return { product: null, ambiguous: matches.length > 1 };
+    var hid = document.getElementById('trade-prod');
+    var id = canonicalPidById(matches[0].id) || matches[0].id;
+    if (hid) hid.value = id;
+    p = findProductById(id);
+    if (p && qEl) qEl.value = prodDispName(p);
+    return { product: p || null, ambiguous: false };
+  }
+
   function navHint(p) {
     var n = p.nav.length;
     return '净值 ' + Number(p.nav[n - 1]).toFixed(6) + ' · ' + mdText(p.latestDate) + ' · 确认 ' + (p.latestDate || DATA.asOf);
@@ -5190,7 +5218,8 @@
   }
 
   function submitTrade() {
-    var p = tradeProduct();
+    var resolved = resolveTradeProduct();
+    var p = resolved.product;
     var typeEl = document.getElementById('trade-type');
     var navEl = document.getElementById('trade-nav');
     var applyEl = document.getElementById('trade-apply');
@@ -5198,8 +5227,9 @@
     var shEl = document.getElementById('trade-shares');
     var amtEl = document.getElementById('trade-amount');
     var chEl = document.getElementById('trade-channel');
-    if (!p) { toast('请先选择产品'); return; }
-    if (!typeEl || !navEl) return;
+    if (resolved.ambiguous) { toast('该名称匹配多个产品，请从下拉列表中选择具体产品'); return; }
+    if (!p) { toast('请先从下拉列表选择产品'); return; }
+    if (!typeEl || !navEl) { toast('交易表单未加载完成，请刷新页面后重试'); return; }
     var nav = Number(navEl.value);
     var shares = Number(shEl && shEl.value);
     var amount = Number(amtEl && amtEl.value);
@@ -5246,7 +5276,8 @@
       return;
     }
     var btn = document.getElementById('trade-submit');
-    if (btn) btn.disabled = true;
+    var btnText = btn ? btn.textContent : '';
+    if (btn) { btn.disabled = true; btn.textContent = '提交中…'; }
     var body = {
       pid: p.id,
       type: tType,
@@ -5257,14 +5288,21 @@
       confirmDate: dateEl.value,
       saleChannel: chEl ? chEl.value : ''
     };
-    var req = editId ? window.STORE.update(editId, body) : window.STORE.add(body);
+    var req;
+    try {
+      req = editId ? window.STORE.update(editId, body) : window.STORE.add(body);
+    } catch (e) {
+      if (btn) { btn.disabled = false; btn.textContent = btnText; }
+      toast((e && e.message) || '写入交易失败，请重试');
+      return;
+    }
     req.then(function (res) {
-      if (btn) btn.disabled = false;
+      if (btn) { btn.disabled = false; btn.textContent = btnText; }
       if (!res || !res.ok) { toast((res && res.message) || '提交失败'); return; }
       toast(editId ? '交易已修改' : ('已录入 ' + typeEl.value + (navPending ? '（净值待确认，披露后自动更新）' : '')));
       refreshAfterWrite();
     }).catch(function (e) {
-      if (btn) btn.disabled = false;
+      if (btn) { btn.disabled = false; btn.textContent = btnText; }
       toast((e && e.message) || '写入交易失败，请检查网络后重试');
     });
   }
@@ -5280,7 +5318,12 @@
     });
     modal.addEventListener('click', function (e) { if (e.target === modal) modal.hidden = true; });
     var qEl = document.getElementById('trade-prod-q');
-    if (qEl) qEl.addEventListener('input', function () { renderTradeProductList(qEl.value); });
+    if (qEl) qEl.addEventListener('input', function () {
+      /* 手改搜索词后旧 pid 立即失效，避免提交到上一个选中的产品；完整名称会在提交时自动精确匹配 */
+      var hid0 = document.getElementById('trade-prod');
+      if (hid0) hid0.value = '';
+      renderTradeProductList(qEl.value);
+    });
     var list = document.getElementById('trade-prod-list');
     if (list) list.addEventListener('click', function (e) {
       var row = e.target.closest('[data-pid]');

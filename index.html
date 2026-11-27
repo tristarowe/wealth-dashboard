@@ -8,7 +8,7 @@
 <!-- 2026-11-24 u 首屏优化：看板脚本提前并行下载，云端域名提前握手；
      两者都不阻塞 HTML 解析，避免旧版「大库先下载完才开始拉 dashboard.js」的串行等待。 -->
 <link rel="preconnect" href="https://asqaxvrovorqfqwpgjkb.supabase.co" crossorigin>
-<link rel="preload" as="script" href="./assets/dashboard.js?v=20261127g" fetchpriority="low">
+<link rel="preload" as="script" href="./assets/dashboard.js?v=20261127h" fetchpriority="low">
 <style>
   :root{
     --bg:#f3f5f7; --card:#fff; --soft:#F9FFFF;
@@ -594,8 +594,11 @@
   .dp-grid button:hover{background:#eef6f8}
   .dp-grid button.out{color:#c3cfd6}
   .dp-grid button.we{color:#8ea0aa}
-  .dp-grid button.today::after{content:"";position:absolute;left:50%;bottom:4px;width:3px;height:3px;margin-left:-1.5px;border-radius:50%;background:var(--accent)}
-  .dp-grid button.on{background:var(--accent);color:#fff;font-weight:700}
+  /* 2026-11-27 E86：今天用浅蓝填充直接高亮，不再只在日期下方画小圆点；选中态仍用主色实心覆盖 */
+  .dp-grid button.today{background:#e4f0f5;color:var(--accent-deep);font-weight:700;box-shadow:inset 0 0 0 1px #bcd9e3}
+  .dp-grid button.today:hover{background:#d8eaf1}
+  .dp-grid button.today::after{display:none}
+  .dp-grid button.on{background:var(--accent);color:#fff;font-weight:700;box-shadow:none}
   .dp-grid button.on::after{display:none}
   .dp-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;padding-top:8px;border-top:1px solid var(--rule)}
   .dp-foot button{padding:5px 9px;border:0;border-radius:7px;background:transparent;font-family:var(--font);font-size:12px;color:var(--accent);cursor:pointer}
@@ -652,7 +655,7 @@
   .recog{margin-top:10px;font-size:12px;color:var(--accent-deep);background:#eef6f8;border:1px solid #cbe0e8;border-radius:7px;padding:7px 10px}
   .ok-note{display:none;margin-top:10px;font-size:12px;color:#1e8449;background:#eef8f1;border:1px solid #cfe9d6;border-radius:7px;padding:7px 10px}
   .modal-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
-  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:200;background:#172530;color:#fff;font-size:12.5px;line-height:1.5;padding:9px 16px;border-radius:999px;box-shadow:0 10px 24px rgba(9,46,60,.22);opacity:0;pointer-events:none;transition:opacity .18s}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:320;background:#172530;color:#fff;font-size:12.5px;line-height:1.5;padding:9px 16px;border-radius:999px;box-shadow:0 10px 24px rgba(9,46,60,.22);opacity:0;pointer-events:none;transition:opacity .18s}
   .toast.on{opacity:1}
 
   /* 交易 */
@@ -2171,6 +2174,11 @@
     font-weight:700!important;color:var(--blue)!important;
     background:transparent!important;border-color:var(--blue-line)!important}
   .cloud-chip.on,.auth-chip.on{background:#fff!important;font-weight:500!important}
+  /* 2026-11-27 E86：上面全局按钮规则把日历全部强制透明底，今天必须放在其后并用 !important
+     才能真正填色；选中态若是今天就一起高亮，其它已选日期仍维持「蓝字+蓝描边、无填充」口径。 */
+  .dp-grid button.today,.dp-grid button.today.on{
+    background:#e4f0f5!important;color:var(--accent-deep)!important;
+    font-weight:700!important;box-shadow:inset 0 0 0 1px #bcd9e3!important}
   /* 2026-11-24 s：年化条百分比统一左对齐、全档同色；渐变覆盖填充宽度，未填充区保留更浅底
      2026-11-25：文字色由浅亮蓝 #4A8DB8 改回深蓝灰 #31566A，保证浅色数据条上的对比度与正文协调 */
   .rate-cell{font-weight:700!important;color:#31566A!important;justify-content:flex-start!important;
@@ -2771,7 +2779,7 @@
             <div class="att-title">数据说明与口径（PDF）</div>
             <div class="att-sub">含全局口径、顶部指标卡、盈亏、年化口径辨析、交易、新品预告、产品库、添加产品、数据体检九组 · 更新于 2026-11-26（含份额确认日 T+1/T+2 规则）</div>
           </div>
-          <a class="btn primary" href="./assets/数据说明.pdf?v=20261127g" target="_blank" rel="noopener">点击查看</a>
+          <a class="btn primary" href="./assets/数据说明.pdf?v=20261127h" target="_blank" rel="noopener">点击查看</a>
         </div>
       </div>
     </section>
@@ -2928,9 +2936,9 @@
      「新 HTML + 旧渲染」的错位（表现为新品预告仍是拉伸甘特卡片 + 巨大原生多选框）。 -->
 <!-- 2026-11-24 u：ECharts / html2canvas 改按需加载（趋势图、导出长图才拉），
      不再让 338KB + 47KB 的库阻塞首屏；加载器分别在 dashboard.js 与本页导出逻辑内。 -->
-<script src="./assets/data.js?v=20261127g" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
-<script src="./assets/risk_levels.js?v=20261127g"></script>
-<script src="./assets/transactions.js?v=20261127g"></script>
+<script src="./assets/data.js?v=20261127h" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
+<script src="./assets/risk_levels.js?v=20261127h"></script>
+<script src="./assets/transactions.js?v=20261127h"></script>
 <script>
   /* 公开底稿已脱敏：只含 id+pid 的占位行供后台抓净值，不含 applyDate 等明细。
      前端渲染前剔除这类行，真实交易明细由登录后从 Supabase 云端拉取。 */
@@ -2939,16 +2947,16 @@
     if (T && T.items) T.items = T.items.filter(function (t) { return !!t.applyDate; });
   })();
 </script>
-<script src="./assets/newproducts.js?v=20261127g"></script>
-<script src="./assets/library.js?v=20261127g"></script>
-<script src="./assets/supabase-config.js?v=20261127g"></script>
-<script src="./assets/auth.js?v=20261127g"></script>
-<script src="./assets/store.js?v=20261127g" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
+<script src="./assets/newproducts.js?v=20261127h"></script>
+<script src="./assets/library.js?v=20261127h"></script>
+<script src="./assets/supabase-config.js?v=20261127h"></script>
+<script src="./assets/auth.js?v=20261127h"></script>
+<script src="./assets/store.js?v=20261127h" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
 <script>
   /* 先用本地缓存/内置底稿立即渲染，云端数据在后台取回后再重绘，避免等待网络白屏 */
   /* 前序脚本缺失或命中旧缓存时（STORE_READY 不存在）也照常加载看板，避免页面停在空白骨架 */
   (function () {
-    var NP_BUILD = '20261127g';
+    var NP_BUILD = '20261127h';
     function boot(msg, forced) {
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
@@ -2975,7 +2983,7 @@
       // 隐私小眼睛：dashboard.js 就绪后再加载，才能包装 DASHBOARD_REFRESH 并在渲染后套用打码
       if (!window.PRIVACY) {
         var pv = document.createElement('script');
-        pv.src = './assets/privacy.js?v=20261127g';
+        pv.src = './assets/privacy.js?v=20261127h';
         document.body.appendChild(pv);
       }
       if (!window.STORE_REFRESH || typeof window.STORE_REFRESH.then !== 'function') return;
@@ -3418,7 +3426,7 @@
       if (h2cLoading) return h2cLoading;
       h2cLoading = new Promise(function (resolve, reject) {
         var s = document.createElement('script');
-        s.src = './assets/html2canvas.min.js?v=20261127g';
+        s.src = './assets/html2canvas.min.js?v=20261127h';
         s.onload = resolve;
         s.onerror = function () { h2cLoading = null; reject(new Error('截图组件加载失败')); };
         document.head.appendChild(s);

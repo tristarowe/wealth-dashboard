@@ -108,14 +108,45 @@
     });
   }
 
+  /* 2026-11-27 E87：所有写入都必须带有效登录令牌。页面长时间不刷新时 access_token
+     会过期，旧逻辑只拿到空令牌并回退 anon key，RLS 直接返回 401「交易保存失败」。
+     这里在发请求前先续期，并在服务端仍判 401/403 时强刷一次再重试。 */
+  function authReady() {
+    try {
+      if (!window.AUTH || !window.AUTH.refresh) return Promise.resolve(false);
+      return window.AUTH.refresh().then(function (ok) { return !!ok; }).catch(function () { return false; });
+    } catch (e) { return Promise.resolve(false); }
+  }
+
   /* 写入专用：超时或网络中断自动重试一次。add() 的 id 在首次请求前已固定，
      重试时同 id 命中主键冲突视为「首笔其实已写入」，不会产生重复交易。 */
   function reqWrite(u, opt) {
     opt = opt || {};
     opt.write = true;
-    return req(u, opt).catch(function (e) {
-      if (!e || (!e.timeout && e.name !== 'TypeError')) throw e;
-      return req(u, opt);
+    return authReady().then(function (ok) {
+      if (!ok) {
+        var noAuth = new Error('登录已过期，请重新登录后再保存（401）');
+        noAuth.status = 401;
+        noAuth.auth = true;
+        throw noAuth;
+      }
+      /* headers() 必须在续期之后重新生成：调用方传进来的旧 Bearer 已经过期 */
+      opt.headers = headers();
+      return req(u, opt).then(function (r) {
+        if (r.status !== 401 && r.status !== 403) return r;
+        try {
+          if (!window.AUTH || !window.AUTH.forceRefresh) return r;
+          return window.AUTH.forceRefresh().then(function (ok2) {
+            if (!ok2) return r;
+            opt.headers = headers();
+            return req(u, opt);
+          });
+        } catch (e) { return r; }
+      }).catch(function (e) {
+        if (!e || (!e.timeout && e.name !== 'TypeError')) throw e;
+        opt.headers = headers();
+        return req(u, opt);
+      });
     });
   }
 
@@ -182,7 +213,11 @@
   }
 
   function fail(msg, status) {
-    var e = new Error(msg + '（' + status + '）');
+    /* RLS 拒绝时原文「交易保存失败（401）」看不出该做什么，直接给出可操作提示 */
+    var text = status === 401 ? '登录已过期或无写入权限，请重新登录（401）'
+      : status === 403 ? '当前账号无写入权限（403）'
+      : msg + '（' + status + '）';
+    var e = new Error(text);
     e.status = status;
     return e;
   }
