@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261127d';
+  window.__NP_LAYOUT_VERSION = '20261127e';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -2621,7 +2621,7 @@
         markPoint/markLine + SVG 渲染器（约 500KB，gzip 173KB），并在首屏 init 后
         立即用 fetch 预热 HTTP 缓存、load 完成后空闲注入脚本——用户读首屏这几秒里
         图库已就绪，切到趋势页几乎不再等待。 */
-  var CHART_URL = './_shared/js/echarts.slim.js?v=20261127d';
+  var CHART_URL = './_shared/js/echarts.slim.js?v=20261127e';
   function injectEcharts() {
     if (window.echarts || window.__ECHARTS_INJECTED__) return;
     window.__ECHARTS_INJECTED__ = true;
@@ -6504,10 +6504,11 @@
     var winEnd = (NP.window && NP.window.end) || winStart;
     var days = [];
     var cur = parseDate(winStart), endTs = parseDate(winEnd).getTime();
-    /* 2026-11-27：抓取端窗口改为 T+7 个工作日（跨周末/节假日最多 14 个自然日），
-       这里按自然日铺列（无新品的周末照常占位），上限放宽到 14 列，与原 7 列口径同步替换。 */
-    while (cur.getTime() <= endTs && days.length < 14) {
-      days.push(ymd(cur));
+    /* 2026-11-27 定稿：抓取端窗口 T+7 个工作日，泳道也只列工作日——
+       周六、周日与法定节假日一律不出现在时间轴（复用确认日口径的 isMarketClosed()，
+       与 fetch_newproducts.py 的 MARKET_HOLIDAYS 同源）。T 到 T+7 共 8 个工作日列。 */
+    while (cur.getTime() <= endTs && days.length < 8) {
+      if (!isMarketClosed(cur)) days.push(ymd(cur));
       cur = new Date(cur.getFullYear(), cur.getMonth(), cur.getDate() + 1);
     }
     if (!days.length) days.push(winStart);
@@ -6571,7 +6572,9 @@
     var out = [];
     days.forEach(function (ds, di) {
       var dd = parseDate(ds);
-      var dayLab = mdText(ds) + ' 周' + wd[dd.getDay()] + (di === 0 ? ' <em>今天</em>' : '');
+      /* 起点若落在休市日会被上一步跳过，此时首列不是「今天」，不能硬贴标签 */
+      var dayLab = mdText(ds) + ' 周' + wd[dd.getDay()] +
+        (di === 0 && ds === winStart ? ' <em>今天</em>' : '');
       var body = '<div class="lane-day">' + dayLab + '</div>';
       var items = buckets[di];
       if (!items.length) {
