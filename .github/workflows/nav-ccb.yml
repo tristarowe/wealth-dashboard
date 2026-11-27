@@ -7,8 +7,10 @@ name: nav-ccb
 # 建信官网 chart 的 21/22 号点常在周末/节假日「下午」才补齐，而此前建信只在
 # daily-fetch 的 08:00 / 21:50 两次全量刷新，白天出现新点就一直空等，产品库整库
 # 停在 T-2（11-22 11:53 现场：104 只建信里 82 只仍停在 11-20）。
-# 本任务每小时按「净值最落后优先」取 14 只走官网 chart + 建行官网 NLC165 双源补点，
-# 约 8 轮覆盖全部 104 只，全天候追平；daily-fetch 的两次全量刷新仍是最终保障。
+# 本任务每小时按「净值最落后优先」取 26 只走官网 chart + 建行官网 NLC165 双源补点，
+# 约 4 轮覆盖全部 104 只（原为 14 只 / 8 轮，2026-11-27 提速：早间若被排队挤到源端
+# 发布之前而漏抓，全库追平时间从 8 小时缩到 4 小时，当天上午即可补齐）；
+# daily-fetch 的两次全量刷新仍是最终保障。
 #
 # 触发：cron 每小时 :37（避开 nav-rotate 的 :07，减少 push 撞车）+ 手动（limit 0 = 全量）
 on:
@@ -18,7 +20,7 @@ on:
     inputs:
       limit:
         description: "本轮刷新只数（0 = 全量，用于立即补齐）"
-        default: "14"
+        default: "26"
 
 permissions:
   contents: write
@@ -45,7 +47,7 @@ jobs:
       - name: 建信双源补抓（最落后优先）
         env:
           PYTHONIOENCODING: utf-8
-        run: python daily/nav_official.py --lag --limit ${{ inputs.limit || '14' }}
+        run: python daily/nav_official.py --lag --limit ${{ inputs.limit || '26' }}
 
       - name: 产品库较新净值回填持仓底稿
         env:
