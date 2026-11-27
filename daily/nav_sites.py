@@ -1,10 +1,11 @@
-"""农银 / 信银 / 兴银 / 民生 理财子公司官网直连净值（前 three 家 2026-11-22 第一批，民生 2026-11-23 第二批接入）。
+"""农银 / 信银 / 兴银 / 民生 / 中邮 理财子公司官网直连净值（前 three 家 2026-11-22 第一批，
+民生 2026-11-23 第二批，中邮 2026-11-27 第三批接入）。
 
 用法
 ----
-    python daily/nav_sites.py                       # 刷新产品库里这四家的全部产品
+    python daily/nav_sites.py                       # 刷新产品库里这几家的全部产品
     python daily/nav_sites.py --dry-run             # 只打印不写文件
-    python daily/nav_sites.py --org 农银,民生        # 只跑指定机构
+    python daily/nav_sites.py --org 农银,中邮        # 只跑指定机构
     python daily/nav_sites.py --only-reg Z7001126000969
 
 为什么单独一个脚本
@@ -35,6 +36,11 @@ nav_official.py 只服务建信（官网 chart + 建行 NLC165 双源）；这�
       `BTADailyQry` 按 FBAE… 份额代码给历史序列；同产品多份额（A/E/Q/S/B）净值微差，
       靠历史重叠点精确一致判定。库内民生 7 只实测均为 E 份额，其中现金类（天天盈）
       官网为 6 位小数且与库内口径不同，历史不匹配时按规则跳过，宁可滞后不串净值。
+中邮（2026-11-27 第三批）：`pswm-api/product/search?pageNum=N` 是纯 GET 列表（439 页、
+      每页固定 10 条），所有过滤参数都会被忽略，只能整表扫描；列表自带
+      `wp_registration_code`（登记编码，精确匹配）+ `update_date`（净值日）+ `nav`。
+      旧式 TLS 站点，必须走 S_LEGACY。11-27 实测库内 11 只中邮在官网也只到 11-25，
+      属源端未披露，不能伪造；通道本身可用，官网先发时即可自动推进。
 """
 import argparse
 import json
@@ -346,11 +352,59 @@ def cmbc_cands(x):
     return out, len(pool)
 
 
+# ---------------- 中邮理财（2026-11-27 第三批） ----------------
+# 列表接口忽略所有过滤参数（keyword / wp_registration_code 均无效），只能整表扫描。
+# 每页固定 10 条、共约 439 页，按 0.05s 间隔约 1 分钟；索引按登记编码精确匹配，
+# 不依赖名称归一，也不存在份额歧义。
+PSBC_SEARCH = "https://www.psbc-wm.com/pswm-api/product/search?pageNum={pg}"
+PSBC_MAX_PAGES = 600
+_PSBC_INDEX = None
+
+
+def psbc_index():
+    global _PSBC_INDEX
+    if _PSBC_INDEX is not None:
+        return _PSBC_INDEX
+    idx = {}
+    for pg in range(1, PSBC_MAX_PAGES + 1):
+        try:
+            r = S_LEGACY.get(PSBC_SEARCH.format(pg=pg), timeout=25, verify=False,
+                             headers=_head("https://www.psbc-wm.com/products/index.html", False))
+            r.raise_for_status()
+            d = (r.json() or {}).get("data") or {}
+        except Exception as exc:
+            print("中邮列表第 %d 页失败：%s" % (pg, str(exc)[:80]), flush=True)
+            break
+        rows = d.get("list") or []
+        for x in rows:
+            reg = str(x.get("wp_registration_code") or "")
+            dts = d8(x.get("update_date"))
+            nav = fnum(x.get("nav"))
+            if reg and dts and nav is not None:
+                idx[reg] = (dts, nav, str(x.get("wp_name") or ""))
+        if d.get("lastPage") or not rows:
+            break
+        time.sleep(0.05)
+    _PSBC_INDEX = idx
+    return idx
+
+
+def psbc_cands(x):
+    reg = str(x.get("regCode") or "")
+    hit = psbc_index().get(reg)
+    if not hit:
+        return [], 0
+    dts, nav, name = hit
+    return [{"tag": "中邮官网:%s" % reg,
+             "rows": [{"date": dts, "nav": nav, "per10k": None}]}], 1
+
+
 SITES = [
     ("农银理财", abc_cands),
     ("信银理财", citic_cands),
     ("兴银理财", cib_cands),
     ("民生理财", cmbc_cands),
+    ("中邮理财", psbc_cands),
 ]
 
 
@@ -472,7 +526,7 @@ def main():
     if a.limit:
         todo = todo[: a.limit]
     if not todo:
-        print("没有待刷新的产品（四家在库 %d 只）" % sum(
+        print("没有待刷新的产品（五家在库 %d 只）" % sum(
             1 for x in items if any((x.get("orgShort") or "").startswith(s[0].rstrip("理财"))
                                     for s in SITES)), flush=True)
         return 0
@@ -532,7 +586,7 @@ def main():
     promo.save(items)
     print("完成：产品库最新净值日 %s" % asof, flush=True)
     off.commit([promo.LIB_JS, promo.LIB_JSON],
-               "data: 农银/信银/兴银/民生官网刷新产品库净值 %s" % asof)
+               "data: 农银/信银/兴银/民生/中邮官网刷新产品库净值 %s" % asof)
     return 0
 
 
