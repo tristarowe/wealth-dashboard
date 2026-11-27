@@ -8,7 +8,7 @@
 <!-- 2026-11-24 u 首屏优化：看板脚本提前并行下载，云端域名提前握手；
      两者都不阻塞 HTML 解析，避免旧版「大库先下载完才开始拉 dashboard.js」的串行等待。 -->
 <link rel="preconnect" href="https://asqaxvrovorqfqwpgjkb.supabase.co" crossorigin>
-<link rel="preload" as="script" href="./assets/dashboard.js?v=20261126ag" fetchpriority="low">
+<link rel="preload" as="script" href="./assets/dashboard.js?v=20261127a" fetchpriority="low">
 <style>
   :root{
     --bg:#f3f5f7; --card:#fff; --soft:#F9FFFF;
@@ -1706,37 +1706,53 @@
   #prod-table thead th:nth-child(n+4):nth-child(-n+7),
   #prod-table tbody td:nth-child(n+4):nth-child(-n+7){padding-right:var(--pgut,.62em)}
 
-  /* ===== 产品库宽屏（≥969）列宽列间距重排 2026-11-26 第六轮 =====
-     用户：「除产品列，其他列与列的间距怎么不均匀？看起来有点凌乱」。
-     病因：colgroup 是等百分比（6.37%），1050px 宽下每列一律 66.9px，但各列真实内容宽只有
-     16~71px —— 风险列只放「R2」却占 66.9（两侧各白 25px）、净值日期按表头定宽后「11-24」居中、
-     今日万收数字靠右，于是相邻两列的视觉空白在 9.7 / 36.6px 之间跳（极差 27px）。
-     改法：名称列吸收剩余宽度（col1 auto），其余 10 列按全量 11 页实测内容写死 px；
-     左右内边距一律 8px ⇒ 列间空白恒为 16px。含「%」的四列右内边距 15px（8px 间距 + 7px 的 % 挂位），
-     数字右缘、% 右缘到下一列仍是 16px。
-     实测各列最大内容宽（12px 字号、含 % 悬挂）：39/42.9/42.9/42.9/42.9/35.7/16.1/35.9/57.2/71.5，
-     定宽再加左右内边距：65/65/60/60/60/72/41/53/74/88。
-     表头/数据必须同一对齐方式：产品净值表头原居中、数字右对齐，同列两套边线看着最乱，此处一并右对齐。 */
-  @media (min-width:969px){
+  /* ===== 产品库宽屏列宽 2026-11-27：压缩产品列，余量均分给其余 10 列 =====
+     用户截图（1373 视口 / 表宽 1318）：产品名称独占 680px（52%），其余 10 列合计 638px、
+     净值日期~风险只有 41~74px，明显头重脚轻。旧口径是「名称列 auto 吸收全部剩余」。
+     现按 1318px 表宽做基准：名称 680 → 453（压缩约 1/3），让出的 227px 平分给其余 10 列（各 +22.7px），
+     得到 88/88/83/83/83/95/64/76/97/111，再换算成百分比，任意宽屏下都按同一比例分配。
+     ≥1100 才启用百分比：再窄时 7 日/净值列会被压到 60px 以下（1.005400 + 双侧 8px 内边距放不下），
+     969–1099 保留上一轮「按内容定宽」方案，避免数字被裁。
+     含「%」四列沿用右内边距 15px（8px 间距 + 7px 挂位），数字与 % 的右缘仍共线。 */
+  @media (min-width:1100px){
+    #prod-table{table-layout:fixed;width:100%;min-width:0}
+    #prod-table colgroup col{width:auto !important}
+    #prod-table col:nth-child(1){width:34.37% !important}  /* 产品名称（原 680 → 453） */
+    #prod-table col:nth-child(2){width:6.65% !important}   /* 净值日期 65 → 87.7 */
+    #prod-table col:nth-child(3){width:6.65% !important}   /* 今日万收 65 → 87.7 */
+    #prod-table col:nth-child(4){width:6.27% !important}   /* 7日 60 → 82.7 */
+    #prod-table col:nth-child(5){width:6.27% !important}   /* 14日 */
+    #prod-table col:nth-child(6){width:6.27% !important}   /* 30日 */
+    #prod-table col:nth-child(7){width:7.18% !important}   /* 成立至今 72 → 94.7 */
+    #prod-table col:nth-child(8){width:4.83% !important}   /* 风险 41 → 63.7 */
+    #prod-table col:nth-child(9){width:5.74% !important}   /* 持有期 53 → 75.7 */
+    #prod-table col:nth-child(10){width:7.34% !important}  /* 产品净值 74 → 96.7 */
+    #prod-table col:nth-child(11){width:8.40% !important}  /* 成立日期 88 → 110.7 */
+    #prod-table{--pgut:15px}
+    #prod-table thead th:nth-child(10){text-align:right}
+    /* 关掉「今日万收」时固定布局下不能 display:none（11 个 <col> 对 10 个单元格会错位），
+       改为列宽归 0，并把让出的 6.65% 并回名称列，保证整表仍铺满 */
+    #prod-table.no-p10k col:nth-child(1){width:41.02% !important}
+    #prod-table.no-p10k col#prod-p10k-col{width:0 !important}
+    #prod-table.no-p10k [data-col="p10k"]{display:table-cell;visibility:hidden;padding:0 !important;overflow:hidden}
+  }
+  /* 969–1099：宽度不够放百分比方案，保留按内容定宽，名称列继续吸收剩余 */
+  @media (min-width:969px) and (max-width:1099px){
     #prod-table{table-layout:fixed;width:100%;min-width:0}
     #prod-table colgroup col{width:auto !important}
     #prod-table col:nth-child(1){width:auto !important}
-    #prod-table col:nth-child(2){width:65px !important}   /* 净值日期：表头 48.5 + 16 */
-    #prod-table col:nth-child(3){width:65px !important}   /* 今日万收：max(表头 48.5, +11.95 42.9) + 16 */
-    /* 7日/14日/30日：数字 5 字符 35.7 + 左 8 + 右 15（其中 7.2 是 % 的悬挂位）→ 59，留 1px 余量 */
+    #prod-table col:nth-child(2){width:65px !important}
+    #prod-table col:nth-child(3){width:65px !important}
     #prod-table col:nth-child(4){width:60px !important}
     #prod-table col:nth-child(5){width:60px !important}
     #prod-table col:nth-child(6){width:60px !important}
-    #prod-table col:nth-child(7){width:72px !important}   /* 成立至今：表头 48.5 比数字宽，48.5 + 8 + 15 */
-    #prod-table col:nth-child(8){width:41px !important}   /* 风险：表头 24.5 + 16 */
-    #prod-table col:nth-child(9){width:53px !important}   /* 持有期：180天 35.9 + 16 */
-    #prod-table col:nth-child(10){width:74px !important}  /* 产品净值：1.005400 = 57.2 + 16 */
-    #prod-table col:nth-child(11){width:88px !important}  /* 成立日期：2026-11-03 = 71.5 + 16 */
+    #prod-table col:nth-child(7){width:72px !important}
+    #prod-table col:nth-child(8){width:41px !important}
+    #prod-table col:nth-child(9){width:53px !important}
+    #prod-table col:nth-child(10){width:74px !important}
+    #prod-table col:nth-child(11){width:88px !important}
     #prod-table{--pgut:15px}
-    /* 产品净值表头与数字同一条右边线（原表头居中、数字靠右，同列出现两条视觉边线） */
     #prod-table thead th:nth-child(10){text-align:right}
-    /* 关掉「今日万收」时固定布局下不能 display:none（单元格消失会让 11 个 <col> 与 10 个单元格错位，
-       产品净值/成立日期会被套上邻列宽度），与竖屏同款：列宽归 0 + 单元格不可见 */
     #prod-table.no-p10k col#prod-p10k-col{width:0 !important}
     #prod-table.no-p10k [data-col="p10k"]{display:table-cell;visibility:hidden;padding:0 !important;overflow:hidden}
   }
@@ -2765,7 +2781,7 @@
             <div class="att-title">数据说明与口径（PDF）</div>
             <div class="att-sub">含全局口径、顶部指标卡、盈亏、年化口径辨析、交易、新品预告、产品库、添加产品、数据体检九组 · 更新于 2026-11-26（含份额确认日 T+1/T+2 规则）</div>
           </div>
-          <a class="btn primary" href="./assets/数据说明.pdf?v=20261126ag" target="_blank" rel="noopener">点击查看</a>
+          <a class="btn primary" href="./assets/数据说明.pdf?v=20261127a" target="_blank" rel="noopener">点击查看</a>
         </div>
       </div>
     </section>
@@ -2922,9 +2938,9 @@
      「新 HTML + 旧渲染」的错位（表现为新品预告仍是拉伸甘特卡片 + 巨大原生多选框）。 -->
 <!-- 2026-11-24 u：ECharts / html2canvas 改按需加载（趋势图、导出长图才拉），
      不再让 338KB + 47KB 的库阻塞首屏；加载器分别在 dashboard.js 与本页导出逻辑内。 -->
-<script src="./assets/data.js?v=20261126ag" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
-<script src="./assets/risk_levels.js?v=20261126ag"></script>
-<script src="./assets/transactions.js?v=20261126ag"></script>
+<script src="./assets/data.js?v=20261127a" onerror="this.onerror=null;this.src='./assets/data.js?t='+Date.now()"></script>
+<script src="./assets/risk_levels.js?v=20261127a"></script>
+<script src="./assets/transactions.js?v=20261127a"></script>
 <script>
   /* 公开底稿已脱敏：只含 id+pid 的占位行供后台抓净值，不含 applyDate 等明细。
      前端渲染前剔除这类行，真实交易明细由登录后从 Supabase 云端拉取。 */
@@ -2933,16 +2949,16 @@
     if (T && T.items) T.items = T.items.filter(function (t) { return !!t.applyDate; });
   })();
 </script>
-<script src="./assets/newproducts.js?v=20261126ag"></script>
-<script src="./assets/library.js?v=20261126ag"></script>
-<script src="./assets/supabase-config.js?v=20261126ag"></script>
-<script src="./assets/auth.js?v=20261126ag"></script>
-<script src="./assets/store.js?v=20261126ag" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
+<script src="./assets/newproducts.js?v=20261127a"></script>
+<script src="./assets/library.js?v=20261127a"></script>
+<script src="./assets/supabase-config.js?v=20261127a"></script>
+<script src="./assets/auth.js?v=20261127a"></script>
+<script src="./assets/store.js?v=20261127a" onerror="this.onerror=null;this.src='./assets/store.js?t='+Date.now()"></script>
 <script>
   /* 先用本地缓存/内置底稿立即渲染，云端数据在后台取回后再重绘，避免等待网络白屏 */
   /* 前序脚本缺失或命中旧缓存时（STORE_READY 不存在）也照常加载看板，避免页面停在空白骨架 */
   (function () {
-    var NP_BUILD = '20261126ag';
+    var NP_BUILD = '20261127a';
     function boot(msg, forced) {
       var tip = document.getElementById('boot-tip');
       if (tip && msg) { tip.textContent = msg; tip.hidden = false; }
@@ -2969,7 +2985,7 @@
       // 隐私小眼睛：dashboard.js 就绪后再加载，才能包装 DASHBOARD_REFRESH 并在渲染后套用打码
       if (!window.PRIVACY) {
         var pv = document.createElement('script');
-        pv.src = './assets/privacy.js?v=20261126ag';
+        pv.src = './assets/privacy.js?v=20261127a';
         document.body.appendChild(pv);
       }
       if (!window.STORE_REFRESH || typeof window.STORE_REFRESH.then !== 'function') return;
@@ -3412,7 +3428,7 @@
       if (h2cLoading) return h2cLoading;
       h2cLoading = new Promise(function (resolve, reject) {
         var s = document.createElement('script');
-        s.src = './assets/html2canvas.min.js?v=20261126ag';
+        s.src = './assets/html2canvas.min.js?v=20261127a';
         s.onload = resolve;
         s.onerror = function () { h2cLoading = null; reject(new Error('截图组件加载失败')); };
         document.head.appendChild(s);

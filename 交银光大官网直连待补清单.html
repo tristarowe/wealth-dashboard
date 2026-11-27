@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>交银 / 光大官网直连待补产品清单</title>
+<style>
+  :root{
+    --ink:#213743; --sub:#6d8491; --line:#dce7ec; --bg:#f5f8f9; --card:#fff;
+    --blue:#2878af; --blue-bg:#eef6fa; --amber:#a2701f; --amber-bg:#fdf8ef;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:13px/1.55 "PingFang SC","Microsoft YaHei",system-ui,sans-serif}
+  .wrap{max-width:1360px;margin:0 auto;padding:26px 22px 60px}
+  h1{font-size:22px;margin:0 0 6px;letter-spacing:.02em}
+  .meta{color:var(--sub);font-size:12.5px;margin-bottom:18px}
+  .meta b{color:var(--ink);font-weight:600}
+  .cards{display:flex;gap:12px;flex-wrap:wrap;margin:0 0 16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 16px;min-width:170px;box-shadow:0 2px 8px rgba(30,70,90,.04)}
+  .card .n{font:700 21px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--blue)}
+  .card .t{font-size:12px;color:var(--sub);margin-top:4px}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:16px}
+  .panel h2{font-size:15px;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+  .pill{display:inline-block;border-radius:999px;padding:1px 9px;font-size:11.5px;font-weight:600;background:var(--blue-bg);color:var(--blue)}
+  .pill.amber{background:var(--amber-bg);color:var(--amber)}
+  .ask{margin:0;padding-left:18px;color:#3b5561}
+  .ask li{margin:5px 0}
+  .ask code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#f0f5f7;border-radius:4px;padding:1px 5px;font-size:12px}
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+  .toolbar input{font:13px inherit;padding:7px 10px;border:1px solid var(--line);border-radius:7px;width:260px;outline:none}
+  .toolbar input:focus{border-color:var(--blue)}
+  button{font:12.5px inherit;cursor:pointer;border:1px solid #cfe0e9;background:var(--blue-bg);color:var(--blue);border-radius:7px;padding:7px 13px}
+  button:hover{background:#e2f0f7}
+  .tblbox{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:#fff}
+  table{border-collapse:collapse;width:100%;font-size:12.3px;min-width:1180px}
+  th,td{padding:8px 10px;border-bottom:1px solid #edf2f4;text-align:left;vertical-align:top}
+  thead th{background:#f7fafb;color:#49616d;font-weight:600;white-space:nowrap;position:sticky;top:0;z-index:2}
+  tbody tr:hover{background:#fafcfe}
+  tbody tr:last-child td{border-bottom:0}
+  .idx{width:34px;color:var(--sub);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .nm{min-width:270px;max-width:350px;line-height:1.45}
+  .reg{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;white-space:nowrap;color:#31566a}
+  .num{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .tail{color:var(--sub);font-size:11.8px;white-space:nowrap}
+  .edit{min-width:170px;background:#fbfdfe;outline:none;border-bottom:1px dashed #b8d1de;color:#2a5563}
+  .edit:focus{background:#f0f8fb;border-bottom-color:var(--blue)}
+  .edit:empty::before{content:"点击填写";color:#a9bcc5}
+  .grp td{background:#f1f6f8;font-weight:700;color:#3c5c6a;font-size:12.5px}
+  .foot{color:var(--sub);font-size:12px;margin-top:12px}
+  .warn{color:var(--amber)}
+  @media print{
+    body{background:#fff}.wrap{max-width:none;padding:0}
+    .toolbar button,.toolbar input{display:none}
+    .panel,.tblbox{break-inside:avoid;box-shadow:none}
+    thead th{position:static}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>交银 / 光大官网直连待补产品清单</h1>
+  <div class="meta">数据基准：<b>library.json @ 2026-11-26</b>（抓取时间 2026-11-27 09:56）｜目标 T-1 = <b>2026-11-26</b>｜共 <b>18 只</b>滞后产品，均停在上一个披露日 11-25。整理时间：2026-11-27 10:05。</div>
+
+  <div class="cards">
+    <div class="card"><div class="n">12</div><div class="t">交银理财 · 官网尚未定位到详情</div></div>
+    <div class="card"><div class="n">6</div><div class="t">光大理财 · 官网 412 WAF 阻塞</div></div>
+    <div class="card"><div class="n">18</div><div class="t">合计待补产品</div></div>
+  </div>
+
+  <div class="panel">
+    <h2><span class="pill">需要你帮忙搜集</span>官网线索</h2>
+    <ol class="ask">
+      <li>每只产品的<b>详情页 URL</b>，或官网内部产品代码（交银常见为 <code>c_fundcode</code>，光大可能是产品编号 / 登记编码检索页）。有详情页链接就够，不必逐只抄净值。</li>
+      <li>若官网有公开净值接口：提供一次<b>请求 URL + 参数样例</b>（例如按登记编码查询返回 JSON 的那个请求），我们照中邮那套做精确匹配直连。</li>
+      <li>交银现有入口：<a href="https://www.bocommwm.com/BankCommSite/shtml/jylc/cn/2503328/list.shtml?channelId=2503328" target="_blank" rel="noopener">交银理财官网列表</a>、<a href="https://www.bankcomm.com/BankCommSite/shtml/jyjr/cn/7226/7266/7281/7282/list.shtml?channelId=7226" target="_blank" rel="noopener">交通银行主站净值页</a>。当前适配器能取部分产品，但这 12 只无法从列表页枚举出代码。</li>
+      <li class="warn">光大官网 <a href="https://www.cebwm.com/wealth/grlc/index.html" target="_blank" rel="noopener">cebwm.com/wealth/grlc/index.html</a> 实测返回 412（瑞数 WAF）。若有能稳定打开的公开页面 / API 地址，请直接贴过来；不希望上浏览器自动化的话我们就不碰 WAF。</li>
+      <li>表格最后两列可<b>直接点击填写</b>（浅蓝底），填完点「复制待补清单」可连同你的填写内容一起复制到 Excel / 文档。</li>
+    </ol>
+  </div>
+
+  <div class="panel">
+    <h2><span class="pill amber">产品明细</span>按机构分组 · 可按名称 / 登记编码筛选</h2>
+    <div class="toolbar">
+      <input id="q" type="search" placeholder="输入产品名或 Z7 登记编码筛选…" aria-label="筛选产品">
+      <button id="copy" type="button">复制待补清单（含填写内容）</button>
+      <button id="print" type="button">打印 / 另存 PDF</button>
+      <span class="foot" id="cnt">显示 18 / 18 只</span>
+    </div>
+    <div class="tblbox">
+      <table id="tbl">
+        <thead><tr>
+          <th class="idx">#</th><th>产品全称</th><th>登记编码（Z7）</th><th>风险</th><th>成立日</th>
+          <th>库内最新</th><th>最新净值</th><th>近 3 个披露点（日期 / 净值，供比对）</th>
+          <th>官网产品代码 / ID（待补）</th><th>官网详情页 URL（待补）</th>
+        </tr></thead>
+        <tbody>
+          <tr class="grp"><td colspan="10">交银理财 · 12 只</td></tr>
+          <tr data-org="交银理财"><td class="idx">1</td><td class="nm">交银理财稳享慧选日开13号（90天持有期）理财产品</td><td class="reg">Z7000926001548</td><td>R2</td><td class="num">2026-08-20</td><td class="num">2026-11-25</td><td class="num">1.0079</td><td class="tail">11-23 1.0072 ｜ 11-24 1.0079 ｜ 11-25 1.0079</td><td class="edit" contenteditable="true"></td><td class="edit" contenteditable="true"></td></tr>
+          <tr data-org="交银理财"><td class="idx">2</td><td class="nm">交银理财稳享慧选日开36号（90天持有期）理财产品</td><td class="reg">Z7000926001471</td><td>R2</td><td class="num">2026-09-03</td><td class="num">2026-11-25</td><td class="num">1.0037</td><td class="tail">11-23 1.0034 ｜ 11-24 1.0038 ｜ 11-25 1.0037</td><td class="edit" contenteditable="true"></td><td class="edit" contenteditable="true"></td></tr>
+          <tr data-org="交银理财"><td class="idx">3</td><td class="nm">交银理财稳享慧选日开39号（90天持有期）理财产品</td><td class="reg">Z7000926001927</td><td>R2</td><td class="num">2026-09-08</td><td class="num">2026-11-25</td><td class="num">1.0052</td><td class="tail">11-23 1.0057 ｜ 11-24 1.0056 ｜ 11-25 1.0052</td><td class="edit" contenteditable="true"></td><td class="edit" contenteditable="true"></td></tr>
+          <tr data-org="交银理财"><td class="idx">4</td><td class="nm">交银理财稳享慧选日开41号（90天持有期）理财产品</td><td class="reg">Z7000926002157</td><td>R2</td><td class="num">2026-10-23</td><td class="num">2026-11-25</td><td class="num">1.0015</td><td class="tail">11-23 1.0012 ｜ 11-24 1.0014 ｜ 11-25 1.0015</td><td class="edit" contenteditable="true"></td><td class="edit" contenteditable="true"></td></tr>
+          <tr data-org="交银理财"><td class="idx">5</td><td class="nm">交银理财稳享慧选日开49号（180天持有期）理财产品</td><td class="reg">Z7000926002184</td><td>R2</td><td class="num">2026-11-06</td><td class="num">2026-11-25</td><td class="num">1.0016</td><td class="tail">11-23 1.0020 ｜ 11-24 1.0019 ｜ 11-25 1.0016</td><td class="edit" contenteditable="true"></td><td class="edit" contenteditable="true"></td></tr>
+          <tr data-org="交银理财"><td class="idx">6</td><td class="nm">交银理财稳享慧选日开5号（180天持有期）理财产品</td><td class="reg">Z7000926001549</td><td>R2</td><td class="num">2026-08-27</td><td class="num">2026-11-25</td><td class="num">1.0053</td><td class="tail">11-23 1.0053 ｜ 11-24 1.0053 ｜ 11-25 1.0053</td><td class="edit" contenteditable="true"></td><td class="edit" contenteditable="true"></td></tr>
+          <tr data-org="交银理财"><td class="idx">7</td><td class="nm">交银理财稳享慧选日开19号（180天持有期）理财产品</td><td class="reg">Z7000926001926</td><td>R2</td><td class="num">2026-09-11</td><td class="num">2026-11-25</td><td class="num">1.0053</td><td class="tail">11-23 1.0053 ｜ 11-24 1.0053 ｜ 11-25 1.0053</td><td class="edit" contenteditable="true"></td><td class="edit" contenteditable="true"></td></tr>
+          <tr data-org="交银理财"><td class="idx">8</td><td class="nm">交银理财稳享灵动慧利日开69号（14天持有期）理财产品</td><td class="reg">Z7000926002133</td><td>R2</td><td class="num">2026-11-05</td><td class="num">2026-11-25</td><td class="num">1.0007</td><td class="tail">11-23 1.0007 ｜ 11-24 1.0007 ｜ 11-25 1.0007</td><td class="edit" contenteditable="true"></td><td class="edit" contenteditable="true"></td></tr>
+          <tr data-org="交银理财"><td class="idx">9</td><td class="nm">交银理财稳享灵动慧利日开79号（14天持有期）理财产品</td><td class="reg">Z7000926001800</td><td>R2</td><td class="num">2026-09-17</td><td class="num">2026-11-25</td><td class="num">1.0042</td><td class="tail">11-23 1.0049 ｜ 11-24 1.0047 ｜ 11-25 1.0042</td><td class="edit" contenteditable="true"></td><td class="edit" contenteditable="true"></td></tr>
+          <tr data-org="交银理财"><td class="idx">10</td><td class="nm">交银理财稳享灵动慧利日开80号（14天持有期）理财产品</td><td class="reg">Z7000926002345</td><td>R2</td><td class="num">2026-11-05</td><td class="num">2026-11-25</td><td class="num">1.0002</td><td class="tail">11-23 1.0002 ｜ 11-24 1.0002 ｜ 11-25 1.0002</td><td class="edit" contenteditable="true"></td><td class="edit" contenteditable="true"></td></tr>
+          <tr data-org="交银理财"><td class="idx">11</td><td class="nm">交银理财稳享灵动慧利日开93号（30天持有期）理财产品</td><td class="reg">Z7000926001561</td><td>R2</td><td class="num">2026-08-13</td><td class="num">2026-11-25</td><td class="num">1.0073</td><td class="tail">11-23 1.0083 ｜ 11-24 1.0080 ｜ 11-25 1.0073</td><td class="edit" contenteditable="true"></td><td class="edit" contenteditable="true"></td></tr>
+          <tr data-org="交银理财"><td class="idx">12</td><td class="nm">交银理财稳享灵动慧利日开114号（90天持有期）理财产品</td><td class="reg">Z7000926001950</td><td>R2</td><td class="num">2026-09-18</td><td class="num">2026-11-25</td><td class="num">1.0062</td><td class="tail">11-23 1.0062 ｜ 11-24 1.0062 ｜ 11-25 1.0062</td><td class="edit" contenteditable="true"></td><td class="edit" contenteditable="true"></td></tr>
+
+          <tr class="grp"><td colspan="10">光大理财 · 6 只</td></tr>
+          <tr data-org="光大理财"><td class="idx">13</td><td class="nm">阳光金乐盈日开2号（88天最低持有）</td><td class="reg">Z7001426002156</td><td>R2</td><td class="num">2026-09-01</td><td class="num">2026-11-25</td><td class="num">1.0054</td><td class="tail">11-23 1.0053 ｜ 11-24 1.0053 ｜ 11-25 1.0054</td><td class="edit" contenteditable="true"></td><td class="edit" contenteditable="true"></td></tr>
+          <tr data-org="光大理财"><td class="idx">14</td><td class="nm">阳光金乐盈日开18号（180天最低持有）</td><td class="reg">Z7001426002197</td><td>R2</td><td class="num">2026-09-22</td><td class="num">2026-11-25</td><td class="num">1.0035</td><td class="tail">11-23 1.0035 ｜ 11-24 1.0035 ｜ 11-25 1.0035</td><td class="edit" contenteditable="true"></td><td class="edit" contenteditable="true"></td></tr>
+          <tr data-org="光大理财"><td class="idx">15</td><td class="nm">阳光金乐盈日开19号（90天最低持有）</td><td class="reg">Z7001426002702</td><td>R2</td><td class="num">2026-10-28</td><td class="num">2026-11-25</td><td class="num">1.0025</td><td class="tail">11-23 1.0024 ｜ 11-24 1.0025 ｜ 11-25 1.0025</td><td class="edit" contenteditable="true"></td><td class="edit" contenteditable="true"></td></tr>
+          <tr data-org="光大理财"><td class="idx">16</td><td class="nm">阳光金乐盈日开31号（180天最低持有）</td><td class="reg">Z7001426002797</td><td>R2</td><td class="num">2026-11-12</td><td class="num">2026-11-25</td><td class="num">1.0013</td><td class="tail">11-23 1.0008 ｜ 11-24 1.0014 ｜ 11-25 1.0013</td><td class="edit" contenteditable="true"></td><td class="edit" contenteditable="true"></td></tr>
+          <tr data-org="光大理财"><td class="idx">17</td><td class="nm">阳光金增利稳健乐享天天购2号（365天最低持有）</td><td class="reg">Z7001426002673</td><td>R2</td><td class="num">2026-10-20</td><td class="num">2026-11-25</td><td class="num">1.0012</td><td class="tail">11-23 1.0011 ｜ 11-24 1.0012 ｜ 11-25 1.0012</td><td class="edit" contenteditable="true"></td><td class="edit" contenteditable="true"></td></tr>
+          <tr data-org="光大理财"><td class="idx">18</td><td class="nm">阳光金增利稳健乐享天天购52号（90天最低持有）</td><td class="reg">Z7001426002623</td><td>R2</td><td class="num">2026-10-20</td><td class="num">2026-11-25</td><td class="num">1.0034</td><td class="tail">11-23 1.0034 ｜ 11-24 1.0034 ｜ 11-25 1.0034</td><td class="edit" contenteditable="true"></td><td class="edit" contenteditable="true"></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="foot">注：产品净值 date/nav 来自项目 library.json（建行代销 NLC165 + 中国理财网兜底），登记编码是官网精确匹配最稳的键；份额后缀（D/I 等）会造成名称匹配失败，优先用 Z7 编码查。</div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var q = document.getElementById('q');
+  var rows = Array.prototype.slice.call(document.querySelectorAll('#tbl tbody tr[data-org]'));
+  var groups = Array.prototype.slice.call(document.querySelectorAll('#tbl tbody tr.grp'));
+  var cnt = document.getElementById('cnt');
+  function apply(){
+    var k = q.value.trim().toLowerCase(), shown = 0;
+    rows.forEach(function(tr){
+      var hit = !k || tr.textContent.toLowerCase().indexOf(k) >= 0;
+      tr.style.display = hit ? '' : 'none';
+      if (hit) shown++;
+    });
+    groups.forEach(function(g){
+      var next = g.nextElementSibling, any = false;
+      while (next && next.classList.contains('grp') === false){
+        if (next.style.display !== 'none') any = true;
+        next = next.nextElementSibling;
+      }
+      g.style.display = any ? '' : 'none';
+    });
+    cnt.textContent = '显示 ' + shown + ' / 18 只';
+  }
+  q.addEventListener('input', apply);
+
+  function cellText(td){ return (td.innerText || td.textContent || '').trim().replace(/\s+/g, ' '); }
+  function buildTsv(){
+    var lines = [['机构','产品全称','登记编码','最新净值日','最新净值','官网产品代码','官网详情页URL'].join('\t')];
+    rows.forEach(function(tr){
+      var td = tr.querySelectorAll('td');
+      lines.push([tr.getAttribute('data-org'), cellText(td[1]), cellText(td[2]), cellText(td[5]), cellText(td[6]), cellText(td[8]), cellText(td[9])].join('\t'));
+    });
+    return lines.join('\r\n');
+  }
+  document.getElementById('copy').addEventListener('click', function(){
+    var text = buildTsv(), btn = this;
+    function fallback(){
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); btn.textContent = '已复制 18 行'; }
+      catch(e){ btn.textContent = '复制失败，请手动选择表格'; }
+      document.body.removeChild(ta);
+      setTimeout(function(){ btn.textContent = '复制待补清单（含填写内容）'; }, 2200);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function(){
+        btn.textContent = '已复制 18 行';
+        setTimeout(function(){ btn.textContent = '复制待补清单（含填写内容）'; }, 2200);
+      }, fallback);
+    } else fallback();
+  });
+  document.getElementById('print').addEventListener('click', function(){ window.print(); });
+})();
+</script>
+</body>
+</html>
