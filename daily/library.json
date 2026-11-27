@@ -1,12 +1,132 @@
 {
   "asOf": "2026-11-26",
-  "fetchedAt": "2026-11-27 09:56",
+  "fetchedAt": "2026-11-27 10:56",
   "source": "建行新品公告·销售文件要素表 + 中国理财网净值",
   "window": {
     "start": "2026-08-01",
     "end": "2026-11-26"
   },
   "items": [
+    {
+      "id": "LZ7002626002745",
+      "name": "信银理财安盈象固收稳利日开258号理财产品",
+      "short": "安盈象固收稳利日开258号",
+      "org": "信银理财有限责任公司",
+      "orgShort": "信银理财",
+      "regCode": "Z7002626002745",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-12-02",
+      "raiseStart": "2026-11-26",
+      "raiseEnd": "2026-12-01",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7001426003245",
+      "name": "阳光金增利稳健乐享日开135号",
+      "short": "阳光金增利稳健乐享日开135号",
+      "org": "光大理财有限责任公司",
+      "orgShort": "光大理财",
+      "regCode": "Z7001426003245",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-12-01",
+      "raiseStart": "2026-11-26",
+      "raiseEnd": "2026-11-30",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7001426003238",
+      "name": "阳光金增利稳健乐享天天购111号",
+      "short": "阳光金增利稳健乐享天天购111号",
+      "org": "光大理财有限责任公司",
+      "orgShort": "光大理财",
+      "regCode": "Z7001426003238",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-12-01",
+      "raiseStart": "2026-11-26",
+      "raiseEnd": "2026-11-30",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7001426003205",
+      "name": "阳光金增利稳健乐享天天购109号",
+      "short": "阳光金增利稳健乐享天天购109号",
+      "org": "光大理财有限责任公司",
+      "orgShort": "光大理财",
+      "regCode": "Z7001426003205",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-12-01",
+      "raiseStart": "2026-11-26",
+      "raiseEnd": "2026-11-30",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7001626001164",
+      "name": "招银理财招睿鑫鼎14天持有期10号固定收益类理财计划",
+      "short": "招睿鑫鼎14天持有期10号理财计划",
+      "org": "招银理财有限责任公司",
+      "orgShort": "招银理财",
+      "regCode": "Z7001626001164",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-12-01",
+      "raiseStart": "2026-11-26",
+      "raiseEnd": "2026-11-30",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
+    {
+      "id": "LZ7001626001160",
+      "name": "招银理财招睿添利日开30号固定收益类理财计划",
+      "short": "招睿添利日开30号理财计划",
+      "org": "招银理财有限责任公司",
+      "orgShort": "招银理财",
+      "regCode": "Z7001626001160",
+      "risk": "R2",
+      "saleChannel": "建设银行",
+      "inception": "2026-12-01",
+      "raiseStart": "2026-11-26",
+      "raiseEnd": "2026-11-30",
+      "dates": [],
+      "nav": [],
+      "per10k": [
+        null
+      ],
+      "latestDate": "",
+      "latestNav": null
+    },
     {
       "id": "LZ7001626001126",
       "name": "招银理财招睿增鑫30天持有期4号增强型固收类理财计划",

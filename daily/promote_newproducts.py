@@ -1,6 +1,8 @@
 """新品并入产品库（幂等）。
 
-规则（2026-11-24 改为募集起始日 T+1 口径）：
+规则（2026-11-24 改为募集起始日 T+1 口径；2026-11-27 修正为北京时间）：
+- 「今天」一律用北京时间 CN：GitHub runner 为 UTC，早间北京 07:xx 时 UTC 仍是前一日，
+  用 datetime.now() 会把 T+1 生效日算晚一天，导致当日该入库的新品被跳过。
 - 来源：daily/newproducts.json 的 items + established（已成立清单）
 - 触发：募集起始日 + 1 天 <= 今天（T+1 即可入库，无需等成立日），且登记编码不在
         daily/library.json 中；无募集起始日的老数据回退用成立日 + 1 天。
@@ -145,7 +147,10 @@ def commit_in_ci():
 
 def main():
     ap = argparse.ArgumentParser(description="新品成立后并入产品库")
-    ap.add_argument("--today", default=datetime.now().strftime("%Y-%m-%d"))
+    # 守门：GitHub Actions runner 是 UTC，早间北京 07:42 时 UTC 仍是前一日，
+    # 用 datetime.now() 会把募集起始日 T+1 的生效日算晚一天（2026-11-27 六只新品漏并入）。
+    # 默认日期必须按北京时间（CN），与新品抓取和用户可见日期同口径。
+    ap.add_argument("--today", default=datetime.now(CN).strftime("%Y-%m-%d"))
     ap.add_argument("--no-nav", action="store_true", help="只入库不抓净值")
     ap.add_argument("--gap", type=float, default=1.2)
     ap.add_argument("--max-new", type=int, default=20, help="单次最多并入条数")
