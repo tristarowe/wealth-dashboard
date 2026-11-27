@@ -770,10 +770,10 @@ def build():
     lanes.sort(key=lambda l: (-len(l["products"]), l["channel"]))
 
     window_start = today
-    # 2026-11-27：按用户要求把预告窗口从「自然日 today+6」改成「T+7 个工作日」。
+    # 2026-11-27：预告窗口 = 含今天共 7 个工作日（T 起第 6 个工作日，即 add_workdays(today, 6)）。
     # 与份额确认日同口径：跳周末与法定节假日（MARKET_HOLIDAYS 与前端同源）。
-    # 因此 11-27（周五）起窗口到 12-08（周二）；前端列数上限同步放宽到 14 列。
-    window_end = add_workdays(today, 7)
+    # 因此 11-27（周五）起窗口到 12-07（周一）；前端泳道同样只列这 7 个工作日。
+    window_end = add_workdays(today, 6)
     payload = {
         "asOf": today,
         "fetchedAt": datetime.now(CN).strftime("%Y-%m-%d %H:%M"),
