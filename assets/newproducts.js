@@ -1,30 +1,15 @@
 window.NEW_PRODUCTS = {
-  "asOf": "2026-11-26",
-  "fetchedAt": "2026-11-26 23:52",
+  "asOf": "2026-11-27",
+  "fetchedAt": "2026-11-27 11:09",
   "source": "六大行及股份制银行新品公告 · 销售文件要素表",
   "window": {
-    "start": "2026-11-26",
-    "end": "2026-12-02"
+    "start": "2026-11-27",
+    "end": "2026-12-08"
   },
   "institutions": [
     "建设银行"
   ],
   "items": [
-    {
-      "name": "招银理财招睿增鑫30天持有期4号增强型固收类理财计划",
-      "issuer": "招银理财有限责任公司",
-      "short": "招睿增鑫30天持有期4号增强型固收类理财计划",
-      "regCode": "Z7001626001126",
-      "raiseStart": "2026-11-24",
-      "raiseEnd": "2026-11-26",
-      "establish": "2026-11-27",
-      "quotaWan": null,
-      "risk": "R2",
-      "riskRaw": "PR2 中低风险",
-      "mode": "",
-      "saleChannel": "建设银行",
-      "source": "建行官网新品公告·销售文件要素表"
-    },
     {
       "name": "信银理财安盈象固收稳利日开258号理财产品",
       "issuer": "信银理财有限责任公司",
@@ -151,21 +136,6 @@ window.NEW_PRODUCTS = {
       "channel": "建设银行",
       "products": [
         {
-          "name": "招银理财招睿增鑫30天持有期4号增强型固收类理财计划",
-          "issuer": "招银理财有限责任公司",
-          "short": "招睿增鑫30天持有期4号增强型固收类理财计划",
-          "regCode": "Z7001626001126",
-          "raiseStart": "2026-11-24",
-          "raiseEnd": "2026-11-26",
-          "establish": "2026-11-27",
-          "quotaWan": null,
-          "risk": "R2",
-          "riskRaw": "PR2 中低风险",
-          "mode": "",
-          "saleChannel": "建设银行",
-          "source": "建行官网新品公告·销售文件要素表"
-        },
-        {
           "name": "信银理财安盈象固收稳利日开258号理财产品",
           "issuer": "信银理财有限责任公司",
           "short": "安盈象固收稳利日开258号",
@@ -289,10 +259,10 @@ window.NEW_PRODUCTS = {
     }
   ],
   "stats": {
-    "notices": 81,
-    "candidates": 17,
-    "kept": 9,
-    "dropped": 8,
+    "notices": 76,
+    "candidates": 12,
+    "kept": 8,
+    "dropped": 6,
     "failed": 0,
     "quotaRejected": 0
   }

@@ -22,7 +22,11 @@ import json
 import os
 import re
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+
+# GitHub Actions runner 是 UTC，早间北京时间 8 点前后 UTC 仍是前一日；
+# 预告窗口/数据日期统一按北京时间，避免 T+7 工作日整体早算一天。
+CN = timezone(timedelta(hours=8))
 
 import requests
 import urllib3
@@ -125,7 +129,7 @@ def list_page(s, page, per_page=15):
 
 def crawl_notices(days, max_pages=40):
     s = session()
-    today = datetime.now()
+    today = datetime.now(CN)
     floor = (today - timedelta(days=days)).strftime("%Y-%m-%d")
     out, seen = [], set()
     for page in range(1, max_pages + 1):
@@ -574,6 +578,44 @@ def extract_product_name(flat, fallback=""):
     return fallback
 
 
+# 休市日表：与 assets/dashboard.js 的 MARKET_HOLIDAYS 同源，改动须两处同步。
+# 窗口按「T 起 7 个工作日」计算，跳周末与法定节假日；跨年时先补下一年度区间。
+MARKET_HOLIDAYS = [
+    ("2025-01-01", "2025-01-01"),
+    ("2025-01-28", "2025-02-04"),
+    ("2025-04-04", "2025-04-06"),
+    ("2025-05-01", "2025-05-05"),
+    ("2025-05-31", "2025-06-02"),
+    ("2025-10-01", "2025-10-08"),
+    ("2026-01-01", "2026-01-03"),
+    ("2026-02-15", "2026-02-22"),
+    ("2026-04-04", "2026-04-06"),
+    ("2026-05-01", "2026-05-05"),
+    ("2026-06-19", "2026-06-21"),
+    ("2026-09-25", "2026-09-27"),
+    ("2026-10-01", "2026-10-07"),
+]
+
+
+def is_market_closed(d):
+    """周末或法定节假日"""
+    if d.weekday() >= 5:
+        return True
+    s = d.strftime("%Y-%m-%d")
+    return any(lo <= s <= hi for lo, hi in MARKET_HOLIDAYS)
+
+
+def add_workdays(day_str, n):
+    """受理日后第 n 个工作日；n=7 即 T+7 个工作日。"""
+    d = datetime.strptime(day_str, "%Y-%m-%d")
+    left = max(1, int(n))
+    while left > 0:
+        d += timedelta(days=1)
+        if not is_market_closed(d):
+            left -= 1
+    return d.strftime("%Y-%m-%d")
+
+
 def build():
     ap = argparse.ArgumentParser(description="新品预告抓取")
     ap.add_argument("--days", type=int, default=10)
@@ -582,7 +624,7 @@ def build():
     a = ap.parse_args()
 
     R = Rules()
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = datetime.now(CN).strftime("%Y-%m-%d")
     print("== 抓取建行新品公告列表（最近 %d 天）" % a.days)
     notices = crawl_notices(a.days)
     cand = [n for n in notices if is_candidate(n["title"])][: a.limit]
@@ -615,7 +657,7 @@ def build():
 
     items, established, dropped = [], [], 0
     seen = set()
-    ref = datetime.now()
+    ref = datetime.now(CN)
     for n, r, raw_flat in rows:
         nid = str(r.get("公告ID") or _nid_of(n["url"]))
         flat = raw_flat or read_cached_text(nid)
@@ -728,13 +770,13 @@ def build():
     lanes.sort(key=lambda l: (-len(l["products"]), l["channel"]))
 
     window_start = today
-    # 2026-11-26：按用户要求恢复仅展示 7 天日期（今天起含今天共 7 列）。
-    # 已重跑建行官网公告核查：下周 1-4（2026-11-30~2026-12-03）无新品开始募集，
-    # 裁掉第 8 列不丢数据；解析失败 0 条。若后续出现周日成立/周日截止的新品再评估。
-    window_end = (datetime.now() + timedelta(days=6)).strftime("%Y-%m-%d")
+    # 2026-11-27：按用户要求把预告窗口从「自然日 today+6」改成「T+7 个工作日」。
+    # 与份额确认日同口径：跳周末与法定节假日（MARKET_HOLIDAYS 与前端同源）。
+    # 因此 11-27（周五）起窗口到 12-08（周二）；前端列数上限同步放宽到 14 列。
+    window_end = add_workdays(today, 7)
     payload = {
         "asOf": today,
-        "fetchedAt": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "fetchedAt": datetime.now(CN).strftime("%Y-%m-%d %H:%M"),
         "source": "六大行及股份制银行新品公告 · 销售文件要素表",
         "window": {"start": window_start, "end": window_end},
         "institutions": [l["channel"] for l in lanes],

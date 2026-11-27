@@ -460,6 +460,56 @@ def pull_ccb_chart(ecd):
 
 
 # ---------------- 净值序列更新（只追加更新的点） ----------------
+
+# 成立日确认净值（用户核验的凭据，不是推算）：
+# 募集期官网/代销页展示的 nav=1.000000 只是占位（未成立、未起息、无份额），不得入账；
+# 成立日/起息日按份额确认的 1.000000 是真实初始单位净值，可作为首个披露点入账。
+# 键 = 登记编码，值 = (确认日, 净值, 来源)。只在库内还没有净值序列时写入，绝不覆盖真实披露。
+INCEPTION_NAV_CONFIRMED = {
+    "Z7001626001126": (
+        "2026-11-27", 1.0,
+        "建行App持仓明细·起息日份额按1.000000确认（用户截图核验 2026-11-27）",
+    ),
+}
+
+
+def is_pre_inception_placeholder(product, date, nav):
+    """募集期 nav=1.0 占位过滤：日期早于成立日的一律不认；
+    成立日当日及之后的 1.0 是份额按 1 确认的真实初始净值，允许入账。"""
+    if nav is None:
+        return True
+    try:
+        if abs(float(nav) - 1.0) > 1e-9:
+            return False
+    except (TypeError, ValueError):
+        return True
+    inc = str(product.get("inception") or "")
+    return bool(inc) and str(date) < inc
+
+
+def apply_inception_seeds(lib_items):
+    """把已核验的成立日确认净值写成产品库首个净值点，返回写入数量。"""
+    n = 0
+    for x in lib_items:
+        seed = INCEPTION_NAV_CONFIRMED.get(str(x.get("regCode") or ""))
+        if not seed:
+            continue
+        date, nav, src = seed
+        if x.get("dates") or x.get("latestDate"):
+            continue  # 已有真实披露序列，不用初始点覆盖
+        inc = str(x.get("inception") or "")
+        if inc and date < inc:
+            continue
+        if not apply_point(x, date, nav):
+            continue
+        x["source"] = src
+        x["navTried"] = date  # 当天不再重复尝试，避免募集期占位被写回
+        n += 1
+        print("  成立日确认净值 %-18s %s nav=%.6f [%s]" %
+              (str(x.get("regCode"))[-8:], date, nav, src), flush=True)
+    return n
+
+
 def apply_point(product, date, nav):
     """把单个净值点追加到产品序列，返回是否真的更新。"""
     dates = list(product.get("dates") or [])
@@ -471,8 +521,10 @@ def apply_point(product, date, nav):
         return False  # 结构异常，跳过避免污染
     dates.append(date)
     navs.append(round(nav, 6))
-    if not per:
-        per.append(None)
+    # 占位产品初始化时 per10k 可能是 [None]（nav 为空）。追加首点时必须把数组
+    # 收敛到与 nav 等长，否则 check_data 的结构校验会报长度不等。
+    while len(per) > len(navs) - 1:
+        per.pop()
     while len(per) < len(navs) - 1:
         per.append(None)
     if len(navs) >= 2 and navs[-2]:
@@ -518,7 +570,8 @@ def main():
                     help="扩展到全库非持仓产品：用已抓取的 NLC165 索引补滞后净值。"
                          "接受精确名称/ECD 命中 + 安全代销前缀(南极星等)命中 + 身份核命中"
                          "(机构名前后缀/份额字母/渠道专享归一) + 交银官网单点兜底 + 真实净值"
-                         "（跳过现金类 nav=1.0 占位，前缀/身份核命中另过万份收益与净值差校验）；"
+                         "（跳过募集期 nav=1.0 占位与现金类等量级占位；成立日当日及之后的 1.0 "
+                         "按份额确认的真实初始净值入账，前缀/身份核命中另过万份收益与净值差校验）；"
                          "默认关闭，仅处理持仓")
     ap.add_argument("--gap", type=float, default=0.15, help="分页间隔秒")
     ap.add_argument("--cw", action="store_true",
@@ -546,6 +599,14 @@ def main():
             cmap = json.load(open(CCB_MAP, encoding="utf-8"))
         except Exception:
             cmap = {}
+
+    # 先落已核验的成立日确认净值：必须早于 before/candidates 计算，
+    # 否则同日的建行募集期 1.0 占位可能先把首点写成成立日之前。
+    seeded = 0 if a.dry_run else apply_inception_seeds(lib_items)
+    changed = seeded
+    changed_lib = seeded > 0
+    if seeded:
+        print("成立日确认净值已补入 %d 只（仅库内无净值者）" % seeded, flush=True)
 
     before = {pid: (byid[pid].get("latestDate") or "") for pid, _, _ in holds}
     data_pids = set(x["id"] for x in data.get("products", []))  # 区分写回哪个文件
@@ -633,6 +694,10 @@ def main():
         candidates.sort(key=lambda x: x[0], reverse=True)
         date, nav, src = candidates[0]
         t1_report.append((pid, short, date, date >= t1, src))
+        if is_pre_inception_placeholder(prod, date, nav):
+            print("  %-18s %-28s 跳过：%s 的 nav=1.0 是募集期占位（成立日 %s）" %
+                  (pid, short, date, prod.get("inception") or "-"), flush=True)
+            continue
         if date <= before[pid]:
             print("  %-18s %-28s 最优源 %s=%s 不比现有新（%s）" %
                   (pid, short, src, date, before[pid]), flush=True)
@@ -717,6 +782,12 @@ def main():
             # 直接写入会把 per10k 算成大负数 -> 跳过 nav=1.0 且与库内不同量级的项
             nnav = hit[1]
             if nnav is None or nnav <= 0:
+                continue
+            # 募集期的 1.0 是占位；成立日当日及之后的 1.0 才是真实初始净值。
+            if is_pre_inception_placeholder(x, hit[0], nnav):
+                print("  %-18s %-22s 跳过：%s 的 nav=1.0 是募集期占位（成立日 %s）" %
+                      (pid, (x.get("short") or "")[:22], hit[0],
+                       x.get("inception") or "-"), flush=True)
                 continue
             if nnav == 1.0 and curnav and abs(curnav - 1.0) > 1e-6:
                 print("  %-18s %-22s 跳过：现金类 nav=1.0 占位" %
