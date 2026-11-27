@@ -1,6 +1,6 @@
 (function () {
   /* 版本标记：index.html 的 boot() 据此识别旧缓存脚本并强制以时间戳重载 */
-  window.__NP_LAYOUT_VERSION = '20261127f';
+  window.__NP_LAYOUT_VERSION = '20261127g';
   var DATA = window.REPORT_DATA;
   if (!DATA || !Array.isArray(DATA.products)) return;
 
@@ -92,11 +92,27 @@
     return '';
   }
 
-  /* 当前可卖份额：只认已确认的持仓，已清仓为 0 */
+  /* 当前可卖份额：只认已确认的持仓，已清仓为 0；在途赎回/清仓占用的份额必须冻结。
+     2026-11-27 E85：computeHoldings 对在途赎回（确认日未到/净值未披露）直接 skip，
+     这部分份额仍留在持仓里；若可卖份额不扣除，就会出现「已提交 6000 份待确认赎回，
+     新增赎回仍提示可卖 26000」的超卖漏洞。冻结口径与交易流水「在途」状态同源：
+     同一产品所有 txStatus==='在途' 的赎回/清仓单，其份额从可卖里扣掉，下限 0。 */
   function sellableShares(pid) {
     var map = HOLD_BY_PID || {};
     var h = map[canonicalPidById(pid)] || map[pid];
-    return h && h.shares > 0.000001 ? h.shares : 0;
+    var shares = h && h.shares > 0.000001 ? h.shares : 0;
+    if (!(shares > 0)) return 0;
+    var items = (window.TRANSACTIONS && window.TRANSACTIONS.items) || [];
+    var frozen = 0;
+    items.forEach(function (t) {
+      if (!samePid(t.pid, pid)) return;
+      if (t.type !== '赎回' && t.type !== '清仓') return;
+      if (txStatus(t) !== '在途') return;
+      var sh = Number(t.shares);
+      if (!(sh > 0)) sh = Number(t.amount) / (Number(t.confirmNav) || 1) || 0;
+      if (sh > 0) frozen += sh;
+    });
+    return Math.max(0, shares - frozen);
   }
 
   /* 是否已有在途清仓单（确认日未到或净值未披露），避免重复清仓 */
@@ -2621,7 +2637,7 @@
         markPoint/markLine + SVG 渲染器（约 500KB，gzip 173KB），并在首屏 init 后
         立即用 fetch 预热 HTTP 缓存、load 完成后空闲注入脚本——用户读首屏这几秒里
         图库已就绪，切到趋势页几乎不再等待。 */
-  var CHART_URL = './_shared/js/echarts.slim.js?v=20261127f';
+  var CHART_URL = './_shared/js/echarts.slim.js?v=20261127g';
   function injectEcharts() {
     if (window.echarts || window.__ECHARTS_INJECTED__) return;
     window.__ECHARTS_INJECTED__ = true;
@@ -5057,17 +5073,19 @@
       navEl.classList.toggle('pending', !navOn);
     }
     var navVal = Number(navEl && navEl.value) || 0;
-    var h = HOLD_BY_PID[p.id];
+    /* E85：可卖份额统一走 sellableShares（已冻结在途赎回/清仓占用的份额），
+       不再直接读 HOLD_BY_PID 的原始持仓，避免待确认赎回的份额仍显示在「可卖」。 */
+    var freeShares = sellableShares(p.id);
     var t = (typeEl && typeEl.value) || '申购';
     var isBuy = t === '申购';
     applyTradeMode();
     if (shEl) {
       if (isBuy) shEl.placeholder = '按金额与成交净值自动计算';
       else if (t === '清仓') {
-        shEl.value = h && h.shares > 0 ? h.shares.toFixed(2) : '';
+        shEl.value = freeShares > 0 ? freeShares.toFixed(2) : '';
         shEl.placeholder = '';
       } else {
-        shEl.placeholder = '可卖 ' + ((h && h.shares) ? h.shares.toFixed(2) : '0.00') + ' 份';
+        shEl.placeholder = '可卖 ' + (freeShares > 0 ? freeShares.toFixed(2) : '0.00') + ' 份';
       }
     }
     /* 赎回/清仓：金额 = 份额 × 成交净值 */
