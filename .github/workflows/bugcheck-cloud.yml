@@ -1,0 +1,51 @@
+name: bugcheck-cloud
+
+# 云端全站排查 + 微信推送（2026-11-27 新增）。
+# 替代本地 WorkBuddy「全站每日排查」automation：本地定时任务依赖客户端在对应时点运行，
+# 2026-11-26/27 连续两晚未触发（00:30 补推、06:00 排查都漏跑，用户完全收不到推送）。
+# 本工作流在 GitHub Actions 云端定时执行，完全不依赖本地环境：
+#   - 查 CI 用 GITHUB_TOKEN（本地 automation 用 .git/git-credentials）
+#   - 守卫直接读 code_guard_marks.json（本地 api_push.py check 依赖本地凭据/基线）
+#   - check_ann/check_data 纯文件校验，Playwright 用云端 Chromium
+#   - 推送走 notify.send()（Server酱 sendkey 在 Actions secret，不经本地 dispatch 中转）
+#
+# 定时：北京 09:00（UTC 01:00）——早间 daily-fetch 挂号 07:00、落点约 07:40，
+# 数据更新与收益长图推送约 08:00 前完成，此时排查读到的已是当日最新数据，
+# 且与早间两条推送错开，降低 Server酱当日 5 条限额被排查报告挤占的风险。
+# 保留 workflow_dispatch 便于随时手动补跑。
+
+on:
+  schedule:
+    - cron: "0 1 * * *"    # UTC 01:00 = 北京 09:00
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: bugcheck-cloud
+  cancel-in-progress: false
+
+jobs:
+  bugcheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 安装依赖
+        run: |
+          pip install -r daily/requirements.txt
+          python -m playwright install --with-deps chromium
+
+      - name: 执行云端全站排查并推送
+        env:
+          PYTHONIOENCODING: utf-8
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SERVERCHAN_SENDKEY: ${{ secrets.SERVERCHAN_SENDKEY }}
+        run: python daily/cloud_bugcheck.py
