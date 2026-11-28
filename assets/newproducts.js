@@ -3,7 +3,7 @@ window.NEW_PRODUCTS = {
   "fetchedAt": "2026-11-27 11:09",
   "source": "云端登记 + 官网公告",
   "window": {
-    "start": "2026-11-27",
+    "start": "2026-11-28",
     "end": "2026-12-02"
   },
   "institutions": [
