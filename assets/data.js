@@ -1,6 +1,6 @@
 window.REPORT_DATA = {
-  "asOf": "2026-11-27",
-  "fetchedAt": "2026-11-27 22:42",
+  "asOf": "2026-11-28",
+  "fetchedAt": "2026-11-28 08:19",
   "products": [
     {
       "id": "p2150",
@@ -57,7 +57,7 @@ window.REPORT_DATA = {
         1.0011,
         1.0011,
         1.0012,
-        1.0012
+        1.0013
       ],
       "per10k": [
         null,
@@ -80,7 +80,7 @@ window.REPORT_DATA = {
         1.0,
         0.0,
         1.0,
-        0.0
+        1.0
       ],
       "sourceName": "交银理财官网"
     },
@@ -92,7 +92,7 @@ window.REPORT_DATA = {
       "regCode": "Z7000726000157",
       "shareCode": "",
       "inception": "2026-03-03",
-      "latestDate": "2026-11-26",
+      "latestDate": "2026-11-29",
       "officialAnnual": null,
       "officialAsOf": null,
       "dates": [
@@ -364,7 +364,10 @@ window.REPORT_DATA = {
         "2026-11-23",
         "2026-11-24",
         "2026-11-25",
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27",
+        "2026-11-28",
+        "2026-11-29"
       ],
       "nav": [
         1.0,
@@ -635,7 +638,10 @@ window.REPORT_DATA = {
         1.022936,
         1.022915,
         1.022796,
-        1.022638
+        1.022638,
+        1.023053,
+        1.023095,
+        1.023138
       ],
       "per10k": [
         null,
@@ -906,10 +912,13 @@ window.REPORT_DATA = {
         1.28,
         -0.21,
         -1.19,
-        -1.58
+        -1.58,
+        4.15,
+        0.42,
+        0.43
       ],
       "sourceName": "建设银行代销净值",
-      "latestNav": 1.022796
+      "latestNav": 1.023053
     },
     {
       "id": "p2218",
@@ -919,7 +928,7 @@ window.REPORT_DATA = {
       "regCode": "Z7002626002218",
       "shareCode": "AF266423B",
       "inception": "2026-08-25",
-      "latestDate": "2026-11-26",
+      "latestDate": "2026-11-27",
       "officialAnnual": null,
       "officialAsOf": null,
       "dates": [
@@ -985,7 +994,8 @@ window.REPORT_DATA = {
         "2026-11-23",
         "2026-11-24",
         "2026-11-25",
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "nav": [
         1.0001,
@@ -1049,6 +1059,7 @@ window.REPORT_DATA = {
         1.0082,
         1.0084,
         1.0084,
+        1.0085,
         1.0085,
         1.0085
       ],
@@ -1115,6 +1126,7 @@ window.REPORT_DATA = {
         2.0,
         0.0,
         1.0,
+        0.0,
         0.0
       ],
       "sourceName": "中国理财网",
